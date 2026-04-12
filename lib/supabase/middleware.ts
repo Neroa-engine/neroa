@@ -1,0 +1,37 @@
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { getSupabaseEnv } from "@/lib/supabase/env";
+
+export async function updateSession(request: NextRequest) {
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers
+    }
+  });
+
+  try {
+    const { url, anonKey } = getSupabaseEnv();
+
+    const supabase = createServerClient(url, anonKey, {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options });
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: "", ...options });
+          response.cookies.set({ name, value: "", ...options });
+        }
+      }
+    });
+
+    await supabase.auth.getUser();
+  } catch (error) {
+    console.error("SUPABASE_MIDDLEWARE_ERROR", error);
+  }
+
+  return response;
+}
