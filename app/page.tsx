@@ -6,27 +6,30 @@ import { AGENTS, type AgentId } from "@/lib/ai/agents";
 
 export const dynamic = "force-static";
 
-const primaryOffers = [
+const diyAdvantagePoints = [
   {
-    label: "DIY Build Platform",
-    title: "Build with Neroa's guided AI system at your own pace.",
+    title: "Monthly Engine Credits",
     description:
-      "Use monthly Engine Credits for planning, blueprinting, and scoped execution support without confusing a subscription with done-for-you build labor.",
-    primaryCtaLabel: "Build it myself",
-    primaryCtaHref: "/diy",
-    secondaryCtaLabel: "View DIY Pricing",
-    secondaryCtaHref: "/pricing/diy"
+      "DIY plans include monthly Engine Credits that reset with the plan, so you can keep planning and guided execution inside a predictable credit pool."
   },
   {
-    label: "Managed Build Services",
-    title: "Have Neroa help build, launch, and manage your software.",
+    title: "Scoped build pace",
     description:
-      "Move into a scoped managed-build path when you want setup help, QA, deployment coordination, and ongoing management support.",
-    primaryCtaLabel: "Have Neroa build it for me",
-    primaryCtaHref: "/managed-build",
-    secondaryCtaLabel: "View Managed Pricing",
-    secondaryCtaHref: "/pricing/managed"
+      "Build speed depends on scope and available credits. Neroa shows the pace clearly instead of implying that one subscription includes unlimited full-build labor."
+  },
+  {
+    title: "Hard caps with options",
+    description:
+      "You stay in control of budget because users do not exceed monthly caps unless they intentionally buy credit packs or upgrade."
   }
+] as const;
+
+const managedBuildBullets = [
+  "Done-with-you or done-for-you execution",
+  "QA and launch support",
+  "Deployment coordination",
+  "Monthly management after launch",
+  "Scope-based quote before work begins"
 ] as const;
 
 const buildCategories = [
@@ -131,7 +134,7 @@ const specialistCards: Array<{
 
 export default function LandingPage() {
   return (
-    <MarketingInfoShell ctaHref="/diy" ctaLabel="Build it myself" brandVariant="prominent">
+    <MarketingInfoShell ctaHref="/start" ctaLabel="Start DIY Build" brandVariant="prominent">
       <section className="grid gap-12 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
         <div className="max-w-3xl">
           <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
@@ -141,19 +144,19 @@ export default function LandingPage() {
             Most AI tools just talk. Neroa helps you build.
           </p>
           <h1 className="mt-5 text-5xl font-semibold tracking-[-0.055em] text-slate-950 sm:text-6xl xl:text-[5.5rem] xl:leading-[0.92]">
-            Build SaaS, internal software, external apps, and mobile apps with coordinated AI.
+            Build SaaS, internal software, external apps, and mobile apps with guided AI.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 sm:text-xl">
-            Neroa helps you move from idea to MVP, budget, validation, build, and launch using a
-            guided system powered by Naroa and specialized AI support.
+            Neroa helps you move from idea to scope, MVP, budget, build, and launch using a
+            guided system powered by Naroa and specialist AI support.
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link href="/diy" className="button-primary">
-              Build it myself
+            <Link href="/start" className="button-primary">
+              Start DIY Build
             </Link>
-            <Link href="/managed-build" className="button-secondary">
-              Have Neroa build it for me
+            <Link href="/pricing/diy" className="button-secondary">
+              View DIY Pricing
             </Link>
           </div>
         </div>
@@ -170,41 +173,84 @@ export default function LandingPage() {
       <section className="mt-20">
         <div className="mb-8 max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
-            Primary offers
+            DIY advantage
           </p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Choose the lane that matches how you want to build.
+            Build at your own pace with monthly Engine Credits.
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            DIY and Managed Build now have separate customer journeys and separate pricing pages,
-            so subscription planning never gets mixed with scoped service work.
+            Neroa keeps DIY pricing legible: credits reset monthly based on the plan, build speed
+            depends on scope and available credits, and users stay inside hard monthly caps unless
+            they intentionally buy more capacity or upgrade.
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          {primaryOffers.map((offer) => (
-            <article key={offer.label} className="floating-plane rounded-[34px] p-6 sm:p-8">
-              <div className="floating-wash rounded-[34px]" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {diyAdvantagePoints.map((item) => (
+            <article key={item.title} className="floating-plane rounded-[30px] p-6">
+              <div className="floating-wash rounded-[30px]" />
               <div className="relative">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                  {offer.label}
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                  {offer.title}
-                </h2>
-                <p className="mt-4 text-base leading-8 text-slate-600">{offer.description}</p>
-
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                  <Link href={offer.primaryCtaHref} className="button-primary">
-                    {offer.primaryCtaLabel}
-                  </Link>
-                  <Link href={offer.secondaryCtaHref} className="button-secondary">
-                    {offer.secondaryCtaLabel}
-                  </Link>
-                </div>
+                <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{item.description}</p>
               </div>
             </article>
           ))}
+        </div>
+
+        <div className="mt-6 rounded-[30px] border border-cyan-200/70 bg-[linear-gradient(135deg,rgba(240,249,255,0.94),rgba(255,255,255,0.84))] px-6 py-6 sm:px-8">
+          <p className="text-base leading-8 text-slate-700">
+            Build at your own pace. If your plan includes 2,500 Engine Credits per month and your
+            scoped project requires 40,000 credits, Neroa will show that the project can be built
+            over approximately 16 months using only monthly credits, or faster with credit packs
+            or an upgraded plan.
+          </p>
+        </div>
+      </section>
+
+      <section className="mt-20">
+        <div className="floating-plane rounded-[34px] p-6 sm:p-8">
+          <div className="floating-wash rounded-[34px]" />
+          <div className="relative grid gap-8 lg:grid-cols-[1fr_0.92fr] lg:items-start">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+                We Build It For You
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Want Neroa to build it for you?
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                If you prefer not to manage the build yourself, Neroa can help scope, execute, QA,
+                deploy, and manage the project through a separate managed build package.
+              </p>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Link href="/managed-build" className="button-primary">
+                  Explore Managed Build Services
+                </Link>
+                <Link href="/pricing/managed" className="button-secondary">
+                  View Managed Pricing
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-[26px] border border-slate-200/70 bg-white/80 px-5 py-5">
+              <p className="text-sm font-semibold text-slate-950">Managed build includes</p>
+              <div className="mt-4 grid gap-3">
+                {managedBuildBullets.map((item) => (
+                  <div key={item} className="flex items-start gap-3">
+                    <span className="mt-1.5 h-2 w-2 rounded-full bg-cyan-500" />
+                    <p className="text-sm leading-7 text-slate-600">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-[30px] border border-slate-200/70 bg-white/82 px-6 py-6 sm:px-8">
+          <p className="text-base leading-8 text-slate-700">
+            Start DIY and switch later. If you begin in DIY and get stuck, Neroa can review your
+            scope and move the project into a managed build path.
+          </p>
         </div>
       </section>
 
@@ -347,23 +393,24 @@ export default function LandingPage() {
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Choose your lane
+                DIY first
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Start in the lane that matches how you want to build.
+                Start in DIY and move into managed support only if the scope demands it.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                DIY leads into the guided build platform. Managed Build leads into scoped quote
-                and delivery conversations.
+                Pricing stays separated by lane: DIY pricing lives on the DIY side, managed build
+                pricing lives on the managed side, and Neroa helps you move between them when the
+                project needs it.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/diy" className="button-primary">
-                Build it myself
+              <Link href="/start" className="button-primary">
+                Start DIY Build
               </Link>
               <Link href="/managed-build" className="button-secondary">
-                Have Neroa build it for me
+                Explore Managed Build Services
               </Link>
             </div>
           </div>
