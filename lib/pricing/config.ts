@@ -43,7 +43,7 @@ export type ExecutionCreditUsageNotification = {
 };
 
 export const pricingScopeDisclaimer =
-  "Every project is scoped before execution. Your subscription gives access, guidance, and monthly Engine Credits. Large or complex builds may require more credits, scope reduction, a higher plan, or a managed build package.";
+  "Your subscription gives you access, guidance, and monthly Engine Credits. Full build speed depends on your scope and available credits. Large or complex builds may require more credits, scope reduction, a higher plan, or a managed build package.";
 
 export const planScopedEstimateHeadline =
   "Neroa estimates the credit cost after your scope is defined.";
@@ -69,11 +69,18 @@ export const pricingTermDefinitions = [
   }
 ] as const;
 
+export const planningVsBuildProjectsDefinition =
+  "Planning engines are not build slots. Active build projects are scoped execution lanes with real Engine Credit usage and plan-based limits.";
+
 export type PricingPlanCapacity = {
   aiSystemsIncluded: number | null;
   aiSystemsNote: string;
   activeWorkspaces: number | null;
   activeWorkspacesNote: string;
+  activePlanningEngines: number | null;
+  activePlanningEnginesNote: string;
+  activeBuildProjects: number | null;
+  activeBuildProjectsNote: string;
   teamSeatsIncluded: number | null;
   teamSeatsNote: string;
   additionalSeatPriceMonthly: number | null;
@@ -107,6 +114,16 @@ export type PricingPlan = {
   usageBandLabel: string;
   capacity: PricingPlanCapacity;
   exclusions?: string[];
+};
+
+export type ManagedBuildPackage = {
+  id: string;
+  label: string;
+  buildFeeRange: string;
+  monthlyManagementRange: string;
+  summary: string;
+  includes: string[];
+  excludes: string[];
 };
 
 export const publicBillingIntervals: BillingInterval[] = [
@@ -176,21 +193,33 @@ export const executionCreditActions: ExecutionCreditAction[] = [
 export const executionCreditPacks: ExecutionCreditPack[] = [
   {
     credits: 1000,
-    price: 10,
+    price: 25,
     label: "Light top-up",
     detail: "Best for a short burst month when one engine needs extra guided support."
   },
   {
     credits: 5000,
-    price: 40,
+    price: 99,
     label: "Build month",
     detail: "Best when repeated scoping, build assistance, and coordination runs stack up in one cycle."
   },
   {
     credits: 10000,
-    price: 70,
+    price: 179,
     label: "Heavy sprint",
     detail: "Useful when launch prep, reporting, or multi-engine execution spikes usage for a focused stretch."
+  },
+  {
+    credits: 25000,
+    price: 399,
+    label: "Launch push",
+    detail: "Best when a serious scope needs a bigger acceleration window without immediately changing plans."
+  },
+  {
+    credits: 50000,
+    price: 699,
+    label: "Scale pack",
+    detail: "Designed for large or multi-month execution pushes that need a deeper DIY credit reserve."
   }
 ];
 
@@ -198,16 +227,16 @@ export const pricingAddOns: PricingAddOn[] = [
   {
     id: "extra-credits",
     label: "Extra Engine Credits",
-    pricing: "From $10",
+    pricing: "From $25",
     detail: "Add a top-up pack when you need extra guided execution capacity without immediately changing plans.",
     availability: "Available to paid plans"
   },
   {
-    id: "extra-engines",
-    label: "Extra engines",
+    id: "extra-build-projects",
+    label: "Extra build projects",
     pricing: "From $19 / month",
-    detail: "Expand the active engine limit when one more build needs continuity before a full plan upgrade makes sense.",
-    availability: "Available from Builder and above"
+    detail: "Expand scoped execution capacity when the included active build-project limit is no longer enough.",
+    availability: "Available from Agency / Command Center only"
   },
   {
     id: "extra-seats",
@@ -233,9 +262,9 @@ export const pricingAddOns: PricingAddOn[] = [
 ];
 
 export const hardCapPolicyPoints = [
-  "Every plan can stay on a hard monthly Engine Credit cap so usage remains predictable.",
-  "Top-ups are optional. Customers can keep them off and stop at the included monthly Engine Credit limit.",
-  "Upgrade when heavier guided execution becomes your normal monthly pattern, not because one week was unusually busy."
+  "Every plan defaults to hard monthly Engine Credit caps so usage stays predictable.",
+  "Users can buy credit packs or upgrade when more guided build capacity is needed.",
+  "Execution pauses when credits run out. No plan includes unlimited usage or unlimited build labor."
 ] as const;
 
 export const usageNotificationThresholds: ExecutionCreditUsageNotification[] = [
@@ -252,7 +281,7 @@ export const usageNotificationThresholds: ExecutionCreditUsageNotification[] = [
 ] as const;
 
 const defaultTopUpNote =
-  "Add more capacity later with $10 / 1,000, $40 / 5,000, or $70 / 10,000 Engine Credit packs.";
+  "Add more capacity later with $25 / 1,000, $99 / 5,000, $179 / 10,000, $399 / 25,000, or $699 / 50,000 Engine Credit packs.";
 
 export const teamPricingCallout = {
   title: "Need team or multi-client support?",
@@ -261,6 +290,87 @@ export const teamPricingCallout = {
   actionLabel: "Talk to Naroa",
   actionHref: "/contact?type=partnership"
 } as const;
+
+export const managedBuildPackages: ManagedBuildPackage[] = [
+  {
+    id: "managed-mvp-internal-tool",
+    label: "Managed MVP / Internal Tool",
+    buildFeeRange: "$1,500-$3,500+",
+    monthlyManagementRange: "$199-$499/month minimum",
+    summary:
+      "A lighter managed engagement for MVPs and internal tools that still need structured execution, QA, and launch follow-through.",
+    includes: [
+      "Scoped build plan and execution guidance",
+      "QA support and launch preparation",
+      "Monthly monitoring, updates, and small improvement cycles"
+    ],
+    excludes: [
+      "Unlimited rebuilds",
+      "Unlimited new modules without rescoping",
+      "Separate new products outside the agreed scope"
+    ]
+  },
+  {
+    id: "managed-saas",
+    label: "Managed SaaS",
+    buildFeeRange: "$5,000-$15,000+",
+    monthlyManagementRange: "$500-$1,500/month minimum",
+    summary:
+      "For founders who want Neroa and a partner team to help execute, QA, deploy, and manage a real SaaS product.",
+    includes: [
+      "Product scoping and structured execution support",
+      "QA, deployment help, and launch support",
+      "Monthly monitoring, maintenance, and guided improvement cycles"
+    ],
+    excludes: [
+      "Unlimited product rebuilds",
+      "Unlimited new feature delivery",
+      "Large-scope expansion without a new quote"
+    ]
+  },
+  {
+    id: "managed-mobile-app",
+    label: "Managed Mobile App",
+    buildFeeRange: "$10,000-$30,000+",
+    monthlyManagementRange: "$750-$2,500/month minimum",
+    summary:
+      "For cross-platform or store-ready mobile products that need more hands-on execution, QA, and release coordination.",
+    includes: [
+      "Mobile execution planning and delivery support",
+      "QA, release prep, and deployment coordination",
+      "Monthly monitoring, support, and small iteration cycles"
+    ],
+    excludes: [
+      "Unlimited app rewrites",
+      "Unlimited store-submission cycles without scope control",
+      "Net-new product builds outside the engagement"
+    ]
+  },
+  {
+    id: "managed-external-platform",
+    label: "Managed External Customer App / Marketplace / AI Platform",
+    buildFeeRange: "$15,000-$50,000+",
+    monthlyManagementRange: "$1,500-$5,000/month minimum",
+    summary:
+      "For larger customer-facing products, marketplaces, and AI platforms that need deeper coordination and more guided operational support.",
+    includes: [
+      "Execution support across larger scope and integration depth",
+      "QA, deployment, and launch coordination",
+      "Monthly monitoring, bug fixes, dependency updates, and managed improvements"
+    ],
+    excludes: [
+      "Unlimited rebuilds",
+      "Unlimited new products",
+      "Open-ended feature expansion without scoped approval"
+    ]
+  }
+] as const;
+
+export const managedBuildPackageIntro =
+  "Neroa subscriptions help you plan, structure, and guide your build. Managed Build Packages are separate when you want Neroa or a partner team to help execute, QA, deploy, and manage the software.";
+
+export const managedBuildDisclaimer =
+  "Managed Build pricing depends on scope, integrations, complexity, QA requirements, launch timeline, and support level. Monthly management fees cover monitoring, updates, bug fixes, deployment support, dependency updates, usage review, and small improvement cycles. They do not include unlimited rebuilds or new products.";
 
 export const pricingPlans: PricingPlan[] = [
   {
@@ -272,24 +382,24 @@ export const pricingPlans: PricingPlan[] = [
     priceMonthly: 0,
     launchEnabled: true,
     trialDays: null,
-    targetUser: "People taking a first look at Naroa before they commit to a real build workflow.",
-    bestFor: "Light product exploration before you move into recurring guided execution.",
+    targetUser: "People taking a first look at Neroa before they commit to a real build workflow.",
+    bestFor: "Idea exploration and first-scope thinking before any build execution begins.",
     whatYouGet: [
-      "1 engine",
-      "Strategy, Scope, MVP, and Budget preview only",
-      "A small monthly Engine Credit pool",
-      "A hard cap with no add-on credits"
+      "300 Engine Credits / month",
+      "1 active planning engine",
+      "0 active build projects",
+      "Idea exploration only"
     ],
     workflowAccess: ["Strategy", "Scope", "MVP preview", "Budget preview"],
     whyItMatters:
-      "Lets people understand the product without pretending free usage can cover serious build work.",
+      "Lets people understand the product without pretending a free plan can cover real build execution.",
     usageIncluded:
-      "A low monthly pool of Engine Credits for early planning, scoping, and budget framing inside one engine.",
+      "A low monthly pool of Engine Credits for planning, scoping, and budget framing inside one planning engine.",
     agentAccess: "Naroa core guidance only.",
     exportsAndHandoffs: "Basic summary export only.",
-    integrationsAccess: "No advanced build workflows, premium integrations, or deeper multi-agent execution.",
+    integrationsAccess: "No build execution, deployment management, or advanced integration support.",
     upgradeTrigger:
-      "Upgrade when you want recurring planning work, test-stage continuity, or anything beyond the preview lanes.",
+      "Upgrade when you want test-stage continuity, recurring planning work, or any real build execution.",
     marketComparison:
       "Acts as a real but limited product entry point instead of a vague free-use promise.",
     usageBandLabel: "Light exploration",
@@ -297,7 +407,11 @@ export const pricingPlans: PricingPlan[] = [
       aiSystemsIncluded: 1,
       aiSystemsNote: "Naroa only.",
       activeWorkspaces: 1,
-      activeWorkspacesNote: "One active engine at a time.",
+      activeWorkspacesNote: "One planning engine at a time.",
+      activePlanningEngines: 1,
+      activePlanningEnginesNote: "One planning engine for idea shaping and scope review.",
+      activeBuildProjects: 0,
+      activeBuildProjectsNote: "No build execution on Free.",
       teamSeatsIncluded: 1,
       teamSeatsNote: "1 seat included for a single guided evaluation path.",
       additionalSeatPriceMonthly: null,
@@ -309,7 +423,9 @@ export const pricingPlans: PricingPlan[] = [
       hardCapControlsNote: "Hard capped by default. Usage stops at the included monthly limit."
     },
     exclusions: [
-      "No Build, Launch, or Operate workflows",
+      "No build execution",
+      "No deployment management",
+      "No active build projects",
       "No specialist AI routing",
       "No multi-engine management"
     ]
@@ -323,32 +439,36 @@ export const pricingPlans: PricingPlan[] = [
     priceMonthly: 29,
     launchEnabled: true,
     trialDays: null,
-    targetUser: "People validating one real idea and turning it into a tighter execution path.",
-    bestFor: "One focused engine with Naroa-led planning, testing, and decision support.",
+    targetUser: "People validating one real idea and turning it into a tighter scoped plan before build execution begins.",
+    bestFor: "One focused planning engine with Naroa-led planning, testing, and decision support.",
     whatYouGet: [
-      "1 active engine",
-      "Strategy, Scope, MVP, Budget, and Test",
-      "Monthly Engine Credits for recurring guided work",
-      "Naroa core guidance with hard-cap controls"
+      "2,500 Engine Credits / month",
+      "1 active planning engine",
+      "0 active build projects",
+      "Planning, Scope, MVP, Budget, and Test-stage support"
     ],
     workflowAccess: ["Strategy", "Scope", "MVP", "Budget", "Test"],
     whyItMatters:
       "Keeps the first paid tier sharp around validation work instead of overpromising deep build capacity too early.",
     usageIncluded:
-      "Monthly Engine Credits for roadmap shaping, MVP definition, budget analysis, and test-stage refinement in one active engine.",
+      "Monthly Engine Credits for roadmap shaping, MVP definition, budget analysis, and test-stage refinement in one planning engine.",
     agentAccess: "Naroa primary, with focused coordinated support when the workflow truly needs it.",
     exportsAndHandoffs: "Light planning exports and structured summaries.",
-    integrationsAccess: "No advanced integrations or heavier build-handoff tooling.",
+    integrationsAccess: "No build execution or deployment management. Built for scoped planning and validation only.",
     upgradeTrigger:
-      "Move up when you want Build unlocked, deeper specialist coordination, or more than one active engine.",
+      "Move up when you want Build unlocked, deeper specialist coordination, or your first active build project.",
     marketComparison:
       "Replaces scattered planning chats and notes with one system that keeps execution structure intact.",
     usageBandLabel: "Single-engine validation",
     capacity: {
       aiSystemsIncluded: 1,
-      aiSystemsNote: "Naroa-led guidance built around one focused engine.",
+      aiSystemsNote: "Naroa-led guidance built around one focused planning engine.",
       activeWorkspaces: 1,
-      activeWorkspacesNote: "One active engine with saved continuity across planning and testing.",
+      activeWorkspacesNote: "One active planning engine with saved continuity across planning and testing.",
+      activePlanningEngines: 1,
+      activePlanningEnginesNote: "One planning engine for validation work.",
+      activeBuildProjects: 0,
+      activeBuildProjectsNote: "No active build projects on Starter.",
       teamSeatsIncluded: 1,
       teamSeatsNote: "1 seat included for one founder or operator.",
       additionalSeatPriceMonthly: null,
@@ -360,9 +480,10 @@ export const pricingPlans: PricingPlan[] = [
       hardCapControlsNote: "Hard cap by default. Top-ups stay optional."
     },
     exclusions: [
-      "No Build workflow",
-      "No deep export or handoff support",
-      "No multi-engine management"
+      "No active build projects",
+      "No completed SaaS build included",
+      "No deployment management",
+      "No deep export or handoff support"
     ]
   },
   {
@@ -374,24 +495,24 @@ export const pricingPlans: PricingPlan[] = [
     priceMonthly: 79,
     launchEnabled: true,
     trialDays: null,
-    targetUser: "Users moving from planning into real product execution for SaaS, internal software, or external apps.",
-    bestFor: "Build-focused work where scoping, execution structure, and handoffs start to matter.",
+    targetUser: "Users moving from planning into one real product execution lane for SaaS, internal software, or external apps.",
+    bestFor: "Build-focused work where one scoped execution lane and stronger handoffs start to matter.",
     whatYouGet: [
-      "2 to 3 active engines",
-      "Build unlocked",
-      "Specialist AI systems unlocked",
-      "Export and handoff support with a stronger Engine Credit pool"
+      "9,000 Engine Credits / month",
+      "3 active planning engines",
+      "1 active build project",
+      "Guided build workflow unlocked for one selected project only"
     ],
     workflowAccess: ["Strategy", "Scope", "MVP", "Budget", "Test", "Build"],
     whyItMatters:
-      "This is where Naroa starts acting like an execution system instead of a planning assistant.",
+      "This is where Naroa starts acting like an execution system without implying unlimited build labor.",
     usageIncluded:
-      "Built for repeated scoping, build workflow assistance, AI coordination, and structured execution support across multiple engines.",
+      "Built for repeated scoping, build workflow assistance, AI coordination, and structured execution support across multiple planning engines and one active build project.",
     agentAccess: "Naroa with Forge, Atlas, RepoLink, and the specialist systems needed for structured build support.",
     exportsAndHandoffs: "Roadmap exports, developer-brief handoffs, and stronger execution outputs.",
-    integrationsAccess: "Core integrations and deeper workflow assistance.",
+    integrationsAccess: "Core integrations and guided build workflow support for one scoped build project.",
     upgradeTrigger:
-      "Move up when launch planning, broader integrations, or several active engines become part of the normal operating rhythm.",
+      "Move up when launch planning, heavier integrations, or more than one active build project becomes part of the normal rhythm.",
     marketComparison:
       "Usually replaces fragmented scoping calls, build notes, and disconnected execution docs with one coordinated system.",
     usageBandLabel: "Structured build execution",
@@ -399,7 +520,11 @@ export const pricingPlans: PricingPlan[] = [
       aiSystemsIncluded: 4,
       aiSystemsNote: "Naroa plus the core specialist systems needed for product execution support.",
       activeWorkspaces: 3,
-      activeWorkspacesNote: "Up to three active engines for parallel build paths or adjacent products.",
+      activeWorkspacesNote: "Up to three planning engines for parallel product shaping or adjacent scope work.",
+      activePlanningEngines: 3,
+      activePlanningEnginesNote: "Three planning engines for parallel product shaping.",
+      activeBuildProjects: 1,
+      activeBuildProjectsNote: "One active build project for scoped execution.",
       teamSeatsIncluded: 1,
       teamSeatsNote: "1 seat included for one builder or operator.",
       additionalSeatPriceMonthly: null,
@@ -409,7 +534,13 @@ export const pricingPlans: PricingPlan[] = [
         "Supports heavier monthly scoping, build workflow assistance, and coordinated AI runs.",
       extraExecutionCreditsNote: defaultTopUpNote,
       hardCapControlsNote: "Hard cap by default, with optional top-ups for burst months."
-    }
+    },
+    exclusions: [
+      "No completed SaaS build included",
+      "No human QA included",
+      "No deployment management included",
+      "No unlimited build labor"
+    ]
   },
   {
     id: "pro",
@@ -420,25 +551,25 @@ export const pricingPlans: PricingPlan[] = [
     priceMonthly: 179,
     launchEnabled: true,
     trialDays: null,
-    targetUser: "One serious operator running deeper builds, launch motion, and multiple active engines.",
-    bestFor: "Single-operator execution with launch planning, stronger integrations, and deeper AI coordination.",
+    targetUser: "One serious operator running deeper builds, launch motion, and several planning engines with one active build project.",
+    bestFor: "Single-operator execution with one deeper build lane, stronger integrations, and stronger handoff/export support.",
     whatYouGet: [
-      "Multiple active engines",
-      "Launch workflow access",
-      "Stronger integrations and advanced execution support",
-      "A larger monthly Engine Credit pool for deeper coordinated work",
+      "22,000 Engine Credits / month",
+      "6 active planning engines",
+      "1 active build project",
+      "Deeper guided execution and stronger handoff/export support",
       "1 seat only with no additional seats"
     ],
     workflowAccess: ["Strategy", "Scope", "MVP", "Budget", "Test", "Build", "Launch", "Operate"],
     whyItMatters:
-      "Keeps scope, build planning, launch readiness, and operating follow-through inside one guided system.",
+      "Keeps scope, build planning, launch readiness, and operating follow-through inside one guided system without implying done-for-you delivery.",
     usageIncluded:
-      "Designed for multi-engine planning, deeper specialist coordination, launch workflow assistance, and recurring exports or handoffs.",
+      "Designed for multi-engine planning, one deeper build project, launch workflow assistance, and recurring exports or handoffs.",
     agentAccess: "Naroa with deeper coordinated specialist support across build, launch, and operating execution.",
     exportsAndHandoffs: "Advanced exports, handoff packets, launch checklists, and stronger operating deliverables.",
     integrationsAccess: "Stronger integrations and advanced execution support.",
     upgradeTrigger:
-      "Move up when you need client workflows, reusable templates, heavier reporting, or consistently higher monthly usage.",
+      "Move up when you need more than one active build project, client workflows, or consistently higher monthly usage.",
     marketComparison:
       "Often replaces a mix of outside planning, launch support, and fragmented operating workflows that cost more and connect less cleanly.",
     usageBandLabel: "Deeper multi-engine execution",
@@ -446,17 +577,27 @@ export const pricingPlans: PricingPlan[] = [
       aiSystemsIncluded: 6,
       aiSystemsNote: "Naroa plus the specialist systems typically needed for deeper build and launch coordination.",
       activeWorkspaces: 6,
-      activeWorkspacesNote: "Multiple active engines for connected products, launches, or sustained workstreams.",
+      activeWorkspacesNote: "Six planning engines for connected products, launches, or sustained workstreams.",
+      activePlanningEngines: 6,
+      activePlanningEnginesNote: "Six planning engines for broader product throughput.",
+      activeBuildProjects: 1,
+      activeBuildProjectsNote: "One active build project with deeper guided execution.",
       teamSeatsIncluded: 1,
       teamSeatsNote: "1 seat included for one serious operator running deeper builds.",
       additionalSeatPriceMonthly: null,
       additionalSeatNote: "No additional seats available on Pro.",
       includedExecutionCreditsMonthly: 22000,
       includedExecutionCreditsNote:
-        "Supports heavier build, launch, export, and coordinated AI activity across several active engines.",
+        "Supports heavier build, launch, export, and coordinated AI activity across several planning engines and one build project.",
       extraExecutionCreditsNote: defaultTopUpNote,
       hardCapControlsNote: "Hard caps stay available even at higher usage levels."
-    }
+    },
+    exclusions: [
+      "No unlimited build labor",
+      "No done-for-you development included",
+      "No extra seats on Pro",
+      "No unlimited active build projects"
+    ]
   },
   {
     id: "command-center",
@@ -467,11 +608,12 @@ export const pricingPlans: PricingPlan[] = [
     priceMonthly: 399,
     launchEnabled: true,
     trialDays: null,
-    targetUser: "Builders, consultants, teams, or agencies managing multiple client or internal engines.",
-    bestFor: "Client workflows, reusable templates, higher throughput, reporting, and deeper coordinated execution.",
+    targetUser: "Builders, consultants, teams, or agencies managing multiple client planning lanes and a limited number of active build projects.",
+    bestFor: "Client workflows, reusable templates, higher planning throughput, and deeper coordinated execution.",
     whatYouGet: [
-      "Highest monthly Engine Credit pool",
-      "Multiple active engines",
+      "60,000 Engine Credits / month",
+      "15 active planning engines",
+      "2 active build projects",
       "Client and team workflow support",
       "Reusable templates, reporting, and stronger handoff structure",
       "2 seats included with expandable team access"
@@ -488,14 +630,14 @@ export const pricingPlans: PricingPlan[] = [
       "Client and team workflows"
     ],
     whyItMatters:
-      "Supports agencies and heavier operators who need Naroa to function as a serious execution environment, not just a scoped planning layer.",
+      "Supports agencies and heavier operators who need Naroa to function as a serious execution environment without pretending the subscription covers unlimited build labor.",
     usageIncluded:
-      "Built for multi-engine throughput, client-facing exports, reusable operating templates, advanced reporting, and deeper guided execution.",
+      "Built for multi-engine throughput, client-facing exports, reusable operating templates, advanced reporting, and limited active build-project execution.",
     agentAccess: "Full coordinated Naroa system under Naroa, with specialist AI brought in where the workflow requires it.",
     exportsAndHandoffs: "Advanced handoff support, reusable templates, reporting views, and stronger client-facing outputs.",
     integrationsAccess: "Priority-ready integrations and higher-touch expansion support.",
     upgradeTrigger:
-      "Talk to Naroa when you need broader team rollout, custom routing, or a deeper operating model across multiple contributors.",
+      "Talk to Naroa when you need broader team rollout, more active build projects, or a deeper operating model across multiple contributors.",
     marketComparison:
       "Usually replaces a large amount of fragmented scoping, reporting, and client handoff work with one coordinated system.",
     usageBandLabel: "Agency and multi-engine operations",
@@ -503,17 +645,27 @@ export const pricingPlans: PricingPlan[] = [
       aiSystemsIncluded: 7,
       aiSystemsNote: "Full specialist stack with Naroa coordinating the operating flow.",
       activeWorkspaces: 15,
-      activeWorkspacesNote: "Fifteen active engines for agencies, consultancies, or serious multi-engine teams.",
+      activeWorkspacesNote: "Fifteen planning engines for agencies, consultancies, or serious multi-engine teams.",
+      activePlanningEngines: 15,
+      activePlanningEnginesNote: "Fifteen planning engines for multi-client or multi-product shaping.",
+      activeBuildProjects: 2,
+      activeBuildProjectsNote: "Two active build projects. Additional build projects require add-on pricing.",
       teamSeatsIncluded: 2,
       teamSeatsNote: "2 seats included for an agency lead and one collaborator.",
       additionalSeatPriceMonthly: 99,
       additionalSeatNote: "Additional seats available at $99 / month per seat on Agency / Command Center only.",
       includedExecutionCreditsMonthly: 60000,
       includedExecutionCreditsNote:
-        "Built for high-throughput planning, execution, reporting, and coordinated AI assistance across many active engines.",
+        "Built for high-throughput planning, execution, reporting, and coordinated AI assistance across many active planning engines and two build projects.",
       extraExecutionCreditsNote: defaultTopUpNote,
       hardCapControlsNote: "Hard caps and top-ups can both be used so larger accounts stay predictable."
-    }
+    },
+    exclusions: [
+      "No flat-rate full-build labor for SaaS or apps",
+      "No unlimited active build projects",
+      "No unlimited build labor",
+      "Additional build projects require add-on pricing"
+    ]
   }
 ];
 

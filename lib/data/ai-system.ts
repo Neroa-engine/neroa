@@ -518,10 +518,19 @@ export const aiSystemCards = aiSystemPages.map((page) => ({
   description: page.description
 }));
 
+function normalizeAiSystemSlug(slug: string) {
+  return slug === "naroa" ? "narua" : slug;
+}
+
 export function getAiSystemPage(slug: string) {
-  return aiSystemPages.find((page) => page.slug === slug) ?? null;
+  const normalizedSlug = normalizeAiSystemSlug(slug);
+  return aiSystemPages.find((page) => page.slug === normalizedSlug) ?? null;
 }
 
 export function getAiSystemStaticParams() {
-  return aiSystemPages.map((page) => ({ slug: page.slug }));
+  return aiSystemPages.flatMap((page) =>
+    page.slug === "narua"
+      ? [{ slug: "narua" }, { slug: "naroa" }]
+      : [{ slug: page.slug }]
+  );
 }

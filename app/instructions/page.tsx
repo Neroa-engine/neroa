@@ -110,8 +110,8 @@ export default function InstructionsPage() {
         {[
           {
             title: "Read pricing",
-            description: "See how plans expand by Engine Credits, active engines, and deeper execution support.",
-            href: "/pricing"
+            description: "See how plans expand by Engine Credits, active planning engines, build projects, and deeper execution support.",
+            href: "/pricing/diy"
           },
           {
             title: "Start your build",

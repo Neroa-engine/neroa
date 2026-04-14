@@ -4,6 +4,7 @@ export type PublicInquiryType =
   | "external-app-project"
   | "mobile-app-project"
   | "agency-partner"
+  | "managed-build-quote"
   | "support"
   | "other";
 
@@ -51,6 +52,11 @@ export const publicInquiryTypeOptions: Array<{
     description: "Discuss builder partnerships, client delivery workflows, or agency use of Neroa."
   },
   {
+    value: "managed-build-quote",
+    label: "Managed build quote",
+    description: "Request a scoped quote for Neroa or a partner team to help execute, QA, deploy, and manage the software."
+  },
+  {
     value: "support",
     label: "Support",
     description: "Get help with pricing, access, public pages, or where to start."
@@ -70,8 +76,10 @@ export const publicSupportLinks: PublicQuickLink[] = [
 ];
 
 const pricingLinks: PublicQuickLink[] = [
-  { label: "Pricing", href: "/pricing" },
+  { label: "DIY Pricing", href: "/pricing/diy" },
+  { label: "Managed Pricing", href: "/pricing/managed" },
   { label: "Start your build", href: "/start" },
+  { label: "Request quote", href: "/contact?type=managed-build-quote" },
   { label: "Contact Us", href: "/contact?type=other" },
   { label: "Instructions", href: "/instructions" }
 ];
@@ -84,14 +92,14 @@ const gettingStartedLinks: PublicQuickLink[] = [
 ];
 
 const aiSystemLinks: PublicQuickLink[] = [
-  { label: "Naroa", href: "/system/narua" },
+  { label: "Naroa", href: "/system/naroa" },
   { label: "AI Systems", href: "/system/ai" },
   { label: "Support", href: "/support" }
 ];
 
 const useCaseLinks: PublicQuickLink[] = [
   { label: "Use Cases", href: "/use-cases" },
-  { label: "Pricing", href: "/pricing" },
+  { label: "DIY Pricing", href: "/pricing/diy" },
   { label: "Contact Us", href: "/contact?type=other" }
 ];
 
@@ -124,11 +132,11 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "pricing",
       title: "Pricing help",
       intro:
-        "I can explain plan capacity, Engine Credits, engine limits, workflow stages, and when to move from validation into heavier build support.",
+        "I can explain DIY vs managed pricing, Engine Credits, planning engines, build-project limits, and when to move from subscription guidance into a managed quote.",
       suggestions: [
         "Which plan fits a SaaS build?",
         "What happens when credits run out?",
-        "Which plan fits internal software?"
+        "Should I use DIY or Managed Build?"
       ],
       quickLinks: pricingLinks
     };
@@ -149,9 +157,9 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
     };
   }
 
-  if (pathname.startsWith("/system/narua")) {
+  if (pathname.startsWith("/system/naroa") || pathname.startsWith("/system/narua")) {
     return {
-      id: "narua",
+      id: "naroa",
       title: "Naroa guide",
       intro:
         "I can explain Naroa's role as the orchestration layer that helps move product ideas into MVP, budget, validation, build, and launch decisions.",
@@ -244,7 +252,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "contact",
       title: "Contact help",
       intro:
-        "I can help you choose the right inquiry type for a SaaS project, internal software, an external app, a mobile app, support, or an agency partnership.",
+        "I can help you choose the right inquiry type for a SaaS project, internal software, an external app, a mobile app, a managed build quote, support, or an agency partnership.",
       suggestions: [
         "Which inquiry type should I pick?",
         "Is this the right place for support?",
@@ -287,7 +295,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
     };
   }
 
-  if (normalized.includes("narua")) {
+  if (normalized.includes("naroa") || normalized.includes("narua")) {
     return {
       message:
         "Naroa is the core orchestration layer of Neroa. It frames the product direction first, then activates specialist systems only when the work needs deeper validation, build logic, launch support, or operating structure.",

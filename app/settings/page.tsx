@@ -137,7 +137,7 @@ export default async function SettingsPage() {
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Active Engines</p>
+                    <p className="text-sm font-semibold text-slate-950">Active Planning Engines</p>
                     <p className="mt-1 text-sm text-slate-500">
                       {usage.activeEnginesUsed.toLocaleString("en-US")} active now
                     </p>
@@ -148,7 +148,7 @@ export default async function SettingsPage() {
                       : `${usage.activeEnginesUsed}/${usage.activeEngineLimit}`}
                   </p>
                 </div>
-                <Link href="/pricing" className="button-secondary justify-between">
+                <Link href="/pricing/diy" className="button-secondary justify-between">
                   <span>Upgrade plan</span>
                   <span className="text-cyan-700">View pricing</span>
                 </Link>

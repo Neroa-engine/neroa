@@ -6,6 +6,7 @@ import {
   calculateIntervalPrice,
   executionCreditActions,
   hardCapPolicyPoints,
+  planningVsBuildProjectsDefinition,
   planScopedEstimateHeadline,
   planScopedEstimateSupport,
   pricingScopeDisclaimer,
@@ -19,7 +20,6 @@ import {
   type PricingPlan,
   type PricingPlanId
 } from "@/lib/pricing/config";
-import { publicLaunchPrimaryCta } from "@/lib/data/public-launch";
 
 type PublicPricingContentProps = {
   plans: PricingPlan[];
@@ -68,24 +68,32 @@ function getPlanTone(category: PricingPlan["category"]) {
 function getPlanAction(planId: PricingPlanId) {
   switch (planId) {
     case "free":
-      return { href: "/start", label: "Start free", className: "button-primary" };
+      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
     case "starter":
-      return { href: "/start", label: "Start Starter", className: "button-primary" };
+      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
     case "builder":
-      return { href: "/start", label: "Choose Builder", className: "button-primary" };
+      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
     case "pro":
-      return { href: "/start", label: "Go Pro", className: "button-primary" };
+      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
     case "command-center":
-      return { href: "/contact?type=partnership", label: "Contact sales", className: "button-primary" };
+      return { href: "/start", label: "Start Agency", className: "button-primary" };
   }
 }
 
-function getEngineLimit(plan: PricingPlan) {
-  if (plan.capacity.activeWorkspaces === null) {
+function getPlanningEngineDisplay(plan: PricingPlan) {
+  if (plan.capacity.activePlanningEngines === null) {
     return "Custom";
   }
 
-  return `${plan.capacity.activeWorkspaces} active ${plan.capacity.activeWorkspaces === 1 ? "engine" : "engines"}`;
+  return `${plan.capacity.activePlanningEngines} ${plan.capacity.activePlanningEngines === 1 ? "planning engine" : "planning engines"}`;
+}
+
+function getBuildProjectDisplay(plan: PricingPlan) {
+  if (plan.capacity.activeBuildProjects === null) {
+    return "Custom";
+  }
+
+  return `${plan.capacity.activeBuildProjects} ${plan.capacity.activeBuildProjects === 1 ? "active build project" : "active build projects"}`;
 }
 
 function getCreditsDisplay(plan: PricingPlan) {
@@ -191,12 +199,20 @@ function PricingCard({
 
           <div className="rounded-[18px] border border-slate-200/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(255,255,255,0.64))] px-4 py-4">
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
-              Active engines
+              Active planning engines
             </p>
-            <p className="mt-2 text-lg font-semibold text-slate-950">{getEngineLimit(plan)}</p>
+            <p className="mt-2 text-lg font-semibold text-slate-950">{getPlanningEngineDisplay(plan)}</p>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {plan.capacity.activeWorkspacesNote}
+              {plan.capacity.activePlanningEnginesNote}
             </p>
+          </div>
+
+          <div className="rounded-[18px] border border-slate-200/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(255,255,255,0.64))] px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
+              Active build projects
+            </p>
+            <p className="mt-2 text-lg font-semibold text-slate-950">{getBuildProjectDisplay(plan)}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{plan.capacity.activeBuildProjectsNote}</p>
           </div>
 
           <div className="rounded-[18px] border border-slate-200/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(255,255,255,0.64))] px-4 py-4">
@@ -215,17 +231,7 @@ function PricingCard({
               Hard cap policy
             </p>
             <p className="mt-2 text-lg font-semibold text-slate-950">Yes</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              {plan.capacity.hardCapControlsNote}
-            </p>
-          </div>
-
-          <div className="rounded-[18px] border border-slate-200/65 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(255,255,255,0.64))] px-4 py-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
-              Workflow unlocked
-            </p>
-            <p className="mt-2 text-lg font-semibold text-slate-950">{plan.workflowAccess.length} stages</p>
-            <p className="mt-2 text-sm leading-6 text-slate-600">{plan.bestFor}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">{plan.capacity.hardCapControlsNote}</p>
           </div>
         </div>
 
@@ -309,17 +315,16 @@ export function PublicPricingContent({
       <section className="mx-auto max-w-6xl">
         <div className="text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-700">
-            Pricing
+            DIY pricing
           </p>
           <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5rem]">
-            Simple pricing for guided AI execution
+            Build with Neroa&apos;s guided AI system at your own pace.
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-9 text-slate-600">
-            Choose a plan based on how many engines you want to run and how much guided
-            execution you need each month.
+            Choose a DIY plan based on how much guided build capacity, planning throughput, and monthly Engine Credit coverage you need.
           </p>
           <p className="mx-auto mt-4 max-w-2xl text-sm font-medium text-slate-500">
-            Every paid plan includes monthly Engine Credits.
+            No plan includes flat-rate full-build labor for SaaS, apps, or platforms.
           </p>
         </div>
 
@@ -330,8 +335,8 @@ export function PublicPricingContent({
               <div>
                 <p className="text-sm font-semibold text-slate-950">How pricing works</p>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Neroa pricing is built around plan access, included monthly Engine Credits,
-                  active engine limits, and hard caps that keep usage predictable.
+                  Neroa DIY pricing is built around plan access, included monthly Engine Credits,
+                  active planning engines, active build projects, and hard caps that keep usage predictable.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {workflowStages.map((item) => (
@@ -383,6 +388,10 @@ export function PublicPricingContent({
 
         <div className="mx-auto mt-6 max-w-5xl rounded-[28px] border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,251,235,0.92),rgba(255,255,255,0.84))] px-6 py-5">
           <p className="text-sm leading-7 text-slate-700">{pricingScopeDisclaimer}</p>
+        </div>
+
+        <div className="mx-auto mt-6 max-w-5xl rounded-[28px] border border-slate-200/70 bg-white/82 px-6 py-5">
+          <p className="text-sm leading-7 text-slate-700">{planningVsBuildProjectsDefinition}</p>
         </div>
       </section>
 
@@ -478,10 +487,10 @@ export function PublicPricingContent({
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-600">
               Plans default to hard caps, so nobody is surprised by usage. If you need more guided
-              execution in a busy month, top up instead of changing your plan immediately.
+              execution in a busy month, top up instead of assuming the subscription includes unlimited build labor.
             </p>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               {topUpBundles.map((bundle) => (
                 <div
                   key={bundle.credits}
@@ -531,7 +540,7 @@ export function PublicPricingContent({
                   </div>
                   <p className="mt-3 text-sm leading-7 text-slate-600">{item.detail}</p>
                   <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
-                    {item.availability}
+                  {item.availability}
                   </p>
                 </div>
               ))}
@@ -604,7 +613,7 @@ export function PublicPricingContent({
                 {
                   question: "How many Engine Credits do I need?",
                   answer:
-                    "It depends on how many engines you run and how deeply you use Neroa. Lighter users may stay within Free or Starter limits, while active builders and agencies may need Builder, Pro, or Agency / Command Center."
+                    "It depends on how many planning engines you keep active, whether you need a build project unlocked, and how deeply you use Neroa. Lighter users may stay within Free or Starter limits, while active builders and agencies may need Builder, Pro, or Agency / Command Center."
                 },
                 {
                   question: "Can I cap usage?",
@@ -619,7 +628,7 @@ export function PublicPricingContent({
                 {
                   question: "Do I need a separate plan for every engine?",
                   answer:
-                    "No. Plans include a set number of active engines. Higher tiers support more active engines and deeper usage."
+                    "No. Plans include active planning-engine capacity plus a separate active build-project limit. Higher tiers increase planning throughput, available build slots, and monthly Engine Credits."
                 },
                 {
                   question: "Will I be notified before I hit my limit?",
@@ -648,19 +657,19 @@ export function PublicPricingContent({
                 Start your build
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Choose the plan that matches your engines now, then expand only when the work proves it.
+                Choose the plan that matches your planning throughput and build capacity now, then expand only when the work proves it.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
                 Neroa pricing is designed to stay legible: visible workflow access, visible Engine
-                Credits, visible engine limits, and clear hard-cap controls.
+                Credits, visible planning-engine and build-project limits, and clear hard-cap controls.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href={publicLaunchPrimaryCta.href} className="button-primary">
-                {publicLaunchPrimaryCta.label}
+              <Link href="/start" className="button-primary">
+                Start DIY Build
               </Link>
-              <Link href="/use-cases" className="button-secondary">
-                Explore use cases
+              <Link href="/managed-build" className="button-secondary">
+                View Managed Build Services
               </Link>
             </div>
           </div>

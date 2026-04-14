@@ -22,6 +22,10 @@ function getInitialInquiryType(value?: string): PublicInquiryType {
     return "agency-partner";
   }
 
+  if (value === "managed-build" || value === "managed-build-quote") {
+    return "managed-build-quote";
+  }
+
   return publicInquiryTypeOptions.some((option) => option.value === value)
     ? (value as PublicInquiryType)
     : "other";
@@ -42,7 +46,7 @@ export default function ContactPage({ searchParams }: ContactPageProps) {
               Tell Neroa what you want to build and we’ll route the right next conversation.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">
-              Use this page for SaaS projects, internal software, external apps, builder partnerships, or support questions. Everything stays inside the public-site experience, with a clear confirmation state after submission.
+              Use this page for SaaS projects, internal software, external apps, managed build quote requests, builder partnerships, or support questions. Everything stays inside the public-site experience, with a clear confirmation state after submission.
             </p>
 
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -91,6 +95,7 @@ export default function ContactPage({ searchParams }: ContactPageProps) {
                 "Use SaaS project if you want help turning a product idea into an MVP scope, budget, and build plan.",
                 "Use Internal software project for CRMs, admin systems, workflow tools, portals, and operations software.",
                 "Use External app / customer-facing product for websites, portals, booking tools, and branded digital products.",
+                "Use Managed build quote when you want Neroa or a partner team to help execute, QA, deploy, and manage the software.",
                 "Use Agency / builder partnership for client delivery, repeatable templates, or builder collaboration conversations."
               ].map((item) => (
                 <div

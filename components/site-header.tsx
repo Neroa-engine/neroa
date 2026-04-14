@@ -17,6 +17,20 @@ type SiteHeaderProps = {
   brandVariant?: "default" | "prominent";
 };
 
+function resolveMainNavHref(href: string, pathname: string) {
+  if (href === "/pricing") {
+    if (pathname.startsWith("/diy") || pathname.startsWith("/pricing/diy")) {
+      return "/pricing/diy";
+    }
+
+    if (pathname.startsWith("/managed-build") || pathname.startsWith("/pricing/managed")) {
+      return "/pricing/managed";
+    }
+  }
+
+  return href;
+}
+
 function HeaderLink({
   href,
   label,
@@ -107,11 +121,19 @@ export function SiteHeader({
 
         <nav className="hidden items-center gap-1 lg:flex">
           {mainNavItems.map((item) => {
-            const active = item.href.includes("#")
+            const resolvedHref = resolveMainNavHref(item.href, pathname);
+            const active = resolvedHref.includes("#")
               ? false
-              : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              : pathname === resolvedHref || pathname.startsWith(`${resolvedHref}/`);
 
-            return <HeaderLink key={item.href} href={item.href} label={item.label} active={active} />;
+            return (
+              <HeaderLink
+                key={item.href}
+                href={resolvedHref}
+                label={item.label}
+                active={active}
+              />
+            );
           })}
         </nav>
 

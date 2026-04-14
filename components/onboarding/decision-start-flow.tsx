@@ -350,10 +350,10 @@ function PlanCard({
         </div>
         <div className="min-w-[180px] flex-1 rounded-[18px] border border-slate-200/70 bg-white/78 px-4 py-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
-            Active engines
+            Active planning engines
           </p>
           <p className="mt-2 text-lg font-semibold text-slate-950">
-            {plan.capacity.activeWorkspaces === null ? "Custom" : plan.capacity.activeWorkspaces}
+            {plan.capacity.activePlanningEngines === null ? "Custom" : plan.capacity.activePlanningEngines}
           </p>
         </div>
       </div>

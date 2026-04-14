@@ -54,7 +54,7 @@ export const mainNavItems: HeaderLinkItem[] = [
   },
   {
     label: "Builders & Agencies",
-    href: "/pricing#agency-command"
+    href: "/managed-build"
   },
   {
     label: "Contact",
@@ -76,12 +76,12 @@ export const siteNavItems: SiteNavItem[] = [
   {
     label: "Pricing",
     href: "/pricing",
-    description: "Review Engine Credits, plan capacity, active engine limits, and upgrade paths."
+    description: "Choose between DIY pricing with Engine Credits and managed-build pricing with scoped service ranges."
   },
   {
     label: "Builders & Agencies",
-    href: "/pricing#agency-command",
-    description: "See the agency and multi-client path for builders, consultants, and teams."
+    href: "/managed-build",
+    description: "See the managed-build and agency path for builders, consultants, teams, and client work."
   },
   {
     label: "How It Works",
@@ -90,7 +90,7 @@ export const siteNavItems: SiteNavItem[] = [
   },
   {
     label: "Naroa",
-    href: "/system/narua",
+    href: "/system/naroa",
     description: "See how the core orchestrator frames engines and activates the right specialist systems."
   },
   {

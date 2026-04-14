@@ -217,7 +217,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 </div>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-slate-950">Active Engines</p>
+                    <p className="text-sm font-semibold text-slate-950">Active Planning Engines</p>
                     <p className="mt-1 text-sm text-slate-500">
                       {usage.activeEnginesUsed.toLocaleString("en-US")} in use
                     </p>
@@ -229,7 +229,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                   </p>
                 </div>
                 <div className="pt-2">
-                  <a href="/pricing" className="button-secondary w-full justify-between">
+                  <a href="/pricing/diy" className="button-secondary w-full justify-between">
                     <span>Upgrade plan</span>
                     <span className="text-cyan-700">View pricing</span>
                   </a>

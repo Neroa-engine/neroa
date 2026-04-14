@@ -16,6 +16,20 @@ type SiteNavProps = {
   authenticated?: boolean;
 };
 
+function resolveSiteNavHref(href: string, pathname: string) {
+  if (href === "/pricing") {
+    if (pathname.startsWith("/diy") || pathname.startsWith("/pricing/diy")) {
+      return "/pricing/diy";
+    }
+
+    if (pathname.startsWith("/managed-build") || pathname.startsWith("/pricing/managed")) {
+      return "/pricing/managed";
+    }
+  }
+
+  return href;
+}
+
 function MenuIcon() {
   return (
     <svg
@@ -246,10 +260,13 @@ export function SiteNav({ className = "", authenticated = false }: SiteNavProps)
 
                         <div className="thin-scrollbar mt-5 min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
                           <div className="grid gap-3 pb-1">
-                            {siteNavItems.map((item, index) => (
+                            {siteNavItems.map((item, index) => {
+                              const resolvedHref = resolveSiteNavHref(item.href, pathname);
+
+                              return (
                               <Link
                                 key={item.href}
-                                href={item.href}
+                                href={resolvedHref}
                                 className="micro-glow rounded-[24px] border border-slate-200/75 bg-white/72 px-4 py-4 transition hover:border-cyan-300/45 hover:bg-white/92 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
                               >
                                 <div className="flex items-center justify-between gap-3">
@@ -262,7 +279,8 @@ export function SiteNav({ className = "", authenticated = false }: SiteNavProps)
                                   <span className="text-sm font-medium text-cyan-700">Open</span>
                                 </div>
                               </Link>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       </div>
