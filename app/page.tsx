@@ -6,6 +6,29 @@ import { AGENTS, type AgentId } from "@/lib/ai/agents";
 
 export const dynamic = "force-static";
 
+const primaryOffers = [
+  {
+    label: "DIY Build Platform",
+    title: "Build with Neroa's guided AI system at your own pace.",
+    description:
+      "Use monthly Engine Credits for planning, blueprinting, and scoped execution support without confusing a subscription with done-for-you build labor.",
+    primaryCtaLabel: "Build it myself",
+    primaryCtaHref: "/diy",
+    secondaryCtaLabel: "View DIY Pricing",
+    secondaryCtaHref: "/pricing/diy"
+  },
+  {
+    label: "Managed Build Services",
+    title: "Have Neroa help build, launch, and manage your software.",
+    description:
+      "Move into a scoped managed-build path when you want setup help, QA, deployment coordination, and ongoing management support.",
+    primaryCtaLabel: "Have Neroa build it for me",
+    primaryCtaHref: "/managed-build",
+    secondaryCtaLabel: "View Managed Pricing",
+    secondaryCtaHref: "/pricing/managed"
+  }
+] as const;
+
 const buildCategories = [
   {
     title: "SaaS",
@@ -37,7 +60,7 @@ const guidedPath = [
   {
     label: "Strategy",
     description: "Define the problem, audience, and product direction.",
-    href: "/system/narua"
+    href: "/system/naroa"
   },
   {
     label: "Scope",
@@ -108,7 +131,7 @@ const specialistCards: Array<{
 
 export default function LandingPage() {
   return (
-    <MarketingInfoShell ctaHref="/start" ctaLabel="Start your build" brandVariant="prominent">
+    <MarketingInfoShell ctaHref="/diy" ctaLabel="Build it myself" brandVariant="prominent">
       <section className="grid gap-12 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
         <div className="max-w-3xl">
           <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
@@ -121,26 +144,68 @@ export default function LandingPage() {
             Build SaaS, internal software, external apps, and mobile apps with coordinated AI.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 sm:text-xl">
-            Neroa helps you move from idea to MVP, budget, validation, build, and launch using a guided system powered by Naroa and specialized AI support.
+            Neroa helps you move from idea to MVP, budget, validation, build, and launch using a
+            guided system powered by Naroa and specialized AI support.
           </p>
 
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <Link href="/start" className="button-primary">
-              Start your build
+            <Link href="/diy" className="button-primary">
+              Build it myself
             </Link>
-            <Link href="/use-cases" className="button-secondary">
-              Explore use cases
+            <Link href="/managed-build" className="button-secondary">
+              Have Neroa build it for me
             </Link>
           </div>
         </div>
 
         <NaruaCore
-          href="/system/narua"
+          href="/system/naroa"
           ctaLabel="Explore Naroa"
           description="Naroa is Neroa's core orchestrator. It frames the Engine, guides the workflow, and brings in specialist systems for strategy, architecture, build execution, GitHub coordination, design, testing, launch, and operations only when the work requires it."
           supportingAgentIds={["forge", "atlas", "repolink", "nova", "pulse", "ops"]}
           className="mx-auto w-full max-w-[660px]"
         />
+      </section>
+
+      <section className="mt-20">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+            Primary offers
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Choose the lane that matches how you want to build.
+          </h2>
+          <p className="mt-4 text-base leading-8 text-slate-600">
+            DIY and Managed Build now have separate customer journeys and separate pricing pages,
+            so subscription planning never gets mixed with scoped service work.
+          </p>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-2">
+          {primaryOffers.map((offer) => (
+            <article key={offer.label} className="floating-plane rounded-[34px] p-6 sm:p-8">
+              <div className="floating-wash rounded-[34px]" />
+              <div className="relative">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                  {offer.label}
+                </p>
+                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+                  {offer.title}
+                </h2>
+                <p className="mt-4 text-base leading-8 text-slate-600">{offer.description}</p>
+
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                  <Link href={offer.primaryCtaHref} className="button-primary">
+                    {offer.primaryCtaLabel}
+                  </Link>
+                  <Link href={offer.secondaryCtaHref} className="button-secondary">
+                    {offer.secondaryCtaLabel}
+                  </Link>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="mt-20">
@@ -152,7 +217,8 @@ export default function LandingPage() {
             Choose the kind of product you want to build.
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            Neroa is built around clear build paths so the system can shape the right MVP, budget, stack, and execution plan from the beginning.
+            Neroa is built around clear build paths so the system can shape the right MVP, budget,
+            stack, and execution plan from the beginning.
           </p>
         </div>
 
@@ -174,7 +240,7 @@ export default function LandingPage() {
                 <p className="mt-4 text-sm leading-7 text-slate-600">{category.description}</p>
                 <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-cyan-700">
                   Explore {category.title}
-                  <span aria-hidden="true">→</span>
+                  <span aria-hidden="true">-&gt;</span>
                 </div>
               </div>
             </Link>
@@ -191,7 +257,8 @@ export default function LandingPage() {
             One build path from direction to execution
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            The system is designed to keep the project moving in a clean sequence instead of fragmenting across disconnected chats, notes, and tools.
+            The system is designed to keep the project moving in a clean sequence instead of
+            fragmenting across disconnected chats, notes, and tools.
           </p>
         </div>
 
@@ -236,11 +303,14 @@ export default function LandingPage() {
               </div>
 
               <p className="mt-6 text-base leading-8 text-slate-600">
-                Naroa is Neroa's core orchestrator. It frames the Engine, guides the workflow, and brings in specialist systems for strategy, architecture, build execution, GitHub coordination, design, testing, launch, and operations only when the work requires it.
+                Naroa is Neroa&apos;s core orchestrator. It frames the Engine, guides the workflow,
+                and brings in specialist systems for strategy, architecture, build execution,
+                GitHub coordination, design, testing, launch, and operations only when the work
+                requires it.
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <Link href="/system/narua" className="button-primary">
+                <Link href="/system/naroa" className="button-primary">
                   Explore Naroa
                 </Link>
                 <Link href="/system/ai" className="button-secondary">
@@ -277,22 +347,23 @@ export default function LandingPage() {
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Final CTA
+                Choose your lane
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Start with the right build path.
+                Start in the lane that matches how you want to build.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Choose what you want to build and let Neroa generate a structured next step.
+                DIY leads into the guided build platform. Managed Build leads into scoped quote
+                and delivery conversations.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/start" className="button-primary">
-                Start your build
+              <Link href="/diy" className="button-primary">
+                Build it myself
               </Link>
-              <Link href="/use-cases" className="button-secondary">
-                Explore use cases
+              <Link href="/managed-build" className="button-secondary">
+                Have Neroa build it for me
               </Link>
             </div>
           </div>
