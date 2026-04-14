@@ -1,6 +1,7 @@
-"use client";
+﻿"use client";
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import NaruaComposerPresence from "@/components/narua/NaruaComposerPresence";
 import NaruaPlan from "@/components/narua/NaruaPlan";
 import VoiceInputButton, { type VoiceInputState } from "@/components/narua/VoiceInputButton";
 import type {
@@ -13,7 +14,7 @@ type NaruaChatProps = {
   messages: NaruaMessage[];
   draft: string;
   onDraftChange: (value: string) => void;
-  onSend: () => void;
+  onSend: (valueOverride?: string) => void;
   generatedPlan: PlanOutput | null;
   onPlanAction: (action: ReviewAction) => void;
   voiceState: VoiceInputState;
@@ -29,6 +30,7 @@ type NaruaChatProps = {
   isProcessing?: boolean;
   suggestedPrompts?: string[];
   onSuggestedPromptSelect?: (value: string) => void;
+  autoSendSuggestedPrompts?: boolean;
 };
 
 type ComposerInputState = "idle" | "listening" | "ready_to_send";
@@ -65,14 +67,15 @@ export default function NaruaChat({
   onVoiceTranscript,
   onVoiceStatusChange,
   afterPlan,
-  eyebrow = "Narua Intake",
-  title = "Tell Narua what you want to build",
-  description = "Start naturally. Narua will ask only the minimum useful follow-up questions, then assemble the first plan automatically.",
+  eyebrow = "Naroa Intake",
+  title = "Tell Naroa what you want to build",
+  description = "Start naturally. Naroa will ask only the minimum useful follow-up questions, then assemble the first plan automatically.",
   helperText = "Tap the mic and speak naturally. Press Send when ready.",
   composerPlaceholder = "Describe what you want to build...",
   isProcessing = false,
   suggestedPrompts,
-  onSuggestedPromptSelect
+  onSuggestedPromptSelect,
+  autoSendSuggestedPrompts = false
 }: NaruaChatProps) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const [stopSignal, setStopSignal] = useState(0);
@@ -144,23 +147,33 @@ export default function NaruaChat({
   }
 
   return (
-    <div className="surface-subtle flex min-h-[760px] flex-col overflow-hidden">
-      <div className="border-b border-white/8 px-6 py-6 sm:px-8">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
+    <div className="floating-plane relative flex min-h-[760px] flex-col overflow-hidden rounded-[40px]">
+      <div className="floating-wash" />
+      <div className="relative border-b border-slate-200/70 px-6 py-7 sm:px-8">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
           {eyebrow}
         </p>
-        <h2 className="mt-3 text-2xl font-semibold text-white sm:text-3xl">{title}</h2>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-slate-400">{description}</p>
+        <h2 className="mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">{title}</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600 sm:text-base">{description}</p>
 
         {suggestedPrompts && suggestedPrompts.length > 0 && onSuggestedPromptSelect ? (
-          <div className="mt-5 flex flex-wrap gap-2">
+          <div className="mt-6 flex flex-wrap gap-2.5">
             {suggestedPrompts.map((prompt) => (
               <button
                 key={prompt}
                 type="button"
-                onClick={() => onSuggestedPromptSelect(prompt)}
+                onClick={() => {
+                  if (autoSendSuggestedPrompts) {
+                    setHintOverride(null);
+                    onSend(prompt);
+                    setComposerState("idle");
+                    return;
+                  }
+
+                  onSuggestedPromptSelect(prompt);
+                }}
                 disabled={isProcessing}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-sm text-slate-200 transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-45"
+                className="micro-glow rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-700 transition disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {prompt}
               </button>
@@ -169,27 +182,27 @@ export default function NaruaChat({
         ) : null}
       </div>
 
-      <div className="thin-scrollbar flex-1 overflow-y-auto px-6 py-6 sm:px-8">
+      <div className="thin-scrollbar relative flex-1 overflow-y-auto px-6 py-8 sm:px-8">
         <div className="mx-auto flex w-full max-w-[88rem] flex-col gap-4">
           {messages.map((message) => (
             <article
               key={message.id}
-              className={`max-w-[60rem] rounded-[28px] px-5 py-4 shadow-[0_16px_40px_rgba(0,0,0,0.18)] ${
+              className={`max-w-[60rem] rounded-[32px] px-5 py-4 shadow-[0_16px_40px_rgba(15,23,42,0.08)] ${
                 message.role === "narua"
-                  ? "mr-auto border border-white/10 bg-white/[0.04]"
-                  : "ml-auto bg-[linear-gradient(135deg,rgba(56,189,248,0.18),rgba(59,130,246,0.16),rgba(139,92,246,0.18))]"
+                  ? "mr-auto border border-slate-200/80 bg-white/76"
+                  : "ml-auto bg-[linear-gradient(135deg,rgba(34,211,238,0.16),rgba(96,165,250,0.18),rgba(139,92,246,0.16))]"
               }`}
             >
               <p
                 className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                  message.role === "narua" ? "text-cyan-200/75" : "text-white/70"
+                  message.role === "narua" ? "text-cyan-700" : "text-slate-700"
                 }`}
               >
-                {message.role === "narua" ? "Narua" : "You"}
+                {message.role === "narua" ? "Naroa" : "You"}
               </p>
               <p
                 className={`mt-3 whitespace-pre-wrap text-sm leading-7 ${
-                  message.role === "narua" ? "text-slate-100" : "text-white"
+                  message.role === "narua" ? "text-slate-700" : "text-slate-800"
                 }`}
               >
                 {message.content}
@@ -203,9 +216,16 @@ export default function NaruaChat({
         </div>
       </div>
 
-      <div className="border-t border-white/8 px-6 py-5 sm:px-8">
+      <div className="relative border-t border-slate-200/70 px-6 py-5 sm:px-8">
         <div className="mx-auto w-full max-w-[88rem]">
-          <div className="rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,rgba(9,14,26,0.98),rgba(12,17,32,0.94))] p-4">
+          <div className="floating-plane rounded-[28px] p-4">
+            <NaruaComposerPresence
+              title="Naroa"
+              subtitle="Core orchestrator active in this engine"
+              speaking={voiceState === "listening"}
+              className="mb-4"
+            />
+
             <div className="flex items-end gap-3">
               <div className="flex h-12 w-12 items-center justify-center">
                 <VoiceInputButton
@@ -227,7 +247,7 @@ export default function NaruaChat({
 
               <button
                 type="button"
-                onClick={onSend}
+                onClick={() => onSend()}
                 disabled={!draft.trim() || voiceState === "processing" || isProcessing}
                 className="button-primary h-12 px-5 disabled:cursor-not-allowed disabled:opacity-40"
               >

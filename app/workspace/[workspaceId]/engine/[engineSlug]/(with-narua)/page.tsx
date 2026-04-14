@@ -14,9 +14,8 @@ export default async function EnginePage({ params }: EnginePageProps) {
   return (
     <EngineOverview
       workspaceId={params.workspaceId}
-      projectId={project.id}
+      project={project}
       lane={lane}
-      siblingLanes={project.lanes}
     />
   );
 }

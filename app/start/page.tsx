@@ -1,46 +1,106 @@
-import { startWorkspace } from "@/app/start/actions";
-import NaruaWorkspace from "@/components/narua/NaruaWorkspace";
-import { SiteHeader } from "@/components/site-header";
-import { requireUser } from "@/lib/auth";
+import { startGuidedEngineWorkspace } from "@/app/start/actions";
+import GuidedStartFlow from "@/components/onboarding/guided-start-flow";
+import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { resolveAccountPlanAccess } from "@/lib/account/plan-access";
+import { getOptionalUser } from "@/lib/auth";
 
 type StartPageProps = {
   searchParams?: {
     error?: string;
+    notice?: string;
+    step?: string;
   };
 };
 
+type WizardStep =
+  | "account"
+  | "plan"
+  | "entry"
+  | "industry"
+  | "goal"
+  | "opportunity"
+  | "product"
+  | "experience"
+  | "preference"
+  | "summary";
+
+function isWizardStep(value?: string): value is WizardStep {
+  return (
+    value === "account" ||
+    value === "plan" ||
+    value === "entry" ||
+    value === "industry" ||
+    value === "goal" ||
+    value === "opportunity" ||
+    value === "product" ||
+    value === "experience" ||
+    value === "preference" ||
+    value === "summary"
+  );
+}
+
+function resolveInitialStep(args: {
+  authenticated: boolean;
+  hasSelectedPlan: boolean;
+  requestedStep?: string;
+}): WizardStep {
+  if (!args.authenticated) {
+    return "account";
+  }
+
+  if (!args.hasSelectedPlan) {
+    return "plan";
+  }
+
+  if (isWizardStep(args.requestedStep) && args.requestedStep !== "account") {
+    return args.requestedStep;
+  }
+
+  return "entry";
+}
+
 export default async function StartPage({ searchParams }: StartPageProps) {
-  const { user } = await requireUser();
+  const user = await getOptionalUser();
+  const access = resolveAccountPlanAccess(user);
+  const initialStep = resolveInitialStep({
+    authenticated: Boolean(user),
+    hasSelectedPlan: access.hasSelectedPlan,
+    requestedStep: searchParams?.step
+  });
 
   return (
-    <main className="min-h-screen bg-[#060816] pb-16 text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_56%)]" />
-
-      <SiteHeader userEmail={user.email ?? undefined} ctaHref="/dashboard" ctaLabel="Dashboard" />
-
-      <section className="relative mx-auto w-full max-w-[1760px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <div className="max-w-5xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-            Narua Intake
+    <MarketingInfoShell
+      userEmail={user?.email ?? undefined}
+      ctaHref={user ? "/dashboard" : "/auth?next=/start"}
+      ctaLabel={user ? "Engine Board" : "Sign in"}
+      brandVariant="prominent"
+      contentWidth="wide"
+    >
+      <section className="relative mx-auto w-full max-w-[1880px] px-2 py-6 lg:px-4 lg:py-10 xl:px-6">
+        <div className="mx-auto max-w-[1480px] text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+            Guided system builder
           </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Tell Narua what you want to build
+          <h1 className="mt-5 text-4xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-5xl xl:text-[4.4rem] xl:leading-[0.96]">
+            Neroa architects the business path before it builds the Engine.
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-            Narua is the execution backbone of Neroa. Start naturally, let Narua understand the intent, and then move into the right workspace lane with a structured plan.
+          <p className="mx-auto mt-6 max-w-4xl text-lg leading-9 text-slate-600">
+            This flow leads with industry, product type, goal, experience level, and build preference so the resulting system feels assembled for the business you want, not copied from a generic template grid.
           </p>
         </div>
 
-        {searchParams?.error ? (
-          <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-            {searchParams.error}
-          </div>
-        ) : null}
-
-        <div className="mt-8">
-          <NaruaWorkspace userEmail={user.email ?? undefined} startWorkspaceAction={startWorkspace} />
+        <div className="mt-10">
+          <GuidedStartFlow
+            initialUserEmail={user?.email ?? undefined}
+            initialSelectedPlanId={access.selectedPlanId}
+            initialBillingInterval={access.billingInterval}
+            initialStep={initialStep}
+            initialError={searchParams?.error ?? null}
+            initialNotice={searchParams?.notice ?? null}
+            startGuidedEngineWorkspaceAction={startGuidedEngineWorkspace}
+          />
         </div>
       </section>
-    </main>
+    </MarketingInfoShell>
   );
 }

@@ -3,34 +3,39 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-export async function authenticate(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "").trim();
-  const mode = String(formData.get("mode") ?? "signin");
+function safeString(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
 
-  const supabase = createSupabaseServerClient();
+function safeNextPath(value: string) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/dashboard";
+}
 
-  if (mode === "signup") {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password
-    });
+function buildErrorRedirect(message: string, next: string) {
+  const params = new URLSearchParams();
+  params.set("error", message);
 
-    if (error) {
-      redirect(`/auth?error=${encodeURIComponent(error.message)}`);
-    }
-
-    redirect("/auth?notice=Check your email if confirmation is enabled.");
+  if (next !== "/dashboard") {
+    params.set("next", next);
   }
 
+  return `/auth?${params.toString()}`;
+}
+
+export async function authenticate(formData: FormData) {
+  const email = safeString(formData.get("email"));
+  const password = safeString(formData.get("password"));
+  const next = safeNextPath(safeString(formData.get("next")));
+
+  const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
-    redirect(`/auth?error=${encodeURIComponent(error.message)}`);
+    redirect(buildErrorRedirect(error.message, next));
   }
 
-  redirect("/dashboard");
+  redirect(next);
 }

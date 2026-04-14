@@ -1,0 +1,65 @@
+import Link from "next/link";
+
+const footerSections = [
+  {
+    title: "Explore",
+    links: [
+      { label: "Home", href: "/" },
+      { label: "Pricing", href: "/pricing" },
+      { label: "How It Works", href: "/how-it-works" },
+      { label: "AI Systems", href: "/system/ai" },
+      { label: "Blog", href: "/blog" }
+    ]
+  },
+  {
+    title: "Help",
+    links: [
+      { label: "Start your build", href: "/start" },
+      { label: "Contact Us", href: "/contact" },
+      { label: "Support", href: "/support" },
+      { label: "Instructions", href: "/instructions" }
+    ]
+  }
+];
+
+export function PublicFooter() {
+  return (
+    <footer className="shell relative pb-16 pt-10">
+      <div className="floating-plane rounded-[34px] p-6 sm:p-8">
+        <div className="floating-wash rounded-[34px]" />
+        <div className="relative grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+              Build with Neroa
+            </p>
+            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+              Neroa is live and ready to help plan, validate, and build real products.
+            </h2>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+              Use the public site to understand Naroa, pricing, AI systems, and build paths, then move directly into your first engine when you are ready to start.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {footerSections.map((section) => (
+              <div key={section.title}>
+                <p className="text-sm font-semibold text-slate-950">{section.title}</p>
+                <div className="mt-4 grid gap-2">
+                  {section.links.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="text-sm leading-7 text-slate-600 transition hover:text-slate-950"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

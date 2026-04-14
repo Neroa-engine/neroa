@@ -1,7 +1,19 @@
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getOptionalUser } from "@/lib/auth";
+import { DashboardBoardShell } from "@/components/layout/page-shells";
+import DashboardBoard, {
+  type DashboardBoardProject
+} from "@/components/dashboard/dashboard-board";
+import { resolveAccountPlanAccess } from "@/lib/account/plan-access";
+import { requireUser } from "@/lib/auth";
+import { syncAccountPlanAccess } from "@/lib/account/plan-usage-server";
+import { listAccessibleWorkspaces } from "@/lib/platform/foundation";
+import { getProjectAiCollaboration } from "@/lib/ai/collaboration";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { parseWorkspaceProjectDescription } from "@/lib/workspace/project-metadata";
+import {
+  buildProjectModel,
+  getFirstProjectLane,
+  getProjectLanePhaseForLane
+} from "@/lib/workspace/project-lanes";
 
 type DashboardPageProps = {
   searchParams?: {
@@ -9,176 +21,225 @@ type DashboardPageProps = {
   };
 };
 
-export default async function DashboardPage({ searchParams }: DashboardPageProps) {
-  const user = await getOptionalUser();
-
-  if (!user) {
-    redirect("/auth");
+function formatPlanStatus(value: string | null) {
+  if (!value) {
+    return "not set";
   }
 
-  const supabase = createSupabaseServerClient();
-  const { data: workspaces } = await supabase
-    .from("workspaces")
-    .select("id, name, description, created_at")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+  return value.replace(/_/g, " ");
+}
 
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select("id, title, notes, workspace_id, created_at")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+function formatUpdatedLabel(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Recently";
+  }
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  });
+}
+
+function buildDashboardProject(args: {
+  workspace: {
+    id: string;
+    name: string;
+    description: string | null;
+    created_at: string;
+  };
+}) {
+  const parsed = parseWorkspaceProjectDescription(args.workspace.description);
+  const project = buildProjectModel({
+    workspaceId: args.workspace.id,
+    projectId: args.workspace.id,
+    title: args.workspace.name,
+    description: parsed.visibleDescription,
+    templateId: parsed.metadata?.templateId ?? null,
+    customLanes: parsed.metadata?.customLanes ?? []
+  });
+  const featuredLane = getFirstProjectLane(project);
+  const leadingPhase = featuredLane ? getProjectLanePhaseForLane(featuredLane) : null;
+  const activeAiStack = getProjectAiCollaboration(project).map((agent) =>
+    agent.id === "repolink"
+      ? "RepoLink"
+      : agent.id.charAt(0).toUpperCase() + agent.id.slice(1)
+  );
+  const assets = parsed.metadata?.assets ?? [];
+  const latestAsset = [...assets].sort((left, right) =>
+    right.addedAt.localeCompare(left.addedAt)
+  )[0];
+
+  return {
+    id: project.id,
+    title: project.title,
+    description: project.description,
+    route: `/workspace/${project.workspaceId}/project/${project.id}`,
+    templateLabel: parsed.metadata?.guidedBuildIntake?.categoryLabel ?? project.templateLabel,
+    statusLabel: leadingPhase ? `${leadingPhase.label} leading` : "Ready",
+    currentPhaseLabel: leadingPhase?.label ?? null,
+    currentPhaseSummary: leadingPhase?.summary ?? null,
+    leadingLaneTitle: featuredLane?.title ?? null,
+    laneCount: project.lanes.length,
+    assetCount: assets.length,
+    lastUpdatedLabel: formatUpdatedLabel(latestAsset?.addedAt ?? args.workspace.created_at),
+    activeAiStack,
+    recentOutputs: project.lanes.slice(0, 3).map((lane) => lane.deliverables[0] ?? lane.focusLabel),
+    assets
+  } satisfies DashboardBoardProject;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const { user } = await requireUser({ nextPath: "/dashboard" });
+
+  const supabase = createSupabaseServerClient();
+  const workspaces = await listAccessibleWorkspaces({
+    supabase,
+    userId: user.id
+  }).catch(() => []);
+
+  const projects = (workspaces ?? []).map((workspace) => buildDashboardProject({ workspace }));
+  const openProjects = projects.filter((project) => {
+    const parsed = parseWorkspaceProjectDescription(
+      workspaces?.find((item) => item.id === project.id)?.description
+    );
+
+    return !parsed.metadata?.archived;
+  });
+  const archivedProjects = projects.filter((project) => {
+    const parsed = parseWorkspaceProjectDescription(
+      workspaces?.find((item) => item.id === project.id)?.description
+    );
+
+    return Boolean(parsed.metadata?.archived);
+  });
+  const totalAssets = openProjects.reduce((sum, project) => sum + project.assetCount, 0);
+  const activeAiCount = new Set(openProjects.flatMap((project) => project.activeAiStack)).size;
+  const usage = await syncAccountPlanAccess({
+    supabase,
+    user,
+    activeEnginesUsed: openProjects.length
+  }).catch(() =>
+    resolveAccountPlanAccess(user, {
+      activeEnginesUsed: openProjects.length
+    })
+  );
 
   return (
-    <main className="min-h-screen bg-[#060816] py-8 text-white">
-      <section className="shell">
-        <div className="surface-main p-6 md:p-8">
-          <div className="flex flex-col gap-6 border-b border-white/8 pb-6 lg:flex-row lg:items-start lg:justify-between">
-            <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
-                Dashboard
-              </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white">
-                Welcome back, {user.email}
-              </h1>
-              <p className="mt-4 text-base leading-8 text-slate-300">
-                Start with Narua, route the work into the right lane, and keep every workspace focused instead of forcing one giant page to do everything.
-              </p>
-            </div>
+    <DashboardBoardShell userEmail={user.email ?? undefined} ctaHref="/start" ctaLabel="New Engine">
+        <div className="space-y-6">
+          <section className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 xl:px-8">
+            <div className="floating-wash rounded-[38px]" />
+            <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+              <div className="max-w-4xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+                  Dashboard / Engine Board
+                </p>
+                <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-slate-950 xl:text-6xl">
+                  Manage your engines, assets, and AI execution in one command surface.
+                </h1>
+                <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+                  The dashboard is now your engine board. Open active engines, manage assets, and move directly into the next execution step without losing context.
+                </p>
+              </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/start" className="button-primary">
-                Build with Narua
-              </Link>
-              <form action="/auth/sign-out" method="post">
-                <button className="button-secondary" type="submit">
-                  Sign out
-                </button>
-              </form>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="premium-surface-soft p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Open engines
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold text-slate-950">{openProjects.length}</p>
+                </div>
+                <div className="premium-surface-soft p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Tracked assets
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold text-slate-950">{totalAssets}</p>
+                </div>
+                <div className="premium-surface-soft p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Active AI systems
+                  </p>
+                  <p className="mt-3 text-2xl font-semibold text-slate-950">{activeAiCount}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
           {searchParams?.error ? (
-            <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+            <div className="rounded-2xl border border-rose-300/50 bg-rose-50/90 px-4 py-3 text-sm text-rose-700">
               {searchParams.error}
             </div>
           ) : null}
 
-          <div className="mt-8 grid gap-6 xl:grid-cols-[0.92fr_1.08fr]">
-            <section className="surface-subtle p-6">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Start flow
+          <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="premium-surface rounded-[28px] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                Current plan
               </p>
-              <h2 className="mt-4 text-2xl font-semibold text-white">Narua-first intake</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-400">
-                Use `/start` whenever you want to begin new work. Narua will determine the best lead lane and recommend supporting lanes before the workspace opens.
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-300">
-                NeuroEngines are specialized AI execution systems for business, SaaS, automation, strategy, and growth.
-              </p>
-
-              <div className="mt-6 space-y-3">
-                {[
-                  "Describe the build or the operational problem.",
-                  "Let Narua ask only the minimum useful follow-up questions.",
-                  "Open the workspace once the route and plan are clear."
-                ].map((item) => (
-                  <div key={item} className="rounded-2xl bg-[#090f1d] px-4 py-3 text-sm leading-7 text-slate-200">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="surface-subtle p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    NeuroEngines
-                  </p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white">Your NeuroEngines</h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-                    NeuroEngines are specialized AI execution systems for business, SaaS, automation, strategy, and growth.
-                  </p>
-                </div>
-                <span className="rounded-full bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
-                  {workspaces?.length ?? 0} total
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                  {usage.planName ?? "Plan required"}
+                </h2>
+                <span className="premium-pill text-slate-500">
+                  {formatPlanStatus(usage.planStatus)}
                 </span>
               </div>
-
-              {workspaces && workspaces.length > 0 ? (
-                <div className="mt-6 space-y-4">
-                  {workspaces.map((workspace) => (
-                    <Link
-                      key={workspace.id}
-                      href={`/workspace/${workspace.id}/project/${workspace.id}`}
-                      className="surface-inner block p-5 transition hover:bg-white/[0.06]"
-                    >
-                      <p className="text-lg font-semibold text-white">{workspace.name}</p>
-                      <p className="mt-2 text-sm leading-7 text-slate-400">
-                        {workspace.description || "No description added yet."}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="surface-inner mt-6 p-8 text-center">
-                  <p className="text-xl font-semibold text-white">No NeuroEngines yet</p>
-                  <p className="mt-3 text-sm leading-7 text-slate-400">
-                    Start with Narua to launch your first NeuroEngine instead of filling out a blank setup form.
-                  </p>
-                  <div className="mt-6">
-                    <Link href="/start" className="button-primary">
-                      Launch your first NeuroEngine
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </section>
-          </div>
-
-          <section className="surface-subtle mt-6 p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Saved jobs
-                </p>
-                <h2 className="mt-3 text-2xl font-semibold text-white">Reusable outputs</h2>
-              </div>
-              <span className="rounded-full bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
-                {jobs?.length ?? 0} total
-              </span>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                {usage.selectedPlanId === "free"
+                  ? "Free gets one active Engine through MVP planning with a hard monthly credit cap."
+                  : usage.planStatus === "pending_billing"
+                    ? "Billing is still marked pending for local MVP testing. Paid activation can be connected before production launch."
+                    : "Your plan controls Engine Credits, active Engine limits, and the deeper workflow stages available here."}
+              </p>
             </div>
 
-            {jobs && jobs.length > 0 ? (
-              <div className="mt-6 grid gap-4 md:grid-cols-2">
-                {jobs.map((job) => (
-                  <Link
-                    key={job.id}
-                    href={`/jobs/${job.id}`}
-                    className="surface-inner block p-5 transition hover:bg-white/[0.06]"
-                  >
-                    <p className="text-lg font-semibold text-white">{job.title}</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">
-                      {job.notes || "No notes saved for this job yet."}
+            <div className="premium-surface rounded-[28px] p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                Usage summary
+              </p>
+              <div className="mt-4 grid gap-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">Engine Credits</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {usage.engineCreditsUsed.toLocaleString("en-US")} used
                     </p>
-                    <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-                      Workspace {job.workspace_id}
+                  </div>
+                  <p className="text-sm font-semibold text-cyan-700">
+                    {usage.engineCreditsRemaining === null
+                      ? "Custom"
+                      : `${usage.engineCreditsRemaining.toLocaleString("en-US")} left`}
+                  </p>
+                </div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">Active Engines</p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {usage.activeEnginesUsed.toLocaleString("en-US")} in use
                     </p>
-                  </Link>
-                ))}
+                  </div>
+                  <p className="text-sm font-semibold text-cyan-700">
+                    {usage.activeEngineLimit === null
+                      ? "Custom"
+                      : `${usage.activeEnginesUsed}/${usage.activeEngineLimit}`}
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <a href="/pricing" className="button-secondary w-full justify-between">
+                    <span>Upgrade plan</span>
+                    <span className="text-cyan-700">View pricing</span>
+                  </a>
+                </div>
               </div>
-            ) : (
-              <div className="surface-inner mt-6 p-8 text-center">
-                <p className="text-xl font-semibold text-white">No jobs saved yet</p>
-                <p className="mt-3 text-sm leading-7 text-slate-400">
-                  Saved jobs will appear here once workspaces start producing reusable outputs.
-                </p>
-              </div>
-            )}
+            </div>
           </section>
+
+          <DashboardBoard projects={openProjects} archivedProjects={archivedProjects} />
         </div>
-      </section>
-    </main>
+    </DashboardBoardShell>
   );
 }

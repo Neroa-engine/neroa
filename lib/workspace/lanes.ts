@@ -1,4 +1,4 @@
-import { getModuleDefinitions } from "@/lib/workspace/modules";
+﻿import { getModuleDefinitions } from "@/lib/workspace/modules";
 import type { LaneDefinition, LaneId } from "@/lib/workspace/types";
 
 export const laneRegistry: Record<LaneId, LaneDefinition> = {
@@ -10,7 +10,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "planning",
     defaultModules: ["overview", "roadmap", "business-plan", "strategy", "budget", "launch-plan", "risk-notes"],
-    recommendedAIStack: ["Narua Execution Layer", "Business plan", "Roadmap", "Budget model"],
+    recommendedAIStack: ["Naroa Execution Layer", "Business plan", "Roadmap", "Budget model"],
     starterPrompts: [
       "Clarify the business model and first offer.",
       "Map the first 90 days of execution.",
@@ -26,7 +26,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "content",
     defaultModules: ["overview", "domain-brand", "copy", "pages"],
-    recommendedAIStack: ["Narua Execution Layer", "Brand narrative", "Naming matrix", "Page messaging"],
+    recommendedAIStack: ["Naroa Execution Layer", "Brand narrative", "Naming matrix", "Page messaging"],
     starterPrompts: [
       "Develop the brand direction and voice.",
       "Explore naming and domain options.",
@@ -42,7 +42,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "content",
     defaultModules: ["overview", "site-plan", "pages", "copy", "launch-plan"],
-    recommendedAIStack: ["Narua Execution Layer", "Site plan", "Page map", "Copy system"],
+    recommendedAIStack: ["Naroa Execution Layer", "Site plan", "Page map", "Copy system"],
     starterPrompts: [
       "Plan the first website version.",
       "Map the page structure and key pages.",
@@ -58,7 +58,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "planning",
     defaultModules: ["overview", "product-brief", "mvp-scope", "features", "tech-stack", "roadmap", "tasks"],
-    recommendedAIStack: ["Narua Execution Layer", "Next.js App Router", "TypeScript", "Supabase"],
+    recommendedAIStack: ["Naroa Execution Layer", "Next.js App Router", "TypeScript", "Supabase"],
     starterPrompts: [
       "Define the product brief and MVP.",
       "Sequence the app into build phases.",
@@ -74,7 +74,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "campaign",
     defaultModules: ["overview", "marketing-plan", "campaigns", "funnels", "content-calendar", "launch-plan"],
-    recommendedAIStack: ["Narua Execution Layer", "Campaign plan", "Funnel map", "Content calendar"],
+    recommendedAIStack: ["Naroa Execution Layer", "Campaign plan", "Funnel map", "Content calendar"],
     starterPrompts: [
       "Build the initial marketing plan.",
       "Create the first campaigns and funnel ideas.",
@@ -90,7 +90,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "campaign",
     defaultModules: ["overview", "strategy", "funnels", "tasks"],
-    recommendedAIStack: ["Narua Execution Layer", "Pipeline plan", "Outbound sequence", "Conversion workflow"],
+    recommendedAIStack: ["Naroa Execution Layer", "Pipeline plan", "Outbound sequence", "Conversion workflow"],
     starterPrompts: [
       "Outline an outbound or pipeline strategy.",
       "Turn the offer into a sales motion.",
@@ -106,7 +106,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "content",
     defaultModules: ["overview", "content-calendar", "copy", "community-plan"],
-    recommendedAIStack: ["Narua Execution Layer", "Content calendar", "Copy system", "Distribution plan"],
+    recommendedAIStack: ["Naroa Execution Layer", "Content calendar", "Copy system", "Distribution plan"],
     starterPrompts: [
       "Plan the first content series.",
       "Map content around audience and offer.",
@@ -122,7 +122,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "workflow",
     defaultModules: ["overview", "workflow-map", "sops", "data-entry", "advertising-ops", "automation-ideas", "tasks"],
-    recommendedAIStack: ["Narua Execution Layer", "Workflow map", "SOPs", "Automation layer"],
+    recommendedAIStack: ["Naroa Execution Layer", "Workflow map", "SOPs", "Automation layer"],
     starterPrompts: [
       "Map the current workflow and bottlenecks.",
       "Define the SOPs and repetitive tasks.",
@@ -138,7 +138,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "planning",
     defaultModules: ["overview", "automation-ideas", "workflow-map", "tech-stack", "tasks"],
-    recommendedAIStack: ["Narua Execution Layer", "Automation map", "System design", "Tool stack"],
+    recommendedAIStack: ["Naroa Execution Layer", "Automation map", "System design", "Tool stack"],
     starterPrompts: [
       "Identify AI systems that remove repetitive work.",
       "Map automations across the workflow.",
@@ -154,7 +154,7 @@ export const laneRegistry: Record<LaneId, LaneDefinition> = {
     status: "active",
     layoutType: "planning",
     defaultModules: ["overview", "project-concept", "mvp-scope", "community-plan", "risk-notes", "launch-plan"],
-    recommendedAIStack: ["Narua Execution Layer", "Project concept", "Launch plan", "Community strategy"],
+    recommendedAIStack: ["Naroa Execution Layer", "Project concept", "Launch plan", "Community strategy"],
     starterPrompts: [
       "Turn the crypto idea into a structured project concept.",
       "Define the first release and ecosystem plan.",
@@ -307,7 +307,7 @@ export function getLaneLayoutSections(laneId: LaneId) {
         text: "This lane is built for thinking, sequencing, and scope control before execution spreads too wide."
       },
       {
-        title: "Use Narua here for",
+        title: "Use Naroa here for",
         text: "Clarifying priorities, narrowing the first release, and tightening decision quality."
       }
     ],
@@ -317,7 +317,7 @@ export function getLaneLayoutSections(laneId: LaneId) {
         text: "This lane is built for structure, messaging, pages, and outward-facing presentation."
       },
       {
-        title: "Use Narua here for",
+        title: "Use Naroa here for",
         text: "Clarifying page roles, message hierarchy, and what content should exist first."
       }
     ],
@@ -327,7 +327,7 @@ export function getLaneLayoutSections(laneId: LaneId) {
         text: "This lane is built for growth motion, launch sequencing, and repeatable marketing or sales activity."
       },
       {
-        title: "Use Narua here for",
+        title: "Use Naroa here for",
         text: "Choosing channels, sequencing campaigns, and narrowing the next test."
       }
     ],
@@ -337,7 +337,7 @@ export function getLaneLayoutSections(laneId: LaneId) {
         text: "This lane is built for operational movement, SOPs, systems, and repetitive work support."
       },
       {
-        title: "Use Narua here for",
+        title: "Use Naroa here for",
         text: "Mapping systems, identifying bottlenecks, and deciding what should be automated first."
       }
     ]

@@ -1,269 +1,303 @@
 import Link from "next/link";
-import NeroaLogo from "@/components/brand/neroa-logo";
-import { howItWorksPages, useCasePages } from "@/lib/marketing-pages";
-import { getVisibleLanes } from "@/lib/workspace/lanes";
+import AgentAvatar from "@/components/ai/AgentAvatar";
+import NaruaCore from "@/components/ai/NaruaCore";
+import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { AGENTS, type AgentId } from "@/lib/ai/agents";
 
 export const dynamic = "force-static";
 
+const buildCategories = [
+  {
+    title: "SaaS",
+    description:
+      "Build subscription software, dashboards, portals, AI tools, and digital products with a guided MVP-to-launch workflow.",
+    href: "/use-cases/saas"
+  },
+  {
+    title: "Internal Software",
+    description:
+      "Create CRMs, admin dashboards, workflow systems, reporting portals, operations tools, and custom internal platforms.",
+    href: "/use-cases/internal-software"
+  },
+  {
+    title: "External Apps",
+    description:
+      "Plan and build customer-facing websites, portals, booking systems, and branded digital products.",
+    href: "/use-cases/external-apps"
+  },
+  {
+    title: "Mobile Apps",
+    description:
+      "Plan iPhone apps, Android apps, and cross-platform mobile MVPs with a guided path through scope, budget, build, testing, and launch.",
+    href: "/use-cases/mobile-apps"
+  }
+] as const;
+
+const guidedPath = [
+  {
+    label: "Strategy",
+    description: "Define the problem, audience, and product direction.",
+    href: "/system/narua"
+  },
+  {
+    label: "Scope",
+    description: "Clarify what belongs in the project and what does not.",
+    href: "/use-cases"
+  },
+  {
+    label: "MVP",
+    description: "Reduce the concept to the smallest valuable version worth testing.",
+    href: "/use-cases/saas"
+  },
+  {
+    label: "Budget",
+    description: "Understand cost, stack, timing, and what to avoid overspending on.",
+    href: "/use-cases/saas"
+  },
+  {
+    label: "Test",
+    description: "Validate demand, workflow, and market response before scaling build effort.",
+    href: "/use-cases/external-apps"
+  },
+  {
+    label: "Build",
+    description: "Activate the right specialist systems to move into structured execution.",
+    href: "/system/ai"
+  },
+  {
+    label: "Launch",
+    description: "Prepare the go-live path, user flow, and release steps.",
+    href: "/use-cases/external-apps"
+  },
+  {
+    label: "Operate",
+    description: "Manage improvements, iterations, and next-stage execution.",
+    href: "/use-cases/internal-software"
+  }
+] as const;
+
+const specialistCards: Array<{
+  id: Exclude<AgentId, "narua">;
+  summary: string;
+}> = [
+  {
+    id: "forge",
+    summary: "Shapes the build structure, technical plan, and execution sequence."
+  },
+  {
+    id: "atlas",
+    summary: "Strengthens strategy, validation thinking, and product decision quality."
+  },
+  {
+    id: "repolink",
+    summary: "Connects repositories, systems, and implementation context when the build widens."
+  },
+  {
+    id: "nova",
+    summary: "Shapes design direction, UX copy, brand presentation, and customer-facing assets."
+  },
+  {
+    id: "pulse",
+    summary: "Handles testing, QA, usage signals, performance checks, and feedback loops."
+  },
+  {
+    id: "ops",
+    summary: "Keeps deployment, connected services, launch operations, and support workflows structured."
+  }
+];
+
 export default function LandingPage() {
-  const lanes = getVisibleLanes();
-
   return (
-    <main className="min-h-screen overflow-hidden bg-[#060816] text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[32rem] bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_54%)]" />
-      <div className="pointer-events-none absolute right-[-12rem] top-[10rem] h-[28rem] w-[28rem] rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.18),transparent_58%)] blur-3xl" />
+    <MarketingInfoShell ctaHref="/start" ctaLabel="Start your build" brandVariant="prominent">
+      <section className="grid gap-12 lg:grid-cols-[0.94fr_1.06fr] lg:items-center">
+        <div className="max-w-3xl">
+          <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
+            Coordinated AI build system
+          </span>
+          <p className="mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">
+            Most AI tools just talk. Neroa helps you build.
+          </p>
+          <h1 className="mt-5 text-5xl font-semibold tracking-[-0.055em] text-slate-950 sm:text-6xl xl:text-[5.5rem] xl:leading-[0.92]">
+            Build SaaS, internal software, external apps, and mobile apps with coordinated AI.
+          </h1>
+          <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 sm:text-xl">
+            Neroa helps you move from idea to MVP, budget, validation, build, and launch using a guided system powered by Naroa and specialized AI support.
+          </p>
 
-      <div className="shell relative pb-20 pt-6">
-        <header className="panel flex items-center justify-between px-5 py-4 sm:px-7">
-          <div className="flex items-center gap-4">
-            <NeroaLogo className="h-14 w-auto sm:h-16" />
-            <div className="hidden sm:block">
-              <p className="text-sm font-medium text-white/90">Neroa</p>
-              <p className="mt-1 text-sm text-slate-400">
-                Lane-based workspaces for building and execution
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link href="/auth" className="button-secondary">
-              Sign in
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <Link href="/start" className="button-primary">
+              Start your build
             </Link>
-            <Link href="/auth" className="button-primary">
-              Open Neroa
-            </Link>
-          </div>
-        </header>
-
-        <section className="grid gap-10 py-14 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-20">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-300/15 bg-cyan-300/[0.08] px-4 py-2 text-sm text-cyan-100/84">
-              <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_16px_rgba(103,232,249,0.82)]" />
-              Structured execution for serious work
-            </div>
-
-            <h1 className="mt-7 text-5xl font-semibold leading-[0.92] tracking-[-0.045em] text-white sm:text-6xl xl:text-[5.3rem]">
-              Build with multiple AIs in one workspace
-            </h1>
-
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300 sm:text-xl">
-              Neroa is a premium workspace that helps teams turn ideas into execution by routing work into the right lanes for planning, websites, SaaS, marketing, operations, and more.
-            </p>
-
-            <p className="mt-4 max-w-lg text-base leading-7 text-slate-400">
-              Move from idea to action without a giant form or a cluttered UI by using one shared shell with focused execution lanes.
-            </p>
-
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link href="/auth" className="button-primary">
-                Open Neroa
-              </Link>
-              <Link href="/how-it-works" className="button-secondary">
-                See how it works
-              </Link>
-            </div>
-          </div>
-
-          <div className="surface-main overflow-hidden p-4">
-            <div className="rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(8,12,24,0.98),rgba(13,18,32,0.94))] p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/18" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                </div>
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-slate-300">
-                  Neroa lanes
-                </span>
-              </div>
-
-              <div className="mt-5 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
-                <div className="rounded-[24px] bg-white/[0.03] p-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    Guided routing
-                  </p>
-                  <div className="mt-4 space-y-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 text-sm leading-7 text-slate-200">
-                      Describe the work and Neroa will route it into the right workspace lanes.
-                    </div>
-                    <div className="rounded-2xl bg-[linear-gradient(135deg,rgba(56,189,248,0.18),rgba(59,130,246,0.16),rgba(139,92,246,0.18))] px-4 py-4 text-sm leading-7 text-white">
-                      I want to start a contract screen printing business and figure out the website, marketing, and operations.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="rounded-[24px] bg-white/[0.03] p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                      Workspace lanes
-                    </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {lanes.map((lane) => (
-                        <div key={lane.id} className="rounded-2xl border border-white/8 bg-[#090f1d] p-4">
-                          <div className="flex items-center gap-3">
-                            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-xs font-semibold text-white">
-                              {lane.icon}
-                            </span>
-                            <div>
-                              <p className="text-sm font-semibold text-white">{lane.name}</p>
-                              <p className="text-xs text-slate-500">{lane.layoutType}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-[22px] bg-white/[0.03] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Step 1
-                      </p>
-                      <p className="mt-3 text-sm font-semibold text-white">Describe the build</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">Start with the work itself.</p>
-                    </div>
-                    <div className="rounded-[22px] bg-white/[0.03] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Step 2
-                      </p>
-                      <p className="mt-3 text-sm font-semibold text-white">Neroa scopes it</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">The system routes work into the right lanes.</p>
-                    </div>
-                    <div className="rounded-[22px] bg-white/[0.03] p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Step 3
-                      </p>
-                      <p className="mt-3 text-sm font-semibold text-white">Workspace begins</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-400">Execution starts inside the right lanes.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-12">
-          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
-            <div className="max-w-xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-                Lane architecture
-              </p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                One shared shell, multiple focused lanes
-              </h2>
-              <p className="mt-5 text-base leading-8 text-slate-400">
-                Neroa keeps the product simple by using one workspace shell and a reusable lane system. The platform changes focus without becoming a completely different app.
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {lanes.map((lane) => (
-                <div key={lane.id} className="rounded-[28px] border border-white/8 bg-white/[0.03] p-5">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/[0.06] text-xs font-semibold text-white">
-                      {lane.icon}
-                    </span>
-                    <div>
-                      <p className="text-base font-semibold text-white">{lane.name}</p>
-                      <p className="text-xs uppercase tracking-[0.14em] text-slate-500">{lane.layoutType}</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-400">{lane.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="py-12">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-                Use cases
-              </p>
-              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                From business planning to ongoing operations, Neroa stays focused on execution
-              </h2>
-            </div>
-            <Link href="/auth" className="button-secondary">
-              Open Neroa
+            <Link href="/use-cases" className="button-secondary">
+              Explore use cases
             </Link>
           </div>
+        </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {useCasePages.map((page) => (
-              <Link
-                key={page.slug}
-                href={`/use-cases/${page.slug}`}
-                className="rounded-[28px] border border-white/8 bg-white/[0.03] p-6 transition hover:border-white/16 hover:bg-white/[0.05]"
-              >
-                <p className="text-xl font-semibold text-white">{page.title}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{page.summary}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
+        <NaruaCore
+          href="/system/narua"
+          ctaLabel="Explore Naroa"
+          description="Naroa is Neroa's core orchestrator. It frames the Engine, guides the workflow, and brings in specialist systems for strategy, architecture, build execution, GitHub coordination, design, testing, launch, and operations only when the work requires it."
+          supportingAgentIds={["forge", "atlas", "repolink", "nova", "pulse", "ops"]}
+          className="mx-auto w-full max-w-[660px]"
+        />
+      </section>
 
-        <section className="py-12">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-                How it works
-              </p>
-              <h2 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                Start with the work, move into lanes, then execute in one shared shell
-              </h2>
-            </div>
-            <Link href="/how-it-works" className="button-secondary">
-              View the full outline
-            </Link>
-          </div>
+      <section className="mt-20">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+            Build categories
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            Choose the kind of product you want to build.
+          </h2>
+          <p className="mt-4 text-base leading-8 text-slate-600">
+            Neroa is built around clear build paths so the system can shape the right MVP, budget, stack, and execution plan from the beginning.
+          </p>
+        </div>
 
-          <div className="mt-8 grid gap-4 lg:grid-cols-3">
-            {howItWorksPages.map((item) => (
-              <Link
-                key={item.slug}
-                href={`/how-it-works/${item.slug}`}
-                className="rounded-[28px] border border-white/8 bg-white/[0.03] p-6 transition hover:border-white/16 hover:bg-white/[0.05]"
-              >
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-cyan-200/70">
-                  {item.index}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {buildCategories.map((category) => (
+            <Link
+              key={category.title}
+              href={category.href}
+              className="micro-glow floating-plane rounded-[30px] p-6"
+            >
+              <div className="floating-wash rounded-[30px]" />
+              <div className="relative">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                  Build category
                 </p>
-                <h3 className="mt-4 text-2xl font-semibold text-white">{item.title}</h3>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{item.summary}</p>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        <section className="pt-12">
-          <div className="surface-main overflow-hidden px-6 py-10 sm:px-8 lg:px-10">
-            <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-                  Open Neroa
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
-                  Get the structure right before the work gets messy
+                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+                  {category.title}
                 </h2>
-                <p className="mt-4 max-w-2xl text-base leading-8 text-slate-300">
-                  Neroa gives you a cleaner path: describe the work, route it into the right execution lanes, then build inside a workspace designed for real NeuroEngines.
-                </p>
+                <p className="mt-4 text-sm leading-7 text-slate-600">{category.description}</p>
+                <div className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-cyan-700">
+                  Explore {category.title}
+                  <span aria-hidden="true">→</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-20">
+        <div className="mb-8 max-w-3xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+            Guided path
+          </p>
+          <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+            One build path from direction to execution
+          </h2>
+          <p className="mt-4 text-base leading-8 text-slate-600">
+            The system is designed to keep the project moving in a clean sequence instead of fragmenting across disconnected chats, notes, and tools.
+          </p>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {guidedPath.map((step, index) => (
+            <Link
+              key={step.label}
+              href={step.href}
+              className="micro-glow floating-plane rounded-[28px] p-5"
+            >
+              <div className="floating-wash rounded-[28px]" />
+              <div className="relative">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="rounded-full border border-cyan-300/22 bg-cyan-300/12 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-700">
+                    0{index + 1}
+                  </span>
+                  <span className="text-xs font-medium text-slate-400">Open</span>
+                </div>
+                <p className="mt-4 text-xl font-semibold text-slate-950">{step.label}</p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">{step.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-20">
+        <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-start">
+          <div className="floating-plane rounded-[34px] p-6 sm:p-8">
+            <div className="floating-wash rounded-[34px]" />
+            <div className="relative">
+              <div className="flex items-center gap-5">
+                <AgentAvatar id="narua" active size={120} showLabel={false} />
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                    Core orchestrator
+                  </p>
+                  <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+                    Naroa coordinates the system. Specialist AI expands execution only when needed.
+                  </h2>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href="/auth" className="button-primary">
-                  Open Neroa
+              <p className="mt-6 text-base leading-8 text-slate-600">
+                Naroa is Neroa's core orchestrator. It frames the Engine, guides the workflow, and brings in specialist systems for strategy, architecture, build execution, GitHub coordination, design, testing, launch, and operations only when the work requires it.
+              </p>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link href="/system/narua" className="button-primary">
+                  Explore Naroa
                 </Link>
-                <Link href="/auth" className="button-secondary">
-                  Sign in
+                <Link href="/system/ai" className="button-secondary">
+                  Explore AI systems
                 </Link>
               </div>
             </div>
           </div>
-        </section>
-      </div>
-    </main>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {specialistCards.map((agent) => (
+              <Link
+                key={agent.id}
+                href={`/system/${agent.id}`}
+                className="micro-glow floating-plane rounded-[28px] p-5"
+              >
+                <div className="floating-wash rounded-[28px]" />
+                <div className="relative">
+                  <AgentAvatar id={agent.id} active size={88} showLabel={false} />
+                  <p className="mt-4 text-xl font-semibold tracking-tight text-slate-950">
+                    {AGENTS[agent.id].name}
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">{agent.summary}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-20 pb-4">
+        <div className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 sm:px-8 sm:py-10">
+          <div className="floating-wash rounded-[38px]" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                Final CTA
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Start with the right build path.
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                Choose what you want to build and let Neroa generate a structured next step.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href="/start" className="button-primary">
+                Start your build
+              </Link>
+              <Link href="/use-cases" className="button-secondary">
+                Explore use cases
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+    </MarketingInfoShell>
   );
 }

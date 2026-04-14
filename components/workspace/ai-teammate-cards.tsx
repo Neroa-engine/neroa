@@ -1,227 +1,129 @@
 "use client";
 
-import { useState } from "react";
-import AiAvatar from "@/components/workspace/ai-avatar";
+import AgentAvatar from "@/components/ai/AgentAvatar";
+import { AGENTS, type AgentId } from "@/lib/ai/agents";
 
-type ConnectedAI = {
-  id: string;
-  provider: "chatgpt" | "claude" | "codex" | "github";
-  displayName: string;
-  role: string;
-  status: "connected" | "available" | "connect_repo";
-  avatarSeed: string;
-  systemPrompt?: string;
-  accent?: string;
-  enabled: boolean;
+export type AiTeammateCardItem = {
+  id: AgentId;
+  description?: string;
+  badge?: string;
+  active?: boolean;
 };
 
-const initialTeammates: ConnectedAI[] = [
+type AiTeammateCardsProps = {
+  agents?: AiTeammateCardItem[];
+  compact?: boolean;
+  className?: string;
+};
+
+const defaultAgents: AiTeammateCardItem[] = [
   {
-    id: "chatgpt",
-    provider: "chatgpt",
-    displayName: "Narua",
-    role: "Core Intelligence / Execution",
-    status: "connected",
-    avatarSeed: "narua-core",
-    systemPrompt: "Drives routing, planning, synthesis, and execution guidance across the workspace.",
-    accent: "from-cyan-300/18 via-sky-400/10 to-transparent",
-    enabled: true
+    id: "narua",
+    badge: "Orchestrator",
+    active: true,
+    description:
+      "Naroa anchors the Engine, guides the user-facing flow, and decides when specialist systems or backend build-review systems should turn on."
   },
   {
-    id: "claude",
-    provider: "claude",
-    displayName: "Atlas",
-    role: "Long-form Reasoning",
-    status: "available",
-    avatarSeed: "atlas-depth",
-    systemPrompt: "Handles deep analysis, synthesis, and long-form reasoning work.",
-    accent: "from-fuchsia-300/18 via-violet-400/10 to-transparent",
-    enabled: true
+    id: "forge",
+    badge: "Execution",
+    description:
+      "Forge shapes implementation structure, build sequencing, and execution planning before repository work moves into delivery."
   },
   {
-    id: "codex",
-    provider: "codex",
-    displayName: "Forge",
-    role: "Code Generation",
-    status: "available",
-    avatarSeed: "forge-build",
-    systemPrompt: "Executes code-oriented tasks and implementation workflows.",
-    accent: "from-sky-300/18 via-blue-400/10 to-transparent",
-    enabled: true
+    id: "atlas",
+    badge: "Strategy",
+    description:
+      "Atlas strengthens strategy, research, architecture reasoning, and product logic before the build widens."
   },
   {
-    id: "github",
-    provider: "github",
-    displayName: "RepoLink",
-    role: "Source Context",
-    status: "connect_repo",
-    avatarSeed: "repolink-source",
-    systemPrompt: "Provides repository state and source-grounded software context.",
-    accent: "from-slate-200/12 via-slate-400/8 to-transparent",
-    enabled: true
+    id: "repolink",
+    badge: "GitHub",
+    description:
+      "RepoLink connects GitHub, repositories, branches, commits, pull requests, and deployment-linked technical context into the Engine."
+  },
+  {
+    id: "nova",
+    badge: "Experience",
+    description:
+      "Nova shapes design direction, UX copy, brand presentation, and customer-facing assets across the build."
+  },
+  {
+    id: "pulse",
+    badge: "Quality",
+    description:
+      "Pulse handles testing, QA, usage signals, performance checks, and feedback loops before and after launch."
+  },
+  {
+    id: "ops",
+    badge: "Launch Ops",
+    description:
+      "Ops keeps deployment, connected services, launch operations, and support workflows structured and visible."
   }
 ];
 
-function providerLabel(provider: ConnectedAI["provider"]) {
-  switch (provider) {
-    case "chatgpt":
-      return "ChatGPT";
-    case "claude":
-      return "Claude";
-    case "codex":
-      return "Codex";
-    case "github":
-      return "GitHub";
-  }
+function cardClasses(active: boolean) {
+  return active
+    ? "border-cyan-300/22 bg-[linear-gradient(180deg,rgba(34,211,238,0.12),rgba(255,255,255,0.58))]"
+    : "border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.46))]";
 }
 
-function statusLabel(status: ConnectedAI["status"]) {
-  switch (status) {
-    case "connected":
-      return "Connected";
-    case "available":
-      return "Available";
-    case "connect_repo":
-      return "Connect Repo";
-  }
+function badgeClasses(active: boolean) {
+  return active
+    ? "border-cyan-300/28 bg-cyan-300/12 text-cyan-700"
+    : "border-slate-200 bg-white/70 text-slate-600";
 }
 
-function statusClasses(status: ConnectedAI["status"]) {
-  if (status === "connected") {
-    return "bg-emerald-400/12 text-emerald-200";
-  }
-
-  if (status === "connect_repo") {
-    return "bg-cyan-400/12 text-cyan-200";
-  }
-
-  return "bg-white/[0.06] text-white/65";
-}
-
-function toneClasses(teammate: ConnectedAI) {
-  return teammate.accent ?? "from-white/10 to-transparent";
-}
-
-export default function AiTeammateCards() {
-  const [teammates, setTeammates] = useState(initialTeammates);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [draftName, setDraftName] = useState("");
-
-  function startEdit(teammate: ConnectedAI) {
-    setEditingId(teammate.id);
-    setDraftName(teammate.displayName);
-  }
-
-  function saveEdit(id: string) {
-    const nextName = draftName.trim();
-
-    setTeammates((current) =>
-      current.map((teammate) =>
-        teammate.id === id
-          ? {
-              ...teammate,
-              displayName: nextName || teammate.displayName
-            }
-          : teammate
-      )
-    );
-
-    setEditingId(null);
-    setDraftName("");
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setDraftName("");
-  }
-
+export default function AiTeammateCards({
+  agents = defaultAgents,
+  compact = false,
+  className = ""
+}: AiTeammateCardsProps) {
   return (
-    <div className="mt-6 space-y-3">
-      {teammates.filter((teammate) => teammate.enabled).map((teammate) => {
-        const isEditing = editingId === teammate.id;
+    <div
+      className={`grid gap-4 ${compact ? "sm:grid-cols-2" : "sm:grid-cols-2 xl:grid-cols-3"} ${className}`}
+    >
+      {agents.map((item) => {
+        const agent = AGENTS[item.id];
+        const active = item.active ?? item.id === "narua";
 
         return (
           <article
-            key={teammate.id}
-            className="relative overflow-hidden rounded-[28px] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.045),rgba(255,255,255,0.022))] p-4 shadow-[0_18px_50px_rgba(0,0,0,0.22)]"
+            key={item.id}
+            className={`micro-glow relative overflow-hidden rounded-[26px] border p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ${cardClasses(
+              active
+            )}`}
           >
-            <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${toneClasses(teammate)} opacity-100`} />
+            <div className="floating-wash" />
             <div className="relative flex items-start gap-4">
-              <AiAvatar
-                provider={teammate.provider}
-                displayName={teammate.displayName}
-                avatarSeed={teammate.avatarSeed}
+              <AgentAvatar
+                id={item.id}
+                size={compact ? 78 : 92}
+                showLabel={false}
+                active={active}
+                className="shrink-0"
               />
 
               <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    {isEditing ? (
-                      <div className="space-y-2">
-                        <input
-                          value={draftName}
-                          onChange={(event) => setDraftName(event.target.value)}
-                          className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3 text-base font-semibold text-white outline-none placeholder:text-white/30"
-                          placeholder={teammate.displayName}
-                          autoFocus
-                        />
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => saveEdit(teammate.id)}
-                            className="inline-flex items-center justify-center rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-950"
-                          >
-                            Save
-                          </button>
-                          <button
-                            type="button"
-                            onClick={cancelEdit}
-                            className="inline-flex items-center justify-center rounded-xl bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/75"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="truncate text-xl font-semibold tracking-tight text-white">
-                          {teammate.displayName}
-                        </p>
-                        <p className="mt-1 text-xs font-medium uppercase tracking-[0.18em] text-white/40">
-                          Powered by {providerLabel(teammate.provider)}
-                        </p>
-                      </>
-                    )}
-                  </div>
-
-                  {!isEditing ? (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(teammate)}
-                      className="inline-flex items-center justify-center rounded-xl bg-white/[0.06] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/70 transition hover:bg-white/[0.1]"
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-base font-semibold text-slate-950">{agent.name}</p>
+                  {item.badge ? (
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${badgeClasses(
+                        active
+                      )}`}
                     >
-                      Edit
-                    </button>
+                      {item.badge}
+                    </span>
                   ) : null}
                 </div>
 
-                {!isEditing ? (
-                  <>
-                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-white/[0.06] px-3 py-1.5 text-xs font-medium text-white/78">
-                        {teammate.role}
-                      </span>
-                      <span className={`rounded-full px-3 py-1.5 text-xs font-medium ${statusClasses(teammate.status)}`}>
-                        {statusLabel(teammate.status)}
-                      </span>
-                    </div>
+                <p className="mt-1 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  {agent.role}
+                </p>
 
-                    {teammate.systemPrompt ? (
-                      <p className="mt-3 text-sm leading-6 text-white/50">
-                        {teammate.systemPrompt}
-                      </p>
-                    ) : null}
-                  </>
+                {!compact && item.description ? (
+                  <p className="mt-3 text-sm leading-6 text-slate-600">{item.description}</p>
                 ) : null}
               </div>
             </div>

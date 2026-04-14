@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import type { NaruaMessage } from "@/lib/narua/planning";
@@ -9,12 +9,15 @@ type UseNaruaThreadArgs = {
   initialMessage: string;
   buildReply: (message: string, messages: NaruaMessage[]) => string;
   idleMessage?: string;
+  contextTitle?: string | null;
 };
 
 type PersistedNaruaThread = {
+  version: 1;
   messages: NaruaMessage[];
   draft: string;
   updatedAt: string;
+  contextTitle: string | null;
 };
 
 function safeParse(value: string | null): PersistedNaruaThread | null {
@@ -23,7 +26,11 @@ function safeParse(value: string | null): PersistedNaruaThread | null {
   }
 
   try {
-    const parsed = JSON.parse(value) as PersistedNaruaThread;
+    const parsed = JSON.parse(value) as Partial<PersistedNaruaThread> | null;
+
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
 
     if (
       !Array.isArray(parsed.messages) ||
@@ -34,9 +41,14 @@ function safeParse(value: string | null): PersistedNaruaThread | null {
     }
 
     return {
+      version: 1,
       messages: parsed.messages,
       draft: parsed.draft,
-      updatedAt: parsed.updatedAt ?? new Date(0).toISOString()
+      updatedAt: parsed.updatedAt ?? new Date(0).toISOString(),
+      contextTitle:
+        "contextTitle" in parsed && typeof parsed.contextTitle === "string"
+          ? parsed.contextTitle
+          : null
     };
   } catch {
     return null;
@@ -47,7 +59,8 @@ export function useNaruaThread({
   storageKey,
   initialMessage,
   buildReply,
-  idleMessage = "Type or speak to Narua naturally"
+  idleMessage = "Type or speak to Naroa naturally",
+  contextTitle = null
 }: UseNaruaThreadArgs) {
   const [messages, setMessages] = useState<NaruaMessage[]>([
     {
@@ -60,6 +73,7 @@ export function useNaruaThread({
   const [voiceState, setVoiceState] = useState<VoiceInputState>("idle");
   const [voiceMessage, setVoiceMessage] = useState(idleMessage);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = safeParse(window.localStorage.getItem(storageKey));
@@ -67,6 +81,7 @@ export function useNaruaThread({
     if (saved) {
       setMessages(saved.messages);
       setDraft(saved.draft);
+      setUpdatedAt(saved.updatedAt);
     } else {
       setMessages([
         {
@@ -76,6 +91,7 @@ export function useNaruaThread({
         }
       ]);
       setDraft("");
+      setUpdatedAt(null);
     }
 
     setHasLoaded(true);
@@ -87,13 +103,16 @@ export function useNaruaThread({
     }
 
     const snapshot: PersistedNaruaThread = {
+      version: 1,
       messages,
       draft,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
+      contextTitle
     };
 
     window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
-  }, [draft, hasLoaded, messages, storageKey]);
+    setUpdatedAt(snapshot.updatedAt);
+  }, [contextTitle, draft, hasLoaded, messages, storageKey]);
 
   function handleSend(valueOverride?: string) {
     const value = (valueOverride ?? draft).trim();
@@ -127,6 +146,9 @@ export function useNaruaThread({
     setVoiceMessage(message);
   }
 
+  const messageCount = messages.length;
+  const hasStarted = messageCount > 1 || draft.trim().length > 0;
+
   return {
     messages,
     draft,
@@ -135,6 +157,12 @@ export function useNaruaThread({
     voiceState,
     voiceMessage,
     handleVoiceTranscript,
-    handleVoiceStatusChange
+    handleVoiceStatusChange,
+    threadMeta: {
+      messageCount,
+      hasStarted,
+      updatedAt,
+      contextTitle
+    }
   };
 }

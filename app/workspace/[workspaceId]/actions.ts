@@ -20,7 +20,7 @@ export async function sendMessage(workspaceId: string, formData: FormData) {
     .maybeSingle();
 
   if (!workspace) {
-    redirect("/dashboard?error=Workspace not found.");
+    redirect("/dashboard?error=Engine not found.");
   }
 
   const { error } = await supabase.from("workspace_messages").insert({
@@ -50,7 +50,7 @@ export async function saveJob(workspaceId: string, formData: FormData) {
     .maybeSingle();
 
   if (!workspace) {
-    redirect("/dashboard?error=Workspace not found.");
+    redirect("/dashboard?error=Engine not found.");
   }
 
   const finalTitle = title || `${workspace.name} job`;

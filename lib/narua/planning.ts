@@ -1,3 +1,4 @@
+﻿import { inferProjectTemplate, type ProjectTemplateId } from "@/lib/workspace/project-lanes";
 import { getModuleDefinitions } from "@/lib/workspace/modules";
 import { getLaneById, inferLaneSelection } from "@/lib/workspace/lanes";
 import type { LaneId, ModuleId } from "@/lib/workspace/types";
@@ -43,6 +44,7 @@ export type TeammateRecommendation = {
 
 export type GeneratedPlan = {
   title: string;
+  projectTemplateId: ProjectTemplateId;
   overview: string;
   projectSummary: string;
   targetUser: string;
@@ -149,7 +151,7 @@ export function createEmptyAnswers(): PlanningAnswers {
 }
 
 export function createWelcomeMessage() {
-  return "Hi, I'm Narua. Tell me what you want to build and I'll shape it into a real execution plan.";
+  return "Hi, I'm Naroa. Tell me what you want to build and I'll shape it into a real execution plan.";
 }
 
 export function buildWorkspaceName(idea: string) {
@@ -258,11 +260,11 @@ function createDefaultTeammateSet(): TeammateRecommendation[] {
   return [
     {
       id: "narua",
-      name: "Narua",
+      name: "Naroa",
       provider: "chatgpt",
-      role: "Core intelligence / execution layer",
+      role: "Core orchestrator / execution layer",
       status: "active",
-      reason: "Narua drives intake, planning, synthesis, routing, and execution guidance across the product."
+      reason: "Naroa drives intake, planning, synthesis, routing, and execution guidance across the product."
     },
     {
       id: "atlas",
@@ -305,7 +307,7 @@ function buildRecommendedModules(primaryLaneId: LaneId, supportingLaneIds: LaneI
 }
 
 function buildRecommendedStack(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers: PlanningAnswers) {
-  const stack = ["Narua Workspace", "Narua Execution Layer"];
+  const stack = ["Naroa Workspace", "Naroa Execution Layer"];
 
   if (primaryLaneId === "website") {
     stack.push("Marketing site structure", "Copy and page system");
@@ -341,7 +343,7 @@ function buildPhases(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers
       items: [
         `Turn the idea into a sharper ${answers.projectType.toLowerCase()} direction.`,
         `Define the target user around ${answers.targetUser || "the clearest customer segment"}.`,
-        `Use Narua to tighten the goal: ${answers.mainGoal || "create a measurable first outcome"}.`
+        `Use Naroa to tighten the goal: ${answers.mainGoal || "create a measurable first outcome"}.`
       ]
     },
     {
@@ -391,7 +393,7 @@ function buildTeammates(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answ
       return {
         ...teammate,
         status: "recommended" as const,
-        reason: "Narua recommends Atlas for deeper reasoning, research, and long-context analysis."
+        reason: "Naroa recommends Atlas for deeper reasoning, research, and long-context analysis."
       };
     }
 
@@ -399,7 +401,7 @@ function buildTeammates(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answ
       return {
         ...teammate,
         status: "recommended" as const,
-        reason: "Narua recommends Forge when the plan needs product, site, automation, or implementation help."
+        reason: "Naroa recommends Forge when the plan needs product, site, automation, or implementation help."
       };
     }
 
@@ -407,7 +409,7 @@ function buildTeammates(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answ
       return {
         ...teammate,
         status: "recommended" as const,
-        reason: "Narua recommends RepoLink when repository or systems context will affect execution."
+        reason: "Naroa recommends RepoLink when repository or systems context will affect execution."
       };
     }
 
@@ -450,10 +452,24 @@ export function generatePlan(answers: PlanningAnswers): GeneratedPlan {
     (laneId) => laneId !== laneSelection.primaryLaneId
   );
   const supportingLanes = supportingLaneIds.map((laneId) => getLaneById(laneId));
+  const projectTemplateId = inferProjectTemplate({
+    name: answers.idea || buildWorkspaceName(answers.idea),
+    description: [
+      answers.projectType,
+      answers.targetUser,
+      answers.mainGoal,
+      answers.mvp,
+      answers.integrations
+    ]
+      .filter(Boolean)
+      .join("\n"),
+    primaryLaneId: laneSelection.primaryLaneId
+  });
 
   return {
     title: buildWorkspaceName(answers.idea),
-    overview: `${answers.idea} Narua is framing this as a ${primaryLane.name.toLowerCase()} workspace with the right supporting lanes to carry the idea into execution.`,
+    projectTemplateId,
+    overview: `${answers.idea} Naroa is framing this as a ${primaryLane.name.toLowerCase()} workspace with the right supporting lanes to carry the idea into execution.`,
     projectSummary: `${answers.projectType || "Initiative"} for ${answers.targetUser || "a defined user"} focused on ${answers.mainGoal || "a concrete business or product outcome"}.`,
     targetUser: answers.targetUser || "Target user still needs refinement.",
     mainGoal: answers.mainGoal || "Primary outcome still needs refinement.",
@@ -471,7 +487,7 @@ export function generatePlan(answers: PlanningAnswers): GeneratedPlan {
     expandedSection: null,
     tasks: [],
     refinementNotes: supportingLanes.length > 0
-      ? [`Narua assigned supporting lanes: ${supportingLanes.map((lane) => lane.name).join(", ")}.`]
+      ? [`Naroa assigned supporting lanes: ${supportingLanes.map((lane) => lane.name).join(", ")}.`]
       : []
   };
 }
@@ -483,7 +499,7 @@ export function createSynthesisMessage(plan: GeneratedPlan) {
       ? ` with supporting lanes for ${plan.supportingLaneIds.map((laneId) => getLaneById(laneId).name).join(", ")}`
       : "";
 
-  return `Perfect. Narua has enough context to draft this as a ${primaryLane.name} workspace${supportingText}. Review the plan below, then refine it or open the workspace.`;
+  return `Perfect. Naroa has enough context to draft this as a ${primaryLane.name} workspace${supportingText}. Review the plan below, then refine it or open the workspace.`;
 }
 
 export function applyReviewAction(
@@ -500,13 +516,13 @@ export function applyReviewAction(
       ],
       refinementNotes: [
         ...plan.refinementNotes,
-        "Narua refined the plan by tightening the positioning, narrowing the MVP, and sharpening the execution path."
+        "Naroa refined the plan by tightening the positioning, narrowing the MVP, and sharpening the execution path."
       ]
     };
 
     return {
       plan: refinedPlan,
-      reply: "Narua refined the plan by tightening the positioning and making the first phase more execution-focused."
+      reply: "Naroa refined the plan by tightening the positioning and making the first phase more execution-focused."
     };
   }
 
@@ -525,7 +541,7 @@ export function applyReviewAction(
           ]
         }
       },
-      reply: "Narua expanded the plan so the first execution phase is more concrete."
+      reply: "Naroa expanded the plan so the first execution phase is more concrete."
     };
   }
 
@@ -541,7 +557,7 @@ export function applyReviewAction(
           "Start the workspace and activate only the next-needed teammate."
         ]
       },
-      reply: "Narua turned the plan into an initial task sequence so execution can move faster."
+      reply: "Naroa turned the plan into an initial task sequence so execution can move faster."
     };
   }
 
@@ -559,10 +575,10 @@ export function applyReviewAction(
       supportingLaneIds,
       refinementNotes: [
         ...plan.refinementNotes,
-        "Narua reframed the plan toward an app build path and added SaaS / App support."
+        "Naroa reframed the plan toward an app build path and added SaaS / App support."
       ]
     },
-    reply: "Narua adjusted the plan so it can move more directly into an app build workflow."
+    reply: "Naroa adjusted the plan so it can move more directly into an app build workflow."
   };
 }
 
@@ -571,14 +587,14 @@ export function getPlanModuleDefinitions(plan: GeneratedPlan) {
 }
 
 export function createEngineWelcomeMessage(context: NaruaEngineContext) {
-  return `Narua is active in the ${context.engineTitle} lane inside ${context.workspaceName}. This thread stays scoped to ${context.engineDescription.toLowerCase()} so the project keeps a clean conversation boundary.`;
+  return `Naroa is ready to generate the first ${context.engineTitle.toLowerCase()} output inside ${context.workspaceName}. ${context.engineDescription} will stay centered in this lane so the next deliverable is clear.`;
 }
 
 export function createEngineReply(context: NaruaEngineContext, message: string) {
   const recommendedStack = context.recommendedAIStack.slice(0, 3).join(", ");
 
   return [
-    `Narua is keeping the ${context.engineTitle} lane focused on ${context.engineDescription.toLowerCase()}.`,
+    `Naroa is keeping the ${context.engineTitle} lane focused on ${context.engineDescription.toLowerCase()}.`,
     `Based on "${message.trim()}", the next move is to tighten the outcome, identify the immediate blocker, and sequence the next deliverable inside this lane thread only.`,
     recommendedStack
       ? `Recommended stack in this lane: ${recommendedStack}.`
@@ -592,7 +608,7 @@ export function createWorkspaceWelcomeMessage(context: NaruaWorkspaceContext) {
       ? ` Supporting lanes currently include ${context.supportingLaneNames.join(", ")}.`
       : "";
 
-  return `Narua is active in this workspace. I have ${context.primaryLaneName} as the lead execution lane inside ${context.workspaceName}.${supportingText}`;
+  return `Naroa has ${context.primaryLaneName} leading inside ${context.workspaceName}.${supportingText}`;
 }
 
 export function createWorkspaceReply(context: NaruaWorkspaceContext, message: string) {
@@ -602,7 +618,7 @@ export function createWorkspaceReply(context: NaruaWorkspaceContext, message: st
       : " I’ll keep this workspace narrow until a second lane is truly needed.";
 
   return [
-    `Narua is treating ${context.primaryLaneName} as the lead operating context in ${context.workspaceName}.`,
+    `Naroa is treating ${context.primaryLaneName} as the lead operating context in ${context.workspaceName}.`,
     `Based on "${message.trim()}", the next move is to tighten the immediate outcome, choose the next concrete deliverable, and keep the work anchored to the active lane.`,
     supportingText
   ].join(" ");

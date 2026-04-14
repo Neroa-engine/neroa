@@ -1,20 +1,23 @@
-"use client";
+﻿"use client";
 
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { NaruaDesktopPanel, NaruaMobileDrawer } from "@/components/narua/NaruaPanel";
-import { useNaruaThread } from "@/components/narua/useNaruaThread";
 import {
-  createEngineReply,
-  createEngineWelcomeMessage,
-  type NaruaEngineContext
-} from "@/lib/narua/planning";
+  LaneWorkspaceEngineProvider,
+  useLaneWorkspaceEngine
+} from "@/components/workspace/lane-workspace-engine";
 import {
   buildLaneConversationStorageKey,
   buildProjectLaneRoute,
   buildProjectRoute,
-  type ProjectLaneRecord
+  getProjectLanePhaseForLane,
+  getProjectLanePhaseGroups,
+  type ProjectLaneRecord,
+  type ProjectRecord
 } from "@/lib/workspace/project-lanes";
+import { isBudgetLane } from "@/lib/workspace/budget-lane";
+import { isStrategyLane } from "@/lib/workspace/strategy-lane";
 
 type EngineShellProps = {
   workspace: {
@@ -22,11 +25,7 @@ type EngineShellProps = {
     name: string;
     description: string | null;
   };
-  project: {
-    id: string;
-    title: string;
-    templateLabel: string;
-  };
+  project: ProjectRecord;
   lane: ProjectLaneRecord;
   naruaEnabled: boolean;
   children: ReactNode;
@@ -34,62 +33,90 @@ type EngineShellProps = {
 
 type NaruaEnabledEngineFrameProps = {
   workspace: EngineShellProps["workspace"];
-  project: EngineShellProps["project"];
+  project: ProjectRecord;
   lane: ProjectLaneRecord;
   children: ReactNode;
 };
 
-function NaruaEnabledEngineFrame({
+function StrategyLaneFrame({
   workspace,
   project,
   lane,
   children
 }: NaruaEnabledEngineFrameProps) {
-  const naruaContext: NaruaEngineContext = {
-    workspaceId: workspace.id,
-    workspaceName: project.title,
-    workspaceDescription: workspace.description,
-    engineSlug: lane.slug,
-    engineTitle: lane.title,
-    engineDescription: lane.description,
-    recommendedAIStack: lane.recommendedAIStack
-  };
-  const thread = useNaruaThread({
-    storageKey: buildLaneConversationStorageKey({
-      workspaceId: workspace.id,
-      projectId: project.id,
-      laneSlug: lane.slug
-    }),
-    initialMessage: createEngineWelcomeMessage(naruaContext),
-    buildReply: (message) => createEngineReply(naruaContext, message),
-    idleMessage: "Type or speak to Narua inside this lane thread"
-  });
+  return (
+    <div className="grid min-h-[calc(100vh-10rem)] xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
+      <LaneNavigator workspaceId={workspace.id} project={project} activeLaneSlug={lane.slug} />
+
+      <div className="thin-scrollbar min-w-0 overflow-y-auto px-6 py-6 xl:px-8 xl:py-8 2xl:px-10 2xl:py-10">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function StandardNaruaEnabledEngineFrame({
+  workspace,
+  project,
+  lane,
+  children
+}: NaruaEnabledEngineFrameProps) {
+  return (
+    <LaneWorkspaceEngineProvider
+      storageKey={buildLaneConversationStorageKey({
+        workspaceId: workspace.id,
+        projectId: project.id,
+        laneSlug: lane.slug
+      })}
+      project={project}
+      lane={lane}
+    >
+      <StandardNaruaEnabledEngineLayout workspace={workspace} project={project} lane={lane}>
+        {children}
+      </StandardNaruaEnabledEngineLayout>
+    </LaneWorkspaceEngineProvider>
+  );
+}
+
+function StandardNaruaEnabledEngineLayout({
+  workspace,
+  project,
+  lane,
+  children
+}: NaruaEnabledEngineFrameProps) {
+  const laneWorkspace = useLaneWorkspaceEngine();
   const panelProps = {
-    contextLabel: "Lane Thread",
+    contextLabel: "Naroa Guidance",
     contextTitle: lane.title,
     contextDescription: lane.description,
-    statusText:
-      "Narua is active in this lane thread and will keep the conversation scoped to this project lane only.",
+    statusText: laneWorkspace.statusText,
     recommendedStack: lane.recommendedAIStack,
-    suggestedPrompts: lane.starterPrompts,
-    messages: thread.messages,
-    draft: thread.draft,
-    onDraftChange: thread.setDraft,
-    onSend: thread.handleSend,
-    voiceState: thread.voiceState,
-    voiceMessage: thread.voiceMessage,
-    onVoiceTranscript: thread.handleVoiceTranscript,
-    onVoiceStatusChange: thread.handleVoiceStatusChange
+    suggestedPrompts: laneWorkspace.suggestedPrompts,
+    messages: laneWorkspace.messages,
+    draft: laneWorkspace.draft,
+    onDraftChange: laneWorkspace.setDraft,
+    onSend: laneWorkspace.handleSend,
+    voiceState: laneWorkspace.voiceState,
+    voiceMessage: laneWorkspace.voiceMessage,
+    onVoiceTranscript: laneWorkspace.handleVoiceTranscript,
+    onVoiceStatusChange: laneWorkspace.handleVoiceStatusChange,
+    isProcessing: laneWorkspace.isProcessing,
+    collaboration: laneWorkspace.collaboration,
+    nextMove: laneWorkspace.nextMove,
+    errorText: laneWorkspace.error,
+    threadMeta: laneWorkspace.threadMeta
   };
 
   return (
     <>
-      <div className="border-b border-white/8 px-6 py-4 xl:hidden">
+      <div className="border-b border-slate-200/70 px-6 py-4 xl:hidden">
         <NaruaMobileDrawer {...panelProps} />
       </div>
 
-      <div className="flex min-h-[calc(100vh-10rem)] flex-col xl:flex-row">
-        <div className="thin-scrollbar min-w-0 flex-1 overflow-y-auto px-6 py-6 xl:px-8 xl:py-8 2xl:px-10 2xl:py-10">
+      <div className="grid min-h-[calc(100vh-10rem)] xl:grid-cols-[320px_minmax(0,1fr)_460px] 2xl:grid-cols-[340px_minmax(0,1fr)_520px]">
+        <LaneNavigator workspaceId={workspace.id} project={project} activeLaneSlug={lane.slug} />
+
+        <div className="thin-scrollbar min-w-0 overflow-y-auto px-6 py-6 xl:px-8 xl:py-8 2xl:px-10 2xl:py-10">
           {children}
         </div>
 
@@ -99,6 +126,130 @@ function NaruaEnabledEngineFrame({
   );
 }
 
+function lanePill(status: ProjectLaneRecord["status"], active: boolean) {
+  if (active) {
+    return "border-cyan-300/25 bg-cyan-300/12 text-cyan-700";
+  }
+
+  if (status === "active") {
+    return "border-emerald-300/30 bg-emerald-300/14 text-emerald-700";
+  }
+
+  if (status === "recommended") {
+    return "border-slate-200 bg-white/70 text-slate-600";
+  }
+
+  return "border-slate-200 bg-white/60 text-slate-400";
+}
+
+function LaneLinkCard({
+  workspaceId,
+  projectId,
+  lane,
+  active
+}: {
+  workspaceId: string;
+  projectId: string;
+  lane: ProjectLaneRecord;
+  active: boolean;
+}) {
+  return (
+    <Link
+      href={buildProjectLaneRoute(workspaceId, projectId, lane.slug)}
+      className={`block rounded-[22px] border px-4 py-3 transition ${
+        active
+          ? "border-cyan-300/25 bg-cyan-300/12 shadow-[0_20px_50px_rgba(34,211,238,0.12)]"
+          : "border-slate-200 bg-white/70 hover:bg-white/85"
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-950">{lane.title}</p>
+          <p className="mt-2 text-xs leading-5 text-slate-500">{lane.description}</p>
+        </div>
+        <span
+          className={`rounded-full border px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] ${lanePill(
+            lane.status,
+            active
+          )}`}
+        >
+          {active ? "Open" : lane.status === "active" ? "Ready" : lane.status === "recommended" ? "Next" : "Later"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function LaneNavigator({
+  workspaceId,
+  project,
+  activeLaneSlug
+}: {
+  workspaceId: string;
+  project: ProjectRecord;
+  activeLaneSlug: string;
+}) {
+  const lanePhases = getProjectLanePhaseGroups(project);
+
+  return (
+    <aside className="thin-scrollbar border-b border-slate-200/70 px-5 py-6 xl:overflow-y-auto xl:border-b-0 xl:border-r xl:px-6">
+      <div className="floating-plane rounded-[30px] p-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+          Execution phases
+        </p>
+        <p className="mt-3 text-sm leading-6 text-slate-600">
+          Follow the guided sequence from strategy into build, budget, launch, and operations without losing the focused lane context.
+        </p>
+      </div>
+
+      <div className="mt-6 space-y-4">
+        {lanePhases.map((phase) => (
+          <section key={phase.id} className="floating-plane rounded-[30px] p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                  {phase.label}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{phase.summary}</p>
+              </div>
+              <span className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-[11px] text-slate-500">
+                {phase.lanes.length}
+              </span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {phase.lanes.map((item) => (
+                <LaneLinkCard
+                  key={item.id}
+                  workspaceId={workspaceId}
+                  projectId={project.id}
+                  lane={item}
+                  active={item.slug === activeLaneSlug}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+function NaruaEnabledEngineFrame({
+  workspace,
+  project,
+  lane,
+  children
+}: NaruaEnabledEngineFrameProps) {
+  const customWorkspaceLane = isStrategyLane(lane) || isBudgetLane(lane);
+
+  if (customWorkspaceLane) {
+    return <StrategyLaneFrame workspace={workspace} project={project} lane={lane} children={children} />;
+  }
+
+  return <StandardNaruaEnabledEngineFrame workspace={workspace} project={project} lane={lane} children={children} />;
+}
+
 export default function EngineShell({
   workspace,
   project,
@@ -106,11 +257,13 @@ export default function EngineShell({
   naruaEnabled,
   children
 }: EngineShellProps) {
+  const lanePhase = getProjectLanePhaseForLane(lane);
+
   return (
-    <main className="min-h-screen bg-[#060816] py-6 text-white">
-      <div className="mx-auto w-full max-w-[1840px] px-4 sm:px-6 xl:px-8">
-        <div className="surface-main overflow-hidden">
-          <div className="border-b border-white/8 px-6 py-6 xl:px-8 2xl:px-10">
+    <div className="surface-main relative overflow-hidden rounded-[42px]">
+      <div className="floating-wash rounded-[42px]" />
+      <div className="relative">
+        <div className="border-b border-slate-200/70 px-6 py-6 xl:px-8 2xl:px-10">
             <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
               <div className="max-w-5xl">
                 <div className="flex flex-wrap items-center gap-3">
@@ -118,36 +271,36 @@ export default function EngineShell({
                     href={buildProjectRoute(workspace.id, project.id)}
                     className="button-secondary"
                   >
-                    Back to project overview
+                    Back to engine overview
                   </Link>
-                  <span className="rounded-full bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-300">
-                    {lane.title} lane
+                  <span className="rounded-full border border-slate-200 bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                    Naroa Workspace
                   </span>
-                  <span className="rounded-full bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-300">
-                    {project.templateLabel}
+                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-700">
+                    {lanePhase.label}
                   </span>
                   {!naruaEnabled ? (
-                    <span className="rounded-full bg-amber-400/12 px-4 py-2 text-xs uppercase tracking-[0.18em] text-amber-200">
-                      Narua excluded
+                    <span className="rounded-full border border-amber-300/35 bg-amber-50/80 px-4 py-2 text-xs uppercase tracking-[0.18em] text-amber-700">
+                      Naroa excluded
                     </span>
                   ) : null}
                 </div>
-                <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white xl:text-4xl 2xl:text-[2.8rem]">
-                  {project.title}
+                <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950 xl:text-4xl 2xl:text-[2.8rem]">
+                  {lane.title}
                 </h1>
-                <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-400 xl:text-base xl:leading-8">
-                  {workspace.description ||
-                    "Dynamic project workspace powered by Neroa lane threads."}
+                <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600 xl:text-base xl:leading-8">
+                  {lane.description}
                 </p>
               </div>
 
-              <div>
-                <Link
-                  href={buildProjectLaneRoute(workspace.id, project.id, lane.slug)}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-200"
-                >
-                  {lane.slug}
-                </Link>
+              <div className="floating-plane max-w-sm rounded-[30px] p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  What this lane does
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{lanePhase.label}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {lanePhase.summary} Naroa keeps this lane tied to {project.title} with a dedicated thread, live deliverables, and a clear next move for the engine.
+                </p>
               </div>
             </div>
           </div>
@@ -157,12 +310,19 @@ export default function EngineShell({
               {children}
             </NaruaEnabledEngineFrame>
           ) : (
-            <div className="thin-scrollbar min-h-[calc(100vh-10rem)] overflow-y-auto px-6 py-6 xl:px-8 xl:py-8 2xl:px-10 2xl:py-10">
-              {children}
+            <div className="grid min-h-[calc(100vh-10rem)] xl:grid-cols-[320px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)]">
+              <LaneNavigator
+                workspaceId={workspace.id}
+                project={project}
+                activeLaneSlug={lane.slug}
+              />
+
+              <div className="thin-scrollbar min-h-0 overflow-y-auto px-6 py-6 xl:px-8 xl:py-8 2xl:px-10 2xl:py-10">
+                {children}
+              </div>
             </div>
           )}
-        </div>
       </div>
-    </main>
+    </div>
   );
 }

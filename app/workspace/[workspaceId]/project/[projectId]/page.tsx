@@ -1,6 +1,6 @@
 import WorkspaceShell from "@/components/workspace/workspace-shell";
-import { deriveWorkspaceLanes } from "@/lib/workspace/lanes";
-import { buildProjectModel } from "@/lib/workspace/project-lanes";
+import { DashboardBoardShell } from "@/components/layout/page-shells";
+import { renameWorkspace } from "@/app/workspace/actions";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type ProjectPageProps = {
@@ -20,40 +20,62 @@ function firstValue(value: string | string[] | undefined) {
 }
 
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
-  const { user, workspace } = await getWorkspaceProjectContext(
+  const { user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
     params.workspaceId,
-    params.projectId
+    params.projectId,
+    {
+      requestedPrimaryLaneId: firstValue(searchParams?.lane),
+      requestedSupportingLaneIds: firstValue(searchParams?.supporting)
+    }
   );
 
-  const laneSelection = deriveWorkspaceLanes({
-    name: workspace.name,
-    description: workspace.description,
-    requestedPrimaryLaneId: firstValue(searchParams?.lane),
-    requestedSupportingLaneIds: firstValue(searchParams?.supporting)
-  });
-  const project = buildProjectModel({
-    workspaceId: workspace.id,
-    projectId: params.projectId,
-    title: workspace.name,
-    description: workspace.description,
-    primaryLaneId: laneSelection.primaryLaneId
-  });
-
   return (
-    <main className="min-h-screen bg-[#060816] py-6 text-white">
-      <div className="mx-auto w-full max-w-[1840px] px-4 sm:px-6 xl:px-8">
+    <DashboardBoardShell userEmail={user.email ?? undefined} ctaHref="/dashboard" ctaLabel="Dashboard">
         {firstValue(searchParams?.error) ? (
-          <div className="mb-4 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
+          <div className="mb-4 rounded-2xl border border-rose-300/50 bg-rose-50/90 px-4 py-3 text-sm text-rose-700">
             {firstValue(searchParams?.error)}
           </div>
         ) : null}
 
+        <section className="floating-plane mb-4 rounded-[30px] px-5 py-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                Engine control
+              </p>
+              <p className="mt-2 text-lg font-semibold text-slate-950">{project.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Rename the engine here without leaving the command center.
+              </p>
+            </div>
+
+            <form action={renameWorkspace} className="flex w-full max-w-xl flex-col gap-3 sm:flex-row">
+              <input type="hidden" name="workspaceId" value={workspace.id} />
+              <input
+                type="hidden"
+                name="returnTo"
+                value={`/workspace/${workspace.id}/project/${project.id}`}
+              />
+              <input
+                type="text"
+                name="name"
+                defaultValue={project.title}
+                className="input flex-1"
+                placeholder="Rename engine"
+              />
+              <button type="submit" className="button-secondary whitespace-nowrap">
+                Save name
+              </button>
+            </form>
+          </div>
+        </section>
+
         <WorkspaceShell
           workspaceId={workspace.id}
           project={project}
+          projectMetadata={projectMetadata}
           userEmail={user.email ?? undefined}
         />
-      </div>
-    </main>
+    </DashboardBoardShell>
   );
 }

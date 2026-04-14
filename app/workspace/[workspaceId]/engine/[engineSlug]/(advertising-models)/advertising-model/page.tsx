@@ -16,7 +16,7 @@ export default function AdvertisingModelPage({ params }: AdvertisingModelPagePro
           Advertising model page
         </h1>
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 xl:text-base xl:leading-8">
-          This route intentionally excludes Narua so advertising-only modeling can run as a focused surface without the persistent build guidance layer in view.
+          This route intentionally excludes Naroa so advertising-only modeling can run as a focused surface without the persistent build guidance layer in view.
         </p>
       </section>
 
@@ -32,7 +32,7 @@ export default function AdvertisingModelPage({ params }: AdvertisingModelPagePro
         </div>
 
         <div className="rounded-[28px] border border-white/8 bg-white/[0.03] p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Why Narua is excluded here</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Why Naroa is excluded here</p>
           <p className="mt-3 text-sm leading-7 text-slate-200">
             Advertising-model routes use a separate layout so the broader execution layer does not intrude on narrow ad modeling work.
           </p>
