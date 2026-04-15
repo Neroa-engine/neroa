@@ -19,7 +19,11 @@ type SiteHeaderProps = {
 
 function resolveMainNavHref(href: string, pathname: string) {
   if (href === "/pricing") {
-    if (pathname.startsWith("/diy") || pathname.startsWith("/pricing/diy")) {
+    if (
+      pathname.startsWith("/diy-build") ||
+      pathname.startsWith("/diy") ||
+      pathname.startsWith("/pricing/diy")
+    ) {
       return "/pricing/diy";
     }
 
@@ -141,11 +145,11 @@ export function SiteHeader({
           {showSiteNav ? <SiteNav authenticated={isAuthenticated} /> : null}
           <PublicAccountMenu initialEmail={resolvedEmail ?? undefined} />
           {showAccountButton ? (
-            <Link className="button-quiet px-4 py-3 text-sm" href={accountButton.href}>
+            <Link className="button-quiet px-4 py-3 text-sm" href={accountButton.href} prefetch>
               {accountButton.label}
             </Link>
           ) : null}
-          <Link className={ctaClassName} href={ctaHref}>
+          <Link className={ctaClassName} href={ctaHref} prefetch>
             {ctaLabel}
           </Link>
         </div>

@@ -1511,6 +1511,10 @@ export function getGuidedBuildOpportunities(goalId: BuildGoalId | null | undefin
 }
 
 export function getGuidedBuildProductTypes(industryId: BuildIndustryId | null | undefined) {
+  if (!industryId) {
+    return customIndustryProductTypes;
+  }
+
   if (industryId === "custom") {
     return customIndustryProductTypes;
   }

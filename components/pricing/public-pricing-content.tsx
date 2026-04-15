@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { GrowthLayerPricing } from "@/components/pricing/growth-layer-pricing";
 import {
   calculateIntervalPrice,
   executionCreditActions,
   hardCapPolicyPoints,
+  getExecutionCreditPackUnitPrice,
   planningVsBuildProjectsDefinition,
   planScopedEstimateHeadline,
   planScopedEstimateSupport,
@@ -493,7 +495,7 @@ export function PublicPricingContent({
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               {topUpBundles.map((bundle) => (
                 <div
-                  key={bundle.credits}
+                  key={bundle.id}
                   className="rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
                 >
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
@@ -505,6 +507,9 @@ export function PublicPricingContent({
                   <p className="mt-2 text-sm leading-7 text-slate-600">Engine Credits</p>
                   <p className="mt-4 text-lg font-semibold text-slate-950">
                     {formatMoney(bundle.price)}
+                  </p>
+                  <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                    {formatMoney(getExecutionCreditPackUnitPrice(bundle))} per credit
                   </p>
                   <p className="mt-3 text-sm leading-7 text-slate-500">{bundle.detail}</p>
                 </div>
@@ -548,6 +553,8 @@ export function PublicPricingContent({
           </div>
         </div>
       </section>
+
+      <GrowthLayerPricing />
 
       <section className="mt-16">
         <div className="floating-plane rounded-[34px] p-6 sm:p-8">

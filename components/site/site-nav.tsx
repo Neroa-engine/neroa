@@ -18,7 +18,11 @@ type SiteNavProps = {
 
 function resolveSiteNavHref(href: string, pathname: string) {
   if (href === "/pricing") {
-    if (pathname.startsWith("/diy") || pathname.startsWith("/pricing/diy")) {
+    if (
+      pathname.startsWith("/diy-build") ||
+      pathname.startsWith("/diy") ||
+      pathname.startsWith("/pricing/diy")
+    ) {
       return "/pricing/diy";
     }
 

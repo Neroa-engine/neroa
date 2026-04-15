@@ -1,0 +1,22 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="neroaGlow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(64 64) rotate(90) scale(58)">
+      <stop stop-color="#7DD3FC" stop-opacity="0.92" />
+      <stop offset="0.55" stop-color="#60A5FA" stop-opacity="0.34" />
+      <stop offset="1" stop-color="#8B5CF6" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="neroaStroke" x1="20" y1="24" x2="108" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8" />
+      <stop offset="1" stop-color="#8B5CF6" />
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="36" fill="#F8FBFF" />
+  <circle cx="64" cy="64" r="52" fill="url(#neroaGlow)" />
+  <path d="M28 92V32L64 64L100 32V96" stroke="url(#neroaStroke)" stroke-width="7.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M28 32L64 96L100 32" stroke="url(#neroaStroke)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.72"/>
+  <circle cx="28" cy="32" r="7" fill="#38BDF8"/>
+  <circle cx="28" cy="92" r="7" fill="#38BDF8"/>
+  <circle cx="64" cy="64" r="8.5" fill="#A78BFA"/>
+  <circle cx="100" cy="32" r="7" fill="#8B5CF6"/>
+  <circle cx="100" cy="96" r="7" fill="#8B5CF6"/>
+</svg>

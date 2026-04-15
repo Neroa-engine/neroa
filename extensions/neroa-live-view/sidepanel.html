@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Neroa Live View</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <div class="panel-shell">
+      <header class="panel-header">
+        <div class="brand">
+          <img src="assets/neroa-mark.svg" alt="Neroa Live View" class="brand-mark" />
+          <div>
+            <p class="eyebrow">Neroa Live View</p>
+            <h1>Naroa live inspection bridge</h1>
+          </div>
+        </div>
+        <button id="refresh-button" class="ghost-button" type="button">Refresh</button>
+      </header>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Connection</p>
+            <h2 id="connection-title">Waiting for a Neroa workspace session</h2>
+          </div>
+          <span id="connection-pill" class="pill muted">Disconnected</span>
+        </div>
+        <p id="connection-detail" class="card-copy">
+          Open a Neroa project Live View page to bind the extension to the active workspace/session.
+        </p>
+        <div class="button-row">
+          <button id="open-workspace-button" class="secondary-button" type="button">
+            Open workspace Live View
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Recording</p>
+            <h2>Session capture</h2>
+          </div>
+          <label class="toggle">
+            <input id="recording-toggle" type="checkbox" />
+            <span class="toggle-track"></span>
+            <span class="toggle-label">On</span>
+          </label>
+        </div>
+        <p class="card-copy">
+          Recording is optional. When enabled, Neroa stores timestamped action logs, page history,
+          and capture frames for major checkpoints.
+        </p>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Latest inspection</p>
+            <h2 id="inspection-title">No live app inspected yet</h2>
+          </div>
+        </div>
+        <p id="inspection-detail" class="card-copy">
+          Once you move through a supported localhost app, Naroa will summarize the current page,
+          report findings, and suggest the next best action here.
+        </p>
+        <div id="recommendation-block" class="insight-block hidden"></div>
+        <div id="guardrail-block" class="pill-row"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">QA findings</p>
+            <h2>Pass / fail summary</h2>
+          </div>
+        </div>
+        <div id="findings-list" class="list-block empty-state">
+          No findings yet. Start with the homepage and move through the app flow.
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Activity</p>
+            <h2>Recent walkthrough history</h2>
+          </div>
+        </div>
+        <div id="activity-list" class="list-block empty-state">
+          No activity yet.
+        </div>
+      </section>
+
+      <section id="error-banner" class="error-banner hidden"></section>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

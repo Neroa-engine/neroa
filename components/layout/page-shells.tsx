@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { FocusBubbleProvider } from "@/components/marketing/focus-bubble-system";
 import { SiteHeader } from "@/components/site-header";
 import { PublicFooter } from "@/components/site/public-footer";
 import { PublicHelpChat } from "@/components/support/public-help-chat";
@@ -69,7 +70,9 @@ export function MarketingInfoShell({
         showSiteNav
         brandVariant={brandVariant}
       />
-      <div className={contentShellClassName}>{children}</div>
+      <FocusBubbleProvider>
+        <div className={contentShellClassName}>{children}</div>
+      </FocusBubbleProvider>
       <PublicFooter />
       <PublicHelpChat />
     </main>

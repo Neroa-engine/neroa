@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { AIOnboardingControlProvider } from "@/components/onboarding/ai-onboarding-control-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,7 +15,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-transparent text-slate-900 antialiased">{children}</body>
+      <body className="min-h-screen bg-transparent text-slate-900 antialiased">
+        <AIOnboardingControlProvider>{children}</AIOnboardingControlProvider>
+      </body>
     </html>
   );
 }

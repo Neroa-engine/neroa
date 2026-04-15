@@ -59,6 +59,10 @@ export type UseCaseDetailPage = {
   secondaryCtaHref: string;
   finalCtaTitle: string;
   finalCtaSummary: string;
+  faq?: Array<{
+    question: string;
+    answer: string;
+  }>;
 };
 
 export const useCaseDetailPages: UseCaseDetailPage[] = [
@@ -293,7 +297,24 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     secondaryCtaHref: "/use-cases",
     finalCtaTitle: "Start the SaaS build in one coordinated system",
     finalCtaSummary:
-      "Start with Naroa, shape the MVP, clarify the budget, and let the build and launch workflow open around the real product."
+      "Start with Naroa, shape the MVP, clarify the budget, and let the build and launch workflow open around the real product.",
+    faq: [
+      {
+        question: "Can Neroa help me scope a real SaaS MVP before build work starts?",
+        answer:
+          "Yes. The SaaS path is built to clarify the customer problem, feature cut line, budget logic, and launch path before the product expands into a harder build."
+      },
+      {
+        question: "Should a SaaS idea start in DIY or Managed Build?",
+        answer:
+          "Many SaaS ideas start well in DIY when the founder wants to pace the work with monthly Engine Credits. Move into Managed Build when speed, integrations, or business pressure justify more execution help."
+      },
+      {
+        question: "Does Neroa help with pricing, scope, and launch thinking too?",
+        answer:
+          "Yes. The SaaS lane is designed to keep MVP planning, budget logic, validation, build sequencing, and launch preparation connected in one system."
+      }
+    ]
   },
   {
     slug: "internal-software",
@@ -399,7 +420,24 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     secondaryCtaHref: "/use-cases",
     finalCtaTitle: "Turn internal workflow problems into a structured software plan",
     finalCtaSummary:
-      "Use Neroa to shape the workflow, feature logic, budget, and rollout path before the internal system becomes another messy build."
+      "Use Neroa to shape the workflow, feature logic, budget, and rollout path before the internal system becomes another messy build.",
+    faq: [
+      {
+        question: "What kinds of internal systems fit this Neroa lane best?",
+        answer:
+          "This lane is strongest for CRMs, dashboards, reporting systems, approvals, dispatch tools, admin workflows, and other internal software that needs clearer operational structure before build execution begins."
+      },
+      {
+        question: "Can internal software start small and expand later?",
+        answer:
+          "Yes. Neroa helps teams start with the most valuable workflow first, then widen roles, reports, automations, and integrations later instead of overbuilding the first release."
+      },
+      {
+        question: "Is this only for technical teams?",
+        answer:
+          "No. The internal software lane is designed for operators and business teams that need the workflow, role logic, and rollout path clarified before technical delivery scales up."
+      }
+    ]
   },
   {
     slug: "external-apps",
@@ -504,7 +542,24 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     secondaryCtaHref: "/use-cases",
     finalCtaTitle: "Move from concept to customer-facing launch with one coordinated system",
     finalCtaSummary:
-      "Use Neroa to clarify the audience, shape the release, understand the cost, and move the external product into a cleaner launch path."
+      "Use Neroa to clarify the audience, shape the release, understand the cost, and move the external product into a cleaner launch path.",
+    faq: [
+      {
+        question: "What kinds of external apps fit this path?",
+        answer:
+          "This lane works well for customer portals, booking systems, branded web apps, service platforms, lead flows, and other customer-facing products that need a stronger route from concept into launch."
+      },
+      {
+        question: "How does Neroa help before design and development get expensive?",
+        answer:
+          "Neroa clarifies the audience, user flow, first release, budget logic, and build path first so the external app does not widen into a vague customer-facing project with too many moving parts."
+      },
+      {
+        question: "Can I start in DIY and later move the product into managed support?",
+        answer:
+          "Yes. That is a normal transition when the external app becomes more important to revenue, customer experience, or launch timing than a self-paced lane can comfortably support."
+      }
+    ]
   },
   {
     slug: "mobile-apps",
@@ -620,7 +675,24 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     secondaryCtaHref: "/use-cases",
     finalCtaTitle: "Open the mobile app engine with the right build path from the start",
     finalCtaSummary:
-      "Use Neroa to shape the app, protect the budget, recommend the stack, and carry the work into beta and launch without losing the execution thread."
+      "Use Neroa to shape the app, protect the budget, recommend the stack, and carry the work into beta and launch without losing the execution thread.",
+    faq: [
+      {
+        question: "Can Neroa help plan both iPhone and Android launch paths?",
+        answer:
+          "Yes. The mobile app lane is designed to help customers think through cross-platform scope, store-readiness, beta sequencing, and launch support instead of treating the app like a generic web build."
+      },
+      {
+        question: "What mobile stack does Neroa support most directly?",
+        answer:
+          "Neroa keeps React Native plus Expo as the primary supported mobile path, while lighter PWA paths and advisory-only native alternatives stay secondary so the build logic remains disciplined."
+      },
+      {
+        question: "When should a mobile app move into Managed Build?",
+        answer:
+          "Move into Managed Build when the app needs faster execution, store-submission coordination, deeper integrations, or more launch support than a self-paced DIY lane can comfortably provide."
+      }
+    ]
   },
   {
     slug: "blockchain-projects",

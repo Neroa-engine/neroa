@@ -1,6 +1,14 @@
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import {
+  InfoCardGrid,
+  FaqSection,
+  JsonLdScript,
+  SectionHeader,
+  StepGrid
+} from "@/components/marketing/public-page-sections";
 import AiTeammateCards from "@/components/workspace/ai-teammate-cards";
+import { buildFaqSchema, buildWebPageSchema } from "@/lib/marketing/seo";
 import type { HowItWorksPage } from "@/lib/marketing-pages";
 import type { UseCaseDetailPage } from "@/lib/use-cases";
 import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
@@ -19,7 +27,26 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
   }
 
   return (
-    <MarketingInfoShell ctaHref="/start" ctaLabel="Start your build" brandVariant="prominent">
+    <MarketingInfoShell
+      ctaHref="/start"
+      ctaLabel="Start DIY Build"
+      brandVariant="prominent"
+      contentWidth="wide"
+    >
+      <JsonLdScript
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            buildWebPageSchema({
+              name: `${page.title} | Neroa use case`,
+              description: page.summary,
+              path: `/use-cases/${page.slug}`
+            }),
+            ...(page.faq ? [buildFaqSchema(page.faq)] : [])
+          ]
+        }}
+      />
+
       <section className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/use-cases" className="premium-pill text-slate-600 transition hover:text-slate-900">
@@ -30,22 +57,22 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
           </Link>
         </div>
 
-        <div className="mt-10 grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
-          <div className="max-w-3xl">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+        <div className="hero-shell mt-10">
+          <div className="fade-up-soft max-w-3xl">
+            <span className="premium-pill border-cyan-300/24 bg-cyan-300/12 text-cyan-700">
               {page.eyebrow}
-            </p>
+            </span>
             <h1 className="mt-5 text-4xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-5xl xl:text-[4.5rem] xl:leading-[0.96]">
               {page.heroTitle}
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">{page.intro}</p>
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500">{page.summary}</p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="hero-highlight-grid mt-8">
               {page.heroHighlights.map((item) => (
-                <span key={item} className="premium-pill text-slate-600">
-                  {item}
-                </span>
+                <div key={item} className="hero-highlight-card">
+                  <span>{item}</span>
+                </div>
               ))}
             </div>
 
@@ -59,23 +86,44 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
             </div>
           </div>
 
-          <div className="floating-plane relative overflow-hidden rounded-[34px] p-6 sm:p-8">
-            <div className="floating-wash rounded-[34px]" />
+          <div className="hero-signal-panel fade-up-soft-delay">
+            <div className="signal-orbit" />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                {page.heroPanelTitle}
-              </p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="premium-pill border-slate-200/80 bg-white/80 text-slate-700">
+                  {page.heroPanelTitle}
+                </span>
+                <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
+                  {page.title} lane
+                </span>
+              </div>
               <p className="mt-4 text-base leading-8 text-slate-600">{page.heroPanelSummary}</p>
 
-              <div className="mt-6 space-y-3">
-                {page.heroPanelItems.map((item) => (
+              <div className="signal-grid mt-6">
+                {page.heroPanelItems.map((item, index) => (
                   <div
                     key={item}
-                    className="rounded-[22px] border border-slate-200/70 bg-white/72 px-4 py-4 text-sm leading-7 text-slate-600"
+                    className="signal-item"
                   >
-                    {item}
+                    <span className="signal-item-title">Signal 0{index + 1}</span>
+                    <span className="signal-item-body">{item}</span>
                   </div>
                 ))}
+              </div>
+
+              <div className="comparison-band mt-6">
+                <div className="comparison-metric">
+                  <span className="comparison-label">DIY lane</span>
+                  <span className="comparison-value">Use monthly Engine Credits to scope and pace this build over time.</span>
+                </div>
+                <div className="comparison-metric">
+                  <span className="comparison-label">Managed lane</span>
+                  <span className="comparison-value">Bring Neroa in when this use case needs more structured execution support.</span>
+                </div>
+                <div className="comparison-metric">
+                  <span className="comparison-label">Best first move</span>
+                  <span className="comparison-value">{primaryAction.label}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -92,51 +140,16 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
           </h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
-          {page.workflow.map((step, index) => {
-            const href = getFocusHref(step.detailSlug);
-
-            if (href) {
-              return (
-                <Link
-                  key={step.title}
-                  href={href}
-                  className="micro-glow floating-plane group rounded-[30px] p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-                >
-                  <div className="floating-wash rounded-[30px]" />
-                  <div className="relative">
-                    <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
-                      Step 0{index + 1}
-                    </span>
-                    <h3 className="mt-5 text-2xl font-semibold tracking-tight text-slate-950">
-                      {step.title}
-                    </h3>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">{step.description}</p>
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 transition group-hover:gap-3">
-                      Explore this step
-                      <span aria-hidden="true">-&gt;</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            }
-
-            return (
-              <article key={step.title} className="floating-plane rounded-[30px] p-6">
-                <div className="floating-wash rounded-[30px]" />
-                <div className="relative">
-                  <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
-                    Step 0{index + 1}
-                  </span>
-                  <h3 className="mt-5 text-2xl font-semibold tracking-tight text-slate-950">
-                    {step.title}
-                  </h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{step.description}</p>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <StepGrid
+          steps={page.workflow.map((step, index) => ({
+            title: step.title,
+            description: step.description,
+            eyebrow: `Step 0${index + 1}`,
+            href: getFocusHref(step.detailSlug) ?? undefined,
+            ctaLabel: "Explore this step"
+          }))}
+          guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Explore ${page.title} workflow` }}
+        />
       </section>
 
       <section className="mt-16">
@@ -149,46 +162,50 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
           </h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {page.capabilities.map((capability) => {
-            const href = getFocusHref(capability.detailSlug);
+        <InfoCardGrid
+          items={page.capabilities.map((capability) => ({
+            title: capability.title,
+            description: capability.description,
+            href: getFocusHref(capability.detailSlug) ?? undefined,
+            ctaLabel: capability.detailSlug ? "Open detail" : undefined
+          }))}
+          columns="four"
+          guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Explore ${page.title} capability` }}
+        />
+      </section>
 
-            if (href) {
-              return (
-                <Link
-                  key={capability.title}
-                  href={href}
-                  className="micro-glow floating-plane group rounded-[28px] p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-                >
-                  <div className="floating-wash rounded-[28px]" />
-                  <div className="relative">
-                    <h3 className="text-xl font-semibold tracking-tight text-slate-950">
-                      {capability.title}
-                    </h3>
-                    <p className="mt-4 text-sm leading-7 text-slate-600">
-                      {capability.description}
-                    </p>
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700 transition group-hover:gap-3">
-                      Open detail
-                      <span aria-hidden="true">-&gt;</span>
-                    </div>
-                  </div>
-                </Link>
-              );
-            }
+      <section className="mt-16">
+        <SectionHeader
+          eyebrow="Choose the path"
+          title={`Use ${page.title} inside the lane that fits your budget, speed, and support needs.`}
+          summary="Every use case can begin as a guided DIY build with monthly Engine Credits or move into a managed path when execution support, launch help, or tighter coordination matters more."
+        />
 
-            return (
-              <article key={capability.title} className="floating-plane rounded-[28px] p-5">
-                <div className="floating-wash rounded-[28px]" />
-                <div className="relative">
-                  <h3 className="text-xl font-semibold tracking-tight text-slate-950">
-                    {capability.title}
-                  </h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{capability.description}</p>
-                </div>
-              </article>
-            );
-          })}
+        <div className="mt-8">
+          <InfoCardGrid
+            items={[
+              {
+                eyebrow: "DIY Build",
+                title: "Start this use case inside the guided build platform.",
+                description:
+                  "Use DIY when you want to shape the scope, pace the work with monthly Engine Credits, and keep control over how quickly the build moves.",
+                href: "/diy-build",
+                ctaLabel: "Explore DIY Build",
+                details: ["View DIY pricing to compare pacing and monthly credits."]
+              },
+              {
+                eyebrow: "Managed Build",
+                title: "Move this use case into a managed execution path when the build needs more help.",
+                description:
+                  "Use Managed Build when the software needs faster execution, staged approvals, QA visibility, launch coordination, or more support than a self-paced lane can comfortably provide.",
+                href: "/managed-build",
+                ctaLabel: "Explore Managed Build",
+                details: ["View managed pricing when the project needs more direct execution support."]
+              }
+            ]}
+            columns="two"
+            guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Choose ${page.title} path` }}
+          />
         </div>
       </section>
 
@@ -245,18 +262,15 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
                   </p>
                 </div>
 
-                <div className="mt-6 rounded-[24px] border border-slate-200/70 bg-white/72 p-5">
-                  <p className="text-sm font-semibold text-slate-950">What you get in this stack</p>
-                  <div className="mt-4 grid gap-3">
-                    {page.pricingStack.included.map((item) => (
-                      <div
-                        key={item}
-                        className="rounded-[18px] border border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,255,255,0.62))] px-4 py-3 text-sm leading-6 text-slate-600"
-                      >
-                        {item}
-                      </div>
-                    ))}
-                  </div>
+                <div className="mt-6">
+                  <InfoCardGrid
+                    items={page.pricingStack.included.map((item) => ({
+                      title: item,
+                      description: `Included in the recommended ${page.title.toLowerCase()} stack so the first release stays structured and launchable.`
+                    }))}
+                    columns="two"
+                    guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Review ${page.title} stack inclusion` }}
+                  />
                 </div>
 
                 <div className="mt-5 rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-4">
@@ -275,15 +289,15 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
                 {page.deliverablesTitle}
               </p>
-              <div className="mt-5 grid gap-3">
-                {page.deliverables.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[22px] border border-slate-200/70 bg-white/72 px-4 py-4 text-sm leading-7 text-slate-600"
-                  >
-                    {item}
-                  </div>
-                ))}
+              <div className="mt-5">
+                <InfoCardGrid
+                  items={page.deliverables.map((item) => ({
+                    title: item,
+                    description: `Neroa uses this deliverable to keep the ${page.title.toLowerCase()} workflow concrete and reviewable.`
+                  }))}
+                  columns="one"
+                  guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Review ${page.title} deliverable` }}
+                />
               </div>
             </div>
           </div>
@@ -294,15 +308,15 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
                 {page.outcomesTitle}
               </p>
-              <div className="mt-5 grid gap-3">
-                {page.outcomes.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[22px] border border-slate-200/70 bg-white/72 px-4 py-4 text-sm leading-7 text-slate-600"
-                  >
-                    {item}
-                  </div>
-                ))}
+              <div className="mt-5">
+                <InfoCardGrid
+                  items={page.outcomes.map((item) => ({
+                    title: item,
+                    description: `This is one of the real outcomes Neroa is trying to create through the ${page.title.toLowerCase()} lane.`
+                  }))}
+                  columns="one"
+                  guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Review ${page.title} outcome` }}
+                />
               </div>
             </div>
           </div>
@@ -319,31 +333,29 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
               How Neroa carries the work forward
             </h2>
-            <div className="mt-6 grid gap-4">
-              {howItWorksPages.map((item) => (
-                <Link
-                  key={item.slug}
-                  href={`/how-it-works/${item.slug}`}
-                  className="micro-glow rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-                    {item.index}
-                  </p>
-                  <p className="mt-3 text-lg font-semibold text-slate-950">{item.title}</p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">{item.summary}</p>
-                </Link>
-              ))}
+            <div className="mt-6">
+              <InfoCardGrid
+                items={howItWorksPages.map((item) => ({
+                  eyebrow: item.index,
+                  title: item.title,
+                  description: item.summary,
+                  href: `/how-it-works/${item.slug}`,
+                  ctaLabel: "Open how it works"
+                }))}
+                columns="one"
+                guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Explore ${page.title} handoff flow` }}
+              />
             </div>
           </div>
         </div>
 
-        <div className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 sm:px-8 sm:py-10">
+        <div className="section-stage px-6 py-8 sm:px-8 sm:py-10">
           <div className="floating-wash rounded-[38px]" />
           <div className="relative flex h-full flex-col justify-between gap-8">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+              <span className="premium-pill border-cyan-300/24 bg-cyan-300/12 text-cyan-700">
                 Next move
-              </p>
+              </span>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
                 {page.finalCtaTitle}
               </h2>
@@ -363,6 +375,16 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
           </div>
         </div>
       </section>
+
+      {page.faq?.length ? (
+        <FaqSection
+          eyebrow={`${page.title} FAQ`}
+          title={`Questions people ask before opening the ${page.title} lane.`}
+          summary={`These answers help explain how Neroa handles ${page.title.toLowerCase()} planning, execution, and the choice between DIY Build and Managed Build.`}
+          items={page.faq}
+          guideContext={{ onboardingStep: "public-use-case", intentPrefix: `Review ${page.title} question` }}
+        />
+      ) : null}
     </MarketingInfoShell>
   );
 }

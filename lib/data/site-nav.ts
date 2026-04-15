@@ -53,7 +53,11 @@ export const mainNavItems: HeaderLinkItem[] = [
     href: "/pricing"
   },
   {
-    label: "Builders & Agencies",
+    label: "DIY Build",
+    href: "/diy-build"
+  },
+  {
+    label: "Managed Build",
     href: "/managed-build"
   },
   {
@@ -71,7 +75,7 @@ export const siteNavItems: SiteNavItem[] = [
   {
     label: "Use Cases",
     href: "/use-cases",
-    description: "Choose between SaaS, internal software, and external app build paths."
+    description: "Choose between SaaS, internal software, external apps, and mobile app build paths."
   },
   {
     label: "Pricing",
@@ -79,9 +83,14 @@ export const siteNavItems: SiteNavItem[] = [
     description: "Choose between DIY pricing with Engine Credits and managed-build pricing with scoped service ranges."
   },
   {
-    label: "Builders & Agencies",
+    label: "DIY Build",
+    href: "/diy-build",
+    description: "See how the DIY path uses monthly Engine Credits to build software over time."
+  },
+  {
+    label: "Managed Build",
     href: "/managed-build",
-    description: "See the managed-build and agency path for builders, consultants, teams, and client work."
+    description: "See the managed build path with staged approvals, guided visibility, and quote-led execution."
   },
   {
     label: "How It Works",

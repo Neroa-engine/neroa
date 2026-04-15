@@ -16,6 +16,14 @@ import type { PricingPlanId } from "@/lib/pricing/config";
 import type { SaasWorkspaceBlueprint } from "@/lib/onboarding/saas-intake";
 import type { MobileAppWorkspaceBlueprint } from "@/lib/onboarding/mobile-app-intake";
 import {
+  normalizeBuildSession,
+  type GuidedBuildSession
+} from "@/lib/onboarding/build-session";
+import {
+  normalizeGuidedBuildHandoff,
+  type GuidedBuildHandoff
+} from "@/lib/onboarding/guided-handoff";
+import {
   getProjectTemplateDefinition,
   inferProjectTemplate,
   type CustomProjectLaneInput,
@@ -34,6 +42,8 @@ export type StoredProjectMetadata = {
   assets?: StoredProjectAsset[];
   guidedFlowPreset?: "saas-app" | "mobile-app";
   guidedBuildIntake?: GuidedBuildBlueprint | null;
+  guidedEntryContext?: GuidedBuildHandoff | null;
+  buildSession?: GuidedBuildSession | null;
   saasIntake?: SaasWorkspaceBlueprint | null;
   mobileAppIntake?: MobileAppWorkspaceBlueprint | null;
 };
@@ -941,6 +951,8 @@ export function buildStoredProjectMetadata(args: {
   assets?: StoredProjectAsset[];
   guidedFlowPreset?: "saas-app" | "mobile-app";
   guidedBuildIntake?: GuidedBuildBlueprint | null;
+  guidedEntryContext?: GuidedBuildHandoff | null;
+  buildSession?: GuidedBuildSession | null;
   saasIntake?: SaasWorkspaceBlueprint | null;
   mobileAppIntake?: MobileAppWorkspaceBlueprint | null;
 }) {
@@ -963,6 +975,8 @@ export function buildStoredProjectMetadata(args: {
     assets: args.assets ?? [],
     guidedFlowPreset: args.guidedFlowPreset,
     guidedBuildIntake: args.guidedBuildIntake ?? null,
+    guidedEntryContext: args.guidedEntryContext ?? null,
+    buildSession: args.buildSession ?? null,
     saasIntake: args.saasIntake ?? null,
     mobileAppIntake: args.mobileAppIntake ?? null
   };
@@ -1005,6 +1019,8 @@ function decodeMetadata(value: string) {
           ? parsed.guidedFlowPreset
           : undefined,
       guidedBuildIntake: normalizeGuidedBuildIntake(parsed.guidedBuildIntake),
+      guidedEntryContext: normalizeGuidedBuildHandoff(parsed.guidedEntryContext),
+      buildSession: normalizeBuildSession(parsed.buildSession),
       saasIntake: normalizeSaasIntake(parsed.saasIntake),
       mobileAppIntake: normalizeMobileAppIntake(parsed.mobileAppIntake)
     };

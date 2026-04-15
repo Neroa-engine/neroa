@@ -22,6 +22,8 @@ import {
   type BuildIndustryId,
   type BuildPreferenceId
 } from "@/lib/onboarding/guided-build";
+import { normalizeBuildSession } from "@/lib/onboarding/build-session";
+import { normalizeGuidedBuildHandoff } from "@/lib/onboarding/guided-handoff";
 import { buildMobileAppWorkspaceBlueprint } from "@/lib/onboarding/mobile-app-intake";
 import { buildSaasWorkspaceBlueprint } from "@/lib/onboarding/saas-intake";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -34,6 +36,30 @@ import { normalizeLaneId, parseSupportingLaneIds } from "@/lib/workspace/lanes";
 
 function safeString(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function parseGuidedBuildHandoff(rawValue: string) {
+  if (!rawValue.trim()) {
+    return null;
+  }
+
+  try {
+    return normalizeGuidedBuildHandoff(JSON.parse(rawValue));
+  } catch {
+    return null;
+  }
+}
+
+function parseBuildSessionSnapshot(rawValue: string) {
+  if (!rawValue.trim()) {
+    return null;
+  }
+
+  try {
+    return normalizeBuildSession(JSON.parse(rawValue));
+  } catch {
+    return null;
+  }
 }
 
 async function createWorkspaceRecord(args: {
@@ -463,6 +489,10 @@ export async function startGuidedEngineWorkspace(formData: FormData) {
   const productTypeId = safeString(formData.get("productTypeId"));
   const experienceLevelId = safeString(formData.get("experienceLevelId"));
   const buildPreferenceId = safeString(formData.get("buildPreferenceId"));
+  const guidedBuildHandoff = parseGuidedBuildHandoff(safeString(formData.get("guidedBuildHandoff")));
+  const buildSessionSnapshot = parseBuildSessionSnapshot(
+    safeString(formData.get("buildSessionSnapshot"))
+  );
   const selectedModuleIds = safeString(formData.get("selectedModuleIds"))
     .split(",")
     .map((item) => item.trim())
@@ -523,7 +553,9 @@ export async function startGuidedEngineWorkspace(formData: FormData) {
     description: blueprint.projectSummary,
     templateId: blueprint.templateId,
     customLanes: [],
-    guidedBuildIntake: blueprint
+    guidedBuildIntake: blueprint,
+    guidedEntryContext: guidedBuildHandoff,
+    buildSession: buildSessionSnapshot
   });
 
   const { data, error } = await createWorkspaceRecord({

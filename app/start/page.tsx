@@ -8,6 +8,7 @@ type StartPageProps = {
   searchParams?: {
     error?: string;
     notice?: string;
+    resume?: string;
     step?: string;
   };
 };
@@ -39,9 +40,28 @@ function isWizardStep(value?: string): value is WizardStep {
   );
 }
 
+function normalizeRequestedStep(value?: string): WizardStep | null {
+  if (value === "product-type") {
+    return "product";
+  }
+
+  return isWizardStep(value) ? value : null;
+}
+
+function isResumeRequested(value?: string) {
+  return (
+    value === "1" ||
+    value === "true" ||
+    value === "guided" ||
+    value === "session" ||
+    value === "resume"
+  );
+}
+
 function resolveInitialStep(args: {
   authenticated: boolean;
   hasSelectedPlan: boolean;
+  resumeRequested: boolean;
   requestedStep?: string;
 }): WizardStep {
   if (!args.authenticated) {
@@ -52,19 +72,23 @@ function resolveInitialStep(args: {
     return "plan";
   }
 
-  if (isWizardStep(args.requestedStep) && args.requestedStep !== "account") {
-    return args.requestedStep;
+  const requestedStep = normalizeRequestedStep(args.requestedStep);
+
+  if (args.resumeRequested && requestedStep && requestedStep !== "account") {
+    return requestedStep;
   }
 
-  return "entry";
+  return "product";
 }
 
 export default async function StartPage({ searchParams }: StartPageProps) {
   const user = await getOptionalUser();
   const access = resolveAccountPlanAccess(user);
+  const resumeRequested = isResumeRequested(searchParams?.resume);
   const initialStep = resolveInitialStep({
     authenticated: Boolean(user),
     hasSelectedPlan: access.hasSelectedPlan,
+    resumeRequested,
     requestedStep: searchParams?.step
   });
 
@@ -85,7 +109,7 @@ export default async function StartPage({ searchParams }: StartPageProps) {
             Neroa architects the business path before it builds the Engine.
           </h1>
           <p className="mx-auto mt-6 max-w-4xl text-lg leading-9 text-slate-600">
-            This flow leads with industry, product type, goal, experience level, and build preference so the resulting system feels assembled for the business you want, not copied from a generic template grid.
+            This flow now starts with product type, then market context, then goal, experience level, and build preference so the resulting system feels assembled for the business you want, not copied from a generic template grid.
           </p>
         </div>
 
@@ -95,6 +119,7 @@ export default async function StartPage({ searchParams }: StartPageProps) {
             initialSelectedPlanId={access.selectedPlanId}
             initialBillingInterval={access.billingInterval}
             initialStep={initialStep}
+            resumeRequested={resumeRequested}
             initialError={searchParams?.error ?? null}
             initialNotice={searchParams?.notice ?? null}
             startGuidedEngineWorkspaceAction={startGuidedEngineWorkspace}

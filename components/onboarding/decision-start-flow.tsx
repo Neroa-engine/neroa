@@ -5,6 +5,10 @@ import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "re
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import AgentAvatar from "@/components/ai/AgentAvatar";
+import {
+  useAIOnboardingControl,
+  type AIOnboardingStep
+} from "@/components/onboarding/ai-onboarding-control-provider";
 import GuidedVoiceConfirmField from "@/components/onboarding/guided-voice-confirm-field";
 import { Logo } from "@/components/logo";
 import {
@@ -18,6 +22,7 @@ import {
   publicBillingIntervals
 } from "@/lib/pricing/config";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { mapExampleSelectionToStartProductType } from "@/lib/marketing/example-build-data";
 import {
   buildGuidedBuildBlueprint,
   buildSuggestedEngineName,
@@ -37,6 +42,14 @@ import {
   type BuildPreferenceId,
   type GuidedBuildBlueprint
 } from "@/lib/onboarding/guided-build";
+import {
+  buildBuildSessionSummary,
+  createBuildSession,
+  estimateCredits,
+  recommendBuildPath,
+  scopeProject
+} from "@/lib/onboarding/build-session";
+import { buildGuidedBuildHandoffSummary } from "@/lib/onboarding/guided-handoff";
 import { getExecutionRoutingModel } from "@/lib/workspace/execution-orchestration";
 
 type WizardStep =
@@ -56,6 +69,7 @@ type GuidedStartFlowProps = {
   initialSelectedPlanId?: PricingPlanId | null;
   initialBillingInterval?: BillingIntervalId;
   initialStep: WizardStep;
+  resumeRequested: boolean;
   initialError?: string | null;
   initialNotice?: string | null;
   startGuidedEngineWorkspaceAction: (formData: FormData) => void | Promise<void>;
@@ -69,6 +83,19 @@ type StepMeta = {
 };
 
 const draftStorageKey = "neroa:start-decision-flow:v1";
+
+const startStepMap: Record<WizardStep, AIOnboardingStep> = {
+  account: "start-account",
+  plan: "start-plan",
+  entry: "start-entry",
+  industry: "start-industry",
+  goal: "start-goal",
+  opportunity: "start-opportunity",
+  product: "start-product",
+  experience: "start-experience",
+  preference: "start-preference",
+  summary: "start-summary"
+};
 
 const stepMeta: Record<WizardStep, StepMeta> = {
   account: {
@@ -109,9 +136,9 @@ const stepMeta: Record<WizardStep, StepMeta> = {
   },
   product: {
     id: "product",
-    label: "Product",
+    label: "Product type",
     title: "Choose the product type",
-    description: "Pick the product Neroa should assemble inside the selected market."
+    description: "Start with the product system you want Neroa to architect before you move into industry, scope, and launch planning."
   },
   experience: {
     id: "experience",
@@ -134,6 +161,10 @@ const stepMeta: Record<WizardStep, StepMeta> = {
 };
 
 function safeWizardStep(value: string | null | undefined): WizardStep {
+  if (value === "product-type") {
+    return "product";
+  }
+
   return value === "plan" ||
     value === "entry" ||
     value === "industry" ||
@@ -181,8 +212,15 @@ function normalizePlanId(value: unknown): PricingPlanId | null {
     : null;
 }
 
-function buildStepPath(step: WizardStep) {
-  return `/start?step=${step}`;
+function buildStepPath(step: WizardStep, resumeRequested = false) {
+  const params = new URLSearchParams();
+  params.set("step", step === "product" ? "product-type" : step);
+
+  if (resumeRequested) {
+    params.set("resume", "guided");
+  }
+
+  return `/start?${params.toString()}`;
 }
 
 function buildSignupConfirmationRedirect() {
@@ -193,6 +231,49 @@ function buildSignupConfirmationRedirect() {
   const redirectUrl = new URL("/auth/confirm", origin);
   redirectUrl.searchParams.set("next", "/start?step=plan");
   return redirectUrl.toString();
+}
+
+function buildIntentCarrySummary(args: {
+  userIntent: string;
+  onboardingStep: AIOnboardingStep;
+}) {
+  const intent = args.userIntent.trim();
+
+  if (!intent) {
+    return "";
+  }
+
+  if (
+    args.onboardingStep === "example-build-type" ||
+    args.onboardingStep === "example-build-intent" ||
+    args.onboardingStep === "example-build-framework" ||
+    args.onboardingStep === "example-build-project" ||
+    args.onboardingStep === "example-build-breakdown"
+  ) {
+    return `Starting intent from your Example Build exploration: ${intent}. Neroa should carry this forward while you define the real industry, product type, and build scope.`;
+  }
+
+  return `Starting intent from your earlier Neroa exploration: ${intent}. Use this as the framing context while you move through industry, product type, goal, and scope decisions.`;
+}
+
+function buildGuidedHandoffProjectSeed(summary: string) {
+  if (!summary.trim()) {
+    return "";
+  }
+
+  return `${summary} Use this as the carried context while you define the real industry, product type, scope, and launch path inside Neroa.`;
+}
+
+function mapGuidedIntentModeToEntryMode(value: unknown): BuildEntryMode | null {
+  if (value === "known-industry") {
+    return "known-industry";
+  }
+
+  if (value === "exploring-opportunities") {
+    return "exploring";
+  }
+
+  return null;
 }
 
 function SubmitSystemButton() {
@@ -407,11 +488,25 @@ export default function DecisionStartFlow({
   initialSelectedPlanId,
   initialBillingInterval = "monthly",
   initialStep,
+  resumeRequested,
   initialError,
   initialNotice,
   startGuidedEngineWorkspaceAction
 }: GuidedStartFlowProps) {
   const router = useRouter();
+  const {
+    guidedMode,
+    onboardingStep: sharedOnboardingStep,
+    userIntent,
+    guidedBuildHandoff,
+    buildSession,
+    setOnboardingStep: setSharedOnboardingStep,
+    setNaroaContext,
+    setBuildSession,
+    clearBuildSession,
+    clearGuidedBuildHandoff,
+    setUserIntent
+  } = useAIOnboardingControl();
   const plans = useMemo(() => getLaunchPricingPlans(), []);
   const industries = useMemo(() => getGuidedBuildIndustries(), []);
   const goals = useMemo(() => getGuidedBuildGoals(), []);
@@ -430,7 +525,9 @@ export default function DecisionStartFlow({
     safeWizardStep(!initialUserEmail ? "account" : initialSelectedPlanId ? initialStep : "plan")
   );
 
-  const [entryMode, setEntryMode] = useState<BuildEntryMode | null>(null);
+  const [entryMode, setEntryMode] = useState<BuildEntryMode | null>(
+    resumeRequested ? null : "known-industry"
+  );
   const [industryId, setIndustryId] = useState<BuildIndustryId | null>(null);
   const [customIndustry, setCustomIndustry] = useState("");
   const [goalId, setGoalId] = useState<BuildGoalId | null>(null);
@@ -454,6 +551,11 @@ export default function DecisionStartFlow({
   const [planError, setPlanError] = useState<string | null>(null);
   const [creationError, setCreationError] = useState<string | null>(initialError ?? null);
   const [notice, setNotice] = useState<string | null>(initialNotice ?? null);
+  const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
+  const [loadedDraft, setLoadedDraft] = useState(false);
+  const [intentCarryApplied, setIntentCarryApplied] = useState(false);
+  const [guidedHandoffApplied, setGuidedHandoffApplied] = useState(false);
+  const [buildSessionApplied, setBuildSessionApplied] = useState(false);
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
@@ -492,33 +594,20 @@ export default function DecisionStartFlow({
     [productTypeId]
   );
 
-  const flowSteps = useMemo(() => {
-    if (entryMode === "exploring") {
-      return [
+  const flowSteps = useMemo(
+    () =>
+      [
         "account",
         "plan",
-        "entry",
-        "goal",
-        "opportunity",
         "product",
+        "industry",
+        "goal",
         "experience",
         "preference",
         "summary"
-      ] as WizardStep[];
-    }
-
-    return [
-      "account",
-      "plan",
-      "entry",
-      "industry",
-      "product",
-      "goal",
-      "experience",
-      "preference",
-      "summary"
-    ] as WizardStep[];
-  }, [entryMode]);
+      ] as WizardStep[],
+    []
+  );
 
   const activeStepIndex = Math.max(flowSteps.indexOf(step), 0);
   const previewBlueprint = useMemo<GuidedBuildBlueprint | null>(() => {
@@ -565,6 +654,33 @@ export default function DecisionStartFlow({
     selectedPlanId,
     workingIdeaName
   ]);
+  const carriedIntentSummary = useMemo(
+    () =>
+      buildIntentCarrySummary({
+        userIntent,
+        onboardingStep: sharedOnboardingStep
+      }),
+    [sharedOnboardingStep, userIntent]
+  );
+  const guidedHandoffSummary = useMemo(
+    () => buildGuidedBuildHandoffSummary(guidedBuildHandoff),
+    [guidedBuildHandoff]
+  );
+  const buildSessionSummary = useMemo(
+    () => buildBuildSessionSummary(buildSession),
+    [buildSession]
+  );
+  const activeGuidedBuildHandoff = resumeRequested ? guidedBuildHandoff : null;
+  const activeBuildSession = resumeRequested ? buildSession : null;
+  const activeUserIntent = resumeRequested ? userIntent : "";
+  const serializedGuidedBuildHandoff = useMemo(
+    () => (activeGuidedBuildHandoff ? JSON.stringify(activeGuidedBuildHandoff) : ""),
+    [activeGuidedBuildHandoff]
+  );
+  const serializedBuildSessionSnapshot = useMemo(
+    () => (activeBuildSession ? JSON.stringify(activeBuildSession) : ""),
+    [activeBuildSession]
+  );
 
   useEffect(() => {
     let active = true;
@@ -599,10 +715,47 @@ export default function DecisionStartFlow({
       return;
     }
 
+    if (!resumeRequested) {
+      try {
+        window.localStorage.removeItem(draftStorageKey);
+      } catch {
+        // Ignore storage reset errors.
+      }
+
+      clearGuidedBuildHandoff();
+      clearBuildSession();
+      setUserIntent("");
+      setNaroaContext(null);
+      setEntryMode("known-industry");
+      setIndustryId(null);
+      setCustomIndustry("");
+      setGoalId(null);
+      setProductTypeId(null);
+      setExperienceLevelId(null);
+      setBuildPreferenceId(null);
+      setSelectedModuleIds([]);
+      setWorkingIdeaName("");
+      setWorkingIdeaDirty(false);
+      setEngineName("");
+      setEngineNameDirty(false);
+      setProjectSummary("");
+      setProjectSummaryDirty(false);
+      setLoadedDraft(false);
+      setIntentCarryApplied(false);
+      setGuidedHandoffApplied(false);
+      setBuildSessionApplied(false);
+      setNotice(initialNotice ?? null);
+      setCreationError(initialError ?? null);
+      setStep(initialStep);
+      setHasHydratedDraft(true);
+      return;
+    }
+
     try {
       const raw = window.localStorage.getItem(draftStorageKey);
 
       if (!raw) {
+        setHasHydratedDraft(true);
         return;
       }
 
@@ -621,9 +774,11 @@ export default function DecisionStartFlow({
       }> | null;
 
       if (!parsed) {
+        setHasHydratedDraft(true);
         return;
       }
 
+      setLoadedDraft(true);
       setEntryMode((current) => current ?? parsed.entryMode ?? null);
       setIndustryId((current) => current ?? parsed.industryId ?? null);
       setCustomIndustry((current) => current || parsed.customIndustry || "");
@@ -639,8 +794,218 @@ export default function DecisionStartFlow({
       setProjectSummary((current) => current || parsed.projectSummary || "");
     } catch {
       // Ignore corrupted local drafts.
+    } finally {
+      setHasHydratedDraft(true);
     }
-  }, []);
+  }, [initialError, initialNotice, initialStep, resumeRequested]);
+
+  useEffect(() => {
+    setSharedOnboardingStep(startStepMap[step]);
+
+    if (guidedMode) {
+      setNaroaContext(stepMeta[step].description);
+    }
+  }, [guidedMode, setNaroaContext, setSharedOnboardingStep, step]);
+
+  useEffect(() => {
+    if (!resumeRequested || !hasHydratedDraft || intentCarryApplied || !activeUserIntent.trim()) {
+      return;
+    }
+
+    setNotice((current) =>
+      current ??
+      "Neroa carried context from your earlier exploration into this intake so you do not have to start from a blank state."
+    );
+
+    if (!loadedDraft && !projectSummary.trim()) {
+      setProjectSummary(carriedIntentSummary);
+    }
+
+    setIntentCarryApplied(true);
+  }, [
+    carriedIntentSummary,
+    hasHydratedDraft,
+    intentCarryApplied,
+    loadedDraft,
+    projectSummary,
+    activeUserIntent,
+    resumeRequested
+  ]);
+
+  useEffect(() => {
+    if (!resumeRequested || !hasHydratedDraft || guidedHandoffApplied || !activeGuidedBuildHandoff) {
+      return;
+    }
+
+    setNotice((current) => current ?? "Continuing from guided setup");
+    const carriedEntryMode = mapGuidedIntentModeToEntryMode(activeGuidedBuildHandoff.intentMode);
+    const carriedProductTypeId = mapExampleSelectionToStartProductType({
+      productTypeId:
+        (activeGuidedBuildHandoff.productTypeId as
+          | "saas"
+          | "internal-software"
+          | "external-app"
+          | "mobile-app"
+          | null) ??
+        (activeGuidedBuildHandoff.buildTypeId as
+          | "saas"
+          | "internal-software"
+          | "external-app"
+          | "mobile-app"
+          | null),
+      frameworkId: activeGuidedBuildHandoff.frameworkId as
+        | "dashboard-data-platform"
+        | "workflow-automation-system"
+        | "marketplace-system"
+        | "subscription-platform"
+        | "internal-operations-system"
+        | "lead-generation-system"
+        | "content-community-platform"
+        | "client-portal-service-platform"
+        | null
+    });
+
+    setEntryMode((current) => current ?? carriedEntryMode ?? "exploring");
+
+    if (
+      !loadedDraft &&
+      activeGuidedBuildHandoff.intentMode === "known-industry" &&
+      activeGuidedBuildHandoff.industryLabel
+    ) {
+      setIndustryId((current) => current ?? "custom");
+      setCustomIndustry((current) => current || activeGuidedBuildHandoff.industryLabel || "");
+    }
+
+    if (!loadedDraft && !productTypeId && carriedProductTypeId) {
+      primeProduct(
+        carriedProductTypeId,
+        activeGuidedBuildHandoff.exampleLabel ??
+          activeGuidedBuildHandoff.frameworkLabel ??
+          activeGuidedBuildHandoff.productTypeLabel ??
+          activeGuidedBuildHandoff.buildTypeLabel ??
+          undefined
+      );
+    }
+
+    const suggestedIdeaName =
+      activeGuidedBuildHandoff.exampleLabel ??
+      activeGuidedBuildHandoff.frameworkLabel ??
+      (activeGuidedBuildHandoff.productTypeLabel || activeGuidedBuildHandoff.buildTypeLabel
+        ? `${activeGuidedBuildHandoff.productTypeLabel ?? activeGuidedBuildHandoff.buildTypeLabel} concept`
+        : "");
+
+    if (!loadedDraft && !workingIdeaName.trim() && suggestedIdeaName) {
+      setWorkingIdeaName(suggestedIdeaName);
+    }
+
+    if (!loadedDraft && !projectSummary.trim() && guidedHandoffSummary) {
+      setProjectSummary(buildGuidedHandoffProjectSeed(guidedHandoffSummary));
+    }
+
+    if (!loadedDraft) {
+      if (carriedEntryMode === "known-industry") {
+        updateStep(carriedProductTypeId ? "industry" : "product");
+      } else if (carriedEntryMode === "exploring") {
+        updateStep("product");
+      }
+    }
+
+    setGuidedHandoffApplied(true);
+  }, [
+    activeGuidedBuildHandoff,
+    guidedHandoffApplied,
+    guidedHandoffSummary,
+    hasHydratedDraft,
+    loadedDraft,
+    productTypeId,
+    projectSummary,
+    resumeRequested,
+    workingIdeaName
+  ]);
+
+  useEffect(() => {
+    if (!resumeRequested || !hasHydratedDraft || buildSessionApplied || !activeBuildSession) {
+      return;
+    }
+
+    setNotice((current) => current ?? "Continuing from guided setup");
+    const carriedEntryMode = mapGuidedIntentModeToEntryMode(activeBuildSession.scope.intentMode);
+    const carriedProductTypeId = mapExampleSelectionToStartProductType({
+      productTypeId:
+        (activeBuildSession.scope.productTypeId as
+          | "saas"
+          | "internal-software"
+          | "external-app"
+          | "mobile-app"
+          | null) ??
+        (activeBuildSession.scope.buildTypeId as
+          | "saas"
+          | "internal-software"
+          | "external-app"
+          | "mobile-app"
+          | null),
+      frameworkId: activeBuildSession.scope.frameworkId as
+        | "dashboard-data-platform"
+        | "workflow-automation-system"
+        | "marketplace-system"
+        | "subscription-platform"
+        | "internal-operations-system"
+        | "lead-generation-system"
+        | "content-community-platform"
+        | "client-portal-service-platform"
+        | null
+    });
+
+    setEntryMode((current) => current ?? carriedEntryMode ?? "exploring");
+
+    if (
+      !loadedDraft &&
+      activeBuildSession.scope.intentMode === "known-industry" &&
+      activeBuildSession.scope.industryLabel
+    ) {
+      setIndustryId((current) => current ?? "custom");
+      setCustomIndustry((current) => current || activeBuildSession.scope.industryLabel || "");
+    }
+
+    if (!loadedDraft && !productTypeId && carriedProductTypeId) {
+      primeProduct(
+        carriedProductTypeId,
+        activeBuildSession.scope.exampleLabel ??
+          activeBuildSession.scope.frameworkLabel ??
+          activeBuildSession.scope.productTypeLabel ??
+          activeBuildSession.scope.buildTypeLabel ??
+          undefined
+      );
+    }
+
+    if (!loadedDraft && !workingIdeaName.trim() && activeBuildSession.scope.title) {
+      setWorkingIdeaName(activeBuildSession.scope.title);
+    }
+
+    if (!loadedDraft && !projectSummary.trim()) {
+      setProjectSummary(activeBuildSession.scope.summary ?? buildSessionSummary);
+    }
+
+    if (!loadedDraft) {
+      if (carriedEntryMode === "known-industry") {
+        updateStep(carriedProductTypeId ? "industry" : "product");
+      } else if (carriedEntryMode === "exploring") {
+        updateStep("product");
+      }
+    }
+
+    setBuildSessionApplied(true);
+  }, [
+    activeBuildSession,
+    buildSessionApplied,
+    buildSessionSummary,
+    hasHydratedDraft,
+    loadedDraft,
+    productTypeId,
+    projectSummary,
+    resumeRequested,
+    workingIdeaName
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -678,12 +1043,118 @@ export default function DecisionStartFlow({
   ]);
 
   useEffect(() => {
+    if (!hasHydratedDraft) {
+      return;
+    }
+
+    const hasSessionSignals = Boolean(
+      activeBuildSession?.sessionId ||
+        activeGuidedBuildHandoff ||
+        activeUserIntent.trim() ||
+        workingIdeaName.trim() ||
+        projectSummary.trim() ||
+        productTypeId ||
+        industryId ||
+        goalId
+    );
+
+    if (!hasSessionSignals) {
+      return;
+    }
+
+    setBuildSession(
+      createBuildSession({
+        sessionId: activeBuildSession?.sessionId,
+        source: activeBuildSession?.source ?? (activeGuidedBuildHandoff ? activeGuidedBuildHandoff.source : "start"),
+        userIntent: activeUserIntent.trim() || activeBuildSession?.userIntent,
+        preferences:
+          activeBuildSession?.preferences ??
+          activeGuidedBuildHandoff?.preferences ??
+          (guidedMode ? ["Guided mode active"] : ["Self mode active"]),
+        guidedMode,
+        scope: scopeProject({
+          buildTypeId:
+            activeBuildSession?.scope.buildTypeId ??
+            activeGuidedBuildHandoff?.buildTypeId ??
+            previewBlueprint?.buildCategory,
+          buildTypeLabel:
+            activeBuildSession?.scope.buildTypeLabel ??
+            activeGuidedBuildHandoff?.buildTypeLabel ??
+            previewBlueprint?.categoryLabel,
+          blueprint: previewBlueprint,
+          title: workingIdeaName || activeBuildSession?.scope.title,
+          summary:
+            projectSummary ||
+            activeBuildSession?.scope.summary ||
+            guidedHandoffSummary ||
+            buildSessionSummary,
+          userIntent: activeUserIntent
+        }),
+        credits: previewBlueprint
+          ? estimateCredits({ blueprint: previewBlueprint })
+          : activeBuildSession?.credits ?? { source: "pending" },
+        path: recommendBuildPath({
+          selectedPathId:
+            activeGuidedBuildHandoff?.selectedPathId ??
+            activeBuildSession?.path.selectedPathId,
+          selectedPathLabel:
+            activeGuidedBuildHandoff?.selectedPathLabel ??
+            activeBuildSession?.path.selectedPathLabel,
+          blueprint: previewBlueprint
+        }),
+        progress: {
+          phase: step === "summary" ? "engine-review" : "start-intake",
+          currentStep: step,
+          currentStepLabel: stepMeta[step].title,
+          currentRoute: buildStepPath(step, resumeRequested),
+          completedSteps: flowSteps.slice(0, activeStepIndex).map((item) => item)
+        }
+      })
+    );
+  }, [
+    activeStepIndex,
+    activeBuildSession?.credits.estimateLabel,
+    activeBuildSession?.credits.estimatedMax,
+    activeBuildSession?.credits.estimatedMin,
+    activeBuildSession?.credits.estimatedTimeline,
+    activeBuildSession?.credits.estimatedTotal,
+    activeBuildSession?.credits.note,
+    activeBuildSession?.credits.source,
+    activeBuildSession?.path.selectedPathId,
+    activeBuildSession?.path.selectedPathLabel,
+    activeBuildSession?.preferences?.join("|"),
+    activeBuildSession?.scope.buildTypeId,
+    activeBuildSession?.scope.buildTypeLabel,
+    activeBuildSession?.scope.summary,
+    activeBuildSession?.scope.title,
+    activeBuildSession?.sessionId,
+    activeBuildSession?.source,
+    activeBuildSession?.userIntent,
+    activeGuidedBuildHandoff,
+    activeUserIntent,
+    flowSteps,
+    goalId,
+    guidedHandoffSummary,
+    guidedMode,
+    hasHydratedDraft,
+    industryId,
+    previewBlueprint,
+    productTypeId,
+    projectSummary,
+    resumeRequested,
+    step,
+    workingIdeaName,
+    buildSessionSummary,
+    setBuildSession
+  ]);
+
+  useEffect(() => {
     if (!selectedProductType) {
       return;
     }
 
     const suggestedIdea = selectedProductType.label;
-    const suggestedSummary = `${selectedProductType.description} Neroa will shape the first system around the most direct commercial value path before widening the architecture.`;
+    const suggestedSummary = `${selectedProductType.description} Neroa will shape the first system around the most direct commercial value path before widening the architecture.${userIntent.trim() ? ` Starting intent: ${userIntent.trim()}.` : ""}${guidedHandoffSummary ? ` Guided setup context: ${guidedHandoffSummary}` : ""}`;
     const buildCategory = inferBuildCategoryFromProductType(selectedProductType.id);
     const categoryLabel =
       previewBlueprint?.categoryLabel ??
@@ -713,6 +1184,8 @@ export default function DecisionStartFlow({
     previewBlueprint?.categoryLabel,
     projectSummaryDirty,
     selectedProductType,
+    guidedHandoffSummary,
+    userIntent,
     workingIdeaDirty,
     workingIdeaName
   ]);
@@ -738,7 +1211,7 @@ export default function DecisionStartFlow({
   function updateStep(nextStep: WizardStep) {
     setStep(nextStep);
     setCreationError(null);
-    router.replace(buildStepPath(nextStep), { scroll: false });
+    router.replace(buildStepPath(nextStep, resumeRequested), { scroll: false });
   }
 
   function isStepUnlocked(target: WizardStep) {
@@ -748,23 +1221,18 @@ export default function DecisionStartFlow({
       case "plan":
         return isAuthenticated;
       case "entry":
+      case "opportunity":
+        return false;
+      case "product":
         return isAuthenticated && Boolean(selectedPlanId);
       case "industry":
-        return isAuthenticated && Boolean(selectedPlanId) && entryMode === "known-industry";
+        return Boolean(productTypeId);
       case "goal":
-        return entryMode === "exploring"
-          ? isAuthenticated && Boolean(selectedPlanId) && Boolean(entryMode)
-          : Boolean(productTypeId);
-      case "opportunity":
-        return entryMode === "exploring" && Boolean(goalId);
-      case "product":
-        return entryMode === "known-industry"
-          ? Boolean(industryId && (industryId !== "custom" || customIndustry.trim()))
-          : Boolean(industryId && goalId);
+        return Boolean(industryId && (industryId !== "custom" || customIndustry.trim()));
       case "experience":
-        return Boolean(productTypeId && goalId);
+        return Boolean(productTypeId && industryId && goalId);
       case "preference":
-        return Boolean(experienceLevelId && productTypeId);
+        return Boolean(experienceLevelId && productTypeId && industryId);
       case "summary":
         return Boolean(previewBlueprint && buildPreferenceId);
       default:
@@ -796,7 +1264,7 @@ export default function DecisionStartFlow({
     setSelectedModuleIds([]);
     setWorkingIdeaName(ideaName || nextProductType.label);
     setProjectSummary(
-      `${nextProductType.description} Neroa will shape the first system around the most direct commercial value path before widening the architecture.`
+      `${nextProductType.description} Neroa will shape the first system around the most direct commercial value path before widening the architecture.${guidedHandoffSummary ? ` Guided setup context: ${guidedHandoffSummary}` : ""}`
     );
     const buildCategory = inferBuildCategoryFromProductType(nextProductType.id);
     const categoryLabel =
@@ -829,15 +1297,15 @@ export default function DecisionStartFlow({
   }
 
   function chooseIndustry(nextIndustryId: BuildIndustryId) {
+    setEntryMode("known-industry");
     setIndustryId(nextIndustryId);
     if (nextIndustryId !== "custom") {
       setCustomIndustry("");
     }
-    setProductTypeId(null);
     setExperienceLevelId(null);
     setBuildPreferenceId(null);
     setSelectedModuleIds([]);
-    updateStep("product");
+    updateStep("goal");
   }
 
   function confirmCustomIndustry() {
@@ -849,22 +1317,16 @@ export default function DecisionStartFlow({
     }
 
     setIndustryId("custom");
-    setProductTypeId(null);
+    setEntryMode("known-industry");
     setExperienceLevelId(null);
     setBuildPreferenceId(null);
     setSelectedModuleIds([]);
     setNotice(`${trimmedIndustry} is saved as the custom industry for this build.`);
-    updateStep("product");
+    updateStep("goal");
   }
 
   function chooseGoal(nextGoalId: BuildGoalId) {
     setGoalId(nextGoalId);
-
-    if (entryMode === "exploring") {
-      updateStep("opportunity");
-      return;
-    }
-
     updateStep("experience");
   }
 
@@ -883,8 +1345,9 @@ export default function DecisionStartFlow({
   }
 
   function chooseProduct(nextProductTypeId: string) {
+    setEntryMode("known-industry");
     primeProduct(nextProductTypeId);
-    updateStep(entryMode === "known-industry" ? "goal" : "experience");
+    updateStep("industry");
   }
 
   function chooseExperience(nextExperienceLevelId: BuildExperienceLevelId) {
@@ -998,7 +1461,7 @@ export default function DecisionStartFlow({
           ? payload.message
           : "Plan saved. Continue into the guided system builder."
       );
-      updateStep("entry");
+      updateStep("product");
     } catch (error) {
       setPlanError(error instanceof Error ? error.message : "Unable to save the selected plan.");
     } finally {
@@ -1010,10 +1473,10 @@ export default function DecisionStartFlow({
     account: "Secure account setup and the first saved workspace identity.",
     plan: "Engine Credits, usage guardrails, and the commercial lane for this build.",
     entry: "The right decision path based on whether you know the market or want opportunity guidance.",
-    industry: "The industry-specific framework library or a custom market path with the right product recommendations.",
+    industry: "The market context that should shape the framework, scope, and launch path for the product you chose.",
     goal: "A launch path tuned for speed, scale, or validation.",
     opportunity: "Recommended products with monetization logic, difficulty signals, and the best starting framework.",
-    product: "The framework, module set, UI density, and pricing gate for the selected product type.",
+    product: "The first product system Neroa should shape before it narrows industry fit, scope, and commercial priorities.",
     experience: "The right scope and interface density for your sophistication level.",
     preference: "How much Neroa should recommend versus how much you want to shape manually.",
     summary: "The final system blueprint, architecture logic, recommended modules, and launch path."
@@ -1028,7 +1491,7 @@ export default function DecisionStartFlow({
     industry: "Pick the market this product belongs to or enter a custom industry.",
     goal: "Tell Neroa whether speed, scale, or validation matters most.",
     opportunity: "Choose the most attractive opportunity or use it as a shortcut into product selection.",
-    product: "Pick the product system Neroa should assemble.",
+    product: "Pick the product system Neroa should assemble before you lock the market context.",
     experience: "Choose how guided or advanced the architecture should feel.",
     preference: "Decide whether Neroa should recommend the module set or let you shape it.",
     summary: "Review the system and build the Engine."
@@ -1105,6 +1568,115 @@ export default function DecisionStartFlow({
             <div className="rounded-[24px] border border-cyan-200/70 bg-cyan-50/90 px-5 py-4 text-sm leading-7 text-cyan-800">
               {notice}
             </div>
+          ) : null}
+          {resumeRequested && (activeGuidedBuildHandoff || activeBuildSession) ? (
+            <section className="premium-surface rounded-[28px] border border-cyan-200/70 px-5 py-5 sm:px-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="max-w-3xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                    Continuing from guided setup
+                  </p>
+                  <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-slate-950">
+                    Neroa carried your guided context into the real build intake.
+                  </h2>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    {guidedHandoffSummary ||
+                      buildSessionSummary ||
+                      "The earlier guide handed off your build direction so you can continue without a blank start."}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-slate-200/70 bg-white/84 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    Guided source
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-950">
+                    {activeGuidedBuildHandoff
+                      ? activeGuidedBuildHandoff.source === "example-build"
+                        ? "Example Build"
+                        : "Naroa homepage guide"
+                      : activeBuildSession?.source === "example-build"
+                        ? "Example Build"
+                        : activeBuildSession?.source === "homepage-guide"
+                          ? "Naroa homepage guide"
+                          : "Resumable build session"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {activeGuidedBuildHandoff?.productTypeLabel ||
+                activeGuidedBuildHandoff?.buildTypeLabel ||
+                activeBuildSession?.scope.productTypeLabel ||
+                activeBuildSession?.scope.buildTypeLabel ? (
+                  <SidebarMetric
+                    label="Product type"
+                    value={
+                      activeGuidedBuildHandoff?.productTypeLabel ??
+                      activeGuidedBuildHandoff?.buildTypeLabel ??
+                      activeBuildSession?.scope.productTypeLabel ??
+                      activeBuildSession?.scope.buildTypeLabel ??
+                      "Pending"
+                    }
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.industryLabel || activeBuildSession?.scope.industryLabel ? (
+                  <SidebarMetric
+                    label="Industry"
+                    value={activeGuidedBuildHandoff?.industryLabel ?? activeBuildSession?.scope.industryLabel ?? "Pending"}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.opportunityAreaLabel || activeBuildSession?.scope.opportunityAreaLabel ? (
+                  <SidebarMetric
+                    label="Opportunity area"
+                    value={
+                      activeGuidedBuildHandoff?.opportunityAreaLabel ??
+                      activeBuildSession?.scope.opportunityAreaLabel ??
+                      "Pending"
+                    }
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.frameworkLabel || activeBuildSession?.scope.frameworkLabel ? (
+                  <SidebarMetric
+                    label="Framework"
+                    value={activeGuidedBuildHandoff?.frameworkLabel ?? activeBuildSession?.scope.frameworkLabel ?? "Pending"}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.exampleLabel || activeBuildSession?.scope.exampleLabel ? (
+                  <SidebarMetric
+                    label="Example"
+                    value={activeGuidedBuildHandoff?.exampleLabel ?? activeBuildSession?.scope.exampleLabel ?? "Pending"}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.selectedPathLabel || activeBuildSession?.path.selectedPathLabel ? (
+                  <SidebarMetric
+                    label="Selected path"
+                    value={activeGuidedBuildHandoff?.selectedPathLabel ?? activeBuildSession?.path.selectedPathLabel ?? "Pending"}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.recommendedPathLabel || activeBuildSession?.path.recommendedPathLabel ? (
+                  <SidebarMetric
+                    label="Recommended path"
+                    value={
+                      activeGuidedBuildHandoff?.recommendedPathLabel ??
+                      activeBuildSession?.path.recommendedPathLabel ??
+                      "Pending"
+                    }
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff?.preferences?.length || activeBuildSession?.preferences?.length ? (
+                  <SidebarMetric
+                    label="Preferences"
+                    value={(activeGuidedBuildHandoff?.preferences ?? activeBuildSession?.preferences ?? []).join(", ")}
+                  />
+                ) : null}
+                {activeBuildSession?.credits.estimateLabel ? (
+                  <SidebarMetric label="Session credits" value={activeBuildSession.credits.estimateLabel} />
+                ) : null}
+                {activeBuildSession?.progress.currentStepLabel ? (
+                  <SidebarMetric label="Resumable step" value={activeBuildSession.progress.currentStepLabel} />
+                ) : null}
+              </div>
+            </section>
           ) : null}
 
           {step === "account" ? (
@@ -1369,7 +1941,6 @@ export default function DecisionStartFlow({
                   badge="Manual"
                   onClick={() => {
                     setIndustryId("custom");
-                    setProductTypeId(null);
                     setExperienceLevelId(null);
                     setBuildPreferenceId(null);
                     setSelectedModuleIds([]);
@@ -1628,6 +2199,16 @@ export default function DecisionStartFlow({
             previewBlueprint ? (
               <form action={startGuidedEngineWorkspaceAction} className="space-y-6">
                 <input type="hidden" name="entryMode" value={previewBlueprint.entryMode ?? entryMode ?? ""} />
+                <input
+                  type="hidden"
+                  name="guidedBuildHandoff"
+                  value={serializedGuidedBuildHandoff}
+                />
+                <input
+                  type="hidden"
+                  name="buildSessionSnapshot"
+                  value={serializedBuildSessionSnapshot}
+                />
                 <input type="hidden" name="industryId" value={previewBlueprint.industryId ?? industryId ?? ""} />
                 <input
                   type="hidden"
@@ -1695,7 +2276,7 @@ export default function DecisionStartFlow({
                   <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                     <SidebarMetric label="Industry" value={previewBlueprint.industryLabel ?? "Unknown"} />
                     <SidebarMetric label="Product type" value={selectedProductType?.label ?? previewBlueprint.selectedTemplateName} />
-                    <SidebarMetric label="Complexity" value={`${previewBlueprint.complexityLabel ?? "Moderate"} · ${previewBlueprint.executionIntensity ?? "Balanced"}`} />
+                    <SidebarMetric label="Complexity" value={`${previewBlueprint.complexityLabel ?? "Moderate"} | ${previewBlueprint.executionIntensity ?? "Balanced"}`} />
                     <SidebarMetric label="Variation profile" value={`${previewBlueprint.variationLayoutLabel ?? "Mission control"} / ${previewBlueprint.variationNavigationId ?? "hybrid"}`} />
                   </div>
                 </section>
@@ -1967,6 +2548,81 @@ export default function DecisionStartFlow({
         </main>
 
         <aside className="space-y-6 xl:sticky xl:top-28">
+          {resumeRequested && activeBuildSession ? (
+            <section className="premium-surface rounded-[30px] border border-white/70 px-6 py-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
+                Resumable session
+              </p>
+              <div className="mt-4 space-y-4">
+                <SidebarMetric
+                  label="Current route"
+                  value={activeBuildSession.progress.currentRoute}
+                />
+                <SidebarMetric
+                  label="Current step"
+                  value={activeBuildSession.progress.currentStepLabel ?? activeBuildSession.progress.currentStep}
+                />
+                {activeBuildSession.credits.estimateLabel ? (
+                  <SidebarMetric label="Credit estimate" value={activeBuildSession.credits.estimateLabel} />
+                ) : null}
+                {activeBuildSession.path.recommendedPathLabel ? (
+                  <SidebarMetric
+                    label="Recommended path"
+                    value={activeBuildSession.path.recommendedPathLabel}
+                  />
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
+          {resumeRequested && activeGuidedBuildHandoff ? (
+            <section className="premium-surface rounded-[30px] border border-white/70 px-6 py-7">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
+                Guided carry-forward
+              </p>
+              <div className="mt-4 space-y-4">
+                <SidebarMetric
+                  label="Source"
+                  value={
+                    activeGuidedBuildHandoff.source === "example-build"
+                      ? "Example Build"
+                      : "Naroa homepage guide"
+                  }
+                />
+                {activeGuidedBuildHandoff.productTypeLabel || activeGuidedBuildHandoff.buildTypeLabel ? (
+                  <SidebarMetric
+                    label="Product type"
+                    value={activeGuidedBuildHandoff.productTypeLabel ?? activeGuidedBuildHandoff.buildTypeLabel ?? "Pending"}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff.industryLabel ? (
+                  <SidebarMetric label="Industry" value={activeGuidedBuildHandoff.industryLabel} />
+                ) : null}
+                {activeGuidedBuildHandoff.opportunityAreaLabel ? (
+                  <SidebarMetric
+                    label="Opportunity area"
+                    value={activeGuidedBuildHandoff.opportunityAreaLabel}
+                  />
+                ) : null}
+                {activeGuidedBuildHandoff.frameworkLabel ? (
+                  <SidebarMetric label="Framework" value={activeGuidedBuildHandoff.frameworkLabel} />
+                ) : null}
+                {activeGuidedBuildHandoff.exampleLabel ? (
+                  <SidebarMetric label="Example" value={activeGuidedBuildHandoff.exampleLabel} />
+                ) : null}
+                {activeGuidedBuildHandoff.selectedPathLabel ? (
+                  <SidebarMetric label="Selected path" value={activeGuidedBuildHandoff.selectedPathLabel} />
+                ) : null}
+                {activeGuidedBuildHandoff.recommendedPathLabel ? (
+                  <SidebarMetric
+                    label="Recommended path"
+                    value={activeGuidedBuildHandoff.recommendedPathLabel}
+                  />
+                ) : null}
+              </div>
+            </section>
+          ) : null}
+
           <section className="premium-surface rounded-[30px] border border-white/70 px-6 py-7">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
               Guided status
@@ -1984,7 +2640,7 @@ export default function DecisionStartFlow({
                   />
                   <SidebarMetric
                     label="Complexity"
-                    value={`${previewBlueprint.complexityLabel ?? "Moderate"} · ${previewBlueprint.executionIntensity ?? "Balanced"}`}
+                    value={`${previewBlueprint.complexityLabel ?? "Moderate"} | ${previewBlueprint.executionIntensity ?? "Balanced"}`}
                   />
                   <SidebarMetric
                     label="Monthly credits"
@@ -2039,7 +2695,7 @@ export default function DecisionStartFlow({
             </p>
             <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
               <p>Neroa does not drop a new user into a blank Engine Board.</p>
-              <p>The account comes first, then plan, then product decisions, then the system summary.</p>
+              <p>The account comes first, then plan, then product type, industry fit, and the final system summary.</p>
               <p>Once the system is approved, Neroa creates the Engine and moves directly into the workspace.</p>
             </div>
           </section>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  managedEscalationThresholdCredits,
   managedBuildDisclaimer,
   managedBuildPackageIntro,
   managedBuildPackages
@@ -85,6 +86,65 @@ export function ManagedPricingContent() {
       </section>
 
       <section className="mt-16">
+        <div className="floating-plane rounded-[34px] p-6 sm:p-8">
+          <div className="floating-wash rounded-[34px]" />
+          <div className="relative grid gap-6 lg:grid-cols-[1fr_0.96fr]">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                Managed escalation
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+                Neroa recommends managed or hybrid execution when a scope gets too heavy for credits alone.
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                DIY plans are meant to keep pacing, scope, and budget visible. When a project crosses
+                about {managedEscalationThresholdCredits.toLocaleString()} credits, or the integration
+                and launch risk becomes more serious, Neroa should say that clearly and offer a stronger
+                execution model.
+              </p>
+            </div>
+
+            <div className="rounded-[28px] border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,251,235,0.94),rgba(255,255,255,0.86))] px-6 py-6">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700">
+                Hybrid path
+              </p>
+              <p className="mt-3 text-lg font-semibold text-slate-950">
+                Keep lighter planning in DIY, then move heavier execution into Managed Build.
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                That usually means strategy, scope, MVP framing, and lighter workflow support stay in
+                the DIY lane first. Heavy integrations, QA visibility, launch coordination, and tighter
+                delivery oversight move into Managed Build once the project proves the need.
+              </p>
+            </div>
+          </div>
+
+          <div className="comparison-band mt-6">
+            <div className="comparison-metric">
+              <span className="comparison-label">DIY first</span>
+              <span className="comparison-value">
+                Use monthly Engine Credits for scope, planning, and lighter execution while the product
+                is still being shaped.
+              </span>
+            </div>
+            <div className="comparison-metric">
+              <span className="comparison-label">Hybrid next</span>
+              <span className="comparison-value">
+                Add managed execution when the timeline tightens or the delivery risk gets heavier.
+              </span>
+            </div>
+            <div className="comparison-metric">
+              <span className="comparison-label">Managed fully</span>
+              <span className="comparison-value">
+                Best when the product needs more direct oversight, QA support, and launch coordination
+                from the start.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-16">
         <div className="rounded-[30px] border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,251,235,0.94),rgba(255,255,255,0.86))] px-6 py-6 sm:px-8">
           <p className="text-sm leading-7 text-slate-700">{managedBuildDisclaimer}</p>
         </div>
@@ -111,7 +171,7 @@ export function ManagedPricingContent() {
               <Link href="/contact?type=managed-build-quote" className="button-primary">
                 Request Managed Build Quote
               </Link>
-              <Link href="/diy" className="button-secondary">
+              <Link href="/diy-build" className="button-secondary">
                 View DIY Build Platform
               </Link>
             </div>

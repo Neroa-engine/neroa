@@ -2,6 +2,7 @@ import WorkspaceShell from "@/components/workspace/workspace-shell";
 import { DashboardBoardShell } from "@/components/layout/page-shells";
 import { renameWorkspace } from "@/app/workspace/actions";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
+import Link from "next/link";
 
 type ProjectPageProps = {
   params: {
@@ -67,6 +68,13 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
                 Save name
               </button>
             </form>
+
+            <Link
+              href={`/workspace/${workspace.id}/project/${project.id}/live-view`}
+              className="button-quiet px-4 py-3 text-sm"
+            >
+              Open Live View
+            </Link>
           </div>
         </section>
 

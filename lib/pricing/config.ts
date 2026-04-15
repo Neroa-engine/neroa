@@ -15,10 +15,36 @@ export type BillingInterval = {
 };
 
 export type ExecutionCreditPack = {
+  id: string;
   credits: number;
   price: number;
   label: string;
   detail: string;
+};
+
+export type GrowthLayerScenario = {
+  id: string;
+  label: string;
+  description: string;
+  totalCredits: number;
+  targetAcceleratedMonths: number;
+  defaultPlanId: PricingPlanId;
+  complexity: "moderate" | "high" | "extreme";
+  bestFor: string;
+};
+
+export type GrowthUpgrade = {
+  id: string;
+  label: string;
+  pricing: string;
+  detail: string;
+  features: string[];
+  availability: string;
+};
+
+export type CreditPackMixItem = {
+  pack: ExecutionCreditPack;
+  quantity: number;
 };
 
 export type ExecutionCreditAction = {
@@ -192,36 +218,95 @@ export const executionCreditActions: ExecutionCreditAction[] = [
 
 export const executionCreditPacks: ExecutionCreditPack[] = [
   {
+    id: "light-top-up",
     credits: 1000,
     price: 25,
     label: "Light top-up",
     detail: "Best for a short burst month when one engine needs extra guided support."
   },
   {
+    id: "build-month",
     credits: 5000,
     price: 99,
     label: "Build month",
     detail: "Best when repeated scoping, build assistance, and coordination runs stack up in one cycle."
   },
   {
+    id: "heavy-sprint",
     credits: 10000,
     price: 179,
     label: "Heavy sprint",
     detail: "Useful when launch prep, reporting, or multi-engine execution spikes usage for a focused stretch."
   },
   {
+    id: "launch-push",
     credits: 25000,
     price: 399,
     label: "Launch push",
     detail: "Best when a serious scope needs a bigger acceleration window without immediately changing plans."
   },
   {
+    id: "scale-pack",
     credits: 50000,
     price: 699,
     label: "Scale pack",
     detail: "Designed for large or multi-month execution pushes that need a deeper DIY credit reserve."
   }
 ];
+
+export const growthLayerScenarios: GrowthLayerScenario[] = [
+  {
+    id: "internal-dashboard",
+    label: "Internal dashboard replacement",
+    description:
+      "Replace spreadsheets and manual reporting with one internal dashboard that leadership can actually use.",
+    totalCredits: 12000,
+    targetAcceleratedMonths: 3,
+    defaultPlanId: "starter",
+    complexity: "moderate",
+    bestFor: "Operators replacing internal reporting and approval habits."
+  },
+  {
+    id: "customer-saas",
+    label: "Customer-facing SaaS MVP",
+    description:
+      "Launch a subscription product with accounts, billing, and one clear customer workflow.",
+    totalCredits: 40000,
+    targetAcceleratedMonths: 4,
+    defaultPlanId: "starter",
+    complexity: "high",
+    bestFor: "Founders who want a real SaaS path without full agency capital upfront."
+  },
+  {
+    id: "marketplace-platform",
+    label: "Marketplace or multi-role platform",
+    description:
+      "Coordinate buyers, sellers, admin workflows, and launch support for a heavier customer platform.",
+    totalCredits: 90000,
+    targetAcceleratedMonths: 6,
+    defaultPlanId: "builder",
+    complexity: "extreme",
+    bestFor: "Teams dealing with higher operational complexity, roles, and integrations."
+  }
+] as const;
+
+export const managedEscalationThresholdCredits = 30000;
+
+export const growthUpgrades: GrowthUpgrade[] = [
+  {
+    id: "ai-seo-marketing-optimization",
+    label: "AI SEO + Marketing Optimization",
+    pricing: "From $199 / month",
+    detail:
+      "An optional growth layer for teams that want Neroa to turn product positioning into structured keyword targeting, landing-page production, and cleaner organic acquisition support.",
+    features: [
+      "Keyword structuring for product and use-case intent",
+      "Landing page generation for priority offers and segments",
+      "Content optimization for launch, expansion, and search clarity"
+    ],
+    availability: "Available from Builder and above"
+  }
+] as const;
 
 export const pricingAddOns: PricingAddOn[] = [
   {
@@ -370,7 +455,7 @@ export const managedBuildPackageIntro =
   "Neroa subscriptions help you plan, structure, and guide your build. Managed Build Packages are separate when you want Neroa or a partner team to help execute, QA, deploy, and manage the software.";
 
 export const managedBuildDisclaimer =
-  "Managed Build pricing depends on scope, integrations, complexity, QA requirements, launch timeline, and support level. Monthly management fees cover monitoring, updates, bug fixes, deployment support, dependency updates, usage review, and small improvement cycles. They do not include unlimited rebuilds or new products.";
+  "Managed Build pricing depends on scope, integrations, complexity, QA requirements, launch timeline, and support level. The public ranges are grouped by product type, then narrowed further after scope is defined. Monthly management fees cover monitoring, updates, bug fixes, deployment support, dependency updates, usage review, and small improvement cycles. They do not include unlimited rebuilds or new products.";
 
 export const pricingPlans: PricingPlan[] = [
   {
@@ -724,4 +809,96 @@ export function getRecommendedExecutionCreditPack(requiredCredits: number) {
   }
 
   return executionCreditPacks.find((pack) => pack.credits >= requiredCredits) ?? executionCreditPacks[executionCreditPacks.length - 1];
+}
+
+export function getGrowthLayerScenario(scenarioId: string) {
+  return growthLayerScenarios.find((scenario) => scenario.id === scenarioId) ?? null;
+}
+
+export function getExecutionCreditPackUnitPrice(pack: ExecutionCreditPack) {
+  return roundCurrency(pack.price / pack.credits);
+}
+
+export function calculateScopedBuildMonths(
+  totalCredits: number,
+  monthlyCredits: number | null,
+  purchasedCredits = 0
+) {
+  if (!monthlyCredits || monthlyCredits <= 0) {
+    return null;
+  }
+
+  const remaining = Math.max(totalCredits - purchasedCredits, 0);
+
+  if (remaining === 0) {
+    return 0;
+  }
+
+  return Math.ceil(remaining / monthlyCredits);
+}
+
+export function calculateCreditsNeededForTargetMonths(
+  totalCredits: number,
+  monthlyCredits: number | null,
+  targetMonths: number
+) {
+  if (!monthlyCredits || monthlyCredits <= 0) {
+    return totalCredits;
+  }
+
+  return Math.max(totalCredits - monthlyCredits * targetMonths, 0);
+}
+
+export function getRecommendedCreditPackMix(requiredCredits: number): CreditPackMixItem[] {
+  if (requiredCredits <= 0) {
+    return [];
+  }
+
+  const sortedPacks = [...executionCreditPacks].sort((left, right) => right.credits - left.credits);
+  let remaining = requiredCredits;
+  const mix: CreditPackMixItem[] = [];
+
+  for (const pack of sortedPacks) {
+    if (remaining <= 0) {
+      break;
+    }
+
+    const quantity = Math.floor(remaining / pack.credits);
+
+    if (quantity > 0) {
+      mix.push({ pack, quantity });
+      remaining -= pack.credits * quantity;
+    }
+  }
+
+  if (remaining > 0) {
+    const smallestPack = sortedPacks[sortedPacks.length - 1];
+    const existingSmallest = mix.find((item) => item.pack.id === smallestPack.id);
+
+    if (existingSmallest) {
+      existingSmallest.quantity += Math.ceil(remaining / smallestPack.credits);
+    } else {
+      mix.push({
+        pack: smallestPack,
+        quantity: Math.ceil(remaining / smallestPack.credits)
+      });
+    }
+  }
+
+  return mix;
+}
+
+export function summarizeCreditPackMix(mix: CreditPackMixItem[]) {
+  const totalCredits = mix.reduce((sum, item) => sum + item.pack.credits * item.quantity, 0);
+  const totalPrice = mix.reduce((sum, item) => sum + item.pack.price * item.quantity, 0);
+
+  return {
+    totalCredits,
+    totalPrice: roundCurrency(totalPrice),
+    unitPrice: totalCredits > 0 ? roundCurrency(totalPrice / totalCredits) : 0
+  };
+}
+
+export function shouldEscalateToManagedBuild(totalCredits: number, complexity: GrowthLayerScenario["complexity"]) {
+  return complexity === "high" || complexity === "extreme" || totalCredits >= managedEscalationThresholdCredits;
 }
