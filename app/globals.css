@@ -88,6 +88,18 @@ button {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.premium-surface {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.86)),
+    linear-gradient(135deg, rgba(34, 211, 238, 0.08), transparent 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.86),
+    0 24px 72px rgba(15, 23, 42, 0.08);
+}
+
 .button-primary,
 .button-secondary {
   display: inline-flex;
@@ -400,6 +412,7 @@ button {
 .homepage-kicker,
 .homepage-section-eyebrow,
 .homepage-floating-label,
+.homepage-floating-note-label,
 .homepage-proof-label,
 .homepage-board-stat-label,
 .homepage-experience-eyebrow {

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SiteHeader } from "@/components/site-header";
+import { FrontDoorHeader } from "@/components/front-door/front-door-header";
 
 export function MarketingInfoShell({
   userEmail,
@@ -26,7 +26,7 @@ export function MarketingInfoShell({
       <div className="homepage-atmosphere homepage-atmosphere-cyan" />
       <div className="homepage-atmosphere homepage-atmosphere-violet" />
       <div className="homepage-atmosphere homepage-atmosphere-blue" />
-      <SiteHeader userEmail={userEmail} ctaHref={ctaHref} ctaLabel={ctaLabel} />
+      <FrontDoorHeader userEmail={userEmail} ctaHref={ctaHref} ctaLabel={ctaLabel} />
       <div className={contentShellClassName}>{children}</div>
     </main>
   );

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
+import { PublicActionLink } from "@/components/site/public-action-link";
 
 export type MarketingPageAction = {
   href: string;
@@ -108,7 +108,8 @@ export function ConversionStrip({
   title,
   summary,
   actions,
-  aside
+  aside,
+  initialAuthenticated
 }: {
   eyebrow: string;
   title: string;
@@ -130,13 +131,13 @@ export function ConversionStrip({
 
           <div className="homepage-action-row">
             {actions.map((action) => (
-              <Link
+              <PublicActionLink
                 key={`${action.href}-${action.label}`}
                 href={action.href}
+                label={action.label}
                 className={getActionClassName(action.tone)}
-              >
-                {action.label}
-              </Link>
+                initialAuthenticated={initialAuthenticated}
+              />
             ))}
           </div>
         </div>

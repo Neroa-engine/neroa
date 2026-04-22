@@ -1,52 +1,74 @@
-import { startWorkspace } from "@/app/start/actions";
-import NaruaWorkspace from "@/components/narua/NaruaWorkspace";
-import { SiteHeader } from "@/components/site-header";
+import { redirect } from "next/navigation";
+import { startEntryWorkspace } from "@/app/start/actions";
+import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
 import { getOptionalUser } from "@/lib/auth";
+import { buildAuthRedirectPath } from "@/lib/auth/routes";
+import { APP_ROUTES } from "@/lib/routes";
 
 type StartPageProps = {
   searchParams?: {
     error?: string;
+    notice?: string;
+    entry?: string;
+    title?: string;
+    summary?: string;
   };
 };
 
 export default async function StartPage({ searchParams }: StartPageProps) {
   const user = await getOptionalUser();
+  const entryPathId = searchParams?.entry === "managed" ? "managed" : "diy";
+  const nextParams = new URLSearchParams();
+
+  if (searchParams?.entry === "managed") {
+    nextParams.set("entry", "managed");
+  } else if (searchParams?.entry === "diy") {
+    nextParams.set("entry", "diy");
+  }
+
+  if (searchParams?.title) {
+    nextParams.set("title", searchParams.title);
+  }
+
+  if (searchParams?.summary) {
+    nextParams.set("summary", searchParams.summary);
+  }
+
+  if (searchParams?.error) {
+    nextParams.set("error", searchParams.error);
+  }
+
+  if (searchParams?.notice) {
+    nextParams.set("notice", searchParams.notice);
+  }
+
+  const nextPath = nextParams.size > 0 ? `${APP_ROUTES.start}?${nextParams.toString()}` : APP_ROUTES.start;
+
+  if (!user) {
+    redirect(buildAuthRedirectPath({ nextPath }));
+  }
 
   return (
-    <main className="min-h-screen bg-[#060816] pb-16 text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-80 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.14),transparent_56%)]" />
-
-      <SiteHeader
-        userEmail={user?.email ?? undefined}
-        ctaHref={user ? "/dashboard" : "/auth"}
-        ctaLabel={user ? "Dashboard" : "Enter Neroa"}
-      />
-
-      <section className="relative mx-auto w-full max-w-[1760px] px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        <div className="max-w-5xl">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-200/70">
-            Strategy Room
-          </p>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-            Explain the idea and let Neroa shape the first build plan.
-          </h1>
-          <p className="mt-4 max-w-3xl text-base leading-8 text-slate-300">
-            Start naturally. Neroa will turn the idea into a guided roadmap, a tighter first release,
-            and a clear next move into preview, inspection, and approvals without making you carry
-            the system behind it.
-          </p>
-        </div>
-
-        {searchParams?.error ? (
-          <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-400/10 px-4 py-3 text-sm text-rose-100">
-            {searchParams.error}
-          </div>
-        ) : null}
-
-        <div className="mt-8">
-          <NaruaWorkspace userEmail={user?.email ?? undefined} startWorkspaceAction={startWorkspace} />
-        </div>
+    <MarketingInfoShell
+      userEmail={user?.email ?? undefined}
+      ctaHref={APP_ROUTES.projects}
+      ctaLabel="Projects"
+      brandVariant="prominent"
+      contentWidth="wide"
+      showHelpChat={false}
+    >
+      <section className="relative mx-auto w-full max-w-[2000px] px-0 py-5 sm:px-2 lg:px-4 lg:py-8 xl:px-8">
+        <CanonicalEntryFlow
+          initialUserEmail={user?.email ?? undefined}
+          initialEntryPathId={entryPathId}
+          initialTitle={searchParams?.title}
+          initialSummary={searchParams?.summary}
+          initialError={searchParams?.error ?? null}
+          initialNotice={searchParams?.notice ?? null}
+          startEntryWorkspaceAction={startEntryWorkspace}
+        />
       </section>
-    </main>
+    </MarketingInfoShell>
   );
 }

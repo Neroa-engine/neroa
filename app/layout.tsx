@@ -4,7 +4,8 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Neroa",
-  description: "Neroa is a premium SaaS workspace for lane-based planning, execution, and AI-guided operating systems."
+  description:
+    "Neroa is a premium product-building platform for strategy, roadmap, preview, inspection, approvals, and guided execution."
 };
 
 export default function RootLayout({

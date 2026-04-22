@@ -2,35 +2,46 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { normalizeAppPath } from "@/lib/auth/routes";
+import { APP_ROUTES } from "@/lib/routes";
 
-export async function authenticate(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "").trim();
-  const mode = String(formData.get("mode") ?? "signin");
+function safeString(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
 
-  const supabase = createSupabaseServerClient();
+function buildErrorRedirect(message: string, next: string) {
+  const params = new URLSearchParams();
+  params.set("error", message);
 
-  if (mode === "signup") {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password
-    });
-
-    if (error) {
-      redirect(`/auth?error=${encodeURIComponent(error.message)}`);
-    }
-
-    redirect("/auth?notice=Check your email if confirmation is enabled.");
+  if (next !== APP_ROUTES.dashboard) {
+    params.set("next", next);
   }
 
+  return `/auth?${params.toString()}`;
+}
+
+function normalizeAuthErrorMessage(message: string) {
+  if (message.toLowerCase() === "email not confirmed") {
+    return "Email not confirmed. Confirm your email first, then sign in to continue.";
+  }
+
+  return message;
+}
+
+export async function authenticate(formData: FormData) {
+  const email = safeString(formData.get("email"));
+  const password = safeString(formData.get("password"));
+  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+
+  const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
     email,
     password
   });
 
   if (error) {
-    redirect(`/auth?error=${encodeURIComponent(error.message)}`);
+    redirect(buildErrorRedirect(normalizeAuthErrorMessage(error.message), next));
   }
 
-  redirect("/dashboard");
+  redirect(next);
 }

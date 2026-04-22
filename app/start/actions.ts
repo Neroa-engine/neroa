@@ -2,18 +2,75 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { buildWorkspaceName } from "@/lib/narua/planning";
+import { buildAuthRedirectPath } from "@/lib/auth/routes";
+import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeLaneId, parseSupportingLaneIds } from "@/lib/workspace/lanes";
 
-export async function startWorkspace(formData: FormData) {
-  const title = String(formData.get("title") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const idea = String(formData.get("idea") ?? "").trim();
-  const primaryLaneId = normalizeLaneId(String(formData.get("primaryLaneId") ?? "").trim()) ?? "business";
-  const supportingLaneIds = parseSupportingLaneIds(
-    String(formData.get("supportingLaneIds") ?? "").trim()
-  ).filter((laneId) => laneId !== primaryLaneId);
+function safeString(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildStartWorkspaceName(title: string, description: string) {
+  if (title) {
+    return title;
+  }
+
+  const candidate = description
+    .split(/\n+|[.!?](?:\s+|$)/)
+    .map((part) => part.trim())
+    .find(Boolean);
+
+  if (!candidate) {
+    return "New Neroa Build";
+  }
+
+  return candidate.slice(0, 72);
+}
+
+function buildStartReturnPath(args: {
+  entry: "diy" | "managed";
+  title?: string;
+  summary?: string;
+  error?: string;
+}) {
+  const params = new URLSearchParams();
+  params.set("entry", args.entry);
+
+  if (args.title?.trim()) {
+    params.set("title", args.title.trim());
+  }
+
+  if (args.summary?.trim()) {
+    params.set("summary", args.summary.trim());
+  }
+
+  if (args.error?.trim()) {
+    params.set("error", args.error.trim());
+  }
+
+  return `${APP_ROUTES.start}?${params.toString()}`;
+}
+
+export async function startEntryWorkspace(formData: FormData) {
+  const selectedPathId = safeString(formData.get("selectedPathId")) === "managed" ? "managed" : "diy";
+  const title = safeString(formData.get("title"));
+  const description = safeString(formData.get("description"));
+  const nextPath = buildStartReturnPath({
+    entry: selectedPathId,
+    title,
+    summary: description
+  });
+
+  if (!title || !description) {
+    redirect(
+      buildStartReturnPath({
+        entry: selectedPathId,
+        title,
+        summary: description,
+        error: "Add a project name and short build description before continuing."
+      })
+    );
+  }
 
   const supabase = createSupabaseServerClient();
   const {
@@ -21,31 +78,35 @@ export async function startWorkspace(formData: FormData) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/auth?notice=Sign in to continue into your workspace.");
+    redirect(
+      buildAuthRedirectPath({
+        nextPath,
+        notice: "Sign in to continue into your planning workspace."
+      })
+    );
   }
 
   const { data, error } = await supabase
     .from("workspaces")
     .insert({
       owner_id: user.id,
-      name: title || buildWorkspaceName(idea),
-      description: description || idea || null
+      name: buildStartWorkspaceName(title, description),
+      description
     })
     .select("id")
     .single();
 
   if (error || !data) {
-    redirect(`/start?error=${encodeURIComponent(error?.message ?? "Unable to create workspace.")}`);
+    redirect(
+      buildStartReturnPath({
+        entry: selectedPathId,
+        title,
+        summary: description,
+        error: error?.message ?? "Unable to create the workspace from Strategy Room."
+      })
+    );
   }
 
-  revalidatePath("/dashboard");
-
-  const searchParams = new URLSearchParams();
-  searchParams.set("lane", primaryLaneId);
-
-  if (supportingLaneIds.length > 0) {
-    searchParams.set("supporting", supportingLaneIds.join(","));
-  }
-
-  redirect(`/workspace/${data.id}/project/${data.id}?${searchParams.toString()}`);
+  revalidatePath(APP_ROUTES.dashboard);
+  redirect(`/workspace/${data.id}/project/${data.id}`);
 }

@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
 
-type SiteHeaderProps = {
+type FrontDoorHeaderProps = {
   userEmail?: string;
   ctaHref: string;
   ctaLabel: string;
 };
 
-export function SiteHeader({ userEmail, ctaHref, ctaLabel }: SiteHeaderProps) {
+export function FrontDoorHeader({
+  userEmail,
+  ctaHref,
+  ctaLabel
+}: FrontDoorHeaderProps) {
   return (
     <header className="shell py-6">
       <div className="panel flex items-center justify-between px-5 py-4">
