@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { routeAI } from "@/lib/ai/router";
 
 const bodySchema = z.object({
   workerId: z.enum(["vector", "axiom", "forge", "anchor"]),
@@ -51,6 +50,10 @@ function normalizeContext(context: unknown) {
   }
 }
 
+function isMissingOpenAIKeyError(error: unknown) {
+  return error instanceof Error && /Missing credentials|Missing OPENAI_API_KEY/i.test(error.message);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const json = await request.json();
@@ -59,6 +62,7 @@ export async function POST(request: NextRequest) {
     const body = bodySchema.parse(json);
     console.log("AI_CHAT_REQUEST", body.workerId);
 
+    const { routeAI } = await import("@/lib/ai/router");
     const reply = await routeAI({
       workerId: body.workerId,
       message: body.message,
@@ -72,6 +76,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("AI_CHAT_ROUTE_ERROR", error);
+
+    if (isMissingOpenAIKeyError(error)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "OPENAI_API_KEY is not configured on the server."
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json(
       {
