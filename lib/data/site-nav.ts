@@ -36,10 +36,6 @@ export const authenticatedUtilityNavItems: HeaderLinkItem[] = [
   {
     label: "Support",
     href: "/support"
-  },
-  {
-    label: "Account",
-    href: "/profile"
   }
 ];
 

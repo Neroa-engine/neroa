@@ -7,12 +7,19 @@ import {
   resolveProjectLaneSlug
 } from "@/lib/workspace/project-lanes";
 
-export async function getWorkspaceForCurrentUser(workspaceId: string) {
-  const { supabase, user } = await requireUser();
+export async function getWorkspaceForCurrentUser(
+  workspaceId: string,
+  options?: {
+    nextPath?: string;
+  }
+) {
+  const { supabase, user } = await requireUser({
+    nextPath: options?.nextPath ?? `/workspace/${workspaceId}`
+  });
 
   const { data: workspace, error } = await supabase
     .from("workspaces")
-    .select("id, name, description")
+    .select("id, name, description, created_at")
     .eq("id", workspaceId)
     .eq("owner_id", user.id)
     .maybeSingle();
@@ -28,8 +35,16 @@ export async function getWorkspaceForCurrentUser(workspaceId: string) {
   return { supabase, user, workspace };
 }
 
-export async function getWorkspaceProjectContext(workspaceId: string, projectId: string) {
-  const { user, workspace } = await getWorkspaceForCurrentUser(workspaceId);
+export async function getWorkspaceProjectContext(
+  workspaceId: string,
+  projectId: string,
+  options?: {
+    nextPath?: string;
+  }
+) {
+  const { user, workspace } = await getWorkspaceForCurrentUser(workspaceId, {
+    nextPath: options?.nextPath ?? `/workspace/${workspaceId}/project/${projectId}`
+  });
 
   if (projectId !== workspace.id) {
     redirect(`/workspace/${workspaceId}/project/${workspace.id}?error=Project not found.`);
@@ -57,9 +72,15 @@ export async function getWorkspaceProjectContext(workspaceId: string, projectId:
 export async function getWorkspaceProjectLaneContext(
   workspaceId: string,
   projectId: string,
-  laneSlug: string
+  laneSlug: string,
+  options?: {
+    nextPath?: string;
+  }
 ) {
-  const { user, workspace, project } = await getWorkspaceProjectContext(workspaceId, projectId);
+  const { user, workspace, project } = await getWorkspaceProjectContext(workspaceId, projectId, {
+    nextPath:
+      options?.nextPath ?? `/workspace/${workspaceId}/project/${projectId}/lane/${laneSlug}`
+  });
   const resolvedLaneSlug = resolveProjectLaneSlug(project, laneSlug);
 
   if (!resolvedLaneSlug) {
@@ -80,11 +101,20 @@ export async function getWorkspaceProjectLaneContext(
   };
 }
 
-export async function getWorkspaceEngineContext(workspaceId: string, engineSlug: string) {
+export async function getWorkspaceEngineContext(
+  workspaceId: string,
+  engineSlug: string,
+  options?: {
+    nextPath?: string;
+  }
+) {
   const { user, workspace, project, lane } = await getWorkspaceProjectLaneContext(
     workspaceId,
     workspaceId,
-    engineSlug
+    engineSlug,
+    {
+      nextPath: options?.nextPath ?? `/workspace/${workspaceId}/engine/${engineSlug}`
+    }
   );
 
   return {

@@ -158,11 +158,11 @@ export function PublicAccountMenu({ initialEmail }: PublicAccountMenuProps) {
               Resume Project
             </Link>
             <Link
-              href="/start"
+              href="/projects"
               role="menuitem"
               className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
             >
-              Strategy Room
+              Projects
             </Link>
           </div>
 
