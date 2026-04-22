@@ -15,7 +15,7 @@ type AuthPageProps = {
 export const metadata: Metadata = {
   title: "Neroa | Continue into Neroa",
   description:
-    "Sign in or create your Neroa account, then continue into planning, roadmap review, or your active workspace without losing the next step you already started."
+    "Sign in or create your Neroa account, then continue into planning, roadmap review, or your active workspace inside Neroa."
 };
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
@@ -97,10 +97,10 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-200/70">
                   Continuous product flow
                 </p>
-                <p className="mt-3 text-lg font-semibold text-white">Keep your place</p>
+                <p className="mt-3 text-lg font-semibold text-white">Return cleanly</p>
                 <p className="mt-2 text-sm leading-7 text-slate-400">
-                  Neroa keeps the product thread intact so you can return to the roadmap,
-                  previews, or approvals you were already working through.
+                  Move back into planning, roadmap review, previews, and approvals from the same
+                  premium product shell.
                 </p>
               </div>
             </div>

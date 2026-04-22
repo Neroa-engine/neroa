@@ -1,7 +1,6 @@
 "use client";
 
 import { getPlanModuleDefinitions } from "@/lib/narua/planning";
-import { getLaneById } from "@/lib/workspace/lanes";
 import type { GeneratedPlan, ReviewAction } from "@/lib/narua/planning";
 
 type NaruaPlanProps = {
@@ -30,8 +29,6 @@ function ActionButton({
 }
 
 export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
-  const primaryLane = getLaneById(plan.primaryLaneId);
-  const supportingLanes = plan.supportingLaneIds.map((laneId) => getLaneById(laneId));
   const modules = getPlanModuleDefinitions(plan);
 
   return (
@@ -39,7 +36,7 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
       <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
         <div className="max-w-4xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-200/70">
-            Narua Execution Layer
+            Guided build plan
           </p>
           <h3 className="mt-4 text-3xl font-semibold tracking-tight text-white">{plan.title}</h3>
           <p className="mt-4 text-sm leading-7 text-slate-300">{plan.overview}</p>
@@ -67,24 +64,20 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
           <p className="mt-3 text-sm leading-7 text-slate-200">{plan.projectSummary}</p>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-2xl bg-[#090f1d] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Primary lane</p>
-              <p className="mt-2 text-lg font-semibold text-white">{primaryLane.name}</p>
-              <p className="mt-2 text-sm leading-6 text-slate-400">{primaryLane.description}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Current build direction</p>
+              <p className="mt-2 text-lg font-semibold text-white">{plan.title}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Neroa is shaping the first release around the clearest user outcome, then keeping
+                preview, inspection, and approvals attached to the same thread.
+              </p>
             </div>
 
             <div className="rounded-2xl bg-[#090f1d] p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Supporting lanes</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {supportingLanes.length > 0 ? (
-                  supportingLanes.map((lane) => (
-                    <span key={lane.id} className="rounded-full bg-white/[0.06] px-3 py-2 text-xs text-slate-200">
-                      {lane.name}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-slate-400">No supporting lanes needed yet.</span>
-                )}
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">What stays behind the scenes</p>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                Internal routing, support systems, and execution mechanics stay behind Neroa so
+                the customer experience can stay focused on the roadmap and the next approval.
+              </p>
             </div>
           </div>
         </div>
@@ -131,7 +124,7 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
 
       <div className="mt-6 grid gap-4 2xl:grid-cols-[1.08fr_0.92fr]">
         <section className="rounded-[26px] border border-white/8 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Execution phases</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Roadmap phases</p>
           <div className="mt-4 space-y-3">
             {plan.phases.map((phase, index) => (
               <div key={phase.title} className="rounded-2xl bg-[#090f1d] p-4">
@@ -156,28 +149,25 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
         </section>
 
         <section className="rounded-[26px] border border-white/8 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">AI teammates</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Review loop</p>
           <div className="mt-4 space-y-3">
-            {plan.teammates.map((teammate) => (
-              <div key={teammate.id} className="rounded-2xl bg-[#090f1d] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-semibold text-white">{teammate.name}</p>
-                    <p className="mt-1 text-xs uppercase tracking-[0.16em] text-slate-500">{teammate.role}</p>
-                  </div>
-                  <span
-                    className={`rounded-full px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] ${
-                      teammate.status === "active"
-                        ? "bg-cyan-400/12 text-cyan-200"
-                        : teammate.status === "recommended"
-                          ? "bg-emerald-400/12 text-emerald-200"
-                          : "bg-white/[0.06] text-slate-400"
-                    }`}
-                  >
-                    {teammate.status}
-                  </span>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-400">{teammate.reason}</p>
+            {[
+              {
+                title: "Preview stays visible",
+                body: "Neroa keeps the visible product state close to the roadmap so review does not lose context."
+              },
+              {
+                title: "Inspection supports the decision",
+                body: "Readiness signals stay tied to the current build thread instead of feeling like a detached tool report."
+              },
+              {
+                title: "Approvals keep momentum",
+                body: "Refinements and approvals stay attached to the same path so the next move is always clear."
+              }
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl bg-[#090f1d] p-4">
+                <p className="text-sm font-semibold text-white">{item.title}</p>
+                <p className="mt-3 text-sm leading-6 text-slate-400">{item.body}</p>
               </div>
             ))}
           </div>
@@ -186,7 +176,7 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
 
       <div className="mt-6 grid gap-4 2xl:grid-cols-[0.9fr_1.1fr]">
         <section className="rounded-[26px] border border-white/8 bg-white/[0.03] p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Recommended stack</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Suggested build setup</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {plan.recommendedStack.map((item) => (
               <span key={item} className="rounded-full bg-[#090f1d] px-3 py-2 text-xs font-medium text-slate-200">

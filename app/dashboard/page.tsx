@@ -42,13 +42,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 Welcome back, {user.email}
               </h1>
               <p className="mt-4 text-base leading-8 text-slate-300">
-                Start with Narua, route the work into the right lane, and keep every workspace focused instead of forcing one giant page to do everything.
+                Continue inside Neroa, open Strategy Room when you need a new plan, and keep every
+                build visible from roadmap to preview and approvals.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/start" className="button-primary">
-                Build with Narua
+                Open Strategy Room
               </Link>
               <form action="/auth/sign-out" method="post">
                 <button className="button-secondary" type="submit">
@@ -69,19 +70,21 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                 Start flow
               </p>
-              <h2 className="mt-4 text-2xl font-semibold text-white">Narua-first intake</h2>
+              <h2 className="mt-4 text-2xl font-semibold text-white">Strategy Room first</h2>
               <p className="mt-4 text-sm leading-7 text-slate-400">
-                Use `/start` whenever you want to begin new work. Narua will determine the best lead lane and recommend supporting lanes before the workspace opens.
+                Use `/start` whenever you want to begin new work. Neroa will turn the idea into a
+                guided roadmap and first build direction before the workspace opens.
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-300">
-                NeuroEngines are specialized AI execution systems for business, SaaS, automation, strategy, and growth.
+                Planning, preview, progress, and approvals stay connected behind one customer-facing
+                product shell.
               </p>
 
               <div className="mt-6 space-y-3">
                 {[
-                  "Describe the build or the operational problem.",
-                  "Let Narua ask only the minimum useful follow-up questions.",
-                  "Open the workspace once the route and plan are clear."
+                  "Explain the product idea or the business problem.",
+                  "Let Neroa ask only the minimum useful follow-up questions.",
+                  "Open the build once the roadmap and next move are clear."
                 ].map((item) => (
                   <div key={item} className="rounded-2xl bg-[#090f1d] px-4 py-3 text-sm leading-7 text-slate-200">
                     {item}
@@ -94,11 +97,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    NeuroEngines
+                    Active builds
                   </p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white">Your NeuroEngines</h2>
+                  <h2 className="mt-3 text-2xl font-semibold text-white">Your Neroa builds</h2>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-400">
-                    NeuroEngines are specialized AI execution systems for business, SaaS, automation, strategy, and growth.
+                    These are the current builds, product threads, and workspaces attached to your
+                    Neroa account.
                   </p>
                 </div>
                 <span className="rounded-full bg-white/[0.04] px-3 py-2 text-sm text-slate-300">
@@ -123,13 +127,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 </div>
               ) : (
                 <div className="surface-inner mt-6 p-8 text-center">
-                  <p className="text-xl font-semibold text-white">No NeuroEngines yet</p>
+                  <p className="text-xl font-semibold text-white">No builds yet</p>
                   <p className="mt-3 text-sm leading-7 text-slate-400">
-                    Start with Narua to launch your first NeuroEngine instead of filling out a blank setup form.
+                    Start in Strategy Room to launch your first build instead of filling out a blank
+                    setup form.
                   </p>
                   <div className="mt-6">
                     <Link href="/start" className="button-primary">
-                      Launch your first NeuroEngine
+                      Open your first build
                     </Link>
                   </div>
                 </div>

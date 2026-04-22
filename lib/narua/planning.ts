@@ -149,7 +149,7 @@ export function createEmptyAnswers(): PlanningAnswers {
 }
 
 export function createWelcomeMessage() {
-  return "Hi, I'm Narua. Tell me what you want to build and I'll shape it into a real execution plan.";
+  return "Tell Neroa what you want to build and we’ll shape it into a real product plan.";
 }
 
 export function buildWorkspaceName(idea: string) {
@@ -305,7 +305,7 @@ function buildRecommendedModules(primaryLaneId: LaneId, supportingLaneIds: LaneI
 }
 
 function buildRecommendedStack(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers: PlanningAnswers) {
-  const stack = ["Narua Workspace", "Narua Execution Layer"];
+  const stack = ["Neroa Workspace", "Guided roadmap flow"];
 
   if (primaryLaneId === "website") {
     stack.push("Marketing site structure", "Copy and page system");
@@ -331,17 +331,14 @@ function buildRecommendedStack(primaryLaneId: LaneId, supportingLaneIds: LaneId[
 }
 
 function buildPhases(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers: PlanningAnswers) {
-  const primaryLane = getLaneById(primaryLaneId);
-  const supportingLaneNames = supportingLaneIds.map((laneId) => getLaneById(laneId).name);
-
   return [
     {
       title: "Foundation",
-      summary: `Clarify the ${primaryLane.name.toLowerCase()} direction and lock the first execution target.`,
+      summary: "Clarify the direction and lock the first execution target.",
       items: [
         `Turn the idea into a sharper ${answers.projectType.toLowerCase()} direction.`,
         `Define the target user around ${answers.targetUser || "the clearest customer segment"}.`,
-        `Use Narua to tighten the goal: ${answers.mainGoal || "create a measurable first outcome"}.`
+        `Tighten the goal: ${answers.mainGoal || "create a measurable first outcome"}.`
       ]
     },
     {
@@ -349,9 +346,9 @@ function buildPhases(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers
       summary: "Translate the concept into the smallest deliverable first version.",
       items: [
         `Scope the MVP around ${answers.mvp || "one focused first workflow"}.`,
-        `Sequence the default ${primaryLane.layoutType} modules into a working plan.`,
-        supportingLaneNames.length > 0
-          ? `Use supporting lanes for ${supportingLaneNames.join(", ")} where they directly move the first release forward.`
+        "Sequence the first release into a working plan with visible milestones.",
+        supportingLaneIds.length > 0
+          ? "Bring in additional support only where it directly moves version one forward."
           : "Keep the workspace narrow so version one stays practical."
       ]
     },
@@ -360,8 +357,8 @@ function buildPhases(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers
       summary: "Move from planning into real work with a visible execution path.",
       items: [
         "Break the work into roadmap checkpoints and concrete tasks.",
-        "Activate only the AI teammates that match the next phase of work.",
-        "Carry the plan into the workspace and start executing lane by lane."
+        "Activate only the support systems that match the next phase of work.",
+        "Carry the plan into the workspace and start executing the build in one visible thread."
       ]
     }
   ];
@@ -416,9 +413,8 @@ function buildTeammates(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answ
 }
 
 function buildNextSteps(primaryLaneId: LaneId, supportingLaneIds: LaneId[], answers: PlanningAnswers) {
-  const primaryLane = getLaneById(primaryLaneId);
   const nextSteps = [
-    `Lock the first ${primaryLane.name.toLowerCase()} decision that changes execution speed.`,
+    "Lock the first decision that changes execution speed.",
     `Reduce the MVP to the smallest useful version of ${answers.mvp || "the core workflow"}.`,
     "Turn the plan into task groups and milestone checkpoints."
   ];
@@ -445,7 +441,6 @@ export function generatePlan(answers: PlanningAnswers): GeneratedPlan {
       answers.integrations
     ].join("\n")
   );
-  const primaryLane = getLaneById(laneSelection.primaryLaneId);
   const supportingLaneIds = laneSelection.supportingLaneIds.filter(
     (laneId) => laneId !== laneSelection.primaryLaneId
   );
@@ -453,7 +448,7 @@ export function generatePlan(answers: PlanningAnswers): GeneratedPlan {
 
   return {
     title: buildWorkspaceName(answers.idea),
-    overview: `${answers.idea} Narua is framing this as a ${primaryLane.name.toLowerCase()} workspace with the right supporting lanes to carry the idea into execution.`,
+    overview: `${answers.idea} Neroa is shaping this into a clear product build with the roadmap, preview path, and approvals connected from the start.`,
     projectSummary: `${answers.projectType || "Initiative"} for ${answers.targetUser || "a defined user"} focused on ${answers.mainGoal || "a concrete business or product outcome"}.`,
     targetUser: answers.targetUser || "Target user still needs refinement.",
     mainGoal: answers.mainGoal || "Primary outcome still needs refinement.",
@@ -471,19 +466,13 @@ export function generatePlan(answers: PlanningAnswers): GeneratedPlan {
     expandedSection: null,
     tasks: [],
     refinementNotes: supportingLanes.length > 0
-      ? [`Narua assigned supporting lanes: ${supportingLanes.map((lane) => lane.name).join(", ")}.`]
+      ? [`Neroa prepared additional support for ${supportingLanes.map((lane) => lane.name).join(", ")}.`]
       : []
   };
 }
 
 export function createSynthesisMessage(plan: GeneratedPlan) {
-  const primaryLane = getLaneById(plan.primaryLaneId);
-  const supportingText =
-    plan.supportingLaneIds.length > 0
-      ? ` with supporting lanes for ${plan.supportingLaneIds.map((laneId) => getLaneById(laneId).name).join(", ")}`
-      : "";
-
-  return `Perfect. Narua has enough context to draft this as a ${primaryLane.name} workspace${supportingText}. Review the plan below, then refine it or open the workspace.`;
+  return "Perfect. Neroa has enough context to draft the first build plan. Review it below, refine it if needed, then continue into the workspace.";
 }
 
 export function applyReviewAction(
@@ -500,32 +489,30 @@ export function applyReviewAction(
       ],
       refinementNotes: [
         ...plan.refinementNotes,
-        "Narua refined the plan by tightening the positioning, narrowing the MVP, and sharpening the execution path."
+        "Neroa refined the plan by tightening the positioning, narrowing the MVP, and sharpening the execution path."
       ]
     };
 
     return {
       plan: refinedPlan,
-      reply: "Narua refined the plan by tightening the positioning and making the first phase more execution-focused."
+      reply: "Neroa refined the plan by tightening the positioning and making the first phase more execution-focused."
     };
   }
 
   if (action === "expand") {
-    const primaryLane = getLaneById(plan.primaryLaneId);
-
     return {
       plan: {
         ...plan,
         expandedSection: {
-          title: `${primaryLane.name} execution notes`,
+          title: "Execution notes",
           paragraphs: [
             `Keep the first release centered on ${answers.mvp || plan.mvpScope[0]}.`,
-            `Use the ${primaryLane.name} lane as the lead context, then pull in supporting lanes only when they directly unblock delivery.`,
+            `Keep the main build direction in the lead, then pull in supporting capabilities only when they directly unblock delivery.`,
             "Anything that does not help validation, launch readiness, or operational clarity should stay out of version one."
           ]
         }
       },
-      reply: "Narua expanded the plan so the first execution phase is more concrete."
+      reply: "Neroa expanded the plan so the first execution phase is more concrete."
     };
   }
 
@@ -541,7 +528,7 @@ export function applyReviewAction(
           "Start the workspace and activate only the next-needed teammate."
         ]
       },
-      reply: "Narua turned the plan into an initial task sequence so execution can move faster."
+      reply: "Neroa turned the plan into an initial task sequence so execution can move faster."
     };
   }
 
@@ -554,15 +541,15 @@ export function applyReviewAction(
   );
 
   return {
-    plan: {
-      ...plan,
-      supportingLaneIds,
-      refinementNotes: [
-        ...plan.refinementNotes,
-        "Narua reframed the plan toward an app build path and added SaaS / App support."
-      ]
-    },
-    reply: "Narua adjusted the plan so it can move more directly into an app build workflow."
+      plan: {
+        ...plan,
+        supportingLaneIds,
+        refinementNotes: [
+          ...plan.refinementNotes,
+          "Neroa reframed the plan toward an app build path and added SaaS / App support."
+        ]
+      },
+    reply: "Neroa adjusted the plan so it can move more directly into an app build workflow."
   };
 }
 
