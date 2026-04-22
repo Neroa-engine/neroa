@@ -2,6 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { setActiveProjectContext } from "@/app/portal/actions";
 import {
   archiveWorkspace,
   deleteWorkspace,
@@ -114,6 +115,31 @@ function ProjectActionForm({
       <ProjectActionButton variant={variant}>
         {label}
       </ProjectActionButton>
+    </form>
+  );
+}
+
+function ProjectPortalOpenForm({
+  workspaceId,
+  destination,
+  label,
+  className,
+  returnTo = APP_ROUTES.projects
+}: {
+  workspaceId: string;
+  destination: string;
+  label: string;
+  className: string;
+  returnTo?: string;
+}) {
+  return (
+    <form action={setActiveProjectContext}>
+      <input type="hidden" name="workspaceId" value={workspaceId} />
+      <input type="hidden" name="destination" value={destination} />
+      <input type="hidden" name="returnTo" value={returnTo} />
+      <button type="submit" className={className}>
+        {label}
+      </button>
     </form>
   );
 }
@@ -457,9 +483,12 @@ function FullProjectCard({
         </div>
 
         <div className="min-w-0 space-y-3.5 border-t border-slate-200/70 pt-4 xl:border-l xl:border-t-0 xl:pl-5 xl:pt-0">
-          <Link href={project.route} className="button-secondary w-full justify-center">
-            Open
-          </Link>
+          <ProjectPortalOpenForm
+            workspaceId={project.id}
+            destination={project.route}
+            label="Open"
+            className="button-secondary w-full justify-center"
+          />
 
           <ProjectManagementBar project={project} onRename={onRenameStart} />
         </div>
@@ -520,9 +549,12 @@ function CompactProjectCard({
           </p>
         </div>
 
-        <Link href={project.route} className="button-secondary">
-          Open
-        </Link>
+        <ProjectPortalOpenForm
+          workspaceId={project.id}
+          destination={project.route}
+          label="Open"
+          className="button-secondary"
+        />
       </div>
 
       {renameOpen ? (
@@ -573,6 +605,8 @@ export default function DashboardBoard({
     () => projects.find((project) => project.id === assetWorkspaceId) ?? null,
     [assetWorkspaceId, projects]
   );
+  const resumeProjectRoute = selectedProject?.route ?? APP_ROUTES.dashboard;
+  const resumeProjectWorkspaceId = selectedProject?.id ?? null;
 
   function startRename(project: DashboardBoardProject) {
     setRenameProjectId(project.id);
@@ -591,9 +625,18 @@ export default function DashboardBoard({
         subtitle="Projects"
         action={
           <div className="flex flex-wrap items-center gap-3">
-            <Link href={APP_ROUTES.dashboard} className="button-secondary">
-              Resume Project
-            </Link>
+            {resumeProjectWorkspaceId ? (
+              <ProjectPortalOpenForm
+                workspaceId={resumeProjectWorkspaceId}
+                destination={resumeProjectRoute}
+                label="Resume Project"
+                className="button-secondary"
+              />
+            ) : (
+              <Link href={APP_ROUTES.dashboard} className="button-secondary">
+                Resume Project
+              </Link>
+            )}
             <Link href={APP_ROUTES.startDiy} className="button-primary">
               New Project
             </Link>

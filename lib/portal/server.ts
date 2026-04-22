@@ -161,5 +161,14 @@ export async function resolveSmartResumeDestination(args: {
   projects: PortalProjectSummary[];
 }) {
   const activeProject = await resolveActivePortalProject(args);
-  return activeProject ? resolveSmartResumeDestinationForProject(activeProject) : APP_ROUTES.start;
+
+  if (activeProject) {
+    return resolveSmartResumeDestinationForProject(activeProject);
+  }
+
+  const fallbackProject = listSelectablePortalProjects(args.projects)[0] ?? null;
+
+  return fallbackProject
+    ? resolveSmartResumeDestinationForProject(fallbackProject)
+    : APP_ROUTES.start;
 }
