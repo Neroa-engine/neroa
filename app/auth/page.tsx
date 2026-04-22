@@ -96,8 +96,12 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
                   Next step saved
                 </p>
-                <p className="mt-3 text-lg font-semibold text-slate-950">{destination.label}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-500">{destination.summary}</p>
+                <p className="mt-3 text-lg font-semibold text-slate-950">
+                  {destination.label}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-500">
+                  {destination.summary}
+                </p>
               </div>
 
               <div className="relative mt-5 grid gap-3 sm:grid-cols-3">

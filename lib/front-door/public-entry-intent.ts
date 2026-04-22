@@ -1,4 +1,6 @@
-import { type PublicLaunchIntent } from "@/lib/data/public-launch";
+import {
+  type PublicLaunchIntent
+} from "@/lib/data/public-launch";
 
 const PUBLIC_ENTRY_INTENT_KEY = "neroa:public-entry-intent";
 

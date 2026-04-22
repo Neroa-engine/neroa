@@ -1,28 +1,28 @@
-import { APP_ROUTES } from "@/lib/routes";
-
 export type PublicLaunchIntent = "diy" | "managed";
 
-export const publicLaunchEntryPath = APP_ROUTES.start;
-export const publicLaunchDiyPath = APP_ROUTES.startDiy;
-export const publicLaunchManagedPath = APP_ROUTES.startManaged;
+import { APP_ROUTES } from "@/lib/routes";
+
+export const publicLaunchEntryPath = "/start" as const;
+export const publicLaunchDiyPath = "/start?entry=diy" as const;
+export const publicLaunchManagedPath = "/start?entry=managed" as const;
 
 export const publicLaunchPrimaryCta = {
   href: publicLaunchDiyPath,
-  label: "Open Strategy Room",
+  label: "Start DIY Build",
   intent: "diy"
 } as const;
 
 export const publicLaunchManagedCta = {
   href: publicLaunchManagedPath,
-  label: "Open Managed Strategy Room",
+  label: "Start Managed Build",
   intent: "managed"
 } as const;
 
 export const managedBuildEntryPath = publicLaunchManagedPath;
 export const managedBuildSignupPath =
-  `${APP_ROUTES.signup}?next=${encodeURIComponent(managedBuildEntryPath)}`;
+  `/signup?next=${encodeURIComponent(managedBuildEntryPath)}` as const;
 export const managedBuildAuthPath =
-  `${APP_ROUTES.auth}?next=${encodeURIComponent(managedBuildEntryPath)}`;
+  `/auth?next=${encodeURIComponent(managedBuildEntryPath)}` as const;
 
 export const launchReadyUseCaseSlugs = [
   "saas",
@@ -43,8 +43,7 @@ export function resolvePublicLaunchIntent(
 
   if (
     normalizedLabel === "let's get started" ||
-    normalizedLabel === "start diy build" ||
-    normalizedLabel === "open strategy room"
+    normalizedLabel === "start diy build"
   ) {
     return "diy";
   }
@@ -72,10 +71,12 @@ export function resolvePublicLaunchIntent(
 
 function isPrivateAppHref(href: string) {
   return (
-    href === APP_ROUTES.dashboard ||
-    href === APP_ROUTES.projects ||
+    href === "/auth" ||
+    href === "/signup" ||
+    href === "/dashboard" ||
+    href === "/projects" ||
     href === "/projects/new" ||
-    href === APP_ROUTES.roadmap ||
+    href === "/roadmap" ||
     href.startsWith("/workspace/")
   );
 }

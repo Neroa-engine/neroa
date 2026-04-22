@@ -51,7 +51,7 @@ function normalizeContext(context: unknown) {
 }
 
 function isMissingOpenAIKeyError(error: unknown) {
-  return error instanceof Error && /Missing credentials|Missing OPENAI_API_KEY/i.test(error.message);
+  return error instanceof Error && /Missing OPENAI_API_KEY|Missing credentials/i.test(error.message);
 }
 
 export async function POST(request: NextRequest) {
@@ -61,6 +61,18 @@ export async function POST(request: NextRequest) {
 
     const body = bodySchema.parse(json);
     console.log("AI_CHAT_REQUEST", body.workerId);
+
+    const apiKey = process.env.OPENAI_API_KEY?.trim();
+
+    if (!apiKey) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "OPENAI_API_KEY is not configured on the server."
+        },
+        { status: 503 }
+      );
+    }
 
     const { routeAI } = await import("@/lib/ai/router");
     const reply = await routeAI({

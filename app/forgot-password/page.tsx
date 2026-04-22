@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { sendPasswordResetEmail } from "@/app/signup/actions";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { sendPasswordResetEmail } from "@/app/signup/actions";
 import { normalizeAppPath } from "@/lib/auth/routes";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.dashboard);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.projects);
 
   return (
     <MarketingInfoShell

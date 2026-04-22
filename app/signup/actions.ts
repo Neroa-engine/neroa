@@ -2,12 +2,15 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { normalizeAppPath } from "@/lib/auth/routes";
-import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { APP_ROUTES } from "@/lib/routes";
 
 function safeString(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function safeNextPath(value: string, fallback: string = APP_ROUTES.dashboard) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
 
 function buildSignupRedirect(params: {
@@ -86,7 +89,7 @@ function buildResetPasswordConfirmationUrl(next: string) {
 export async function signInFromSignup(formData: FormData) {
   const email = safeString(formData.get("email"));
   const password = safeString(formData.get("password"));
-  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+  const next = safeNextPath(safeString(formData.get("next")));
 
   const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({
@@ -112,7 +115,7 @@ export async function signUpFromSignup(formData: FormData) {
   const password = safeString(formData.get("password"));
   const confirmPassword = safeString(formData.get("confirmPassword"));
   const name = safeString(formData.get("name"));
-  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+  const next = safeNextPath(safeString(formData.get("next")));
 
   if (password !== confirmPassword) {
     redirect(
@@ -212,7 +215,7 @@ function buildResetPasswordRedirect(params: {
 
 export async function sendPasswordResetEmail(formData: FormData) {
   const email = safeString(formData.get("email"));
-  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+  const next = safeNextPath(safeString(formData.get("next")));
 
   const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -242,7 +245,7 @@ export async function sendPasswordResetEmail(formData: FormData) {
 export async function updatePasswordFromRecovery(formData: FormData) {
   const password = safeString(formData.get("password"));
   const confirmPassword = safeString(formData.get("confirmPassword"));
-  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+  const next = safeNextPath(safeString(formData.get("next")), APP_ROUTES.projects);
 
   if (password !== confirmPassword) {
     redirect(
@@ -271,7 +274,5 @@ export async function updatePasswordFromRecovery(formData: FormData) {
     // If sign-out fails, still continue to the sign-in step.
   });
 
-  redirect(
-    `/auth?notice=${encodeURIComponent("Password updated. Sign in with your new password.")}&next=${encodeURIComponent(next)}`
-  );
+  redirect(`/auth?notice=${encodeURIComponent("Password updated. Sign in with your new password.")}&next=${encodeURIComponent(next)}`);
 }

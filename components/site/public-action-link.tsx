@@ -126,7 +126,11 @@ export function PublicActionLink({
 
   if (forceHardNavigation) {
     return (
-      <a href={resolvedAction.href} className={className} onClick={handleNavigation}>
+      <a
+        href={resolvedAction.href}
+        className={className}
+        onClick={handleNavigation}
+      >
         {children ?? resolvedAction.label}
       </a>
     );

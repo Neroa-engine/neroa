@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { getOptionalUser } from "@/lib/auth";
 import { normalizeAppPath } from "@/lib/auth/routes";
 import { APP_ROUTES } from "@/lib/routes";
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
   const user = await getOptionalUser();
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.dashboard);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.projects);
 
   return (
     <MarketingInfoShell

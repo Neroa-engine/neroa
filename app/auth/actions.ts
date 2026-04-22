@@ -2,11 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { normalizeAppPath } from "@/lib/auth/routes";
 import { APP_ROUTES } from "@/lib/routes";
 
 function safeString(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function safeNextPath(value: string) {
+  return value.startsWith("/") && !value.startsWith("//") ? value : APP_ROUTES.dashboard;
 }
 
 function buildErrorRedirect(message: string, next: string) {
@@ -31,7 +34,7 @@ function normalizeAuthErrorMessage(message: string) {
 export async function authenticate(formData: FormData) {
   const email = safeString(formData.get("email"));
   const password = safeString(formData.get("password"));
-  const next = normalizeAppPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
+  const next = safeNextPath(safeString(formData.get("next")));
 
   const supabase = createSupabaseServerClient();
   const { error } = await supabase.auth.signInWithPassword({

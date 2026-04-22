@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { signInFromSignup, signUpFromSignup } from "@/app/signup/actions";
 import { PasswordField } from "@/components/auth/password-field";
-import { normalizeAppPath } from "@/lib/auth/routes";
 import { managedBuildEntryPath } from "@/lib/data/public-launch";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -15,35 +14,43 @@ type SignupShellProps = {
   next?: string;
 };
 
+function safeNextPath(value?: string) {
+  if (value && value.startsWith("/") && !value.startsWith("//")) {
+    return value;
+  }
+
+  return APP_ROUTES.dashboard;
+}
+
 function describeDestination(nextPath: string) {
-  if (
-    nextPath.startsWith("/workspace/") ||
-    nextPath.startsWith(APP_ROUTES.projects) ||
-    nextPath.startsWith(APP_ROUTES.dashboard)
-  ) {
-    return "current build";
+  if (nextPath.startsWith("/dashboard")) {
+    return "command center entry";
   }
 
-  if (nextPath.startsWith(APP_ROUTES.startManaged)) {
-    return "managed Strategy Room";
+  if (nextPath.startsWith("/start?entry=managed")) {
+    return "managed planning center";
   }
 
-  if (nextPath.startsWith(APP_ROUTES.start)) {
-    return "Strategy Room";
+  if (nextPath.startsWith("/start")) {
+    return "planning center";
   }
 
-  if (nextPath.startsWith(APP_ROUTES.billing)) {
+  if (nextPath.startsWith("/billing")) {
     return "billing";
   }
 
-  return "next step";
+  if (nextPath.startsWith("/projects")) {
+    return "project area";
+  }
+
+  return "account destination";
 }
 
 export function SignupShell({ error, notice, initialEmail, next }: SignupShellProps) {
   const [mode, setMode] = useState<"signup" | "signin">(notice ? "signin" : "signup");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [password, setPassword] = useState("");
-  const nextPath = normalizeAppPath(next, APP_ROUTES.dashboard);
+  const nextPath = safeNextPath(next);
   const isManagedEntry = nextPath === managedBuildEntryPath;
   const destinationLabel = useMemo(() => describeDestination(nextPath), [nextPath]);
   const passwordMatchState =
@@ -64,9 +71,8 @@ export function SignupShell({ error, notice, initialEmail, next }: SignupShellPr
           Create your account without losing your place.
         </h1>
         <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-          Create an account if you are new, or sign in if you already have one. Neroa keeps the
-          same return target attached throughout the handoff so you can continue the build from the
-          right place.
+          This page is only for account access. Create an account if you are new, or sign in if
+          you already have one. Neroa will keep the same return target attached throughout auth.
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -104,7 +110,7 @@ export function SignupShell({ error, notice, initialEmail, next }: SignupShellPr
           <div className="mt-4 flex flex-wrap gap-2">
             <span className="premium-pill text-slate-600">Destination preserved</span>
             <span className="premium-pill text-slate-600">
-              {isManagedEntry ? "Managed Strategy Room preserved" : "Account handoff preserved"}
+              {isManagedEntry ? "Managed lane preserved" : "Account handoff preserved"}
             </span>
           </div>
         </div>
@@ -112,7 +118,7 @@ export function SignupShell({ error, notice, initialEmail, next }: SignupShellPr
 
       <aside className="premium-surface rounded-[34px] p-6">
         <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-          Continue in Neroa
+          Account access
         </p>
         <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
           {mode === "signup" ? "Create your account" : "Sign in"}

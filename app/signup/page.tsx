@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { SignupShell } from "@/components/front-door/signup-shell";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { SignupShell } from "@/components/front-door/signup-shell";
 import { getOptionalUser } from "@/lib/auth";
 import { normalizeAppPath } from "@/lib/auth/routes";
 import { APP_ROUTES } from "@/lib/routes";

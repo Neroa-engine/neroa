@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   ConversionStrip,
   InfoCardGrid,
@@ -7,7 +6,9 @@ import {
   SectionHeader
 } from "@/components/marketing/public-page-sections";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { getOptionalUser } from "@/lib/auth";
+import { publicLaunchEntryPath } from "@/lib/data/public-launch";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://neroa.io"),
@@ -174,11 +175,12 @@ const homepageSchema = {
 
 export default async function LandingPage() {
   const user = await getOptionalUser();
+  const initialAuthenticated = Boolean(user);
 
   return (
     <MarketingInfoShell
       userEmail={user?.email ?? undefined}
-      ctaHref="/start"
+      ctaHref={publicLaunchEntryPath}
       ctaLabel="Open Strategy Room"
       brandVariant="prominent"
       contentWidth="wide"
@@ -203,15 +205,18 @@ export default async function LandingPage() {
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/start"
+              <PublicActionLink
+                href={publicLaunchEntryPath}
+                label="Open Strategy Room"
                 className="button-primary px-6 py-4 text-base shadow-[0_22px_60px_rgba(59,130,246,0.28)]"
-              >
-                Open Strategy Room
-              </Link>
-              <Link href="/auth" className="button-secondary px-6 py-4 text-base">
-                Continue in Neroa
-              </Link>
+                initialAuthenticated={initialAuthenticated}
+              />
+              <PublicActionLink
+                href="/auth"
+                label="Continue in Neroa"
+                className="button-secondary px-6 py-4 text-base"
+                initialAuthenticated={initialAuthenticated}
+              />
             </div>
 
             <p className="homepage-hero-support">
@@ -232,7 +237,7 @@ export default async function LandingPage() {
 
           <div className="homepage-hero-visual fade-up-soft-delay">
             <div className="homepage-floating-note">
-              <span className="homepage-floating-label">Current build feel</span>
+              <span className="homepage-floating-note-label">Current build feel</span>
               <p>
                 Guided, premium, and product-first. The customer sees one clear path while
                 Neroa carries the underlying complexity.
@@ -282,7 +287,7 @@ export default async function LandingPage() {
             </div>
 
             <div className="homepage-floating-note homepage-floating-note-secondary">
-              <span className="homepage-floating-label">What customers feel</span>
+              <span className="homepage-floating-note-label">What customers feel</span>
               <p>
                 They explain the idea, watch the product become clearer, and approve the next
                 move without ever feeling like they are operating a raw tool stack.
@@ -327,7 +332,11 @@ export default async function LandingPage() {
           summary="The homepage now leads with the customer experience first: guided planning, visible progress, stronger review context, and approvals that stay attached to the same build path."
         />
         <div className="mt-8">
-          <InfoCardGrid items={[...productExperienceCards]} columns="three" affordanceMode="icon" />
+          <InfoCardGrid
+            items={[...productExperienceCards]}
+            columns="three"
+            affordanceMode="icon"
+          />
         </div>
       </section>
 
@@ -337,7 +346,7 @@ export default async function LandingPage() {
         summary="Open Strategy Room, shape the roadmap, and move into previews, inspections, approvals, and refinements from the same premium product shell."
         actions={[
           {
-            href: "/start",
+            href: publicLaunchEntryPath,
             label: "Open Strategy Room"
           },
           {
@@ -362,6 +371,7 @@ export default async function LandingPage() {
             </div>
           </div>
         }
+        initialAuthenticated={initialAuthenticated}
       />
     </MarketingInfoShell>
   );
