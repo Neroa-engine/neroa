@@ -20,7 +20,7 @@ export function isSafeAppPath(value: string | null | undefined): value is string
 
 export function normalizeAppPath(
   value: string | null | undefined,
-  fallback = "/projects"
+  fallback = "/start"
 ): string {
   return isSafeAppPath(value) ? value : fallback;
 }
@@ -31,7 +31,7 @@ export function buildAuthRedirectPath(args?: {
 }) {
   const params = new URLSearchParams();
   const hasExplicitNextPath = isSafeAppPath(args?.nextPath);
-  const nextPath = normalizeAppPath(args?.nextPath, "/projects");
+  const nextPath = normalizeAppPath(args?.nextPath, "/start");
 
   if (args?.notice?.trim()) {
     params.set("notice", args.notice.trim());

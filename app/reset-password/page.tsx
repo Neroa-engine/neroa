@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
   const user = await getOptionalUser();
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.projects);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.start);
 
   return (
     <MarketingInfoShell

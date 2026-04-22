@@ -158,39 +158,11 @@ export function PublicAccountMenu({ initialEmail }: PublicAccountMenuProps) {
               Resume Project
             </Link>
             <Link
-              href="/profile"
+              href="/start"
               role="menuitem"
               className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
             >
-              Profile
-            </Link>
-            <Link
-              href="/settings"
-              role="menuitem"
-              className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-            >
-              Account
-            </Link>
-            <Link
-              href="/billing"
-              role="menuitem"
-              className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-            >
-              Billing
-            </Link>
-            <Link
-              href="/usage"
-              role="menuitem"
-              className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-            >
-              Usage / Credits
-            </Link>
-            <Link
-              href="/projects"
-              role="menuitem"
-              className="micro-glow rounded-[20px] border border-slate-200/70 bg-white/76 px-4 py-3 text-sm font-medium text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-            >
-              Projects
+              Strategy Room
             </Link>
           </div>
 

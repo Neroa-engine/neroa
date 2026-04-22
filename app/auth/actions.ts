@@ -9,14 +9,14 @@ function safeString(value: FormDataEntryValue | null) {
 }
 
 function safeNextPath(value: string) {
-  return value.startsWith("/") && !value.startsWith("//") ? value : APP_ROUTES.dashboard;
+  return value.startsWith("/") && !value.startsWith("//") ? value : APP_ROUTES.start;
 }
 
 function buildErrorRedirect(message: string, next: string) {
   const params = new URLSearchParams();
   params.set("error", message);
 
-  if (next !== APP_ROUTES.dashboard) {
+  if (next !== APP_ROUTES.start) {
     params.set("next", next);
   }
 

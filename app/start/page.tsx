@@ -1,3 +1,6 @@
+import { startEntryWorkspace } from "@/app/start/actions";
+import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
 import { buildAuthRedirectPath } from "@/lib/auth/routes";
 import { getOptionalUser } from "@/lib/auth";
 import { APP_ROUTES } from "@/lib/routes";
@@ -15,6 +18,7 @@ type StartPageProps = {
 
 export default async function StartPage({ searchParams }: StartPageProps) {
   const user = await getOptionalUser();
+  const entryPathId = searchParams?.entry === "managed" ? "managed" : "diy";
   const nextParams = new URLSearchParams();
 
   if (searchParams?.entry === "managed") {
@@ -45,5 +49,26 @@ export default async function StartPage({ searchParams }: StartPageProps) {
     redirect(buildAuthRedirectPath({ nextPath }));
   }
 
-  redirect(APP_ROUTES.projects);
+  return (
+    <MarketingInfoShell
+      userEmail={user?.email ?? undefined}
+      ctaHref={APP_ROUTES.dashboard}
+      ctaLabel="Resume Project"
+      brandVariant="prominent"
+      contentWidth="wide"
+      showHelpChat={false}
+    >
+      <section className="relative mx-auto w-full max-w-[2000px] px-0 py-5 sm:px-2 lg:px-4 lg:py-8 xl:px-8">
+        <CanonicalEntryFlow
+          initialUserEmail={user?.email ?? undefined}
+          initialEntryPathId={entryPathId}
+          initialTitle={searchParams?.title}
+          initialSummary={searchParams?.summary}
+          initialError={searchParams?.error ?? null}
+          initialNotice={searchParams?.notice ?? null}
+          startEntryWorkspaceAction={startEntryWorkspace}
+        />
+      </section>
+    </MarketingInfoShell>
+  );
 }

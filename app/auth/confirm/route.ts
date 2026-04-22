@@ -17,12 +17,16 @@ function safeNextPath(value: string | null | undefined) {
     return value;
   }
 
-  return APP_ROUTES.dashboard;
+  return APP_ROUTES.start;
 }
 
 function normalizeNextPath(nextPath: string) {
   if (nextPath === APP_ROUTES.start || nextPath.startsWith("/start?entry=")) {
     return nextPath;
+  }
+
+  if (nextPath === APP_ROUTES.dashboard) {
+    return APP_ROUTES.dashboard;
   }
 
   if (nextPath === "/start?step=plan") {
@@ -37,15 +41,11 @@ function normalizeNextPath(nextPath: string) {
     return APP_ROUTES.startDiy;
   }
 
-  return nextPath;
-}
-
-function shouldResolveProjectDestination(nextPath: string, type: string | null) {
-  if (type === "recovery" || type === "email_change") {
-    return false;
+  if (nextPath === APP_ROUTES.projects || nextPath === APP_ROUTES.roadmap) {
+    return APP_ROUTES.start;
   }
 
-  return nextPath === APP_ROUTES.projects || nextPath === APP_ROUTES.roadmap;
+  return nextPath;
 }
 
 async function resolvePostConfirmationDestination(args: {
@@ -56,14 +56,10 @@ async function resolvePostConfirmationDestination(args: {
   const normalizedNextPath = normalizeNextPath(args.nextPath);
 
   if (normalizedNextPath === APP_ROUTES.dashboard) {
-    return APP_ROUTES.projects;
+    return APP_ROUTES.dashboard;
   }
 
-  if (!shouldResolveProjectDestination(normalizedNextPath, args.type)) {
-    return normalizedNextPath;
-  }
-
-  return normalizedNextPath === APP_ROUTES.projects ? APP_ROUTES.projects : APP_ROUTES.roadmap;
+  return normalizedNextPath;
 }
 
 function buildConfirmationNotice(destinationPath: string) {
@@ -75,20 +71,12 @@ function buildConfirmationNotice(destinationPath: string) {
     return "Email confirmed. Continue into your planning center.";
   }
 
+  if (destinationPath === APP_ROUTES.dashboard) {
+    return "Email confirmed. Continue into your saved build step.";
+  }
+
   if (destinationPath.includes("/command-center")) {
     return "Email confirmed. Continue into your project's Command Center.";
-  }
-
-  if (destinationPath.startsWith("/roadmap")) {
-    return "Email confirmed. Your roadmap is ready.";
-  }
-
-  if (destinationPath.startsWith(APP_ROUTES.roadmap)) {
-    return "Email confirmed. Continue shaping your first project.";
-  }
-
-  if (destinationPath.startsWith(APP_ROUTES.projects)) {
-    return "Email confirmed. Your account is ready.";
   }
 
   return "Email confirmed. Continue into Neroa.";

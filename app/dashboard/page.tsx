@@ -18,8 +18,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (searchParams?.error) {
     const params = new URLSearchParams();
     params.set("error", searchParams.error);
-    redirect(`${APP_ROUTES.projects}?${params.toString()}`);
+    redirect(`${APP_ROUTES.start}?${params.toString()}`);
   }
 
-  redirect(APP_ROUTES.projects);
+  redirect(APP_ROUTES.start);
 }

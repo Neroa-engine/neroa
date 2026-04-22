@@ -100,10 +100,7 @@ export function SiteHeader({
 
   const isAuthenticated = Boolean(resolvedEmail);
   const utilityButtons = isAuthenticated
-    ? [
-        { href: APP_ROUTES.dashboard, label: "Resume Project" },
-        { href: APP_ROUTES.projects, label: "Projects" }
-      ]
+    ? [{ href: APP_ROUTES.dashboard, label: "Resume Project" }]
     : [{ href: APP_ROUTES.auth, label: "Sign in" }];
   const visibleUtilityButtons = utilityButtons.filter(
     (button) => button.href !== ctaHref || button.label !== ctaLabel

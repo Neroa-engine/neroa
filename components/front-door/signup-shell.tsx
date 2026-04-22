@@ -19,12 +19,12 @@ function safeNextPath(value?: string) {
     return value;
   }
 
-  return APP_ROUTES.dashboard;
+  return APP_ROUTES.start;
 }
 
 function describeDestination(nextPath: string) {
   if (nextPath.startsWith("/dashboard")) {
-    return "command center entry";
+    return "saved build step";
   }
 
   if (nextPath.startsWith("/start?entry=managed")) {
@@ -37,10 +37,6 @@ function describeDestination(nextPath: string) {
 
   if (nextPath.startsWith("/billing")) {
     return "billing";
-  }
-
-  if (nextPath.startsWith("/projects")) {
-    return "project area";
   }
 
   return "account destination";
