@@ -13,6 +13,26 @@ const accountNavItems = [
     href: APP_ROUTES.projects,
     label: "Projects",
     summary: "Open workspaces and active builds"
+  },
+  {
+    href: APP_ROUTES.billing,
+    label: "Billing",
+    summary: "Plans, upgrades, and purchases"
+  },
+  {
+    href: APP_ROUTES.usage,
+    label: "Usage",
+    summary: "Credits, limits, and capacity"
+  },
+  {
+    href: APP_ROUTES.profile,
+    label: "Profile",
+    summary: "Identity and session details"
+  },
+  {
+    href: APP_ROUTES.settings,
+    label: "Settings",
+    summary: "Account controls and sign-out"
   }
 ] as const;
 

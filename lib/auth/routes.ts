@@ -14,35 +14,15 @@ export const protectedAppPathPrefixes = [
 
 export const authEntryPathPrefixes = ["/auth", "/signup"] as const;
 
-const retiredContinuationPathPrefixes = [
-  "/admin",
-  "/billing",
-  "/profile",
-  "/settings",
-  "/usage"
-] as const;
-
-function matchesPathPrefix(pathname: string, prefix: string) {
-  return pathname === prefix || pathname.startsWith(`${prefix}/`);
-}
-
 export function isSafeAppPath(value: string | null | undefined): value is string {
   return Boolean(value && value.startsWith("/") && !value.startsWith("//"));
 }
 
 export function normalizeAppPath(
   value: string | null | undefined,
-  fallback = "/start"
+  fallback = "/projects"
 ): string {
-  if (!isSafeAppPath(value)) {
-    return fallback;
-  }
-
-  if (retiredContinuationPathPrefixes.some((prefix) => matchesPathPrefix(value, prefix))) {
-    return fallback;
-  }
-
-  return value;
+  return isSafeAppPath(value) ? value : fallback;
 }
 
 export function buildAuthRedirectPath(args?: {
@@ -51,7 +31,7 @@ export function buildAuthRedirectPath(args?: {
 }) {
   const params = new URLSearchParams();
   const hasExplicitNextPath = isSafeAppPath(args?.nextPath);
-  const nextPath = normalizeAppPath(args?.nextPath, "/start");
+  const nextPath = normalizeAppPath(args?.nextPath, "/projects");
 
   if (args?.notice?.trim()) {
     params.set("notice", args.notice.trim());

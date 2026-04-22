@@ -6,18 +6,11 @@ type PlaceholderModule = {
   body: string;
 };
 
-type PlaceholderNavItem = {
-  label: string;
-  href: string;
-  active?: boolean;
-};
-
 export function ProjectRoomPlaceholder({
   eyebrow,
   title,
   description,
   modules,
-  navigation,
   primaryAction,
   secondaryAction
 }: {
@@ -25,7 +18,6 @@ export function ProjectRoomPlaceholder({
   title: string;
   description: string;
   modules: PlaceholderModule[];
-  navigation?: PlaceholderNavItem[];
   primaryAction?: {
     label: string;
     href: string;
@@ -37,24 +29,6 @@ export function ProjectRoomPlaceholder({
 }) {
   return (
     <div className="space-y-6">
-      {navigation && navigation.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {navigation.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
-                item.active
-                  ? "border-slate-950 bg-slate-950 text-white"
-                  : "border-slate-200/75 bg-white/82 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50/70 hover:text-slate-950"
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      ) : null}
-
       <section className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 xl:px-8">
         <div className="floating-wash rounded-[38px]" />
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
@@ -101,48 +75,72 @@ export function ProjectRoomPlaceholder({
 }
 
 export function BuildRoomRestrictedState({
-  navigation,
   commandCenterHref,
   workspaceHref
 }: {
-  navigation?: PlaceholderNavItem[];
   commandCenterHref: string;
   workspaceHref: string;
 }) {
   return (
-    <ProjectRoomPlaceholder
-      eyebrow="Build Room"
-      title="Protected live execution environment"
-      description="Build Room is where live execution, preview, and protected implementation work will stay organized. The address is now stable again even though direct customer entry remains restricted."
-      navigation={navigation}
-      primaryAction={{
-        label: "Open Command Center",
-        href: commandCenterHref
-      }}
-      secondaryAction={{
-        label: "Return to Project Workspace",
-        href: workspaceHref
-      }}
-      modules={[
-        {
-          label: "What happens here",
-          title: "Live build and preview work",
-          body:
-            "Approved roadmap work, preview review, and implementation coordination will live here when the deeper protected execution path is ready."
-        },
-        {
-          label: "How it connects",
-          title: "Rooms stay aligned",
-          body:
-            "Strategy Room keeps the product definition clear, Project Workspace keeps the approved scope visible, and Command Center reflects how the work moves forward."
-        },
-        {
-          label: "Access model",
-          title: "Restricted by design",
-          body:
-            "This room is intentionally visible so the project architecture stays understandable, but direct customer entry is still gated while the protected runtime layer is stabilized."
-        }
-      ]}
-    />
+    <div className="space-y-6">
+      <section className="floating-plane relative overflow-hidden rounded-[38px] border border-slate-200/70 px-6 py-8 xl:px-8">
+        <div className="floating-wash rounded-[38px]" />
+        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-4xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
+              Build Room
+            </p>
+            <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-slate-950 xl:text-6xl">
+              Protected live execution environment
+            </h1>
+            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
+              Build Room is where live building, testing, previewing, and protected remote
+              workspace operations run. Direct access stays limited while execution is managed
+              through a controlled environment.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Link href={commandCenterHref} className="button-primary">
+              Open Command Center
+            </Link>
+            <Link href={workspaceHref} className="button-secondary">
+              Return to Project Workspace
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        {[
+          {
+            label: "What happens here",
+            title: "Live build and preview work",
+            body:
+              "Approved roadmap work, protected previews, test environments, and active implementation operations are organized here when direct access opens."
+          },
+          {
+            label: "How it stays organized",
+            title: "Rooms stay in sync",
+            body:
+              "Strategy Room defines what should be built, Project Workspace keeps the approved roadmap visible, and Command Center shows how that plan translates into delivery."
+          },
+          {
+            label: "Access model",
+            title: "Restricted by design",
+            body:
+              "This room remains visible so the product architecture is understandable, but access stays gated until the protected execution environment is ready for direct customer entry."
+          }
+        ].map((item) => (
+          <div key={item.title} className="floating-plane rounded-[30px] p-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {item.label}
+            </p>
+            <p className="mt-3 text-lg font-semibold text-slate-950">{item.title}</p>
+            <p className="mt-3 text-sm leading-7 text-slate-600">{item.body}</p>
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }

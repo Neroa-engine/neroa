@@ -1,11 +1,17 @@
-import { DashboardBoardShell } from "@/components/layout/page-shells";
-import { ProjectRoomPlaceholder } from "@/components/portal/project-room-placeholders";
-import { buildPortalProjectSummary } from "@/lib/portal/server";
+import { unstable_noStore as noStore } from "next/cache";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { ActiveProjectPortalShell } from "@/components/portal/portal-shells";
+import { ProjectCommandCenterV1 } from "@/components/workspace/project-command-center-v1";
+import { listLiveViewSessionsForProject, mapLiveViewSessionToRuntimeTarget } from "@/lib/live-view/store";
+import { APP_ROUTES } from "@/lib/routes";
+import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
 import {
-  buildProjectRoomRoute,
-  buildProjectWorkspaceRoute
-} from "@/lib/portal/routes";
-import { getWorkspaceForCurrentUser } from "@/lib/workspace/server";
+  buildPortalProjectSummary,
+  loadPortalProjectSummariesForUser
+} from "@/lib/portal/server";
+import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
+import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type CommandCenterPageProps = {
   params: {
@@ -14,76 +20,63 @@ type CommandCenterPageProps = {
 };
 
 export default async function CommandCenterPage({ params }: CommandCenterPageProps) {
-  const { user, workspace } = await getWorkspaceForCurrentUser(params.workspaceId, {
-    nextPath: buildProjectRoomRoute(params.workspaceId, "command-center")
+  noStore();
+  const requestOrigin = resolveBrowserRuntimeRequestOrigin(headers());
+
+  const { supabase, user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
+    params.workspaceId,
+    params.workspaceId,
+    {
+      nextPath: `/workspace/${params.workspaceId}/command-center`
+    }
+  );
+  const liveViewSession =
+    (
+      await listLiveViewSessionsForProject({
+        workspaceId: workspace.id,
+        projectId: project.id,
+        preferredOrigin: requestOrigin
+      })
+    )[0] ?? null;
+  const runtimeTargetSession = liveViewSession
+    ? mapLiveViewSessionToRuntimeTarget(liveViewSession, requestOrigin)
+    : null;
+  const commandCenter = buildCommandCenterSummary({
+    project,
+    projectMetadata,
+    liveViewSession: runtimeTargetSession
   });
-  const project = buildPortalProjectSummary(workspace);
-  const workspaceHref = buildProjectWorkspaceRoute(params.workspaceId);
-  const strategyRoomHref = buildProjectRoomRoute(params.workspaceId, "strategy-room");
-  const buildRoomHref = buildProjectRoomRoute(params.workspaceId, "build-room");
+  const portalProjects = await loadPortalProjectSummariesForUser({
+    supabase,
+    userId: user.id
+  });
+  const activeProjectSummary =
+    portalProjects.find((item) => item.workspaceId === params.workspaceId) ??
+    buildPortalProjectSummary(workspace);
+
+  if (activeProjectSummary.customerFacingState !== "current") {
+    redirect(APP_ROUTES.projects);
+  }
+
+  const activeProject = {
+    ...activeProjectSummary,
+    phaseLabel: commandCenter.activePhase.label,
+    statusLabel: commandCenter.executionReadiness.label
+  };
 
   return (
-    <DashboardBoardShell
+    <ActiveProjectPortalShell
+      currentRoom="command-center"
       userEmail={user.email ?? undefined}
-      ctaHref={workspaceHref}
-      ctaLabel="Project Workspace"
+      activeProject={activeProject}
+      availableProjects={portalProjects}
     >
-      <ProjectRoomPlaceholder
-        eyebrow="Command Center"
-        title={`Continue ${project.title} from the command layer.`}
-        description="Command Center is now a stable project route again, so signed-in continuation can land here without a 404. It stays connected to the same project workspace and strategy thread."
-        navigation={[
-          {
-            label: "Projects",
-            href: "/projects"
-          },
-          {
-            label: "Strategy Room",
-            href: strategyRoomHref
-          },
-          {
-            label: "Project Workspace",
-            href: workspaceHref
-          },
-          {
-            label: "Command Center",
-            href: buildProjectRoomRoute(params.workspaceId, "command-center"),
-            active: true
-          },
-          {
-            label: "Build Room",
-            href: buildRoomHref
-          }
-        ]}
-        primaryAction={{
-          label: "Open Project Workspace",
-          href: workspaceHref
-        }}
-        secondaryAction={{
-          label: "Review Build Room",
-          href: buildRoomHref
-        }}
-        modules={[
-          {
-            label: "Execution view",
-            title: "Stay in the same project context",
-            body:
-              "The command layer is now addressable again from the signed-in customer flow instead of failing on a missing route."
-          },
-          {
-            label: "Room handoff",
-            title: "Move between rooms cleanly",
-            body:
-              "You can move back to Strategy Room to refine what should be built or return to Project Workspace to review the currently active work areas."
-          },
-          {
-            label: "Current scope",
-            title: "Portal continuation restored first",
-            body:
-              "This pass restores the customer-facing continuation path and stable command route. Deeper operator/runtime systems remain separate from this narrow fix."
-          }
-        ]}
+      <ProjectCommandCenterV1
+        project={project}
+        commandCenter={commandCenter}
+        liveViewSession={runtimeTargetSession}
+        canManageDecisions={activeProjectSummary.accessMode === "owner"}
       />
-    </DashboardBoardShell>
+    </ActiveProjectPortalShell>
   );
 }

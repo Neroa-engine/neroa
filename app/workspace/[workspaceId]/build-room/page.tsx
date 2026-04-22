@@ -1,7 +1,14 @@
-import { DashboardBoardShell } from "@/components/layout/page-shells";
+import { ActiveProjectPortalShell } from "@/components/portal/portal-shells";
 import { BuildRoomRestrictedState } from "@/components/portal/project-room-placeholders";
-import { buildProjectRoomRoute, buildProjectWorkspaceRoute } from "@/lib/portal/routes";
-import { getWorkspaceForCurrentUser } from "@/lib/workspace/server";
+import {
+  buildPortalProjectSummary,
+  loadPortalProjectSummariesForUser
+} from "@/lib/portal/server";
+import {
+  buildProjectRoomRoute,
+  buildProjectWorkspaceRoute
+} from "@/lib/portal/routes";
+import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type BuildRoomPageProps = {
   params: {
@@ -10,41 +17,32 @@ type BuildRoomPageProps = {
 };
 
 export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
-  const { user } = await getWorkspaceForCurrentUser(params.workspaceId, {
-    nextPath: buildProjectRoomRoute(params.workspaceId, "build-room")
+  const { supabase, user, workspace } = await getWorkspaceProjectContext(
+    params.workspaceId,
+    params.workspaceId,
+    {
+      nextPath: `/workspace/${params.workspaceId}/build-room`
+    }
+  );
+  const portalProjects = await loadPortalProjectSummariesForUser({
+    supabase,
+    userId: user.id
   });
-  const workspaceHref = buildProjectWorkspaceRoute(params.workspaceId);
-  const commandCenterHref = buildProjectRoomRoute(params.workspaceId, "command-center");
+  const activeProject =
+    portalProjects.find((item) => item.workspaceId === params.workspaceId) ??
+    buildPortalProjectSummary(workspace);
 
   return (
-    <DashboardBoardShell
+    <ActiveProjectPortalShell
+      currentRoom="build-room"
       userEmail={user.email ?? undefined}
-      ctaHref={workspaceHref}
-      ctaLabel="Project Workspace"
+      activeProject={activeProject}
+      availableProjects={portalProjects}
     >
       <BuildRoomRestrictedState
-        navigation={[
-          {
-            label: "Projects",
-            href: "/projects"
-          },
-          {
-            label: "Project Workspace",
-            href: workspaceHref
-          },
-          {
-            label: "Command Center",
-            href: commandCenterHref
-          },
-          {
-            label: "Build Room",
-            href: buildProjectRoomRoute(params.workspaceId, "build-room"),
-            active: true
-          }
-        ]}
-        commandCenterHref={commandCenterHref}
-        workspaceHref={workspaceHref}
+        commandCenterHref={buildProjectRoomRoute(params.workspaceId, "command-center")}
+        workspaceHref={buildProjectWorkspaceRoute(params.workspaceId)}
       />
-    </DashboardBoardShell>
+    </ActiveProjectPortalShell>
   );
 }
