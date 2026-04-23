@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.start);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.dashboard);
 
   return (
     <MarketingInfoShell

@@ -19,7 +19,7 @@ function safeNextPath(value?: string) {
     return value;
   }
 
-  return APP_ROUTES.start;
+  return APP_ROUTES.dashboard;
 }
 
 function describeDestination(nextPath: string) {

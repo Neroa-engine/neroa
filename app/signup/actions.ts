@@ -9,7 +9,7 @@ function safeString(value: FormDataEntryValue | null) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function safeNextPath(value: string, fallback: string = APP_ROUTES.start) {
+function safeNextPath(value: string, fallback: string = APP_ROUTES.dashboard) {
   return value.startsWith("/") && !value.startsWith("//") ? value : fallback;
 }
 
@@ -245,7 +245,7 @@ export async function sendPasswordResetEmail(formData: FormData) {
 export async function updatePasswordFromRecovery(formData: FormData) {
   const password = safeString(formData.get("password"));
   const confirmPassword = safeString(formData.get("confirmPassword"));
-  const next = safeNextPath(safeString(formData.get("next")), APP_ROUTES.start);
+  const next = safeNextPath(safeString(formData.get("next")), APP_ROUTES.dashboard);
 
   if (password !== confirmPassword) {
     redirect(

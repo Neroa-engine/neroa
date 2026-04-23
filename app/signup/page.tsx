@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default async function SignupPage({ searchParams }: SignupPageProps) {
   const user = await getOptionalUser();
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.start);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.dashboard);
 
   if (user) {
     redirect(next);

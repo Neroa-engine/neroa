@@ -605,7 +605,6 @@ export default function DashboardBoard({
     () => projects.find((project) => project.id === assetWorkspaceId) ?? null,
     [assetWorkspaceId, projects]
   );
-const resumeProjectRoute = selectedProject?.route ?? APP_ROUTES.projects;
   const resumeProjectWorkspaceId = selectedProject?.id ?? null;
 
   function startRename(project: DashboardBoardProject) {
@@ -628,7 +627,7 @@ const resumeProjectRoute = selectedProject?.route ?? APP_ROUTES.projects;
             {resumeProjectWorkspaceId ? (
               <ProjectPortalOpenForm
                 workspaceId={resumeProjectWorkspaceId}
-                destination={resumeProjectRoute}
+                destination={APP_ROUTES.dashboard}
                 label="Resume Project"
                 className="button-secondary"
               />

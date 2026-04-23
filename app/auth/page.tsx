@@ -60,7 +60,7 @@ function describeNextStep(next: string) {
 
 export default async function AuthPage({ searchParams }: AuthPageProps) {
   const user = await getOptionalUser();
-  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.start);
+  const next = normalizeAppPath(searchParams?.next, APP_ROUTES.dashboard);
   const destination = describeNextStep(next);
 
   if (user) {

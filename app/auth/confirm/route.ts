@@ -60,7 +60,7 @@ async function resolvePostConfirmationDestination(args: {
 
   if (normalizedNextPath === APP_ROUTES.dashboard) {
     if (!user) {
-      return APP_ROUTES.start;
+      return APP_ROUTES.projects;
     }
 
     const projects = await loadPortalProjectSummariesForUser({
