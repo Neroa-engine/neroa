@@ -1,4 +1,5 @@
-import { WorkspaceProjectPage } from "@/components/workspace/workspace-project-page";
+import { redirect } from "next/navigation";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 
 type ProjectPageProps = {
   params: {
@@ -12,12 +13,26 @@ type ProjectPageProps = {
   };
 };
 
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function buildCanonicalWorkspaceRedirect(workspaceId: string, error: string | null) {
+  const canonicalRoute = buildProjectWorkspaceRoute(workspaceId);
+
+  if (!error) {
+    return canonicalRoute;
+  }
+
+  return `${canonicalRoute}?error=${encodeURIComponent(error)}`;
+}
+
 export default function ProjectPage({ params, searchParams }: ProjectPageProps) {
-  return (
-    <WorkspaceProjectPage
-      workspaceId={params.workspaceId}
-      projectId={params.projectId}
-      searchParams={searchParams}
-    />
-  );
+  const error =
+    firstValue(searchParams?.error) ??
+    (params.projectId !== params.workspaceId
+      ? "This legacy project route has been retired. Continue in the canonical active project portal."
+      : null);
+
+  redirect(buildCanonicalWorkspaceRedirect(params.workspaceId, error));
 }

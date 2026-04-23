@@ -640,7 +640,7 @@ export async function updateCommandCenterPreviewState(formData: FormData) {
     mutation === "start_preview" || mutation === "update_preview"
       ? await getOrCreateProjectLiveViewSession({
           workspaceId,
-          projectId: workspaceId,
+          projectId: workspace.id,
           projectTitle: workspace.name,
           bridgeOrigin: resolveActionOrigin()
         }).catch((error) =>

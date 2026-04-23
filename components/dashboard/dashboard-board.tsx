@@ -387,19 +387,19 @@ function ProjectManagementBar({
 }
 
 function RenamePanel({
-  projectId,
+  workspaceId,
   renameValue,
   onChange,
   onCancel
 }: {
-  projectId: string;
+  workspaceId: string;
   renameValue: string;
   onChange: (value: string) => void;
   onCancel: () => void;
 }) {
   return (
     <form action={renameWorkspace} className="flex flex-col gap-3 rounded-[22px] bg-white/72 p-4">
-      <input type="hidden" name="workspaceId" value={projectId} />
+      <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="returnTo" value={APP_ROUTES.projects} />
       <input
         name="name"
@@ -496,7 +496,7 @@ function FullProjectCard({
         {renameOpen ? (
           <div className="xl:col-span-3">
             <RenamePanel
-              projectId={project.id}
+              workspaceId={project.id}
               renameValue={renameValue}
               onChange={onRenameChange}
               onCancel={onRenameCancel}
@@ -560,7 +560,7 @@ function CompactProjectCard({
       {renameOpen ? (
         <div className="mt-4">
           <RenamePanel
-            projectId={project.id}
+            workspaceId={project.id}
             renameValue={renameValue}
             onChange={onRenameChange}
             onCancel={onRenameCancel}

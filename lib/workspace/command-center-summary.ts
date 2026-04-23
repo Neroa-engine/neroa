@@ -2640,7 +2640,7 @@ function buildDesignLibraryPanel(args: {
                 ? "A browser/runtime error is blocking trustworthy preview work right now. Resolve the browser connection first."
                 : "Open Browser first. The Design Library only stages preview and package work against a real connected live session."
         : "Use this entry point to stage design controls, review preview state, and keep approved packages separate from source code while targeting the same live session as Browser.";
-  const ctaLabel = runtimeReady ? "Open library" : runtimeBridge.ctaLabel;
+  const ctaLabel = runtimeReady ? "Open Design Library" : runtimeBridge.ctaLabel;
 
   return {
     title: "Design Library",

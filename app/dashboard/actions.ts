@@ -15,6 +15,7 @@ import {
 } from "@/lib/platform/foundation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { APP_ROUTES } from "@/lib/routes";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
@@ -141,7 +142,7 @@ export async function createWorkspace(formData: FormData) {
     revalidatePath(APP_ROUTES.projects);
     revalidatePath(APP_ROUTES.projectsNew);
     redirect(
-      `/workspace/${data.id}/project/${data.id}?error=${encodeURIComponent(
+      `${buildProjectWorkspaceRoute(data.id)}?error=${encodeURIComponent(
         usageError instanceof Error
           ? `Engine created, but usage could not be synced. ${usageError.message}`
           : "Engine created, but usage could not be synced."
@@ -152,7 +153,7 @@ export async function createWorkspace(formData: FormData) {
   revalidatePath(APP_ROUTES.dashboard);
   revalidatePath(APP_ROUTES.projects);
   revalidatePath(APP_ROUTES.projectsNew);
-  redirect(`/workspace/${data.id}/project/${data.id}`);
+  redirect(buildProjectWorkspaceRoute(data.id));
 }
 
 export async function signOut() {

@@ -1,24 +1,17 @@
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
-import {
-  buildWorkflowUpgradeMessage,
-  isWorkflowStageAllowed,
-  resolveRequiredWorkflowStage
-} from "@/lib/account/plan-access";
 import { deriveWorkspaceLanes } from "@/lib/workspace/lanes";
 import { parseWorkspaceProjectDescription } from "@/lib/workspace/project-metadata";
 import {
   getFirstProjectLane,
   buildProjectModel,
-  getProjectLaneBySlug,
-  resolveProjectLaneSlug,
   type CustomProjectLaneInput,
   type ProjectRecord
 } from "@/lib/workspace/project-lanes";
 import {
-  getAccessibleWorkspace,
-  recordPlatformEvent
+  getAccessibleWorkspace
 } from "@/lib/platform/foundation";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 
 type WorkspaceProjectContextOptions = {
   requestedPrimaryLaneId?: string | null;
@@ -84,12 +77,8 @@ function buildWorkspaceProjectFromRecord(args: {
   });
 }
 
-function getProjectNotFoundRoute(workspaceId: string, projectId: string) {
-  return `/workspace/${workspaceId}/project/${projectId}?error=Project not found.`;
-}
-
-function getLaneNotFoundRoute(workspaceId: string, projectId: string) {
-  return `/workspace/${workspaceId}/project/${projectId}?error=Lane not found.`;
+function buildCanonicalWorkspaceErrorRoute(workspaceId: string, message: string) {
+  return `${buildProjectWorkspaceRoute(workspaceId)}?error=${encodeURIComponent(message)}`;
 }
 
 export async function getWorkspaceProjectContext(
@@ -98,11 +87,20 @@ export async function getWorkspaceProjectContext(
   options?: WorkspaceProjectContextOptions
 ) {
   const { supabase, user, access, workspace } = await getWorkspaceForCurrentUser(workspaceId, {
-    nextPath: options?.nextPath ?? `/workspace/${workspaceId}/project/${projectId}`
+    nextPath: options?.nextPath ?? buildProjectWorkspaceRoute(workspaceId)
   });
 
+  if (!projectId.trim()) {
+    redirect(buildCanonicalWorkspaceErrorRoute(workspace.id, "Project not found."));
+  }
+
   if (projectId !== workspace.id) {
-    redirect(getProjectNotFoundRoute(workspaceId, workspace.id));
+    redirect(
+      buildCanonicalWorkspaceErrorRoute(
+        workspace.id,
+        "This non-canonical project route has been retired. Continue in the active project portal."
+      )
+    );
   }
 
   const parsedWorkspace = parseWorkspaceProjectDescription(workspace.description);
@@ -125,90 +123,6 @@ export async function getWorkspaceProjectContext(
     workspace: cleanWorkspace,
     project,
     projectMetadata: parsedWorkspace.metadata
-  };
-}
-
-export async function getWorkspaceProjectLaneContext(
-  workspaceId: string,
-  projectId: string,
-  laneSlug: string,
-  options?: WorkspaceProjectContextOptions
-) {
-  const { supabase, user, access, workspace, project } = await getWorkspaceProjectContext(
-    workspaceId,
-    projectId,
-    {
-      ...options,
-      nextPath:
-        options?.nextPath ?? `/workspace/${workspaceId}/project/${projectId}/lane/${laneSlug}`
-    }
-  );
-  const resolvedLaneSlug = resolveProjectLaneSlug(project, laneSlug);
-
-  if (!resolvedLaneSlug) {
-    redirect(getLaneNotFoundRoute(workspaceId, projectId));
-  }
-
-  const lane = getProjectLaneBySlug(project, resolvedLaneSlug);
-
-  if (!lane) {
-    redirect(getLaneNotFoundRoute(workspaceId, projectId));
-  }
-
-  const requiredStage = resolveRequiredWorkflowStage({
-    laneTitle: lane.title,
-    laneSlug: lane.slug
-  });
-
-  if (!isWorkflowStageAllowed(access, requiredStage)) {
-    await recordPlatformEvent({
-      supabase,
-      userId: user.id,
-      workspaceId,
-      eventType: "workflow_stage_gated",
-      severity: "warning",
-      details: {
-        requiredStage,
-        laneSlug: lane.slug,
-        laneTitle: lane.title,
-        maxWorkflowStage: access.maxWorkflowStage
-      }
-    }).catch(() => {
-      // Optional platform event.
-    });
-
-    redirect(
-      `/workspace/${workspaceId}/project/${projectId}?error=${encodeURIComponent(
-        buildWorkflowUpgradeMessage(access, requiredStage)
-      )}`
-    );
-  }
-
-  return {
-    user,
-    access,
-    workspace,
-    project,
-    lane
-  };
-}
-
-export async function getWorkspaceEngineContext(workspaceId: string, engineSlug: string) {
-  const { user, workspace, project, lane } = await getWorkspaceProjectLaneContext(
-    workspaceId,
-    workspaceId,
-    engineSlug,
-    {
-      nextPath: `/workspace/${workspaceId}/engine/${engineSlug}`
-    }
-  );
-
-  return {
-    user,
-    workspace,
-    project,
-    laneId: lane.slug,
-    lane
   };
 }
 

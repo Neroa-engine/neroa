@@ -111,7 +111,7 @@ export function ProjectWorkspaceV1({
   const projectContext = buildProjectContextSnapshot({ project, projectMetadata });
   const leadingLane = getFirstProjectLane(project);
   const strategyRoomHref = buildProjectRoomRoute(project.workspaceId, "strategy-room");
-  const projectLibraryHref = `/workspace/${project.workspaceId}/project/${project.id}/library`;
+  const projectLibraryHref = buildProjectRoomRoute(project.workspaceId, "command-center");
 
   return (
     <section className="surface-main relative overflow-hidden rounded-[42px] p-6 xl:p-8 2xl:p-10">

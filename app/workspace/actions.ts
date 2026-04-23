@@ -21,6 +21,7 @@ import {
   recordOnboardingDecisionAndBuildSession,
   recordPlatformEvent
 } from "@/lib/platform/foundation";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import {
   buildDescriptionWithMetadata,
   getOwnedWorkspace,
@@ -49,7 +50,7 @@ function workspaceWriteBlockedMessage(action: "archive" | "restore" | "rename" |
 export async function renameWorkspace(formData: FormData) {
   const workspaceId = safeString(formData.get("workspaceId"));
   const name = safeString(formData.get("name"));
-  const returnTo = getReturnTo(formData, `/workspace/${workspaceId}/project/${workspaceId}`);
+  const returnTo = getReturnTo(formData, buildProjectWorkspaceRoute(workspaceId));
 
   if (!workspaceId || !name) {
     redirectWithError(returnTo, "Engine rename requires an id and a name.");
@@ -91,7 +92,7 @@ export async function renameWorkspace(formData: FormData) {
     "/settings",
     "/billing",
     "/usage",
-    `/workspace/${workspaceId}/project/${workspaceId}`
+    buildProjectWorkspaceRoute(workspaceId)
   ]);
 }
 
@@ -492,6 +493,6 @@ export async function registerWorkspaceAssets(formData: FormData) {
   revalidateWorkspacePaths([
     "/dashboard",
     "/projects",
-    `/workspace/${workspaceId}/project/${workspaceId}`
+    buildProjectWorkspaceRoute(workspaceId)
   ]);
 }

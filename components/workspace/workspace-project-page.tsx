@@ -8,7 +8,6 @@ import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type WorkspaceProjectPageProps = {
   workspaceId: string;
-  projectId: string;
   searchParams?: {
     error?: string | string[];
     lane?: string | string[];
@@ -33,21 +32,16 @@ function sanitizeWorkspaceMessage(value: string | null) {
 
 export async function WorkspaceProjectPage({
   workspaceId,
-  projectId,
   searchParams
 }: WorkspaceProjectPageProps) {
-  const nextPath =
-    projectId === workspaceId
-      ? `/workspace/${workspaceId}`
-      : `/workspace/${workspaceId}/project/${projectId}`;
   const { supabase, user, workspace, project, projectMetadata } =
     await getWorkspaceProjectContext(
       workspaceId,
-      projectId,
+      workspaceId,
       {
         requestedPrimaryLaneId: firstValue(searchParams?.lane),
         requestedSupportingLaneIds: firstValue(searchParams?.supporting),
-        nextPath
+        nextPath: `/workspace/${workspaceId}`
       }
     );
 

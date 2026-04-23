@@ -2,6 +2,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
+import { buildProjectRoomRoute } from "@/lib/portal/routes";
 import type { ServerSupabaseClient } from "@/lib/platform/foundation";
 import {
   buildStoredProjectMetadata,
@@ -220,7 +221,7 @@ export type ProjectQcPageSummary = {
 };
 
 export type ProjectQcLibraryDestination = {
-  projectLibraryRoute: string;
+  commandCenterRoute: string;
   listPath: string;
   reportWritePath: string;
   recordingWritePath: string;
@@ -643,7 +644,7 @@ export function buildProjectQcLibraryDestination(args: {
   const basePath = `/api/workspace/${args.workspaceId}/project/${args.projectId}/qc-library`;
 
   return {
-    projectLibraryRoute: `/workspace/${args.workspaceId}/project/${args.projectId}/library`,
+    commandCenterRoute: buildProjectRoomRoute(args.workspaceId, "command-center"),
     listPath: basePath,
     reportWritePath: `${basePath}/reports`,
     recordingWritePath: `${basePath}/recordings`

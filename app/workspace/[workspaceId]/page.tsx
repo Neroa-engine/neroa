@@ -15,7 +15,6 @@ export default function WorkspacePage({ params, searchParams }: WorkspacePagePro
   return (
     <WorkspaceProjectPage
       workspaceId={params.workspaceId}
-      projectId={params.workspaceId}
       searchParams={searchParams}
     />
   );

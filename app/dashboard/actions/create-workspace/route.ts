@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function redirectTo(request: Request, path: string) {
@@ -52,5 +53,5 @@ export async function POST(request: Request) {
 
   revalidatePath("/dashboard");
 
-  return redirectTo(request, `/workspace/${data.id}/project/${data.id}`);
+  return redirectTo(request, buildProjectWorkspaceRoute(data.id));
 }

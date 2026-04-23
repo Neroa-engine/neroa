@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { formatRelativeDate } from "@/lib/format";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import { updateJob } from "@/app/jobs/[id]/actions";
 
 type JobPageProps = {
@@ -75,7 +76,7 @@ export default async function JobPage({ params, searchParams }: JobPageProps) {
                 <dt>Workspace</dt>
                 <dd>
                   {workspace ? (
-                    <Link href={`/workspace/${workspace.id}/project/${workspace.id}`} className="text-white underline-offset-4 hover:underline">
+                    <Link href={buildProjectWorkspaceRoute(workspace.id)} className="text-white underline-offset-4 hover:underline">
                       {workspace.name}
                     </Link>
                   ) : (

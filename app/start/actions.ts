@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { buildAuthRedirectPath } from "@/lib/auth/routes";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -108,5 +109,5 @@ export async function startEntryWorkspace(formData: FormData) {
   }
 
   revalidatePath(APP_ROUTES.dashboard);
-  redirect(`/workspace/${data.id}/project/${data.id}`);
+  redirect(buildProjectWorkspaceRoute(data.id));
 }
