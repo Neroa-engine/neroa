@@ -44,14 +44,15 @@ function HeaderLink({
   label: string;
   active: boolean;
 }) {
-  const className = `whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45 ${
-    active
-      ? "bg-white/82 text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
-      : "text-slate-600 hover:bg-white/72 hover:text-slate-950"
-  }`;
-
   return (
-    <Link href={href} className={className}>
+    <Link
+      href={href}
+      className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45 ${
+        active
+          ? "bg-white/82 text-slate-950 shadow-[0_10px_24px_rgba(15,23,42,0.08)]"
+          : "text-slate-600 hover:bg-white/72 hover:text-slate-950"
+      }`}
+    >
       {label}
     </Link>
   );
