@@ -2,7 +2,7 @@ export type PublicLaunchIntent = "diy" | "managed";
 
 import { APP_ROUTES } from "@/lib/routes";
 
-export const publicLaunchEntryPath = "/start" as const;
+export const publicLaunchEntryPath = APP_ROUTES.roadmap;
 export const publicLaunchDiyPath = "/start?entry=diy" as const;
 export const publicLaunchManagedPath = "/start?entry=managed" as const;
 
@@ -33,6 +33,11 @@ export const launchReadyUseCaseSlugs = [
 
 function normalizeLaunchLabel(label: string) {
   return label.trim().toLowerCase();
+}
+
+function isStrategyRoomLaunchTarget(label: string, href: string) {
+  const normalizedLabel = normalizeLaunchLabel(label);
+  return normalizedLabel === "open strategy room" || href === APP_ROUTES.roadmap;
 }
 
 export function resolvePublicLaunchIntent(
@@ -94,6 +99,13 @@ export function buildPublicLaunchAuthHref(targetPath: string) {
 }
 
 export function resolveCanonicalStartRoute(label: string, href: string) {
+  if (isStrategyRoomLaunchTarget(label, href)) {
+    return {
+      href: APP_ROUTES.roadmap,
+      label
+    };
+  }
+
   const launchIntent = resolvePublicLaunchIntent(label, href);
 
   if (launchIntent === "managed") {
@@ -128,6 +140,17 @@ export function resolvePublicLaunchAction(
   }
 ) {
   const resolvedAction = resolveCanonicalStartRoute(label, href);
+
+  if (resolvedAction.href === APP_ROUTES.roadmap) {
+    if (options?.authenticated === false) {
+      return {
+        href: buildPublicLaunchAuthHref(APP_ROUTES.roadmap),
+        label: resolvedAction.label
+      };
+    }
+
+    return resolvedAction;
+  }
 
   if (options?.authenticated === true && isCanonicalLaunchTarget(resolvedAction.href)) {
     return {

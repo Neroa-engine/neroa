@@ -172,3 +172,23 @@ export async function resolveSmartResumeDestination(args: {
     ? resolveSmartResumeDestinationForProject(fallbackProject)
     : APP_ROUTES.projects;
 }
+
+export async function resolveStrategyRoomLaunchDestination(args: {
+  supabase: ServerSupabaseClient;
+  userId: string;
+  projects: PortalProjectSummary[];
+}) {
+  const activeProject = await resolveActivePortalProject(args);
+
+  if (activeProject) {
+    return activeProject.strategyRoomRoute;
+  }
+
+  const selectableProjects = listSelectablePortalProjects(args.projects);
+
+  if (selectableProjects.length > 0) {
+    return APP_ROUTES.projects;
+  }
+
+  return APP_ROUTES.projectsNew;
+}

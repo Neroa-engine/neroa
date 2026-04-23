@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import {
   loadPortalProjectSummariesForUser,
+  resolveStrategyRoomLaunchDestination,
   resolveSmartResumeDestination
 } from "@/lib/portal/server";
 import { APP_ROUTES } from "@/lib/routes";
@@ -80,7 +81,7 @@ async function resolvePostConfirmationDestination(args: {
   }
 
   if (!user) {
-    return normalizedNextPath === APP_ROUTES.projects ? APP_ROUTES.projects : APP_ROUTES.roadmap;
+    return normalizedNextPath;
   }
 
   const projects = await loadPortalProjectSummariesForUser({
@@ -88,11 +89,19 @@ async function resolvePostConfirmationDestination(args: {
     userId: user.id
   }).catch(() => []);
 
+  if (normalizedNextPath === APP_ROUTES.roadmap) {
+    return resolveStrategyRoomLaunchDestination({
+      supabase: args.supabase,
+      userId: user.id,
+      projects
+    });
+  }
+
   if (projects.length > 0) {
     return APP_ROUTES.projects;
   }
 
-  return APP_ROUTES.roadmap;
+  return APP_ROUTES.projectsNew;
 }
 
 function buildConfirmationNotice(destinationPath: string) {
@@ -106,6 +115,10 @@ function buildConfirmationNotice(destinationPath: string) {
 
   if (destinationPath.includes("/command-center")) {
     return "Email confirmed. Continue into your project's Command Center.";
+  }
+
+  if (destinationPath.includes("/strategy-room")) {
+    return "Email confirmed. Continue into your project's Strategy Room.";
   }
 
   if (destinationPath.startsWith("/roadmap")) {

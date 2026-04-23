@@ -2410,18 +2410,24 @@ function buildDesignPreviewArchitecture(args: {
     };
   const approvedPackage: StoredCommandCenterApprovedDesignPackage | null =
     args.projectMetadata?.commandCenterApprovedDesignPackage ?? null;
+  const approvedPackageSelectedControls = approvedPackage?.selectedControls ?? null;
+  const approvedPackageAffectedSurfaces = approvedPackage?.affectedSurfaces ?? [];
   const effectiveActiveMode =
     previewState.selectedControls.designMode ??
     previewState.selectedControls.roomPreset ??
     approvedPackage?.approvedDesignMode ??
-    approvedPackage?.selectedControls.designMode ??
-    approvedPackage?.selectedControls.roomPreset ??
+    approvedPackageSelectedControls?.designMode ??
+    approvedPackageSelectedControls?.roomPreset ??
     null;
-  const targetedSurfaces = (
+  const targetedSurfaceTargets: CommandCenterPreviewSurfaceTarget[] =
     previewState.selectedControls.surfaceTargets.length > 0
       ? previewState.selectedControls.surfaceTargets
-      : approvedPackage?.affectedSurfaces ?? ["command_center"]
-  ).map((surface) => formatCommandCenterPreviewSurfaceTarget(surface));
+      : approvedPackageAffectedSurfaces.length > 0
+        ? approvedPackageAffectedSurfaces
+        : ["command_center"];
+  const targetedSurfaces = targetedSurfaceTargets.map((surface) =>
+    formatCommandCenterPreviewSurfaceTarget(surface)
+  );
   const controlSummary = normalizeListItems([
     previewState.selectedControls.colorway
       ? `Colorway: ${sanitizeCustomerText(previewState.selectedControls.colorway)}`
@@ -2525,13 +2531,12 @@ function buildDesignPreviewArchitecture(args: {
       status: approvedPackageStatus,
       label: approvedPackageLabel,
       detail: approvedPackageDetail,
-      affectedSurfaceTargets: approvedPackage?.affectedSurfaces ?? [],
-      affectedSurfaces:
-        approvedPackage?.affectedSurfaces.map((surface) =>
-          formatCommandCenterPreviewSurfaceTarget(surface)
-        ) ?? [],
+      affectedSurfaceTargets: approvedPackageAffectedSurfaces,
+      affectedSurfaces: approvedPackageAffectedSurfaces.map((surface) =>
+        formatCommandCenterPreviewSurfaceTarget(surface)
+      ),
       affectedZones: approvedPackage?.affectedZones ?? [],
-      selectedControls: approvedPackage?.selectedControls ?? null,
+      selectedControls: approvedPackageSelectedControls,
       implementationIntent: approvedPackage?.implementationIntent ?? null,
       cautionNotes: approvedPackage?.cautionNotes ?? [],
       approvedAt: approvedPackage?.approvedAt ?? null
