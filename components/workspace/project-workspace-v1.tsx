@@ -235,11 +235,16 @@ export function ProjectWorkspaceV1({
               <p className="text-lg font-semibold text-slate-950">{projectContext.nextStepTitle}</p>
               <p className="mt-3 text-sm leading-7 text-slate-600">{projectContext.nextStepBody}</p>
               <div className="mt-5 space-y-3">
-                <Link href={strategyRoomHref} className="button-primary w-full justify-center">
+                <Link
+                  href={strategyRoomHref}
+                  prefetch={false}
+                  className="button-primary w-full justify-center"
+                >
                   Continue Planning
                 </Link>
                 <Link
                   href={strategyRoomHref}
+                  prefetch={false}
                   className="block text-center text-sm font-medium text-slate-500 transition hover:text-slate-700"
                 >
                   Refine Your Idea
@@ -256,7 +261,11 @@ export function ProjectWorkspaceV1({
                   ? `${leadingLane.title} is leading the project right now while the next phase gets defined.`
                   : "The project will show its leading phase here once the first planning step is active."}
               </p>
-              <Link href={projectLibraryHref} className="button-secondary mt-4 w-full justify-center">
+              <Link
+                href={projectLibraryHref}
+                prefetch={false}
+                className="button-secondary mt-4 w-full justify-center"
+              >
                 Open Project Library
               </Link>
             </div>

@@ -263,6 +263,7 @@ function ProjectRoomNav({
         return (
           <Link
             key={roomId}
+            prefetch={false}
             href={buildProjectRoomRoute(activeProject.workspaceId, roomId)}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
               active
@@ -309,6 +310,7 @@ export function OuterPortalShell({
             </span>
             {showActiveProjectChip && activeProject ? (
               <Link
+                prefetch={false}
                 href={activeProject.workspaceRoute}
                 className="rounded-full border border-slate-200 bg-white/82 px-4 py-2 text-sm font-medium text-slate-600 transition hover:text-slate-950"
               >
@@ -421,6 +423,7 @@ export function ActiveProjectPortalShell({
               {isCommandCenter ? (
                 <div className="flex flex-wrap items-center gap-2 xl:justify-end">
                   <Link
+                    prefetch={false}
                     href={buildProjectRoomRoute(activeProject.workspaceId, "build-room")}
                     className="button-secondary text-sm"
                   >

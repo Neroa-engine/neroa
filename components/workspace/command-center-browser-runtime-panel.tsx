@@ -235,6 +235,30 @@ function parseTimestamp(value: string | null | undefined) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+function resolveSessionPollIntervalMs(args: {
+  runtimeState: CommandCenterBrowserPanel["runtimeState"];
+  runtimeActionBusy: boolean;
+  isLaunching: boolean;
+}) {
+  if (args.isLaunching || args.runtimeActionBusy) {
+    return 5000;
+  }
+
+  switch (args.runtimeState) {
+    case "connected":
+    case "preview_active":
+      return 15000;
+    case "awaiting_bind":
+      return 8000;
+    case "reconnect_needed":
+    case "session_stale":
+    case "error":
+      return 10000;
+    default:
+      return 12000;
+  }
+}
+
 export function CommandCenterBrowserRuntimePanel({
   workspaceId,
   projectId,
@@ -387,24 +411,53 @@ export function CommandCenterBrowserRuntimePanel({
       return null;
     }
 
-    if (runtimeActionBusy) {
-      return 3000;
-    }
-
-    return browserStatus.runtimeState === "connected" ||
-      browserStatus.runtimeState === "preview_active"
-      ? 15000
-      : 5000;
-  }, [browserStatus.runtimeState, runtimeActionBusy, trackedSessionId]);
+    return resolveSessionPollIntervalMs({
+      runtimeState: browserStatus.runtimeState,
+      runtimeActionBusy: runtimeActionBusy !== null,
+      isLaunching
+    });
+  }, [browserStatus.runtimeState, isLaunching, runtimeActionBusy, trackedSessionId]);
 
   useEffect(() => {
     if (!trackedSessionId || sessionPollIntervalMs === null) {
       return;
     }
 
+    const pollIntervalMs = sessionPollIntervalMs;
     let alive = true;
+    let timeoutId: number | null = null;
+    let inFlight = false;
 
-    async function pollSession() {
+    function clearScheduledPoll() {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    }
+
+    function scheduleNextPoll(delay = pollIntervalMs) {
+      if (!alive) {
+        return;
+      }
+
+      clearScheduledPoll();
+      timeoutId = window.setTimeout(() => {
+        void pollSession();
+      }, delay);
+    }
+
+    async function pollSession(force = false) {
+      if (!alive || inFlight) {
+        return;
+      }
+
+      if (!force && document.visibilityState !== "visible") {
+        scheduleNextPoll();
+        return;
+      }
+
+      inFlight = true;
+
       try {
         const session = await refreshSession();
 
@@ -424,27 +477,24 @@ export function CommandCenterBrowserRuntimePanel({
             ? error.message
             : "Unable to refresh the live browser session."
         );
+      } finally {
+        inFlight = false;
+        scheduleNextPoll();
       }
     }
 
-    void pollSession();
+    void pollSession(true);
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
-        void pollSession();
+        clearScheduledPoll();
+        void pollSession(true);
       }
     };
-    const interval = window.setInterval(() => {
-      if (document.visibilityState !== "visible") {
-        return;
-      }
-
-      void pollSession();
-    }, sessionPollIntervalMs);
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       alive = false;
-      window.clearInterval(interval);
+      clearScheduledPoll();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [refreshSession, sessionPollIntervalMs, trackedSessionId]);

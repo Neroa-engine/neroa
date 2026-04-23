@@ -45,12 +45,12 @@ export function ProjectRoomPlaceholder({
           {primaryAction || secondaryAction ? (
             <div className="flex flex-wrap gap-3">
               {primaryAction ? (
-                <Link href={primaryAction.href} className="button-primary">
+                <Link href={primaryAction.href} prefetch={false} className="button-primary">
                   {primaryAction.label}
                 </Link>
               ) : null}
               {secondaryAction ? (
-                <Link href={secondaryAction.href} className="button-secondary">
+                <Link href={secondaryAction.href} prefetch={false} className="button-secondary">
                   {secondaryAction.label}
                 </Link>
               ) : null}
@@ -101,10 +101,10 @@ export function BuildRoomRestrictedState({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Link href={commandCenterHref} className="button-primary">
+            <Link href={commandCenterHref} prefetch={false} className="button-primary">
               Open Command Center
             </Link>
-            <Link href={workspaceHref} className="button-secondary">
+            <Link href={workspaceHref} prefetch={false} className="button-secondary">
               Return to Project Workspace
             </Link>
           </div>
