@@ -34,6 +34,35 @@ const liveViewRecordingsDir = path.join(liveViewRoot, "recordings");
 const sessionReuseWindowMs = 1000 * 60 * 60 * 4;
 const liveViewConnectionFreshWindowMs = 1000 * 60 * 2;
 const sessionMutationQueues = new Map<string, Promise<void>>();
+let liveViewFilesystemStatus: "unknown" | "available" | "unavailable" = "unknown";
+let liveViewFilesystemWarningEmitted = false;
+
+function getLiveViewFilesystemErrorCode(error: unknown) {
+  if (!error || typeof error !== "object" || !("code" in error)) {
+    return null;
+  }
+
+  const code = (error as NodeJS.ErrnoException).code;
+  return typeof code === "string" ? code : null;
+}
+
+function isLiveViewFilesystemUnavailableError(error: unknown) {
+  const code = getLiveViewFilesystemErrorCode(error);
+  return code === "EACCES" || code === "ENOENT" || code === "EPERM" || code === "EROFS";
+}
+
+function warnLiveViewFilesystemUnavailable(error: unknown) {
+  if (liveViewFilesystemWarningEmitted) {
+    return;
+  }
+
+  liveViewFilesystemWarningEmitted = true;
+  console.warn(
+    `[live-view] Filesystem-backed session storage is unavailable at ${liveViewRoot}. ` +
+      "Command Center will continue without live-view session history in this runtime.",
+    error
+  );
+}
 
 function normalizeOrigin(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -303,12 +332,33 @@ function getSessionFilePath(sessionId: string) {
 }
 
 async function ensureLiveViewDirectories() {
-  await mkdir(liveViewSessionsDir, { recursive: true });
-  await mkdir(liveViewRecordingsDir, { recursive: true });
+  if (liveViewFilesystemStatus === "unavailable") {
+    return false;
+  }
+
+  try {
+    await mkdir(liveViewSessionsDir, { recursive: true });
+    await mkdir(liveViewRecordingsDir, { recursive: true });
+    liveViewFilesystemStatus = "available";
+    return true;
+  } catch (error) {
+    if (isLiveViewFilesystemUnavailableError(error)) {
+      liveViewFilesystemStatus = "unavailable";
+      warnLiveViewFilesystemUnavailable(error);
+      return false;
+    }
+
+    throw error;
+  }
 }
 
 async function writeSession(session: LiveViewSession) {
-  await ensureLiveViewDirectories();
+  const storageReady = await ensureLiveViewDirectories();
+  if (!storageReady) {
+    throw new Error(
+      "Live View session storage is unavailable in this runtime. Browser runtime state cannot be persisted here."
+    );
+  }
   await writeFile(getSessionFilePath(session.id), JSON.stringify(session, null, 2), "utf8");
 }
 
@@ -382,6 +432,11 @@ function normalizeSnapshot(payload: LiveViewInspectPayload["snapshot"], screensh
 async function saveRecordingFrame(sessionId: string, snapshotId: string, dataUrl: string) {
   const match = dataUrl.match(/^data:image\/png;base64,(.+)$/);
   if (!match) {
+    return null;
+  }
+
+  const storageReady = await ensureLiveViewDirectories();
+  if (!storageReady) {
     return null;
   }
 
@@ -498,7 +553,10 @@ export async function listLiveViewSessionsForProject(args: {
   projectId: string;
   preferredOrigin?: string | null;
 }) {
-  await ensureLiveViewDirectories();
+  const storageReady = await ensureLiveViewDirectories();
+  if (!storageReady) {
+    return [];
+  }
   const files = await readdir(liveViewSessionsDir);
   const sessions = await Promise.all(
     files
@@ -528,7 +586,10 @@ export async function listLiveViewSessionsForProject(args: {
   }
 
 export async function getLiveViewSessionById(sessionId: string) {
-  await ensureLiveViewDirectories();
+  const storageReady = await ensureLiveViewDirectories();
+  if (!storageReady) {
+    return null;
+  }
   try {
     return await readSessionFile(getSessionFilePath(sessionId));
   } catch {
@@ -537,6 +598,11 @@ export async function getLiveViewSessionById(sessionId: string) {
 }
 
 export async function getLiveViewSessionByToken(token: string) {
+  const storageReady = await ensureLiveViewDirectories();
+  if (!storageReady) {
+    return null;
+  }
+
   const files = await readdir(liveViewSessionsDir).catch(() => []);
 
   for (const file of files) {
