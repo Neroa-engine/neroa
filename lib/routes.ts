@@ -6,6 +6,7 @@ export const APP_ROUTES = {
   startManaged: "/start?entry=managed",
   dashboard: "/dashboard",
   projects: "/projects",
+  projectsNew: "/projects/new",
   profile: "/profile",
   settings: "/settings",
   billing: "/billing",

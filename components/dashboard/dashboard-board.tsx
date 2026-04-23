@@ -605,7 +605,7 @@ export default function DashboardBoard({
     () => projects.find((project) => project.id === assetWorkspaceId) ?? null,
     [assetWorkspaceId, projects]
   );
-  const resumeProjectRoute = selectedProject?.route ?? APP_ROUTES.dashboard;
+const resumeProjectRoute = selectedProject?.route ?? APP_ROUTES.projects;
   const resumeProjectWorkspaceId = selectedProject?.id ?? null;
 
   function startRename(project: DashboardBoardProject) {
@@ -633,11 +633,11 @@ export default function DashboardBoard({
                 className="button-secondary"
               />
             ) : (
-              <Link href={APP_ROUTES.dashboard} className="button-secondary">
+              <Link href={APP_ROUTES.projects} className="button-secondary">
                 Resume Project
               </Link>
             )}
-            <Link href={APP_ROUTES.startDiy} className="button-primary">
+            <Link href={APP_ROUTES.projectsNew} className="button-primary">
               New Project
             </Link>
             <a href="#assets-inputs" className="button-secondary">
@@ -703,7 +703,7 @@ export default function DashboardBoard({
                   phase.
                 </p>
                 <div className="mt-6">
-                  <Link href={APP_ROUTES.startDiy} className="button-primary">
+                  <Link href={APP_ROUTES.projectsNew} className="button-primary">
                     New Project
                   </Link>
                 </div>

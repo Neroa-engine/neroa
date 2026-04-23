@@ -129,6 +129,13 @@ export function resolvePublicLaunchAction(
 ) {
   const resolvedAction = resolveCanonicalStartRoute(label, href);
 
+  if (options?.authenticated === true && isCanonicalLaunchTarget(resolvedAction.href)) {
+    return {
+      href: APP_ROUTES.projectsNew,
+      label: resolvedAction.label
+    };
+  }
+
   if (
     options?.authenticated === false &&
     (isCanonicalLaunchTarget(resolvedAction.href) || isPrivateAppHref(resolvedAction.href))

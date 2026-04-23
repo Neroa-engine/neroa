@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import {
+  loadPortalProjectSummariesForUser,
+  resolveSmartResumeDestination
+} from "@/lib/portal/server";
 import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -17,16 +21,12 @@ function safeNextPath(value: string | null | undefined) {
     return value;
   }
 
-  return APP_ROUTES.start;
+  return APP_ROUTES.dashboard;
 }
 
 function normalizeNextPath(nextPath: string) {
   if (nextPath === APP_ROUTES.start || nextPath.startsWith("/start?entry=")) {
     return nextPath;
-  }
-
-  if (nextPath === APP_ROUTES.dashboard) {
-    return APP_ROUTES.dashboard;
   }
 
   if (nextPath === "/start?step=plan") {
@@ -37,15 +37,15 @@ function normalizeNextPath(nextPath: string) {
     return APP_ROUTES.startDiy;
   }
 
-  if (nextPath === "/projects/new") {
-    return APP_ROUTES.startDiy;
-  }
-
-  if (nextPath === APP_ROUTES.projects || nextPath === APP_ROUTES.roadmap) {
-    return APP_ROUTES.start;
-  }
-
   return nextPath;
+}
+
+function shouldResolveProjectDestination(nextPath: string, type: string | null) {
+  if (type === "recovery" || type === "email_change") {
+    return false;
+  }
+
+  return nextPath === APP_ROUTES.projects || nextPath === APP_ROUTES.roadmap;
 }
 
 async function resolvePostConfirmationDestination(args: {
@@ -54,12 +54,45 @@ async function resolvePostConfirmationDestination(args: {
   type: string | null;
 }) {
   const normalizedNextPath = normalizeNextPath(args.nextPath);
+  const {
+    data: { user }
+  } = await args.supabase.auth.getUser();
 
   if (normalizedNextPath === APP_ROUTES.dashboard) {
-    return APP_ROUTES.dashboard;
+    if (!user) {
+      return APP_ROUTES.start;
+    }
+
+    const projects = await loadPortalProjectSummariesForUser({
+      supabase: args.supabase,
+      userId: user.id
+    }).catch(() => []);
+
+    return resolveSmartResumeDestination({
+      supabase: args.supabase,
+      userId: user.id,
+      projects
+    });
   }
 
-  return normalizedNextPath;
+  if (!shouldResolveProjectDestination(normalizedNextPath, args.type)) {
+    return normalizedNextPath;
+  }
+
+  if (!user) {
+    return normalizedNextPath === APP_ROUTES.projects ? APP_ROUTES.projects : APP_ROUTES.roadmap;
+  }
+
+  const projects = await loadPortalProjectSummariesForUser({
+    supabase: args.supabase,
+    userId: user.id
+  }).catch(() => []);
+
+  if (projects.length > 0) {
+    return APP_ROUTES.projects;
+  }
+
+  return APP_ROUTES.roadmap;
 }
 
 function buildConfirmationNotice(destinationPath: string) {
@@ -71,12 +104,20 @@ function buildConfirmationNotice(destinationPath: string) {
     return "Email confirmed. Continue into your planning center.";
   }
 
-  if (destinationPath === APP_ROUTES.dashboard) {
-    return "Email confirmed. Continue into your saved build step.";
-  }
-
   if (destinationPath.includes("/command-center")) {
     return "Email confirmed. Continue into your project's Command Center.";
+  }
+
+  if (destinationPath.startsWith("/roadmap")) {
+    return "Email confirmed. Your roadmap is ready.";
+  }
+
+  if (destinationPath.startsWith(APP_ROUTES.roadmap)) {
+    return "Email confirmed. Continue shaping your first project.";
+  }
+
+  if (destinationPath.startsWith(APP_ROUTES.projects)) {
+    return "Email confirmed. Your account is ready.";
   }
 
   return "Email confirmed. Continue into Neroa.";

@@ -44,7 +44,12 @@ function PortalAtmosphere() {
 
 function outerPortalNavState(currentPath: string, href: string) {
   if (href === APP_ROUTES.projects) {
-    return currentPath === APP_ROUTES.projects || currentPath === APP_ROUTES.dashboard;
+    return (
+      currentPath === APP_ROUTES.projects ||
+      currentPath === APP_ROUTES.projectsNew ||
+      currentPath === APP_ROUTES.dashboard ||
+      currentPath.startsWith(`${APP_ROUTES.projects}/`)
+    );
   }
 
   if (href === APP_ROUTES.billing) {
@@ -158,8 +163,8 @@ function OuterPortalActiveProject({
           No project is active yet. Start planning here and Neroa will open the next project from
           Strategy Room.
         </p>
-        <Link href={APP_ROUTES.start} className="button-secondary mt-4 w-full justify-center">
-          Start Planning
+        <Link href={APP_ROUTES.projectsNew} className="button-secondary mt-4 w-full justify-center">
+          Start New Project
         </Link>
       </div>
     );
@@ -316,7 +321,7 @@ export function OuterPortalShell({
             <Link href={APP_ROUTES.home} className="button-quiet px-4 py-3 text-sm">
               Home
             </Link>
-            <Link href={APP_ROUTES.startDiy} className="button-primary text-sm">
+            <Link href={APP_ROUTES.projectsNew} className="button-primary text-sm">
               New Project
             </Link>
             <Link href={APP_ROUTES.dashboard} className="button-secondary text-sm">

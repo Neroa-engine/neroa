@@ -170,5 +170,5 @@ export async function resolveSmartResumeDestination(args: {
 
   return fallbackProject
     ? resolveSmartResumeDestinationForProject(fallbackProject)
-    : APP_ROUTES.start;
+    : APP_ROUTES.projects;
 }
