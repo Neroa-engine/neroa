@@ -17,6 +17,24 @@ type SiteHeaderProps = {
   brandVariant?: "default" | "prominent";
 };
 
+function resolveMainNavHref(href: string, pathname: string) {
+  if (href === "/pricing") {
+    if (
+      pathname.startsWith("/diy-build") ||
+      pathname.startsWith("/diy") ||
+      pathname.startsWith("/pricing/diy")
+    ) {
+      return "/pricing/diy";
+    }
+
+    if (pathname.startsWith("/managed-build") || pathname.startsWith("/pricing/managed")) {
+      return "/pricing/managed";
+    }
+  }
+
+  return href;
+}
+
 function HeaderLink({
   href,
   label,
