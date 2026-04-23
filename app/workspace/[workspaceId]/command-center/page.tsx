@@ -30,14 +30,18 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
       nextPath: `/workspace/${params.workspaceId}/command-center`
     }
   );
-  const liveViewSession =
-    (
-      await listLiveViewSessionsForProject({
-        workspaceId: workspace.id,
-        projectId: project.id,
-        preferredOrigin: requestOrigin
-      })
-    )[0] ?? null;
+  const [liveViewSessions, portalProjects] = await Promise.all([
+    listLiveViewSessionsForProject({
+      workspaceId: workspace.id,
+      projectId: project.id,
+      preferredOrigin: requestOrigin
+    }),
+    loadPortalProjectSummariesForUser({
+      supabase,
+      userId: user.id
+    })
+  ]);
+  const liveViewSession = liveViewSessions[0] ?? null;
   const runtimeTargetSession = liveViewSession
     ? mapLiveViewSessionToRuntimeTarget(liveViewSession, requestOrigin)
     : null;
@@ -45,10 +49,6 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
     project,
     projectMetadata,
     liveViewSession: runtimeTargetSession
-  });
-  const portalProjects = await loadPortalProjectSummariesForUser({
-    supabase,
-    userId: user.id
   });
   const activeProjectSummary =
     portalProjects.find((item) => item.workspaceId === params.workspaceId) ??

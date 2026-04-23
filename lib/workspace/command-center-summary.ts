@@ -30,12 +30,15 @@ import {
   COMMAND_CENTER_PREVIEW_BOUNDARY_RULES,
   COMMAND_CENTER_PREVIEW_WORKFLOW_STEPS,
   defaultCommandCenterDesignControls,
+  defaultStoredCommandCenterPreviewState,
   formatCommandCenterApprovedDesignPackageStatusLabel,
   formatCommandCenterDesignModeLabel,
   formatCommandCenterPreviewApprovalStatusLabel,
   formatCommandCenterPreviewSourceLabel,
   formatCommandCenterPreviewStateLabel,
   formatCommandCenterPreviewSurfaceTarget,
+  normalizeStoredCommandCenterApprovedDesignPackage,
+  normalizeStoredCommandCenterPreviewState,
   type CommandCenterPreviewSource,
   type CommandCenterPreviewSurfaceTarget,
   type StoredCommandCenterDesignControls,
@@ -2399,29 +2402,25 @@ function buildDesignPreviewArchitecture(args: {
   liveViewSession?: LiveViewSession | null;
 }): CommandCenterDesignPreviewArchitecture {
   const previewState: StoredCommandCenterPreviewState =
-    args.projectMetadata?.commandCenterPreviewState ?? {
-      previewSessionId: null,
-      state: "inactive",
-      selectedControls: defaultCommandCenterDesignControls(),
-      source: "command_center_design_library",
-      approvalStatus: "not_requested",
-      lastUpdatedAt: null,
-      notes: null
-    };
+    normalizeStoredCommandCenterPreviewState(args.projectMetadata?.commandCenterPreviewState) ??
+    defaultStoredCommandCenterPreviewState();
   const approvedPackage: StoredCommandCenterApprovedDesignPackage | null =
-    args.projectMetadata?.commandCenterApprovedDesignPackage ?? null;
+    normalizeStoredCommandCenterApprovedDesignPackage(
+      args.projectMetadata?.commandCenterApprovedDesignPackage
+    );
+  const previewSelectedControls = previewState.selectedControls ?? defaultCommandCenterDesignControls();
   const approvedPackageSelectedControls = approvedPackage?.selectedControls ?? null;
   const approvedPackageAffectedSurfaces = approvedPackage?.affectedSurfaces ?? [];
   const effectiveActiveMode =
-    previewState.selectedControls.designMode ??
-    previewState.selectedControls.roomPreset ??
+    previewSelectedControls.designMode ??
+    previewSelectedControls.roomPreset ??
     approvedPackage?.approvedDesignMode ??
     approvedPackageSelectedControls?.designMode ??
     approvedPackageSelectedControls?.roomPreset ??
     null;
   const targetedSurfaceTargets: CommandCenterPreviewSurfaceTarget[] =
-    previewState.selectedControls.surfaceTargets.length > 0
-      ? previewState.selectedControls.surfaceTargets
+    previewSelectedControls.surfaceTargets.length > 0
+      ? previewSelectedControls.surfaceTargets
       : approvedPackageAffectedSurfaces.length > 0
         ? approvedPackageAffectedSurfaces
         : ["command_center"];
@@ -2429,23 +2428,23 @@ function buildDesignPreviewArchitecture(args: {
     formatCommandCenterPreviewSurfaceTarget(surface)
   );
   const controlSummary = normalizeListItems([
-    previewState.selectedControls.colorway
-      ? `Colorway: ${sanitizeCustomerText(previewState.selectedControls.colorway)}`
+    previewSelectedControls.colorway
+      ? `Colorway: ${sanitizeCustomerText(previewSelectedControls.colorway)}`
       : null,
-    previewState.selectedControls.buttonStyle
-      ? `Buttons: ${sanitizeCustomerText(previewState.selectedControls.buttonStyle)}`
+    previewSelectedControls.buttonStyle
+      ? `Buttons: ${sanitizeCustomerText(previewSelectedControls.buttonStyle)}`
       : null,
-    previewState.selectedControls.typographyStyle
-      ? `Typography: ${sanitizeCustomerText(previewState.selectedControls.typographyStyle)}`
+    previewSelectedControls.typographyStyle
+      ? `Typography: ${sanitizeCustomerText(previewSelectedControls.typographyStyle)}`
       : null,
-    previewState.selectedControls.densityMode
-      ? `Density: ${previewState.selectedControls.densityMode}`
+    previewSelectedControls.densityMode
+      ? `Density: ${previewSelectedControls.densityMode}`
       : null,
-    previewState.selectedControls.layoutPreset
-      ? `Layout: ${sanitizeCustomerText(previewState.selectedControls.layoutPreset)}`
+    previewSelectedControls.layoutPreset
+      ? `Layout: ${sanitizeCustomerText(previewSelectedControls.layoutPreset)}`
       : null,
-    previewState.selectedControls.roomPreset
-      ? `Room preset: ${sanitizeCustomerText(previewState.selectedControls.roomPreset)}`
+    previewSelectedControls.roomPreset
+      ? `Room preset: ${sanitizeCustomerText(previewSelectedControls.roomPreset)}`
       : null
   ]);
 
@@ -2515,11 +2514,11 @@ function buildDesignPreviewArchitecture(args: {
       previewSessionId: previewState.previewSessionId,
       source: previewState.source,
       sourceLabel: formatCommandCenterPreviewSourceLabel(previewState.source),
-      selectedControls: previewState.selectedControls,
+      selectedControls: previewSelectedControls,
       notes: previewState.notes,
       targetedSurfaceTargets:
-        previewState.selectedControls.surfaceTargets.length > 0
-          ? previewState.selectedControls.surfaceTargets
+        previewSelectedControls.surfaceTargets.length > 0
+          ? previewSelectedControls.surfaceTargets
           : ["command_center"],
       targetedSurfaces,
       activeModeLabel: formatCommandCenterDesignModeLabel(effectiveActiveMode),

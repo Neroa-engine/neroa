@@ -382,8 +382,23 @@ export function CommandCenterBrowserRuntimePanel({
     return json.session ?? null;
   }, [projectId, trackedSessionId, workspaceId]);
 
-  useEffect(() => {
+  const sessionPollIntervalMs = useMemo(() => {
     if (!trackedSessionId) {
+      return null;
+    }
+
+    if (runtimeActionBusy) {
+      return 3000;
+    }
+
+    return browserStatus.runtimeState === "connected" ||
+      browserStatus.runtimeState === "preview_active"
+      ? 15000
+      : 5000;
+  }, [browserStatus.runtimeState, runtimeActionBusy, trackedSessionId]);
+
+  useEffect(() => {
+    if (!trackedSessionId || sessionPollIntervalMs === null) {
       return;
     }
 
@@ -413,15 +428,26 @@ export function CommandCenterBrowserRuntimePanel({
     }
 
     void pollSession();
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void pollSession();
+      }
+    };
     const interval = window.setInterval(() => {
+      if (document.visibilityState !== "visible") {
+        return;
+      }
+
       void pollSession();
-    }, 5000);
+    }, sessionPollIntervalMs);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       alive = false;
       window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [refreshSession, trackedSessionId]);
+  }, [refreshSession, sessionPollIntervalMs, trackedSessionId]);
 
   const extensionConnected = activeSession?.extensionConnection.status === "connected";
   const hasRealBind = Boolean(activeSession?.extensionConnection.boundAt);
