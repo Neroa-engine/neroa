@@ -1,0 +1,257 @@
+{
+  "version": 1,
+  "protectedBaseBranch": "main",
+  "recommendedWorktreeRoot": "../neroa-worktrees",
+  "lanes": [
+    {
+      "id": "lane/portal-shell",
+      "required": true,
+      "branch": "codex/lane-portal-shell",
+      "worktree": "lane-portal-shell",
+      "purpose": "Canonical portal shell, room nav, portal guards, outer portal surfaces, and Project Workspace room.",
+      "owns": [
+        "components/portal/**",
+        "components/dashboard/**",
+        "components/account/**",
+        "app/projects/**",
+        "app/profile/page.tsx",
+        "app/settings/page.tsx",
+        "app/billing/**",
+        "app/usage/**",
+        "app/workspace/[workspaceId]/page.tsx",
+        "components/workspace/workspace-project-page.tsx",
+        "components/workspace/project-workspace-v1.tsx",
+        "lib/portal/**"
+      ],
+      "mustNotTouch": [
+        "components/workspace/project-strategy-room-v1.tsx",
+        "components/workspace/project-command-center-v1.tsx",
+        "components/portal/project-room-placeholders.tsx",
+        "lib/browser-runtime-v2/**",
+        "lib/live-view/**"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify all four canonical rooms still share ActiveProjectPortalShell",
+        "Run duplication and route-drift check on active-project paths"
+      ]
+    },
+    {
+      "id": "lane/strategy-room",
+      "required": true,
+      "branch": "codex/lane-strategy-room",
+      "worktree": "lane-strategy-room",
+      "purpose": "Strategy Room UI, strategy conversation layer, extraction flow, and roadmap/project-definition intelligence.",
+      "owns": [
+        "app/workspace/[workspaceId]/strategy-room/page.tsx",
+        "components/workspace/project-strategy-room-v1.tsx",
+        "components/onboarding/**",
+        "lib/start/**",
+        "app/start/**",
+        "app/api/start/chat/route.ts"
+      ],
+      "mustNotTouch": [
+        "components/portal/**",
+        "components/workspace/project-command-center-v1.tsx",
+        "components/portal/project-room-placeholders.tsx",
+        "lib/browser-runtime-v2/**"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify Strategy Room remains inside ActiveProjectPortalShell",
+        "Verify no signed-in project flow lands on public-shell strategy"
+      ]
+    },
+    {
+      "id": "lane/command-center",
+      "required": true,
+      "branch": "codex/lane-command-center",
+      "worktree": "lane-command-center",
+      "purpose": "Command Center UI, operator surfaces, monitoring/reporting panels, and command-center summaries.",
+      "owns": [
+        "app/workspace/[workspaceId]/command-center/**",
+        "components/workspace/project-command-center-v1.tsx",
+        "components/workspace/command-center-*.tsx",
+        "lib/workspace/command-center-*.ts",
+        "app/portal/actions.ts"
+      ],
+      "mustNotTouch": [
+        "components/portal/**",
+        "components/workspace/project-strategy-room-v1.tsx",
+        "components/portal/project-room-placeholders.tsx",
+        "lib/browser-runtime-v2/**",
+        "lib/live-view/**"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify Command Center loads in the canonical shell",
+        "Verify no server-side exception remains in the canonical route"
+      ]
+    },
+    {
+      "id": "lane/build-room",
+      "required": true,
+      "branch": "codex/lane-build-room",
+      "worktree": "lane-build-room",
+      "purpose": "Build Room UI and execution-facing user surfaces.",
+      "owns": [
+        "app/workspace/[workspaceId]/build-room/**",
+        "components/portal/project-room-placeholders.tsx"
+      ],
+      "mustNotTouch": [
+        "components/portal/portal-shells.tsx",
+        "components/workspace/project-strategy-room-v1.tsx",
+        "components/workspace/project-command-center-v1.tsx",
+        "lib/browser-runtime-v2/**"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify Build Room stays in the canonical shell",
+        "Verify Build Room links back to canonical Command Center and Project Workspace"
+      ]
+    },
+    {
+      "id": "lane/browser-runtime",
+      "required": true,
+      "branch": "codex/lane-browser-runtime",
+      "worktree": "lane-browser-runtime",
+      "purpose": "Browser runtime integration, runtime sessions, inspections, recordings, captures, and browser-linked evidence systems.",
+      "owns": [
+        "lib/browser-runtime-v2/**",
+        "lib/live-view/**",
+        "extensions/neroa-live-view/**",
+        "app/api/live-view/**",
+        "components/live-view/**",
+        "components/workspace/command-center-browser-runtime-panel.tsx"
+      ],
+      "mustNotTouch": [
+        "components/portal/**",
+        "app/page.tsx",
+        "components/workspace/project-strategy-room-v1.tsx"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify Command Center and Build Room still render when runtime is unavailable",
+        "Verify no duplicate browser runtime path is introduced"
+      ]
+    },
+    {
+      "id": "lane/auth-entry",
+      "required": true,
+      "branch": "codex/lane-auth-entry",
+      "worktree": "lane-auth-entry",
+      "purpose": "Sign-in/sign-up handoff, create/select/open/resume flow, and authenticated redirect rules.",
+      "owns": [
+        "app/auth/**",
+        "app/signup/**",
+        "app/forgot-password/**",
+        "app/reset-password/**",
+        "app/dashboard/**",
+        "app/roadmap/**",
+        "app/projects/resume/**",
+        "lib/auth/**"
+      ],
+      "mustNotTouch": [
+        "app/page.tsx",
+        "components/marketing/**",
+        "components/portal/**",
+        "components/workspace/project-command-center-v1.tsx"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify sign-in, resume, and roadmap flows land inside canonical portal destinations",
+        "Verify no signed-in project route falls back to public-shell pages"
+      ]
+    },
+    {
+      "id": "lane/front-door-ui",
+      "required": true,
+      "branch": "codex/lane-front-door-ui",
+      "worktree": "lane-front-door-ui",
+      "purpose": "Homepage, landing visual system, front-door branding, and public marketing-facing surfaces only.",
+      "owns": [
+        "app/page.tsx",
+        "components/layout/page-shells.tsx",
+        "components/site-header.tsx",
+        "components/site/**",
+        "components/support/public-help-chat.tsx",
+        "components/marketing/**",
+        "lib/data/public-launch.ts",
+        "app/pricing/**",
+        "app/blog/**",
+        "app/contact/**",
+        "app/use-cases/**"
+      ],
+      "mustNotTouch": [
+        "components/portal/**",
+        "app/workspace/**",
+        "lib/portal/**",
+        "lib/browser-runtime-v2/**"
+      ],
+      "validation": [
+        "npm.cmd run build",
+        "Verify public landing pages only",
+        "Verify no signed-in project room shows the public marketing shell"
+      ]
+    },
+    {
+      "id": "lane/billing-usage",
+      "required": false,
+      "branch": "codex/lane-billing-usage",
+      "worktree": "lane-billing-usage",
+      "purpose": "Future extraction point for account plan, credits, billing, and usage surfaces.",
+      "owns": [
+        "Placeholder only until activated"
+      ],
+      "mustNotTouch": [
+        "No active ownership until promoted"
+      ],
+      "validation": [
+        "Promote explicitly before use"
+      ]
+    },
+    {
+      "id": "lane/growth-layer",
+      "required": false,
+      "branch": "codex/lane-growth-layer",
+      "worktree": "lane-growth-layer",
+      "purpose": "Future extraction point for growth and experimentation systems.",
+      "owns": [
+        "Placeholder only until activated"
+      ],
+      "mustNotTouch": [
+        "No active ownership until promoted"
+      ],
+      "validation": [
+        "Promote explicitly before use"
+      ]
+    },
+    {
+      "id": "lane/admin-ops",
+      "required": false,
+      "branch": "codex/lane-admin-ops",
+      "worktree": "lane-admin-ops",
+      "purpose": "Future extraction point for admin and operational tooling.",
+      "owns": [
+        "Placeholder only until activated"
+      ],
+      "mustNotTouch": [
+        "No active ownership until promoted"
+      ],
+      "validation": [
+        "Promote explicitly before use"
+      ]
+    }
+  ],
+  "sharedCore": [
+    "components/portal/portal-shells.tsx",
+    "lib/portal/routes.ts",
+    "lib/portal/server.ts",
+    "lib/workspace/server.ts",
+    "lib/workspace/project-context-summary.ts",
+    "lib/auth/routes.ts",
+    "lib/auth.ts",
+    "lib/supabase/server.ts",
+    "app/globals.css"
+  ]
+}
