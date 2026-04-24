@@ -1,87 +1,38 @@
-﻿import type { NaruaMessage } from "@/lib/narua/planning";
+import type { NaruaMessage } from "@/lib/narua/planning";
 import { buildPricingRecommendation, type PricingRecommendation } from "@/lib/pricing/recommendation";
 import type { ProjectLaneRecord, ProjectRecord } from "@/lib/workspace/project-lanes";
-
-export type StrategyLaneField =
-  | "concept"
-  | "target"
-  | "offer"
-  | "launch"
-  | "budget"
-  | "needs";
-
-export type StrategyRoadmapItem = {
-  id: string;
-  title: string;
-  detail: string;
-  status: "now" | "next" | "later";
-};
-
-export type StrategyBudgetEstimate = {
-  title: string;
-  rangeLabel: string;
-  summary: string;
-  lineItems: Array<{
-    label: string;
-    amountLabel: string;
-    note: string;
-  }>;
-  assumptions: string[];
-};
-
-export type StrategyLaneLabels = {
-  modelTitle: string;
-  targetTitle: string;
-  offerTitle: string;
-  launchTitle: string;
-  budgetTitle: string;
-};
-
-export type StrategyLaneAnswers = {
-  concept: string;
-  target: string;
-  offer: string;
-  launch: string;
-  budget: string;
-  needs: string;
-};
-
-export type StrategyLaneOutputs = {
-  projectSummary: string;
-  model: string;
-  target: string;
-  offer: string;
-  launch: string;
-  roadmap: StrategyRoadmapItem[];
-  budget: StrategyBudgetEstimate;
-  recommendedPlan: PricingRecommendation;
-  recentActions: string[];
-  blockers: string[];
-};
-
-export type StrategyLaneSnapshot = {
-  version: 1;
-  messages: NaruaMessage[];
-  draft: string;
-  updatedAt: string;
-  contextTitle: string | null;
-  activeQuestionField: StrategyLaneField | null;
-  answers: StrategyLaneAnswers;
-  outputs: StrategyLaneOutputs | null;
-};
-
-export type StrategyLaneQuestion = {
-  field: StrategyLaneField;
-  prompt: string;
-};
-
-function createMessage(role: NaruaMessage["role"], content: string): NaruaMessage {
-  return {
-    id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    role,
-    content
-  };
-}
+import {
+  appendUniqueTop,
+  createStrategyLaneMessage,
+  trimStrategySupportTail,
+  truncateStrategySupportText
+} from "@/lib/workspace/strategy-lane-message-utils";
+import { inferStrategyLaneRefinementField } from "@/lib/workspace/strategy-lane-inference";
+import type {
+  StrategyBudgetEstimate,
+  StrategyLaneAnswers,
+  StrategyLaneField,
+  StrategyLaneLabels,
+  StrategyLaneOutputs,
+  StrategyLaneQuestion,
+  StrategyLaneSnapshot,
+  StrategyRoadmapItem
+} from "@/lib/workspace/strategy-lane-types";
+import {
+  analyzeStrategyRoomSupportIntent,
+  shouldLogStrategyRoomBlocker,
+  type StrategyRoomSupportIntent
+} from "@/lib/workspace/strategy-room-support";
+export type {
+  StrategyBudgetEstimate,
+  StrategyLaneAnswers,
+  StrategyLaneField,
+  StrategyLaneLabels,
+  StrategyLaneOutputs,
+  StrategyLaneQuestion,
+  StrategyLaneSnapshot,
+  StrategyRoadmapItem
+} from "@/lib/workspace/strategy-lane-types";
 
 function parseBudgetHint(value: string) {
   const matches = value.replace(/,/g, "").match(/\$?\d+(?:\.\d+)?/g);
@@ -137,8 +88,8 @@ function buildBudgetEstimate(project: ProjectRecord, answers: StrategyLaneAnswer
         : "Estimated startup budget",
     rangeLabel: buildRangeLabel(budgetRange.low, budgetRange.high),
     summary: explicitBudget
-      ? `Naroa is using the stated budget signal of about ${formatMoney(explicitBudget)} and adding delivery buffer for execution, retries, and supporting systems.`
-      : `Naroa estimated a realistic first-phase range based on project type, lane complexity, and the current launch scope.`,
+      ? `Neroa is using the stated budget signal of about ${formatMoney(explicitBudget)} and adding delivery buffer for execution, retries, and supporting systems.`
+      : `Neroa estimated a realistic first-phase range based on project type, lane complexity, and the current launch scope.`,
     lineItems: [
       {
         label:
@@ -148,7 +99,7 @@ function buildBudgetEstimate(project: ProjectRecord, answers: StrategyLaneAnswer
             ? "Scoping and implementation planning"
             : "Strategy and launch foundation",
         amountLabel: buildRangeLabel(Math.round(budgetRange.low * 0.28), Math.round(budgetRange.high * 0.32)),
-        note: "Naroa planning, structure, and first execution framing."
+        note: "Neroa planning, structure, and first execution framing."
       },
       {
         label:
@@ -174,7 +125,7 @@ function buildBudgetEstimate(project: ProjectRecord, answers: StrategyLaneAnswer
     assumptions: [
       "Estimate includes orchestration overhead, retries, and supporting execution work rather than raw model cost only.",
       explicitBudget
-        ? "Naroa will keep checking this range against the actual scope as the strategy gets sharper."
+        ? "Neroa will keep checking this range against the actual scope as the strategy gets sharper."
         : "Provide a firmer budget signal to tighten the estimate.",
       answers.needs.trim()
         ? `Current supporting needs: ${answers.needs.trim()}`
@@ -199,7 +150,7 @@ function createRoadmap(project: ProjectRecord, answers: StrategyLaneAnswers): St
     {
       id: "align-direction",
       title: `Lock the ${modelLabel.toLowerCase()}`,
-      detail: `Turn ${answers.concept || "the project concept"} into one sharp direction that Naroa can defend across the rest of the project.`,
+      detail: `Turn ${answers.concept || "the project concept"} into one sharp direction that Neroa can defend across the rest of the project.`,
       status: "now"
     },
     {
@@ -288,7 +239,7 @@ function getQuestionPrompt(project: ProjectRecord, field: StrategyLaneField, ans
         case "budget":
           return "What build budget and delivery window are you planning around?";
         case "needs":
-          return "Do you need Naroa to include website, developer brief, and launch planning in the first phase?";
+          return "Do you need Neroa to include website, developer brief, and launch planning in the first phase?";
       }
       break;
     case "mobile-app-build":
@@ -320,13 +271,13 @@ function getQuestionPrompt(project: ProjectRecord, field: StrategyLaneField, ans
         case "budget":
           return "What launch budget and timeline are you working with?";
         case "needs":
-          return "Do you need Naroa to include branding, domain, storefront, and marketing setup right away?";
+          return "Do you need Neroa to include branding, domain, storefront, and marketing setup right away?";
       }
       break;
     case "coding-project":
       switch (field) {
         case "concept":
-          return "What is the project, system, or code initiative you want Naroa to structure first?";
+          return "What is the project, system, or code initiative you want Neroa to structure first?";
         case "target":
           return "Who is the primary stakeholder or end user this needs to help first?";
         case "offer":
@@ -336,7 +287,7 @@ function getQuestionPrompt(project: ProjectRecord, field: StrategyLaneField, ans
         case "budget":
           return "What delivery budget or time window are you planning around?";
         case "needs":
-          return "Do you need Naroa to include repo planning, implementation workflow, or release coordination now?";
+          return "Do you need Neroa to include repo planning, implementation workflow, or release coordination now?";
       }
       break;
     default:
@@ -356,7 +307,7 @@ function getQuestionPrompt(project: ProjectRecord, field: StrategyLaneField, ans
       }
   }
 
-  return `Tell Naroa more about ${field}.`;
+  return `Tell Neroa more about ${field}.`;
 }
 
 const questionOrder: StrategyLaneField[] = [
@@ -420,9 +371,9 @@ function createOutputs(project: ProjectRecord, lane: ProjectLaneRecord, answers:
   return {
     projectSummary: createOutputSummary(project, answers),
     model: `${answers.concept} should be organized as a focused ${project.templateLabel.toLowerCase()} workflow with ${lane.title.toLowerCase()} leading the project direction before the other lanes widen execution.`,
-    target: `${answers.target} should feel like the first clear audience, not a broad market. Naroa should keep later strategy work anchored to what this group values first.`,
-    offer: `${answers.offer} should be the first offer or first deliverable Naroa protects as the project scope tightens. Anything that does not strengthen this first outcome should stay secondary.`,
-    launch: `${answers.launch} should guide the first 90-day push. Naroa should keep roadmap decisions, budget tradeoffs, and lane sequencing aligned to that direction.`,
+    target: `${answers.target} should feel like the first clear audience, not a broad market. Neroa should keep later strategy work anchored to what this group values first.`,
+    offer: `${answers.offer} should be the first offer or first deliverable Neroa protects as the project scope tightens. Anything that does not strengthen this first outcome should stay secondary.`,
+    launch: `${answers.launch} should guide the first 90-day push. Neroa should keep roadmap decisions, budget tradeoffs, and lane sequencing aligned to that direction.`,
     roadmap: createRoadmap(project, answers),
     budget,
     recommendedPlan,
@@ -438,38 +389,88 @@ function createOutputs(project: ProjectRecord, lane: ProjectLaneRecord, answers:
   };
 }
 
-function inferRefinementField(message: string): StrategyLaneField | null {
-  const normalized = message.toLowerCase();
+function buildStrategyLaneSupportReply(args: {
+  project: ProjectRecord;
+  snapshot: StrategyLaneSnapshot;
+  intent: StrategyRoomSupportIntent;
+}) {
+  const currentQuestion =
+    getStrategyLaneQuestion(args.project, args.snapshot.answers, args.snapshot.activeQuestionField) ??
+    getStrategyLaneQuestion(args.project, args.snapshot.answers, null);
+  const nextRoadmapItem = args.snapshot.outputs?.roadmap[0] ?? null;
+  const followUpRoadmapItem = args.snapshot.outputs?.roadmap[1] ?? null;
+  const topBlocker = args.snapshot.outputs?.blockers[0] ?? null;
+  const currentSummary =
+    args.snapshot.outputs?.projectSummary || args.snapshot.answers.concept || args.project.title;
 
-  if (normalized.includes("customer") || normalized.includes("user") || normalized.includes("audience")) {
-    return "target";
+  if (args.intent.wantsHumanSupport) {
+    return [
+      "Yes. If you want a person to step in, use Contact support or the Support page from this workspace.",
+      `The cleanest handoff summary right now is ${truncateStrategySupportText(
+        trimStrategySupportTail(currentSummary),
+        180
+      )}.`,
+      nextRoadmapItem
+        ? `If you stay here for now, the next move is ${truncateStrategySupportText(
+            trimStrategySupportTail(`${nextRoadmapItem.title}: ${nextRoadmapItem.detail}`),
+            220
+          )}.`
+        : currentQuestion?.prompt ??
+          "Tell me what feels unclear or blocked and I will tighten the next move."
+    ].join("\n\n");
   }
 
-  if (normalized.includes("offer") || normalized.includes("service") || normalized.includes("product")) {
-    return "offer";
+  if (!args.snapshot.outputs) {
+    const opener =
+      args.intent.mentionsBlockage || args.intent.mentionsFrustration || args.intent.mentionsNotWorking
+        ? "We can slow this down and get the strategy thread moving again."
+        : args.intent.mentionsConfusion || args.intent.mentionsUncertainty
+          ? "We can make this simpler and work one piece at a time."
+          : "I can help with that here.";
+    const bridge =
+      args.intent.mentionsRoadmap || args.intent.mentionsRecommendation || args.intent.mentionsNextStep
+        ? "Before I guess at the roadmap, budget, or recommendation, I need one more layer of strategy context."
+        : "The cleanest next move is to answer the missing strategy question instead of guessing.";
+
+    return [
+      opener,
+      bridge,
+      currentQuestion?.prompt ?? "Tell me what you want to build and what feels unclear right now."
+    ].join("\n\n");
   }
 
-  if (normalized.includes("budget") || normalized.includes("$") || normalized.includes("cost")) {
-    return "budget";
-  }
+  const opener =
+    args.intent.mentionsBlockage || args.intent.mentionsFrustration || args.intent.mentionsNotWorking
+      ? "We can get you unstuck without throwing the strategy away."
+      : args.intent.mentionsConfusion || args.intent.mentionsUncertainty
+        ? "We can make the strategy room more concrete."
+        : "I can walk you through this.";
+  const focusLine = nextRoadmapItem
+    ? `The next move is ${truncateStrategySupportText(
+        trimStrategySupportTail(`${nextRoadmapItem.title}: ${nextRoadmapItem.detail}`),
+        220
+      )}.`
+    : `The next move is to tighten the ${getLabels(args.project).modelTitle.toLowerCase()}.`;
+  const blockerLine = topBlocker
+    ? `The blocker still in view is ${truncateStrategySupportText(
+        trimStrategySupportTail(topBlocker),
+        180
+      )}.`
+    : followUpRoadmapItem
+      ? `After that, move into ${truncateStrategySupportText(
+          trimStrategySupportTail(`${followUpRoadmapItem.title}: ${followUpRoadmapItem.detail}`),
+          220
+        )}.`
+      : "If a part of the roadmap or recommendation feels wrong, tell me which part and I will rewrite it with you.";
+  const closingLine =
+    args.intent.mentionsRoadmap ||
+    args.intent.mentionsRecommendation ||
+    args.intent.mentionsBuild ||
+    args.intent.mentionsNextStep
+      ? "Tell me whether the unclear part is the roadmap, build order, or plan recommendation and I will tighten just that part."
+      : "Tell me what feels unclear, blocked, or not working and I will tighten that part directly.";
 
-  if (normalized.includes("launch") || normalized.includes("timeline") || normalized.includes("roadmap")) {
-    return "launch";
-  }
-
-  if (normalized.includes("website") || normalized.includes("brand") || normalized.includes("operations") || normalized.includes("need")) {
-    return "needs";
-  }
-
-  if (normalized.includes("business") || normalized.includes("model") || normalized.includes("strategy")) {
-    return "concept";
-  }
-
-  return null;
-}
-
-function appendUniqueTop(items: string[], item: string, maxItems = 4) {
-  return [item, ...items.filter((value) => value !== item)].slice(0, maxItems);
+  return [opener, focusLine, blockerLine, closingLine].join("\n\n");
 }
 
 export function isStrategyLane(lane: Pick<ProjectLaneRecord, "slug" | "title">) {
@@ -483,18 +484,18 @@ export function getStrategyLaneLabels(project: ProjectRecord) {
 export function createStrategyLaneInitialSnapshot(project: ProjectRecord, lane: ProjectLaneRecord): StrategyLaneSnapshot {
   const intro =
     project.templateId === "saas-build"
-      ? `Naroa is active in ${lane.title}. Start with the product direction and I will shape the first strategy summary, roadmap, budget estimate, and plan recommendation.`
+      ? `Neroa is active in ${lane.title}. Start with the product direction and I will shape the first strategy summary, roadmap, budget estimate, and plan recommendation. Use this same thread if something feels unclear, blocked, or if you want a person to step in.`
       : project.templateId === "mobile-app-build"
-        ? `Naroa is active in ${lane.title}. Start with the mobile app direction and I will shape the first app summary, roadmap, budget estimate, and stack recommendation.`
-      : project.templateId === "ecommerce-brand"
-        ? `Naroa is active in ${lane.title}. Tell me what brand or store you want to build first and I will shape the launch direction, roadmap, budget, and plan recommendation.`
+        ? `Neroa is active in ${lane.title}. Start with the mobile app direction and I will shape the first app summary, roadmap, budget estimate, and stack recommendation. Use this same thread if something feels unclear, blocked, or if you want a person to step in.`
+        : project.templateId === "ecommerce-brand"
+          ? `Neroa is active in ${lane.title}. Tell me what brand or store you want to build first and I will shape the launch direction, roadmap, budget, and plan recommendation. Use this same thread if something feels unclear, blocked, or if you want a person to step in.`
         : project.templateId === "coding-project"
-          ? `Naroa is active in ${lane.title}. Tell me what initiative you want to structure and I will turn it into a sharper delivery direction, roadmap, budget estimate, and plan recommendation.`
-          : `Naroa is active in ${lane.title}. Tell me what business you want to build and I will turn it into a sharper strategy, roadmap, budget estimate, and plan recommendation.`;
+          ? `Neroa is active in ${lane.title}. Tell me what initiative you want to structure and I will turn it into a sharper delivery direction, roadmap, budget estimate, and plan recommendation. Use this same thread if something feels unclear, blocked, or if you want a person to step in.`
+          : `Neroa is active in ${lane.title}. Tell me what business you want to build and I will turn it into a sharper strategy, roadmap, budget estimate, and plan recommendation. Use this same thread if something feels unclear, blocked, or if you want a person to step in.`;
 
   return {
     version: 1,
-    messages: [createMessage("narua", intro)],
+    messages: [createStrategyLaneMessage("narua", intro)],
     draft: "",
     updatedAt: new Date(0).toISOString(),
     contextTitle: lane.title,
@@ -699,6 +700,7 @@ export function getStrategyLaneQuestion(
 export function getStrategySuggestedPrompts(project: ProjectRecord, lane: ProjectLaneRecord) {
   const common = [
     "Help me sharpen the strategy.",
+    "Walk me through the next step.",
     "Estimate the budget and complexity.",
     "Recommend the right Neroa plan."
   ];
@@ -707,7 +709,7 @@ export function getStrategySuggestedPrompts(project: ProjectRecord, lane: Projec
 }
 
 export function createStrategyNarration(project: ProjectRecord, outputs: StrategyLaneOutputs) {
-  return `Naroa has shaped the first ${project.templateLabel.toLowerCase()} direction, refreshed the roadmap and budget, and recommended the strongest plan for the current scope.`;
+  return `Neroa has shaped the first ${project.templateLabel.toLowerCase()} direction, refreshed the roadmap and budget, and recommended the strongest plan for the current scope.`;
 }
 
 export function appendStrategyUserMessage(
@@ -716,7 +718,7 @@ export function appendStrategyUserMessage(
 ) {
   return {
     ...snapshot,
-    messages: [...snapshot.messages, createMessage("user", content)]
+    messages: [...snapshot.messages, createStrategyLaneMessage("user", content)]
   };
 }
 
@@ -736,6 +738,42 @@ export function buildStrategyLaneStateFromMessage(args: {
   }
 
   const nextSnapshot = appendStrategyUserMessage(args.snapshot, value);
+  const supportIntent = analyzeStrategyRoomSupportIntent(value);
+
+  if (supportIntent.hasHelpIntent) {
+    const naruaReply = buildStrategyLaneSupportReply({
+      project: args.project,
+      snapshot: nextSnapshot,
+      intent: supportIntent
+    });
+    const nextOutputs = nextSnapshot.outputs
+      ? {
+          ...nextSnapshot.outputs,
+          blockers: shouldLogStrategyRoomBlocker(supportIntent)
+            ? appendUniqueTop(
+                nextSnapshot.outputs.blockers,
+                `Needs strategy help: ${truncateStrategySupportText(value, 160)}`
+              )
+            : nextSnapshot.outputs.blockers,
+          recentActions: appendUniqueTop(
+            nextSnapshot.outputs.recentActions,
+            supportIntent.wantsHumanSupport
+              ? "Requested human or live support guidance."
+              : "Requested strategy clarification or next-step help."
+          )
+        }
+      : null;
+
+    return {
+      snapshot: {
+        ...nextSnapshot,
+        outputs: nextOutputs,
+        messages: [...nextSnapshot.messages, createStrategyLaneMessage("narua", naruaReply)],
+        updatedAt: new Date().toISOString()
+      },
+      naruaReply
+    };
+  }
 
   if (!nextSnapshot.outputs) {
     const currentField = nextSnapshot.activeQuestionField ?? getNextQuestionField(nextSnapshot.answers);
@@ -755,7 +793,7 @@ export function buildStrategyLaneStateFromMessage(args: {
           answers: nextAnswers,
           activeQuestionField: null,
           outputs,
-          messages: [...nextSnapshot.messages, createMessage("narua", naruaReply)],
+          messages: [...nextSnapshot.messages, createStrategyLaneMessage("narua", naruaReply)],
           updatedAt: new Date().toISOString()
         },
         naruaReply
@@ -763,21 +801,21 @@ export function buildStrategyLaneStateFromMessage(args: {
     }
 
     const question = getStrategyLaneQuestion(args.project, nextAnswers, nextQuestionField);
-    const naruaReply = question?.prompt ?? "Tell Naroa a little more so I can sharpen the strategy.";
+    const naruaReply = question?.prompt ?? "Tell Neroa a little more so I can sharpen the strategy.";
 
     return {
       snapshot: {
         ...nextSnapshot,
         answers: nextAnswers,
         activeQuestionField: nextQuestionField,
-        messages: [...nextSnapshot.messages, createMessage("narua", naruaReply)],
+        messages: [...nextSnapshot.messages, createStrategyLaneMessage("narua", naruaReply)],
         updatedAt: new Date().toISOString()
       },
       naruaReply
     };
   }
 
-  const refinementField = inferRefinementField(value);
+  const refinementField = inferStrategyLaneRefinementField(value);
   const nextAnswers = refinementField
     ? {
         ...nextSnapshot.answers,
@@ -790,7 +828,7 @@ export function buildStrategyLaneStateFromMessage(args: {
     : nextOutputs.blockers;
   const recentActions = appendUniqueTop(nextOutputs.recentActions, `Updated strategy direction: ${value}`);
   const naruaReply = refinementField
-    ? `Naroa updated the ${getLabels(args.project)[
+    ? `Neroa updated the ${getLabels(args.project)[
         refinementField === "concept"
           ? "modelTitle"
           : refinementField === "target"
@@ -803,7 +841,7 @@ export function buildStrategyLaneStateFromMessage(args: {
                   ? "budgetTitle"
                   : "launchTitle"
       ].toLowerCase()} and refreshed the roadmap, budget, and plan recommendation.`
-    : "Naroa captured that refinement and refreshed the strategy outputs so the project stays aligned.";
+    : "Neroa captured that refinement and refreshed the strategy outputs so the project stays aligned.";
 
   return {
     snapshot: {
@@ -814,7 +852,7 @@ export function buildStrategyLaneStateFromMessage(args: {
         blockers,
         recentActions
       },
-      messages: [...nextSnapshot.messages, createMessage("narua", naruaReply)],
+      messages: [...nextSnapshot.messages, createStrategyLaneMessage("narua", naruaReply)],
       updatedAt: new Date().toISOString()
     },
     naruaReply

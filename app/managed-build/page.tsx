@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import {
-  ConversionStrip,
   FaqSection,
   InfoCardGrid,
   JsonLdScript,
@@ -9,6 +9,9 @@ import {
   SectionHeader,
   StepGrid
 } from "@/components/marketing/public-page-sections";
+import { PublicActionLink } from "@/components/site/public-action-link";
+import { getOptionalUser } from "@/lib/auth";
+import { publicLaunchManagedCta } from "@/lib/data/public-launch";
 import { buildFaqSchema, buildPublicMetadata, buildWebPageSchema } from "@/lib/marketing/seo";
 import {
   managedBuildDisclaimer,
@@ -156,7 +159,10 @@ export const metadata: Metadata = buildPublicMetadata({
   ]
 });
 
-export default function ManagedBuildPage() {
+export default async function ManagedBuildPage() {
+  const user = await getOptionalUser();
+  const initialAuthenticated = Boolean(user);
+
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -172,8 +178,9 @@ export default function ManagedBuildPage() {
 
   return (
     <MarketingInfoShell
-      ctaHref="/contact?type=managed-build-quote"
-      ctaLabel="Request Managed Build Quote"
+      userEmail={user?.email ?? undefined}
+      ctaHref={publicLaunchManagedCta.href}
+      ctaLabel={publicLaunchManagedCta.label}
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -183,30 +190,31 @@ export default function ManagedBuildPage() {
         <PublicPageHero
           eyebrow="Managed Build Services"
           title="Get your product built with structured AI-guided execution."
-          summary="Managed Build helps customers move from idea into staged execution with review points, guided visibility, and launch coordination. The build stays understandable instead of disappearing into a black-box delivery process."
+          summary="Managed Build helps customers move from idea into staged execution with review points, guided visibility, and launch coordination so the build stays understandable."
           primaryAction={{
-            href: "/contact?type=managed-build-quote",
-            label: "Request Managed Path"
+            href: publicLaunchManagedCta.href,
+            label: publicLaunchManagedCta.label
           }}
           secondaryAction={{
             href: "/pricing/managed",
             label: "View Pricing",
             tone: "secondary"
           }}
+          initialAuthenticated={initialAuthenticated}
           highlights={[
             "Phased delivery",
             "Approval checkpoints",
             "Educational transparency during the build"
           ]}
           panelTitle="Managed path overview"
-          panelSummary="This path is built for customers who want more than DIY guidance but still want to understand the product while it is being built."
+          panelSummary="This path is for customers who want more than DIY guidance but still want to understand the product while it is being built."
           panelItems={[
             "Structured scope before serious build work begins",
             "Review points before major continuation",
             "Launch support and post-launch management options"
           ]}
           panelBadge="Managed visibility"
-          supportingNote="Managed Build is designed to feel controlled and understandable. The customer stays close to the software, the checkpoints, and the launch logic instead of waiting through an opaque delivery cycle."
+          supportingNote="Managed Build is designed to feel controlled and understandable, with the customer staying close to the software, checkpoints, and launch logic."
           metrics={[
             { label: "Execution model", value: "Phased delivery with review points before the project widens" },
             { label: "Customer role", value: "Stay informed, approve progress, and learn the system during the build" },
@@ -219,12 +227,12 @@ export default function ManagedBuildPage() {
         <SectionHeader
           eyebrow="How Managed Build works"
           title="A staged execution path designed to reduce fear, drift, and black-box delivery."
-          summary="Managed Build keeps the customer informed, keeps the product aligned, and keeps major continuation decisions visible."
+          summary="Managed Build keeps the customer informed, the product aligned, and major continuation decisions visible."
         />
         <div className="mt-8">
           <StepGrid
             steps={[...managedSteps]}
-            guideContext={{ onboardingStep: "public-managed", intentPrefix: "Explore managed build step" }}
+            guideContext={{ onboardingStep: "public-managed", intentPrefix: "Start managed build step" }}
           />
         </div>
       </section>
@@ -233,7 +241,7 @@ export default function ManagedBuildPage() {
         <SectionHeader
           eyebrow="Approval guardrails"
           title="Visibility and review are part of the experience, not an afterthought."
-          summary="Managed execution should feel controlled and legible. Customers should understand what is being built, what changed, and what happens next."
+          summary="Managed execution should feel controlled and legible, with customers able to see what is being built, what changed, and what happens next."
         />
         <div className="mt-8">
           <InfoCardGrid
@@ -286,7 +294,7 @@ export default function ManagedBuildPage() {
         <SectionHeader
           eyebrow="Managed Build includes"
           title="What the managed path is built to support."
-          summary="These are the kinds of structured delivery layers customers should expect from a managed execution model."
+          summary="These are the structured delivery layers customers should expect from a managed execution model."
         />
         <div className="mt-8">
           <InfoCardGrid
@@ -321,54 +329,58 @@ export default function ManagedBuildPage() {
       </section>
 
       <section className="mt-16">
-        <ConversionStrip
-          eyebrow="Interactive walkthrough"
-          title="Want to see the guided build logic before you request a managed path?"
-          summary="The Example Build route shows how Neroa frames strategy, scope, MVP, example credits, and execution choices. It is a useful way to understand the system before you choose the Managed lane."
-          actions={[
-            { href: "/example-build", label: "See an Example Build" },
-            {
-              href: "/contact?type=managed-build-quote",
-              label: "Request Managed Path",
-              tone: "secondary"
-            },
-            { href: "/pricing/managed", label: "View Managed Pricing", tone: "secondary" }
-          ]}
-        />
-      </section>
+        <div className="floating-plane rounded-[38px] p-6 sm:p-8">
+          <div className="floating-wash rounded-[38px]" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                Managed entry
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Start with Managed when the product needs more execution support from the beginning.
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                The same roadmap logic still applies, but this path tracks the build as Managed
+                from the first real intake step so scope, checkpoints, and support expectations stay
+                aligned all the way into execution.
+              </p>
+            </div>
 
-      <ConversionStrip
-        eyebrow="DIY to Managed transition"
-        title="Start in DIY when you want control, then move into Managed Build when the project deserves more support."
-        summary="The two lanes are designed to work together. Customers can learn the product in DIY first, then request structured execution help later when scope, urgency, or business impact changes."
-        actions={[
-          {
-            href: "/contact?type=managed-build-quote",
-            label: "Request Managed Path"
-          },
-          {
-            href: "/diy-build",
-            label: "Compare with DIY",
-            tone: "secondary"
-          }
-        ]}
-        aside={
-          <div className="comparison-band">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <PublicActionLink
+                href={publicLaunchManagedCta.href}
+                label={publicLaunchManagedCta.label}
+                className="button-primary"
+                initialAuthenticated={initialAuthenticated}
+              />
+              <Link href="/diy-build" className="button-secondary">
+                Compare with DIY
+              </Link>
+            </div>
+          </div>
+
+          <div className="comparison-band mt-6">
             <div className="comparison-metric">
               <span className="comparison-label">Checkpoint logic</span>
-              <span className="comparison-value">Review progress before major continuation instead of waiting until the end.</span>
+              <span className="comparison-value">
+                Review progress before major continuation instead of waiting until the end.
+              </span>
             </div>
             <div className="comparison-metric">
               <span className="comparison-label">Visibility</span>
-              <span className="comparison-value">Keep scope, QA visibility, and launch preparation understandable as the build moves.</span>
+              <span className="comparison-value">
+                Keep scope, QA visibility, and launch preparation understandable as the build moves.
+              </span>
             </div>
             <div className="comparison-metric">
               <span className="comparison-label">Support level</span>
-              <span className="comparison-value">Bring Neroa in when the project needs more speed, coordination, or operational help.</span>
+              <span className="comparison-value">
+                Bring Neroa in when the project needs more speed, coordination, or operational help.
+              </span>
             </div>
           </div>
-        }
-      />
+        </div>
+      </section>
 
       <FaqSection
         eyebrow="Managed Build FAQ"
@@ -376,24 +388,6 @@ export default function ManagedBuildPage() {
         summary="These answers are designed to make Managed Build feel structured, transparent, and credible instead of vague."
         items={managedFaq}
         guideContext={{ onboardingStep: "public-managed", intentPrefix: "Review managed question" }}
-      />
-
-      <ConversionStrip
-        eyebrow="Next step"
-        title="Bring Neroa in when the build needs more execution support, launch help, or coordinated visibility."
-        summary="Managed Build is for customers who want software progress without disappearing into a black-box agency process."
-        actions={[
-          {
-            href: "/contact?type=managed-build-quote",
-            label: "Request Managed Build Quote"
-          },
-          {
-            href: "/start",
-            label: "Start with Neroa",
-            tone: "secondary"
-          },
-          { href: "/example-build", label: "See an Example Build", tone: "secondary" }
-        ]}
       />
     </MarketingInfoShell>
   );

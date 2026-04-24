@@ -1,68 +1,57 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { buildPublicMetadata } from "@/lib/marketing/seo";
 
-const useCaseCards = [
+const guideCards = [
   {
-    title: "SaaS",
+    title: "What NEROA helps build",
     description:
-      "Build subscription software, AI tools, dashboards, portals, and digital products with a guided MVP-to-launch workflow.",
-    cta: "Explore SaaS",
-    href: "/use-cases/saas"
+      "Use NEROA for serious SaaS products with dashboards, portals, recurring workflows, customer access, and mobile-ready planning from the start.",
+    cta: "Learn what SaaS can include",
+    href: "/what-is-saas"
   },
   {
-    title: "Internal Software",
+    title: "When DIY fits best",
     description:
-      "Create CRMs, admin dashboards, workflow systems, operations tools, reporting portals, and custom internal platforms.",
-    cta: "Explore Internal Software",
-    href: "/use-cases/internal-software"
+      "Choose DIY when you want guided structure, visible tradeoffs, and a budget-aware pace you can control month by month.",
+    cta: "Start a conversation",
+    href: "/diy-build"
   },
   {
-    title: "External Apps",
+    title: "When Managed fits best",
     description:
-      "Plan and build customer-facing websites, portals, booking systems, and branded digital experiences.",
-    cta: "Explore External Apps",
-    href: "/use-cases/external-apps"
-  },
-  {
-    title: "Mobile Apps",
-    description:
-      "Plan iPhone apps, Android apps, and cross-platform mobile products with a guided path through scope, budget, testing, build, and launch.",
-    cta: "Explore Mobile Apps",
-    href: "/use-cases/mobile-apps"
+      "Choose Managed when the build needs more direct execution support, tighter coordination, QA visibility, or stronger launch help.",
+    cta: "Start Managed Build",
+    href: "/start"
   }
 ] as const;
 
 const workflowSteps = [
   "Strategy",
   "Scope",
-  "MVP",
   "Budget",
-  "Test",
+  "Build Definition",
   "Build",
+  "Test",
   "Launch",
   "Operate"
 ] as const;
 
 export const metadata: Metadata = buildPublicMetadata({
-  title: "Use Cases | SaaS, internal software, external apps, and mobile apps with Neroa",
+  title: "Use Cases | What NEROA helps build and which path fits best",
   description:
-    "Explore the main Neroa use cases for SaaS, internal software, external apps, and mobile apps, then choose between DIY Build and Managed Build.",
+    "See what NEROA helps build, how the guided path works, and whether DIY Build or Managed Build is the better fit before you start.",
   path: "/use-cases",
-  keywords: [
-    "build SaaS with AI",
-    "build internal software with AI",
-    "build external apps with AI",
-    "build mobile apps with AI"
-  ]
+  keywords: ["build SaaS with AI", "guided SaaS build path", "DIY vs managed build"]
 });
 
 export default function UseCasesOverviewPage() {
   return (
     <MarketingInfoShell
-      ctaHref="/start"
-      ctaLabel="Start DIY Build"
+      ctaHref="/pricing"
+      ctaLabel="Compare Build Paths"
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -73,22 +62,22 @@ export default function UseCasesOverviewPage() {
               Use Cases
             </span>
             <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5.2rem] xl:leading-[0.96]">
-              Choose the product category Neroa should help you build.
+              See what NEROA helps build, then choose the lane that fits.
             </h1>
             <p className="mt-6 max-w-3xl text-lg leading-9 text-slate-600">
-              These pages explain what Neroa helps build in each category, why AI-guided product
-              logic matters, and when to stay in DIY Build versus move into Managed Build.
+              This page is here to make the front door clearer: what the product is built for, how
+              the guided path works, and whether DIY or Managed is the better next move.
             </p>
 
             <div className="hero-highlight-grid mt-8">
               <div className="hero-highlight-card">
-                <span>SaaS, internal software, external apps, and mobile products in one guided system.</span>
+                <span>Understand what kind of SaaS system NEROA helps shape before you enter the builder.</span>
               </div>
               <div className="hero-highlight-card">
-                <span>Choose the lane that matches your budget, urgency, and execution support needs.</span>
+                <span>Choose between DIY pacing and Managed execution without losing the same product logic.</span>
               </div>
               <div className="hero-highlight-card">
-                <span>Move from use-case understanding into live scope, MVP, budget, build, and launch work.</span>
+                <span>Move into pricing or the builder only after the lane and next step feel clear.</span>
               </div>
             </div>
           </div>
@@ -98,21 +87,21 @@ export default function UseCasesOverviewPage() {
             <div className="relative">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="premium-pill border-slate-200/80 bg-white/80 text-slate-700">
-                  Guided category selection
+                  Guided entry logic
                 </span>
                 <span className="premium-pill border-cyan-300/18 bg-cyan-300/12 text-cyan-700">
                   Use-case overview
                 </span>
               </div>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Each category page is built to help the customer understand what gets built, how the
-                workflow differs, and which lane makes the most sense before serious execution begins.
+                The goal is not to send you through more categories. It is to make the product path
+                easier to understand before serious execution begins.
               </p>
 
               <div className="signal-grid mt-6">
                 <div className="signal-item">
                   <span className="signal-item-title">Signal 01</span>
-                  <span className="signal-item-body">See what Neroa helps build in that category.</span>
+                  <span className="signal-item-body">See what NEROA helps build and how the product is framed.</span>
                 </div>
                 <div className="signal-item">
                   <span className="signal-item-title">Signal 02</span>
@@ -128,17 +117,18 @@ export default function UseCasesOverviewPage() {
         </div>
       </section>
 
-      <section className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {useCaseCards.map((card) => (
-          <Link
+      <section className="mt-14 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {guideCards.map((card) => (
+          <PublicActionLink
             key={card.title}
             href={card.href}
+            label={card.cta}
             className="micro-glow floating-plane rounded-[30px] p-6"
           >
             <div className="floating-wash rounded-[30px]" />
             <div className="relative">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Build category
+                Guide
               </p>
               <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
                 {card.title}
@@ -149,7 +139,7 @@ export default function UseCasesOverviewPage() {
                 <span aria-hidden="true">&rarr;</span>
               </div>
             </div>
-          </Link>
+          </PublicActionLink>
         ))}
       </section>
 
@@ -172,56 +162,6 @@ export default function UseCasesOverviewPage() {
         </div>
       </section>
 
-      <section className="mt-16 grid gap-4 lg:grid-cols-2">
-        <div className="floating-plane rounded-[30px] p-6">
-          <div className="floating-wash rounded-[30px]" />
-          <div className="relative">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-              DIY Build
-            </p>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-              Use monthly Engine Credits when you want to build at your own pace.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              DIY is best when you want budget flexibility, structured scope, and a real path into
-              software without starting with a full managed engagement.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/diy-build" className="button-primary">
-                Explore DIY Build
-              </Link>
-              <Link href="/pricing/diy" className="button-secondary">
-                View DIY Pricing
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="floating-plane rounded-[30px] p-6">
-          <div className="floating-wash rounded-[30px]" />
-          <div className="relative">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-              Managed Build
-            </p>
-            <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-              Move into managed execution when the build needs more help.
-            </h2>
-            <p className="mt-4 text-sm leading-7 text-slate-600">
-              Managed is best when speed, complexity, launch pressure, or business impact make a
-              more supported path the better fit.
-            </p>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/managed-build" className="button-primary">
-                Explore Managed Build
-              </Link>
-              <Link href="/pricing/managed" className="button-secondary">
-                View Managed Pricing
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="mt-16 pb-4">
         <div className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 sm:px-8 sm:py-10">
           <div className="floating-wash rounded-[38px]" />
@@ -231,19 +171,16 @@ export default function UseCasesOverviewPage() {
                 Next step
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Choose the category, understand the path, then move into the live build system.
+                Compare the build lanes once the product path is clearer.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Neroa helps customers decide whether they should stay in a self-paced build lane or
-                move into a managed execution path before the product gets harder to coordinate.
+                Use pricing to decide whether this should stay in DIY or move into Managed before
+                the product gets harder to coordinate.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/start" className="button-primary">
-                Start DIY Build
-              </Link>
-              <Link href="/pricing" className="button-secondary">
+              <Link href="/pricing" className="button-primary">
                 Compare build paths
               </Link>
             </div>

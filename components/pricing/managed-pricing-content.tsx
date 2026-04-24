@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { PublicActionLink } from "@/components/site/public-action-link";
+import { buildBillingIntentPath } from "@/lib/billing/catalog";
+import { publicLaunchManagedCta } from "@/lib/data/public-launch";
 import {
   managedEscalationThresholdCredits,
   managedBuildDisclaimer,
@@ -8,7 +11,16 @@ import {
   managedBuildPackages
 } from "@/lib/pricing/config";
 
-export function ManagedPricingContent() {
+export function ManagedPricingContent({
+  initialAuthenticated
+}: {
+  initialAuthenticated?: boolean;
+}) {
+  const managedBillingHref = buildBillingIntentPath({
+    kind: "addon",
+    addOnId: "done-for-you-support"
+  });
+
   return (
     <>
       <section className="mx-auto max-w-6xl">
@@ -90,18 +102,18 @@ export function ManagedPricingContent() {
           <div className="floating-wash rounded-[34px]" />
           <div className="relative grid gap-6 lg:grid-cols-[1fr_0.96fr]">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Managed escalation
-              </p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                Neroa recommends managed or hybrid execution when a scope gets too heavy for credits alone.
-              </h2>
-              <p className="mt-4 text-base leading-8 text-slate-600">
-                DIY plans are meant to keep pacing, scope, and budget visible. When a project crosses
-                about {managedEscalationThresholdCredits.toLocaleString()} credits, or the integration
-                and launch risk becomes more serious, Neroa should say that clearly and offer a stronger
-                execution model.
-              </p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+              Managed escalation
+            </p>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
+              Neroa recommends managed or hybrid execution when credits stop being the right tool on their own.
+            </h2>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              DIY plans are meant to keep pacing, scope, and budget visible. When a project crosses
+              about {managedEscalationThresholdCredits.toLocaleString()} credits, or the integration
+              depth, QA burden, or launch risk becomes more serious, Neroa should say that clearly
+              and offer a stronger execution model.
+            </p>
             </div>
 
             <div className="rounded-[28px] border border-amber-200/70 bg-[linear-gradient(135deg,rgba(255,251,235,0.94),rgba(255,255,255,0.86))] px-6 py-6">
@@ -130,7 +142,7 @@ export function ManagedPricingContent() {
             <div className="comparison-metric">
               <span className="comparison-label">Hybrid next</span>
               <span className="comparison-value">
-                Add managed execution when the timeline tightens or the delivery risk gets heavier.
+                Add managed execution when the timeline tightens or delivery risk gets heavier.
               </span>
             </div>
             <div className="comparison-metric">
@@ -159,18 +171,21 @@ export function ManagedPricingContent() {
                 Next step
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                Request a managed quote when you need execution help.
+                Open the managed path when the build needs stronger execution support.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Neroa will scope the project first, then route the right build, QA, deployment,
-                and management conversation.
+                Use the Managed Build page to start in the right lane first, then continue through
+                account access and the tracked managed intake when you are ready to move.
               </p>
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/contact?type=managed-build-quote" className="button-primary">
-                Request Managed Build Quote
-              </Link>
+              <PublicActionLink
+                href={initialAuthenticated ? managedBillingHref : publicLaunchManagedCta.href}
+                label={initialAuthenticated ? "Open managed billing" : publicLaunchManagedCta.label}
+                className="button-primary"
+                initialAuthenticated={initialAuthenticated}
+              />
               <Link href="/diy-build" className="button-secondary">
                 View DIY Build Platform
               </Link>

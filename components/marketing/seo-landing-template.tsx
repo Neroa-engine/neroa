@@ -71,7 +71,7 @@ type SeoLandingTemplateProps = {
 
 export function SeoLandingTemplate({
   ctaHref = "/start",
-  ctaLabel = "Start DIY Build",
+  ctaLabel = "Start a conversation",
   schema,
   hero,
   coreSection,

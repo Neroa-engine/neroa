@@ -9,10 +9,9 @@ import {
 } from "@/lib/account/plan-access";
 import {
   ensurePlatformAccountState,
-  listAccessibleWorkspaces
+  getCustomerFacingWorkspacePortfolio
 } from "@/lib/platform/foundation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { parseWorkspaceProjectDescription } from "@/lib/workspace/project-metadata";
 
 type ServerSupabaseClient = ReturnType<typeof createSupabaseServerClient>;
 
@@ -51,16 +50,12 @@ export async function countActiveEnginesForUser(
   supabase: ServerSupabaseClient,
   userId: string
 ) {
-  const data = await listAccessibleWorkspaces({
+  const portfolio = await getCustomerFacingWorkspacePortfolio({
     supabase,
     userId
   });
 
-  return (data ?? []).reduce((count, workspace) => {
-    const parsed = parseWorkspaceProjectDescription(workspace.description);
-
-    return parsed.metadata?.archived ? count : count + 1;
-  }, 0);
+  return portfolio.currentCount;
 }
 
 export async function syncAccountPlanAccess(args: {

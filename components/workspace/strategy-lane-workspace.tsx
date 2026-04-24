@@ -125,7 +125,7 @@ function StrategyBlockCard({
         />
       ) : (
         <p className="mt-4 text-sm leading-7 text-slate-700">
-          {value || `Naroa will generate ${title.toLowerCase()} once the strategy intake is complete.`}
+          {value || `Neroa will generate ${title.toLowerCase()} once the strategy intake is complete.`}
         </p>
       )}
     </section>
@@ -259,7 +259,7 @@ export default function StrategyLaneWorkspace({
       } catch (error) {
         console.error("STRATEGY_LANE_ERROR", error);
         setStrategyError(
-          "Naroa hit a strategy update issue, but your conversation is still here. Try the message again and we’ll keep moving."
+          "Neroa hit a strategy update issue, but your conversation is still here. Try the message again and we’ll keep moving."
         );
       } finally {
         setIsProcessing(false);
@@ -305,13 +305,16 @@ export default function StrategyLaneWorkspace({
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-4xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-                Naroa Strategy Workspace
+                Neroa Strategy Workspace
               </p>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950 xl:text-4xl">
                 {lane.title}
               </h1>
               <p className="mt-3 text-sm leading-7 text-slate-600 xl:text-base xl:leading-8">
-                Naroa is leading the strategy thread for this engine so the roadmap, budget, and plan recommendation stay grounded in a usable direction instead of scattered notes.
+                Neroa is leading the strategy thread for this engine so the roadmap, budget, and
+                plan recommendation stay grounded in a usable direction instead of scattered notes.
+                The same conversation can also handle clarification, blockers, and support
+                escalation.
               </p>
             </div>
 
@@ -320,7 +323,7 @@ export default function StrategyLaneWorkspace({
                 Engine overview
               </Link>
               <span className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                Powered by Naroa
+                Powered by Neroa
               </span>
             </div>
           </div>
@@ -332,8 +335,8 @@ export default function StrategyLaneWorkspace({
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-700">
                 {snapshot.outputs
-                  ? "Review the live strategy outputs, tighten scope, and keep Naroa aligned to the next execution move."
-                  : "Complete the strategy intake so Naroa can build the first roadmap, budget estimate, and plan recommendation."}
+                  ? "Review the live strategy outputs, tighten scope, and keep Neroa aligned to the next execution move."
+                  : "Complete the strategy intake so Neroa can build the first roadmap, budget estimate, and plan recommendation."}
               </p>
             </div>
 
@@ -342,18 +345,18 @@ export default function StrategyLaneWorkspace({
                 Working summary
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-700">
-                {projectSummary || "Naroa will summarize the strategy once the first inputs are in."}
+                {projectSummary || "Neroa will summarize the strategy once the first inputs are in."}
               </p>
             </div>
 
             <div className="rounded-[22px] border border-slate-200 bg-white/78 p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Naroa recommendation
+                Neroa recommendation
               </p>
               <p className="mt-3 text-sm leading-6 text-slate-700">
                 {snapshot.outputs
                   ? snapshot.outputs.recommendedPlan.usageHeadline
-                  : "Naroa will recommend the right plan after the first strategy draft is complete."}
+                  : "Neroa will recommend the right plan after the first strategy draft is complete."}
               </p>
             </div>
           </div>
@@ -363,6 +366,37 @@ export default function StrategyLaneWorkspace({
               {strategyError}
             </div>
           ) : null}
+        </section>
+
+        <section className="floating-plane rounded-[28px] p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Help and support
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-600">
+            Use this same thread if the roadmap feels unclear, you are unsure what to do next,
+            something is not working, you feel blocked, or you want a person to step in.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setDraft("I do not understand the next step yet. Can you walk me through it?")
+              }
+              className="rounded-full border border-slate-200 bg-white/80 px-3 py-2 text-[11px] text-slate-600 transition hover:bg-white"
+            >
+              Ask for guidance
+            </button>
+            <button
+              type="button"
+              onClick={() => setDraft("Can I talk to a person about this?")}
+              className="rounded-full border border-slate-200 bg-white/80 px-3 py-2 text-[11px] text-slate-600 transition hover:bg-white"
+            >
+              Ask for a person
+            </button>
+            <Link href="/contact?type=support" className="button-secondary">
+              Contact support
+            </Link>
+          </div>
         </section>
 
         <NaruaChat
@@ -376,11 +410,11 @@ export default function StrategyLaneWorkspace({
           voiceMessage={voiceMessage}
           onVoiceTranscript={handleVoiceTranscript}
           onVoiceStatusChange={handleVoiceStatusChange}
-          eyebrow="Naroa Presence"
-          title={`Naroa is driving ${lane.title.toLowerCase()}`}
-          description="Use the conversation to define direction, narrow scope, estimate budget, and let Naroa recommend the right plan before the engine widens."
-          helperText="Text or voice both work here. Naroa will keep the strategy thread structured and persistent."
-          composerPlaceholder="Tell Naroa what you want to shape next..."
+          eyebrow="Neroa Presence"
+          title={`Neroa is driving ${lane.title.toLowerCase()}`}
+          description="Use the conversation to define direction, narrow scope, estimate budget, ask what to do next, and let Neroa recommend the right plan before the engine widens."
+          helperText="Text or voice both work here. Ask for roadmap help, blockers, next-step guidance, or human support in plain language."
+          composerPlaceholder="Ask about strategy, the roadmap, blockers, next steps, or support..."
           isProcessing={isProcessing}
           suggestedPrompts={suggestedPrompts}
           onSuggestedPromptSelect={setDraft}
@@ -484,7 +518,7 @@ export default function StrategyLaneWorkspace({
                   onClick={() => setDraft(`Help me execute this roadmap item next: ${selectedRoadmapItem.title}`)}
                   className="mt-4 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] text-slate-600 transition hover:bg-slate-50"
                 >
-                  Ask Naroa to execute this
+                  Ask Neroa to execute this
                 </button>
               </div>
             ) : null}
@@ -541,7 +575,7 @@ export default function StrategyLaneWorkspace({
         ) : (
           <EmptyStrategyCard
             title={strategyLabels.budgetTitle}
-            message="Budget guidance will appear after Naroa shapes the first strategy draft."
+            message="Budget guidance will appear after Neroa shapes the first strategy draft."
           />
         )}
 
@@ -616,7 +650,7 @@ export default function StrategyLaneWorkspace({
         ) : (
           <EmptyStrategyCard
             title="Recommended Neroa plan"
-            message="Naroa will recommend the right plan after it understands scope, complexity, and projected usage."
+            message="Neroa will recommend the right plan after it understands scope, complexity, and projected usage."
           />
         )}
 
@@ -646,7 +680,7 @@ export default function StrategyLaneWorkspace({
                 ))
               ) : (
                 <div className="rounded-[20px] border border-slate-200 bg-white/80 px-4 py-3 text-sm leading-6 text-slate-600">
-                  No active blockers right now. Keep refining the strategy with Naroa to stay ahead of execution risk.
+                  No active blockers right now. Keep refining the strategy with Neroa to stay ahead of execution risk.
                 </div>
               )}
             </div>
@@ -654,7 +688,7 @@ export default function StrategyLaneWorkspace({
         ) : (
           <EmptyStrategyCard
             title="Progress and blockers"
-            message="Recent actions and blockers will appear once Naroa shapes the first strategy outputs."
+            message="Recent actions and blockers will appear once Neroa shapes the first strategy outputs."
           />
         )}
       </aside>

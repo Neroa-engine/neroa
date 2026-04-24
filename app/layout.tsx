@@ -4,8 +4,8 @@ import { AIOnboardingControlProvider } from "@/components/onboarding/ai-onboardi
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Neroa",
-  description: "Neroa is a premium SaaS workspace for lane-based planning, execution, and AI-guided operating systems."
+  title: "NEROA",
+  description: "NEROA is a premium SaaS workspace for lane-based planning, execution, and AI-guided operating systems."
 };
 
 export default function RootLayout({

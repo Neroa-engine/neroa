@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
-import { resolveAccountPlanAccess } from "@/lib/account/plan-access";
-import { listAccessibleWorkspaces } from "@/lib/platform/foundation";
+import {
+  loadPortalProjectSummariesForUser,
+  resolveSmartResumeDestination
+} from "@/lib/portal/server";
+import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const allowedOtpTypes: EmailOtpType[] = [
@@ -18,15 +21,31 @@ function safeNextPath(value: string | null | undefined) {
     return value;
   }
 
-  return "/start?step=plan";
+  return APP_ROUTES.dashboard;
 }
 
-function shouldResumeGuidedSetup(nextPath: string, type: string | null) {
+function normalizeNextPath(nextPath: string) {
+  if (nextPath === APP_ROUTES.start || nextPath.startsWith("/start?entry=")) {
+    return nextPath;
+  }
+
+  if (nextPath === "/start?step=plan") {
+    return APP_ROUTES.startDiy;
+  }
+
+  if (nextPath === "/project-preview" || nextPath.startsWith("/project-preview")) {
+    return APP_ROUTES.startDiy;
+  }
+
+  return nextPath;
+}
+
+function shouldResolveProjectDestination(nextPath: string, type: string | null) {
   if (type === "recovery" || type === "email_change") {
     return false;
   }
 
-  return nextPath === "/start?step=plan" || nextPath.startsWith("/start");
+  return nextPath === APP_ROUTES.projects || nextPath === APP_ROUTES.roadmap;
 }
 
 async function resolvePostConfirmationDestination(args: {
@@ -34,46 +53,74 @@ async function resolvePostConfirmationDestination(args: {
   nextPath: string;
   type: string | null;
 }) {
-  if (!shouldResumeGuidedSetup(args.nextPath, args.type)) {
-    return args.nextPath;
-  }
-
+  const normalizedNextPath = normalizeNextPath(args.nextPath);
   const {
     data: { user }
   } = await args.supabase.auth.getUser();
 
+  if (normalizedNextPath === APP_ROUTES.dashboard) {
+    if (!user) {
+      return APP_ROUTES.start;
+    }
+
+    const projects = await loadPortalProjectSummariesForUser({
+      supabase: args.supabase,
+      userId: user.id
+    }).catch(() => []);
+
+    return resolveSmartResumeDestination({
+      supabase: args.supabase,
+      userId: user.id,
+      projects
+    });
+  }
+
+  if (!shouldResolveProjectDestination(normalizedNextPath, args.type)) {
+    return normalizedNextPath;
+  }
+
   if (!user) {
-    return "/start?step=plan";
+    return normalizedNextPath === APP_ROUTES.projects ? APP_ROUTES.projects : APP_ROUTES.roadmap;
   }
 
-  const access = resolveAccountPlanAccess(user);
-
-  if (!access.hasSelectedPlan) {
-    return "/start?step=plan";
-  }
-
-  const workspaces = await listAccessibleWorkspaces({
+  const projects = await loadPortalProjectSummariesForUser({
     supabase: args.supabase,
     userId: user.id
   }).catch(() => []);
 
-  if (workspaces.length > 0) {
-    return "/dashboard";
+  if (projects.length > 0) {
+    return APP_ROUTES.projects;
   }
 
-  return "/start?step=entry";
+  return APP_ROUTES.roadmap;
 }
 
 function buildConfirmationNotice(destinationPath: string) {
-  if (destinationPath.startsWith("/dashboard")) {
+  if (destinationPath.startsWith("/reset-password")) {
+    return "Email confirmed. Set your new password in this same browser.";
+  }
+
+  if (destinationPath.startsWith(APP_ROUTES.start)) {
+    return "Email confirmed. Continue into your planning center.";
+  }
+
+  if (destinationPath.includes("/command-center")) {
+    return "Email confirmed. Continue into your project's Command Center.";
+  }
+
+  if (destinationPath.startsWith("/roadmap")) {
+    return "Email confirmed. Your roadmap is ready.";
+  }
+
+  if (destinationPath.startsWith(APP_ROUTES.roadmap)) {
+    return "Email confirmed. Continue shaping your first project.";
+  }
+
+  if (destinationPath.startsWith(APP_ROUTES.projects)) {
     return "Email confirmed. Your account is ready.";
   }
 
-  if (destinationPath.includes("step=entry")) {
-    return "Email confirmed. Continue the guided setup so Neroa can shape your first system before the Engine is created.";
-  }
-
-  return "Email confirmed. Choose your plan and continue setting up your first Engine.";
+  return "Email confirmed. Continue into Neroa.";
 }
 
 export async function GET(request: Request) {
@@ -106,7 +153,7 @@ export async function GET(request: Request) {
   }
 
   if (errorMessage) {
-    const destination = new URL("/auth", requestUrl.origin);
+    const destination = new URL(APP_ROUTES.auth, requestUrl.origin);
     destination.searchParams.set("error", errorMessage);
     destination.searchParams.set("next", next);
     return NextResponse.redirect(destination);

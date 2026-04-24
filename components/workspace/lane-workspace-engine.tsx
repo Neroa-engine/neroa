@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   createContext,
@@ -72,7 +72,7 @@ function createMessage(role: NaruaMessage["role"], content: string): NaruaMessag
 }
 
 function idleVoiceMessage() {
-  return "Click a prompt or type the next deliverable you want Naroa to build.";
+  return "Click a prompt or type the next deliverable you want Neroa to build.";
 }
 
 function statusTextForLane(args: {
@@ -81,14 +81,14 @@ function statusTextForLane(args: {
   outputs: LaneWorkspaceOutputs | null;
 }) {
   if (args.isProcessing) {
-    return `Naroa is generating the next ${args.lane.title.toLowerCase()} output now.`;
+    return `Neroa is generating the next ${args.lane.title.toLowerCase()} output now.`;
   }
 
   if (args.outputs) {
     return args.outputs.summary;
   }
 
-  return `Naroa is ready to build the first ${args.lane.title.toLowerCase()} deliverable for this engine.`;
+  return `Neroa is ready to build the first ${args.lane.title.toLowerCase()} deliverable for this engine.`;
 }
 
 function migrateLegacySnapshot(args: {
@@ -212,7 +212,7 @@ export function LaneWorkspaceEngineProvider({
         } catch (processingError) {
           console.error("LANE_WORKSPACE_ENGINE_ERROR", processingError);
           setError(
-            `Naroa hit an issue while updating ${lane.title}. Your thread is still preserved, so try the prompt again.`
+            `Neroa hit an issue while updating ${lane.title}. Your thread is still preserved, so try the prompt again.`
           );
         } finally {
           setIsProcessing(false);

@@ -1,4 +1,4 @@
-﻿import { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 import { RefreshControl, Text } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/AuthContext";
@@ -79,7 +79,7 @@ export default function EngineBoardScreen({ navigation }) {
           Manage your engines and AI execution from mobile.
         </Heading>
         <Body style={{ marginTop: 12 }}>
-          Open active engines, review the lane structure, jump into Naroa, and keep support close
+          Open active engines, review the lane structure, jump into Neroa, and keep support close
           without losing the execution thread.
         </Body>
         <PrimaryButton
@@ -92,7 +92,7 @@ export default function EngineBoardScreen({ navigation }) {
         <SurfaceCard>
           <Text style={{ fontSize: 18, fontWeight: "700", color: "#0f172a" }}>No engines yet</Text>
           <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 22, color: "#475569" }}>
-            Start with SaaS, Internal Software, External Apps, or Mobile Apps and Naroa will create
+            Start with SaaS, Internal Software, External Apps, or Mobile Apps and Neroa will create
             the first engine structure for you.
           </Text>
         </SurfaceCard>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import AgentAvatar from "@/components/ai/AgentAvatar";
@@ -141,9 +141,9 @@ function NaruaPanelBody({
     <div className="flex h-full flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(246,249,255,0.9))]">
       <div className="border-b border-slate-200/70 px-6 py-6">
         <div className="flex items-start gap-4">
-          <AiAvatar provider="chatgpt" displayName="Naroa" avatarSeed="narua-core" />
+          <AiAvatar provider="chatgpt" displayName="Neroa" avatarSeed="narua-core" />
           <div className="min-w-0">
-            <p className="text-lg font-semibold text-slate-950">Naroa - Your AI Build Partner</p>
+            <p className="text-lg font-semibold text-slate-950">Neroa - Your AI Build Partner</p>
             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-cyan-700">{contextLabel}</p>
             <p className="mt-3 text-sm leading-6 text-slate-600">{statusText}</p>
           </div>
@@ -169,7 +169,7 @@ function NaruaPanelBody({
           </p>
           <p className="mt-3 text-sm font-semibold text-slate-950">
             {isProcessing
-              ? `Naroa is generating the next ${threadMeta?.contextTitle ?? contextTitle} output.`
+              ? `Neroa is generating the next ${threadMeta?.contextTitle ?? contextTitle} output.`
               : nextMove
                 ? "Next recommended move"
                 : threadMeta?.hasStarted
@@ -178,7 +178,7 @@ function NaruaPanelBody({
           </p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {isProcessing
-              ? "Naroa is updating the lane thread and center engine right now."
+              ? "Neroa is updating the lane thread and center engine right now."
               : nextMove ||
                 "Keep this lane narrow until the next decision is clear, then widen into the next lane only when it unblocks execution."}
           </p>
@@ -201,7 +201,7 @@ function NaruaPanelBody({
                   message.role === "narua" ? "text-cyan-700" : "text-slate-500"
                 }`}
               >
-                {message.role === "narua" ? "Naroa" : "You"}
+                {message.role === "narua" ? "Neroa" : "You"}
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-700">{message.content}</p>
             </article>
@@ -271,7 +271,7 @@ function NaruaPanelBody({
 
       <div className="border-t border-slate-200/70 px-6 py-6">
         <NaruaComposerPresence
-          title="Naroa"
+          title="Neroa"
           subtitle="Guidance active in this lane"
           speaking={voiceState === "listening"}
           className="mb-3"
@@ -283,7 +283,7 @@ function NaruaPanelBody({
               value={draft}
               onChange={(event) => onDraftChange(event.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Naroa what should happen next..."
+              placeholder="Ask Neroa what should happen next..."
               disabled={isProcessing}
               className="input min-h-[84px] flex-1 resize-none disabled:cursor-not-allowed disabled:opacity-60"
             />
@@ -304,7 +304,7 @@ function NaruaPanelBody({
           </div>
           <div className="mt-3 flex items-center justify-between gap-3 text-xs">
             <span className={feedbackTone(voiceState)}>{composerHint}</span>
-            <span className="text-slate-500">Naroa Guidance</span>
+            <span className="text-slate-500">Neroa Guidance</span>
           </div>
         </div>
       </div>
@@ -327,7 +327,7 @@ export function NaruaMobileDrawer(props: NaruaPanelSharedProps) {
     <>
       <div className="xl:hidden">
         <button type="button" onClick={() => setIsOpen(true)} className="button-secondary">
-          Naroa Guidance
+          Neroa Guidance
         </button>
       </div>
 
@@ -335,7 +335,7 @@ export function NaruaMobileDrawer(props: NaruaPanelSharedProps) {
         <div className="fixed inset-0 z-[8] bg-slate-900/18 backdrop-blur-sm xl:hidden">
           <div className="absolute inset-y-0 right-0 w-full max-w-[520px] border-l border-slate-200/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(246,249,255,0.94))] shadow-[0_32px_120px_rgba(15,23,42,0.16)]">
             <div className="flex items-center justify-between border-b border-slate-200/70 px-5 py-4">
-              <p className="text-sm font-semibold text-slate-950">Naroa Guidance</p>
+              <p className="text-sm font-semibold text-slate-950">Neroa Guidance</p>
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}

@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
+import { AccountNav } from "@/components/account/account-nav";
+import { NeroaAtmosphere } from "@/components/layout/neroa-atmosphere";
 import { FocusBubbleProvider } from "@/components/marketing/focus-bubble-system";
 import { SiteHeader } from "@/components/site-header";
 import { PublicFooter } from "@/components/site/public-footer";
 import { PublicHelpChat } from "@/components/support/public-help-chat";
-import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
 
 function PageAtmosphere({
   variant
@@ -44,37 +45,61 @@ export function MarketingInfoShell({
   ctaHref,
   ctaLabel,
   brandVariant = "prominent",
+  brandScale = "landing",
   contentWidth = "default",
+  theme = "front-door",
+  minimalHeader = false,
+  showFooter = true,
+  footerShowBrandCopy = true,
+  showHelpChat = true,
   children
 }: {
   userEmail?: string;
   ctaHref: string;
   ctaLabel: string;
   brandVariant?: "default" | "prominent";
+  brandScale?: "default" | "landing";
   contentWidth?: "default" | "wide";
+  theme?: "default" | "front-door";
+  minimalHeader?: boolean;
+  showFooter?: boolean;
+  footerShowBrandCopy?: boolean;
+  showHelpChat?: boolean;
   children: ReactNode;
 }) {
-  const resolvedCta = resolvePublicLaunchAction(ctaLabel, ctaHref);
+  const frontDoorTheme = theme === "front-door";
   const contentShellClassName =
     contentWidth === "wide"
       ? "relative mx-auto w-full max-w-[1880px] px-4 pt-4 sm:px-6 lg:px-10 lg:pt-8 xl:px-12"
       : "shell relative pt-4 lg:pt-8";
 
   return (
-    <main className="relative isolate min-h-screen overflow-x-hidden text-slate-900">
-      <PageAtmosphere variant="marketing" />
+    <main
+      className={`relative isolate min-h-screen overflow-x-hidden ${
+        frontDoorTheme ? "front-door-theme" : "text-slate-900"
+      }`}
+    >
+      {frontDoorTheme ? <NeroaAtmosphere /> : <PageAtmosphere variant="marketing" />}
       <SiteHeader
         userEmail={userEmail}
-        ctaHref={resolvedCta.href}
-        ctaLabel={resolvedCta.label}
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
         showSiteNav
+        minimalNavigation={minimalHeader}
         brandVariant={brandVariant}
+        brandScale={brandScale}
+        tone={frontDoorTheme ? "dark" : "light"}
       />
       <FocusBubbleProvider>
         <div className={contentShellClassName}>{children}</div>
       </FocusBubbleProvider>
-      <PublicFooter />
-      <PublicHelpChat />
+      {showFooter ? (
+        <PublicFooter
+          tone={frontDoorTheme ? "dark" : "light"}
+          showBrandCopy={footerShowBrandCopy}
+        />
+      ) : null}
+      {showHelpChat ? <PublicHelpChat /> : null}
     </main>
   );
 }
@@ -83,18 +108,43 @@ export function DashboardBoardShell({
   userEmail,
   ctaHref,
   ctaLabel,
+  commandCenterPath,
   children
 }: {
   userEmail?: string;
   ctaHref: string;
   ctaLabel: string;
+  commandCenterPath?: string;
   children: ReactNode;
 }) {
   return (
-    <main className="relative isolate min-h-screen overflow-x-hidden pb-16 text-slate-900">
-      <PageAtmosphere variant="board" />
-      <SiteHeader userEmail={userEmail} ctaHref={ctaHref} ctaLabel={ctaLabel} showSiteNav />
-      <section className="shell relative">{children}</section>
+    <main className="front-door-theme relative isolate min-h-screen overflow-x-hidden pb-16">
+      <NeroaAtmosphere />
+      <SiteHeader
+        userEmail={userEmail}
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        showSiteNav
+        brandVariant="prominent"
+        tone="dark"
+      />
+      <section className="shell relative">
+        {commandCenterPath ? (
+          <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)]">
+            <div className="hidden xl:block">
+              <AccountNav currentPath={commandCenterPath} />
+            </div>
+            <div className="space-y-4">
+              <div className="xl:hidden">
+                <AccountNav currentPath={commandCenterPath} compact />
+              </div>
+              {children}
+            </div>
+          </div>
+        ) : (
+          children
+        )}
+      </section>
     </main>
   );
 }
@@ -111,9 +161,16 @@ export function LaneWorkspaceShell({
   children: ReactNode;
 }) {
   return (
-    <main className="relative isolate min-h-screen overflow-x-hidden pb-16 text-slate-900">
-      <PageAtmosphere variant="lane" />
-      <SiteHeader userEmail={userEmail} ctaHref={ctaHref} ctaLabel={ctaLabel} showSiteNav />
+    <main className="front-door-theme relative isolate min-h-screen overflow-x-hidden pb-16">
+      <NeroaAtmosphere />
+      <SiteHeader
+        userEmail={userEmail}
+        ctaHref={ctaHref}
+        ctaLabel={ctaLabel}
+        showSiteNav
+        brandVariant="prominent"
+        tone="dark"
+      />
       <section className="relative mx-auto w-full max-w-[1880px] px-4 py-2 sm:px-6 xl:px-8">
         {children}
       </section>

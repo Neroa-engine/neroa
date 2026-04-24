@@ -17,6 +17,10 @@
     );
   }
 
+  function shouldIgnoreRuntimeSignal(message) {
+    return /NEXT_REDIRECT/i.test(message || "");
+  }
+
   function serialize(args) {
     return args
       .map(function mapArg(item) {
@@ -39,29 +43,39 @@
 
   var originalConsoleError = console.error;
   console.error = function wrappedConsoleError() {
-    emit("runtime", {
-      kind: "console-error",
-      message: serialize(Array.prototype.slice.call(arguments)),
-      source: window.location.href,
-      statusCode: null,
-      url: window.location.href
-    });
+    var message = serialize(Array.prototype.slice.call(arguments));
+    if (!shouldIgnoreRuntimeSignal(message)) {
+      emit("runtime", {
+        kind: "console-error",
+        message: message,
+        source: window.location.href,
+        statusCode: null,
+        url: window.location.href
+      });
+    }
     return originalConsoleError.apply(console, arguments);
   };
 
   var originalConsoleWarn = console.warn;
   console.warn = function wrappedConsoleWarn() {
-    emit("runtime", {
-      kind: "console-warn",
-      message: serialize(Array.prototype.slice.call(arguments)),
-      source: window.location.href,
-      statusCode: null,
-      url: window.location.href
-    });
+    var message = serialize(Array.prototype.slice.call(arguments));
+    if (!shouldIgnoreRuntimeSignal(message)) {
+      emit("runtime", {
+        kind: "console-warn",
+        message: message,
+        source: window.location.href,
+        statusCode: null,
+        url: window.location.href
+      });
+    }
     return originalConsoleWarn.apply(console, arguments);
   };
 
   window.addEventListener("error", function onError(event) {
+    if (shouldIgnoreRuntimeSignal(event.message || "")) {
+      return;
+    }
+
     emit("runtime", {
       kind: /hydration/i.test(event.message || "") ? "hydration-error" : "window-error",
       message: event.message || "Unhandled window error",
@@ -73,9 +87,14 @@
 
   window.addEventListener("unhandledrejection", function onRejection(event) {
     var reason = event.reason;
+    var message = reason && reason.message ? reason.message : String(reason);
+    if (shouldIgnoreRuntimeSignal(message)) {
+      return;
+    }
+
     emit("runtime", {
       kind: "unhandled-rejection",
-      message: reason && reason.message ? reason.message : String(reason),
+      message: message,
       source: window.location.href,
       statusCode: null,
       url: window.location.href
@@ -90,7 +109,7 @@
 
       return originalFetch.apply(window, args).then(
         function onResolve(response) {
-          if (!response.ok) {
+          if (response.status >= 400) {
             emit("runtime", {
               kind: response.status >= 500 ? "route-error" : "network-failure",
               message: "Request failed with status " + response.status,

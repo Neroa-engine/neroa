@@ -2,10 +2,11 @@ import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import AgentAvatar from "@/components/ai/AgentAvatar";
 import { AiCard } from "@/components/ai-system/ai-card";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { AGENTS } from "@/lib/ai/agents";
 import type { AiSystemPage } from "@/lib/data/ai-system";
 import { aiSystemDeepContent } from "@/lib/data/ai-system-deep-content";
-import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
+import { APP_ROUTES } from "@/lib/routes";
 
 type AiDetailTemplateProps = {
   page: AiSystemPage;
@@ -14,18 +15,13 @@ type AiDetailTemplateProps = {
 export function AiDetailTemplate({ page }: AiDetailTemplateProps) {
   const agent = AGENTS[page.id];
   const deepContent = aiSystemDeepContent[page.id];
-  const primaryAction = resolvePublicLaunchAction(page.primaryCtaLabel, page.primaryCtaHref);
-  const secondaryAction = resolvePublicLaunchAction(
-    page.secondaryCtaLabel,
-    page.secondaryCtaHref
-  );
 
   return (
     <MarketingInfoShell ctaHref="/start" ctaLabel="Start your build" brandVariant="prominent">
       <section className="mx-auto max-w-6xl">
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href="/system/ai"
+            href={APP_ROUTES.system}
             className="premium-pill text-slate-600 transition hover:text-slate-900"
           >
             Back to AI System
@@ -48,12 +44,16 @@ export function AiDetailTemplate({ page }: AiDetailTemplateProps) {
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
-              <Link href={secondaryAction.href} className="button-secondary">
-                {secondaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
+              <PublicActionLink
+                href={page.secondaryCtaHref}
+                label={page.secondaryCtaLabel}
+                className="button-secondary"
+              />
             </div>
           </div>
 
@@ -168,7 +168,7 @@ export function AiDetailTemplate({ page }: AiDetailTemplateProps) {
             </div>
 
             <div className="mt-6 rounded-[24px] border border-cyan-300/20 bg-cyan-300/10 px-5 py-4 text-sm leading-7 text-slate-700">
-              Naroa remains the control layer across the full system. This AI activates to sharpen a specific kind of work, then feeds the result back into the broader project flow.
+              Neroa remains the control layer across the full system. This AI activates to sharpen a specific kind of work, then feeds the result back into the broader project flow.
             </div>
           </div>
         </div>
@@ -274,9 +274,11 @@ export function AiDetailTemplate({ page }: AiDetailTemplateProps) {
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
               <Link href="/use-cases" className="button-secondary">
                 Explore use cases
               </Link>

@@ -1,4 +1,4 @@
-﻿import type { CollaborationAgent } from "@/lib/ai/collaboration";
+import type { CollaborationAgent } from "@/lib/ai/collaboration";
 import { getLaneAiCollaboration } from "@/lib/ai/collaboration";
 import type { NaruaMessage } from "@/lib/narua/planning";
 import type { ProjectLaneRecord, ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -110,7 +110,7 @@ function buildBusinessPlanOutputs(project: ProjectRecord, lane: ProjectLaneRecor
 
   return {
     title: "Business plan draft",
-    summary: `Naroa drafted the first business plan structure for ${subject}.`,
+    summary: `Neroa drafted the first business plan structure for ${subject}.`,
     whatChanged: [
       "Built the first plan section structure.",
       "Mapped milestone logic for the opening phase.",
@@ -122,7 +122,7 @@ function buildBusinessPlanOutputs(project: ProjectRecord, lane: ProjectLaneRecor
       {
         id: "plan-sections",
         title: "Plan sections",
-        summary: "The core plan structure Naroa generated for this business direction.",
+        summary: "The core plan structure Neroa generated for this business direction.",
         items: [
           "Business model and problem being solved",
           "Target customer and demand signal",
@@ -144,7 +144,7 @@ function buildBusinessPlanOutputs(project: ProjectRecord, lane: ProjectLaneRecor
       {
         id: "assumptions",
         title: "Assumptions",
-        summary: "The assumptions Naroa wants validated before the plan hardens.",
+        summary: "The assumptions Neroa wants validated before the plan hardens.",
         items: [
           "The customer segment is specific enough to message clearly",
           "The first offer can be delivered without operational sprawl",
@@ -160,7 +160,7 @@ function buildDomainOutputs(project: ProjectRecord, lane: ProjectLaneRecord, pro
 
   return {
     title: "Name and domain shortlist",
-    summary: "Naroa generated the first candidate matrix and registrar setup path.",
+    summary: "Neroa generated the first candidate matrix and registrar setup path.",
     whatChanged: [
       "Created a focused naming shortlist.",
       "Mapped an initial domain availability matrix.",
@@ -172,7 +172,7 @@ function buildDomainOutputs(project: ProjectRecord, lane: ProjectLaneRecord, pro
       {
         id: "candidate-names",
         title: "Candidate names",
-        summary: "Naroa narrowed the naming direction to options that can still flex into brand and launch work.",
+        summary: "Neroa narrowed the naming direction to options that can still flex into brand and launch work.",
         items: candidates.map((item) => item.replace(/\.(com|io)$/, ""))
       },
       {
@@ -202,7 +202,7 @@ function buildBrandingOutputs(project: ProjectRecord, lane: ProjectLaneRecord, p
 
   return {
     title: "Brand direction",
-    summary: `Naroa generated the first brand system for ${subject}.`,
+    summary: `Neroa generated the first brand system for ${subject}.`,
     whatChanged: [
       "Defined the first voice and tone direction.",
       "Mapped brand pillars and positioning cues.",
@@ -214,7 +214,7 @@ function buildBrandingOutputs(project: ProjectRecord, lane: ProjectLaneRecord, p
       {
         id: "voice",
         title: "Voice and tone",
-        summary: "The voice Naroa recommends for the first outward-facing version.",
+        summary: "The voice Neroa recommends for the first outward-facing version.",
         items: [
           "Confident and precise instead of generic",
           "Clear about value, not overloaded with hype",
@@ -224,7 +224,7 @@ function buildBrandingOutputs(project: ProjectRecord, lane: ProjectLaneRecord, p
       {
         id: "pillars",
         title: "Brand pillars",
-        summary: "The brand ideas Naroa wants repeated consistently.",
+        summary: "The brand ideas Neroa wants repeated consistently.",
         items: [
           "Clarity in what the offer does",
           "Credibility in how the work is delivered",
@@ -248,7 +248,7 @@ function buildBrandingOutputs(project: ProjectRecord, lane: ProjectLaneRecord, p
 function buildWebsiteOutputs(project: ProjectRecord, lane: ProjectLaneRecord): LaneWorkspaceOutputs {
   return {
     title: "Website structure draft",
-    summary: "Naroa drafted the first website structure, page flow, and conversion path.",
+    summary: "Neroa drafted the first website structure, page flow, and conversion path.",
     whatChanged: [
       "Mapped the first sitemap.",
       "Defined the page sequence and page requirements.",
@@ -260,7 +260,7 @@ function buildWebsiteOutputs(project: ProjectRecord, lane: ProjectLaneRecord): L
       {
         id: "sitemap",
         title: "Sitemap",
-        summary: "The first page structure Naroa recommends for launch.",
+        summary: "The first page structure Neroa recommends for launch.",
         items: ["Home", "Offer / Solution", "How it works", "About / Credibility", "Contact or CTA page"]
       },
       {
@@ -290,7 +290,7 @@ function buildWebsiteOutputs(project: ProjectRecord, lane: ProjectLaneRecord): L
 function buildOperationsOutputs(project: ProjectRecord, lane: ProjectLaneRecord): LaneWorkspaceOutputs {
   return {
     title: "Workflow map",
-    summary: "Naroa generated the first workflow map, SOP draft, and execution checklist.",
+    summary: "Neroa generated the first workflow map, SOP draft, and execution checklist.",
     whatChanged: [
       "Mapped the core workflow path.",
       "Drafted SOP-style handoff steps.",
@@ -302,7 +302,7 @@ function buildOperationsOutputs(project: ProjectRecord, lane: ProjectLaneRecord)
       {
         id: "workflow",
         title: "Workflow map",
-        summary: "The first operating flow Naroa recommends.",
+        summary: "The first operating flow Neroa recommends.",
         items: [
           "Intake and scope confirmation",
           "Execution handoff and delivery step sequencing",
@@ -312,7 +312,7 @@ function buildOperationsOutputs(project: ProjectRecord, lane: ProjectLaneRecord)
       {
         id: "sops",
         title: "SOP drafts",
-        summary: "The first standard operating procedures Naroa wants formalized.",
+        summary: "The first standard operating procedures Neroa wants formalized.",
         items: [
           "Client or task intake checklist",
           "Internal handoff and owner assignment",
@@ -322,7 +322,7 @@ function buildOperationsOutputs(project: ProjectRecord, lane: ProjectLaneRecord)
       {
         id: "execution-checklist",
         title: "Execution checklist",
-        summary: "The actions Naroa wants repeated the same way every cycle.",
+        summary: "The actions Neroa wants repeated the same way every cycle.",
         items: [
           "Confirm scope before execution begins",
           "Track blockers and dependencies daily",
@@ -336,7 +336,7 @@ function buildOperationsOutputs(project: ProjectRecord, lane: ProjectLaneRecord)
 function buildMarketingOutputs(project: ProjectRecord, lane: ProjectLaneRecord): LaneWorkspaceOutputs {
   return {
     title: "Marketing plan",
-    summary: "Naroa generated the first launch marketing plan and demand-channel sequence.",
+    summary: "Neroa generated the first launch marketing plan and demand-channel sequence.",
     whatChanged: [
       "Built the first campaign priority stack.",
       "Mapped the strongest early demand channels.",
@@ -348,7 +348,7 @@ function buildMarketingOutputs(project: ProjectRecord, lane: ProjectLaneRecord):
       {
         id: "marketing-plan",
         title: "Marketing plan",
-        summary: "The first practical launch motion Naroa recommends.",
+        summary: "The first practical launch motion Neroa recommends.",
         items: [
           "Define the primary message and call to action",
           "Choose one channel to prove demand first",
@@ -358,7 +358,7 @@ function buildMarketingOutputs(project: ProjectRecord, lane: ProjectLaneRecord):
       {
         id: "channel-priorities",
         title: "Channel priorities",
-        summary: "The channels Naroa wants tested before wider spend.",
+        summary: "The channels Neroa wants tested before wider spend.",
         items: ["Direct outreach", "Owned content", "Referral or partner motion"]
       },
       {
@@ -378,7 +378,7 @@ function buildMarketingOutputs(project: ProjectRecord, lane: ProjectLaneRecord):
 function buildBuildOutputs(project: ProjectRecord, lane: ProjectLaneRecord): LaneWorkspaceOutputs {
   return {
     title: "Execution structure",
-    summary: `Naroa generated the first ${lane.title.toLowerCase()} deliverable set and execution path.`,
+    summary: `Neroa generated the first ${lane.title.toLowerCase()} deliverable set and execution path.`,
     whatChanged: [
       "Built the first deliverable structure for this lane.",
       "Mapped the main task sequence.",
@@ -390,13 +390,13 @@ function buildBuildOutputs(project: ProjectRecord, lane: ProjectLaneRecord): Lan
       {
         id: "lane-structure",
         title: lane.title,
-        summary: "The first structured output Naroa generated for this lane.",
+        summary: "The first structured output Neroa generated for this lane.",
         items: lane.deliverables.length > 0 ? lane.deliverables : ["Initial scoped output", "Priority sequence", "Execution notes"]
       },
       {
         id: "task-sequence",
         title: "Task sequence",
-        summary: "The first working order Naroa recommends for execution.",
+        summary: "The first working order Neroa recommends for execution.",
         items: [
           "Lock the scope and expected outcome",
           "Break the lane into the smallest useful deliverables",
@@ -406,7 +406,7 @@ function buildBuildOutputs(project: ProjectRecord, lane: ProjectLaneRecord): Lan
       {
         id: "decision-risks",
         title: "Decision risks",
-        summary: "The areas Naroa wants watched before the lane expands.",
+        summary: "The areas Neroa wants watched before the lane expands.",
         items: [
           "Scope growing before the first output is validated",
           "Dependencies not being surfaced early enough",
@@ -445,7 +445,7 @@ export function createLaneWorkspaceWelcome(project: ProjectRecord, lane: Project
     messages: [
       createMessage(
         "narua",
-        `Naroa is ready to generate the first ${lane.title.toLowerCase()} deliverable for ${project.title}.`
+        `Neroa is ready to generate the first ${lane.title.toLowerCase()} deliverable for ${project.title}.`
       )
     ],
     draft: "",
@@ -514,7 +514,7 @@ export function runLaneWorkspacePrompt(args: {
 }): LaneInteractionResult {
   const cleaned = cleanInput(args.prompt);
   const outputs = buildOutputs(args.project, args.lane, cleaned);
-  const acknowledgement = `Naroa is generating the first ${outputs.title.toLowerCase()} for ${args.lane.title}.`;
+  const acknowledgement = `Neroa is generating the first ${outputs.title.toLowerCase()} for ${args.lane.title}.`;
   const reply = `${outputs.summary} ${outputs.nextMove}`;
 
   return {

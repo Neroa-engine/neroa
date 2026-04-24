@@ -29,7 +29,7 @@ export default function NaruaCore({
   className = "",
   href,
   ctaLabel,
-  description = "Naroa is Neroa's core orchestrator. It frames the Engine, guides decision flow, selects the right specialist systems, and keeps execution aligned across strategy, build, launch, and operations.",
+  description = "Neroa is Neroa's core orchestrator. It frames the Engine, guides decision flow, selects the right specialist systems, and keeps execution aligned across strategy, build, launch, and operations.",
   supportingAgentIds = []
 }: NaruaCoreProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -75,15 +75,15 @@ export default function NaruaCore({
             <Image
               src="/logo/neroa.png"
               alt="Neroa"
-              width={26}
-              height={26}
-              className="h-6 w-6 object-contain"
+              width={84}
+              height={33}
+              className="h-6 w-auto object-contain"
             />
-            Naroa Core
+            Neroa Core
           </div>
 
           <span className="rounded-full border border-cyan-300/28 bg-cyan-300/12 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-700">
-            Naroa Active
+            Neroa Active
           </span>
         </div>
 
@@ -111,7 +111,7 @@ export default function NaruaCore({
             {narua.role}
           </p>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-            Naroa
+            Neroa
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-slate-600 sm:text-base sm:leading-8">
             {description}

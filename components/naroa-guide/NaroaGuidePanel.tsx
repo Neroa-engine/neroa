@@ -117,7 +117,7 @@ export function NaroaGuidePanel({
               <div className="flex items-start justify-between gap-4 border-b border-slate-200/70 pb-3">
                 <div className="min-w-0">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
-                    {guideActive ? currentStep.eyebrow : "Naroa guide"}
+                    {guideActive ? currentStep.eyebrow : "Neroa guide"}
                   </p>
                   <p className="mt-2 text-base font-semibold text-slate-950">
                     {guideActive ? currentStep.sectionLabel : "Optional homepage walkthrough"}
@@ -135,7 +135,7 @@ export function NaroaGuidePanel({
               {!guideActive ? (
                 <>
                   <div className="rounded-[24px] border border-cyan-200/75 bg-[linear-gradient(135deg,rgba(240,249,255,0.94),rgba(255,255,255,0.84))] px-4 py-4">
-                    <p className="text-base font-semibold text-slate-950">I&apos;m Naroa, your build orchestrator.</p>
+                    <p className="text-base font-semibold text-slate-950">I&apos;m Neroa, your build orchestrator.</p>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       Want me to guide you through how to build with Neroa?
                     </p>

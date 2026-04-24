@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import AiTeammateCards from "@/components/workspace/ai-teammate-cards";
 import type {
   MobileBinaryChoice,
@@ -88,7 +89,7 @@ export default function MobileAppIntakeFlow({
         badge: "Core",
         active: true,
         description:
-          "Naroa frames the app direction, keeps the engine disciplined, and guides the route from concept into build and launch."
+          "Neroa frames the app direction, keeps the engine disciplined, and guides the route from concept into build and launch."
       },
       {
         id: "forge" as const,
@@ -138,8 +139,8 @@ export default function MobileAppIntakeFlow({
               Let&apos;s shape your mobile app into a build plan.
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-              Answer a focused set of mobile product questions. Naroa will create the engine,
-              load the full lane structure, recommend the right stack path, and open Naroa with
+              Answer a focused set of mobile product questions. Neroa will create the engine,
+              load the full lane structure, recommend the right stack path, and open Neroa with
               the right specialist agents already aligned to the app.
             </p>
           </div>
@@ -210,7 +211,7 @@ export default function MobileAppIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should decide whether auth belongs in the MVP."
+                  description: "Neroa should decide whether auth belongs in the MVP."
                 }
               ]}
             />
@@ -234,7 +235,7 @@ export default function MobileAppIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should help decide whether payments belong in version one."
+                  description: "Neroa should help decide whether payments belong in version one."
                 }
               ]}
             />
@@ -258,7 +259,7 @@ export default function MobileAppIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should help decide if push belongs in the MVP."
+                  description: "Neroa should help decide if push belongs in the MVP."
                 }
               ]}
             />
@@ -304,7 +305,7 @@ export default function MobileAppIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should decide whether a companion surface belongs in phase one."
+                  description: "Neroa should decide whether a companion surface belongs in phase one."
                 }
               ]}
             />
@@ -347,9 +348,13 @@ export default function MobileAppIntakeFlow({
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link href="/start" className="button-secondary">
-              Back to Naroa intake
-            </Link>
+            <PublicActionLink
+              href="/start"
+              label="Back to Neroa intake"
+              className="button-secondary"
+            >
+              Back to Neroa intake
+            </PublicActionLink>
             <SubmitButton />
           </div>
         </div>

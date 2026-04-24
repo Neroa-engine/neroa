@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import { JsonLdScript } from "@/components/marketing/public-page-sections";
 import { ManagedPricingContent } from "@/components/pricing/managed-pricing-content";
+import { buildBillingIntentPath } from "@/lib/billing/catalog";
+import { getOptionalUser } from "@/lib/auth";
 import { buildPublicMetadata, buildWebPageSchema } from "@/lib/marketing/seo";
 
 export const metadata: Metadata = buildPublicMetadata({
@@ -17,11 +19,20 @@ export const metadata: Metadata = buildPublicMetadata({
   ]
 });
 
-export default function ManagedPricingPage() {
+export default async function ManagedPricingPage() {
+  const user = await getOptionalUser();
+  const ctaHref = user
+    ? buildBillingIntentPath({
+        kind: "addon",
+        addOnId: "done-for-you-support"
+      })
+    : "/start";
+
   return (
     <MarketingInfoShell
-      ctaHref="/contact?type=managed-build-quote"
-      ctaLabel="Request Managed Build Quote"
+      userEmail={user?.email ?? undefined}
+      ctaHref={ctaHref}
+      ctaLabel={user ? "Open billing" : "Start Managed Build"}
       brandVariant="prominent"
     >
       <JsonLdScript
@@ -32,7 +43,7 @@ export default function ManagedPricingPage() {
           path: "/pricing/managed"
         })}
       />
-      <ManagedPricingContent />
+      <ManagedPricingContent initialAuthenticated={Boolean(user)} />
     </MarketingInfoShell>
   );
 }

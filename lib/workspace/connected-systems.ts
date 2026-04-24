@@ -1,4 +1,4 @@
-﻿import type { ProjectRecord } from "@/lib/workspace/project-lanes";
+import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
 export type ConnectedSystemId = "narua" | "forge" | "atlas" | "github" | "codex";
 
@@ -21,11 +21,11 @@ export function buildConnectedSystems(project: ProjectRecord): ConnectedSystemDe
   return [
     {
       id: "narua",
-      name: "Naroa",
+      name: "Neroa",
       kind: "core-assistant",
       architectureMode: "lane-thread",
       description:
-        "Naroa is the core assistant layer of Neroa and remains active across every project lane.",
+        "Neroa is the core assistant layer of Neroa and remains active across every project lane.",
       statusText: "Core assistant layer"
     },
     {

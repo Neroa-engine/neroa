@@ -3,11 +3,16 @@
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAIOnboardingControl } from "@/components/onboarding/ai-onboarding-control-provider";
+import { storePublicEntryIntent } from "@/lib/front-door/public-entry-intent";
 import { createBuildSession, recommendBuildPath } from "@/lib/onboarding/build-session";
 import {
   homepageGuidePromptSuggestions,
   resolveGuidePrompt
 } from "@/lib/marketing/naroa-guide";
+import {
+  publicLaunchManagedCta,
+  publicLaunchPrimaryCta
+} from "@/lib/data/public-launch";
 
 type GuidedFinalDecisionPanelProps = {
   prompt: string;
@@ -39,7 +44,7 @@ export function GuidedFinalDecisionPanel({
     const nextIntent =
       prompt.trim() ||
       userIntent.trim() ||
-      `Continue from the Naroa homepage guide into ${args.label.toLowerCase()}.`;
+      `Continue from the Neroa homepage guide into ${args.label.toLowerCase()}.`;
 
     setGuidedBuildHandoff({
       source: "homepage-guide",
@@ -80,6 +85,9 @@ export function GuidedFinalDecisionPanel({
         }
       })
     );
+    if (args.pathId === "managed" || args.pathId === "diy") {
+      storePublicEntryIntent(args.pathId);
+    }
     router.push(args.href);
   }
 
@@ -90,11 +98,11 @@ export function GuidedFinalDecisionPanel({
           Have you made a decision?
         </p>
         <h3 className="mt-3 text-xl font-semibold text-slate-950">
-          Choose a path, or ask Naroa for one more nudge.
+          Choose a path, or ask Neroa for one more nudge.
         </h3>
         <p className="mt-3 text-sm leading-7 text-slate-600">
           If you know your direction, jump into DIY, Managed Build, or pricing. If not, describe
-          what you still need help with and Naroa will point you to the cleanest next step.
+          what you still need help with and Neroa will point you to the cleanest next step.
         </p>
       </div>
 
@@ -102,24 +110,28 @@ export function GuidedFinalDecisionPanel({
         <button
           type="button"
           onClick={() =>
-            persistGuideChoice({ href: "/start?resume=guided", label: "DIY Build", pathId: "diy" })
+            persistGuideChoice({
+              href: "/start?resume=guided",
+              label: publicLaunchPrimaryCta.label,
+              pathId: "diy"
+            })
           }
           className="button-primary"
         >
-          Start DIY Build
+          {publicLaunchPrimaryCta.label}
         </button>
         <button
           type="button"
           onClick={() =>
             persistGuideChoice({
-              href: "/managed-build",
-              label: "Managed Build",
+              href: "/start?resume=guided",
+              label: publicLaunchManagedCta.label,
               pathId: "managed"
             })
           }
           className="button-secondary"
         >
-          Explore Managed Build
+          {publicLaunchManagedCta.label}
         </button>
         <button
           type="button"
@@ -163,7 +175,7 @@ export function GuidedFinalDecisionPanel({
         </div>
 
         <div className="mt-5 rounded-[22px] border border-slate-200/75 bg-slate-50/80 px-4 py-4">
-          <p className="text-sm font-semibold text-slate-950">Naroa&apos;s next-step suggestion</p>
+          <p className="text-sm font-semibold text-slate-950">Neroa&apos;s next-step suggestion</p>
           <p className="mt-3 text-sm leading-7 text-slate-600">{resolution.message}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {resolution.actions.map((action) => (
@@ -177,7 +189,7 @@ export function GuidedFinalDecisionPanel({
                     pathId:
                       action.href.startsWith("/start")
                         ? "diy"
-                        : action.href === "/managed-build"
+                        : action.label.toLowerCase().includes("managed")
                           ? "managed"
                           : "pricing"
                   })

@@ -71,7 +71,7 @@ export default function AuthScreen({ navigation, route }) {
       <SurfaceCard>
         <Eyebrow>{mode === "signup" ? "Account setup" : "Account access"}</Eyebrow>
         <Heading style={{ marginTop: 12 }}>
-          {mode === "signup" ? "Create your Naroa account" : "Sign in to Naroa"}
+          {mode === "signup" ? "Create your Neroa account" : "Sign in to Neroa"}
         </Heading>
         <Body style={{ marginTop: 12 }}>{helperText}</Body>
       </SurfaceCard>

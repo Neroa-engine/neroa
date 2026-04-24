@@ -5,7 +5,6 @@ import type {
   ExampleIntentMode,
   ExampleStackRecommendation
 } from "@/lib/marketing/example-build-data";
-import type { GuidedBuildBlueprint } from "@/lib/onboarding/guided-build";
 import type { GuidedBuildHandoffSource, GuidedBuildPathId } from "@/lib/onboarding/guided-handoff";
 
 export const BUILD_SESSION_STORAGE_KEY = "neroa:guided-build-session:v1";
@@ -22,6 +21,8 @@ export type BuildSessionScope = {
   productTypeLabel?: string;
   buildTypeId?: string;
   buildTypeLabel?: string;
+  buildStageId?: string;
+  buildStageLabel?: string;
   intentMode?: ExampleIntentMode;
   industryId?: string;
   industryLabel?: string;
@@ -42,6 +43,26 @@ export type BuildSessionScope = {
   keyModules?: string[];
   firstBuild?: string[];
   mvpSummary?: string;
+  businessGoal?: string;
+  conceptMode?: string;
+  ventureType?: string;
+  surfaceType?: string;
+  businessDirectionSummary?: string;
+  projectDefinitionSummary?: string;
+  targetUsers?: string;
+  coreWorkflow?: string;
+  keyFeatures?: string[];
+  monetization?: string;
+  integrationNeeds?: string[];
+  priorityTradeoff?: string;
+  experienceDirectionSummary?: string;
+  experienceStyle?: string;
+  platformStyle?: string;
+  automationLevel?: string;
+  complexityLevel?: string;
+  estimateBaseline?: string;
+  estimateRange?: string;
+  timeEstimate?: string;
 };
 
 export type BuildSessionPath = {
@@ -152,6 +173,8 @@ function normalizeScope(value: unknown): BuildSessionScope {
     productTypeLabel: normalizeString(record.productTypeLabel),
     buildTypeId: normalizeString(record.buildTypeId),
     buildTypeLabel: normalizeString(record.buildTypeLabel),
+    buildStageId: normalizeString(record.buildStageId),
+    buildStageLabel: normalizeString(record.buildStageLabel),
     intentMode:
       record.intentMode === "known-industry" || record.intentMode === "exploring-opportunities"
         ? record.intentMode
@@ -174,7 +197,27 @@ function normalizeScope(value: unknown): BuildSessionScope {
     coreFeatures: normalizeStringArray(record.coreFeatures),
     keyModules: normalizeStringArray(record.keyModules),
     firstBuild: normalizeStringArray(record.firstBuild),
-    mvpSummary: normalizeString(record.mvpSummary)
+    mvpSummary: normalizeString(record.mvpSummary),
+    businessGoal: normalizeString(record.businessGoal),
+    conceptMode: normalizeString(record.conceptMode),
+    ventureType: normalizeString(record.ventureType),
+    surfaceType: normalizeString(record.surfaceType),
+    businessDirectionSummary: normalizeString(record.businessDirectionSummary),
+    projectDefinitionSummary: normalizeString(record.projectDefinitionSummary),
+    targetUsers: normalizeString(record.targetUsers),
+    coreWorkflow: normalizeString(record.coreWorkflow),
+    keyFeatures: normalizeStringArray(record.keyFeatures),
+    monetization: normalizeString(record.monetization),
+    integrationNeeds: normalizeStringArray(record.integrationNeeds),
+    priorityTradeoff: normalizeString(record.priorityTradeoff),
+    experienceDirectionSummary: normalizeString(record.experienceDirectionSummary),
+    experienceStyle: normalizeString(record.experienceStyle),
+    platformStyle: normalizeString(record.platformStyle),
+    automationLevel: normalizeString(record.automationLevel),
+    complexityLevel: normalizeString(record.complexityLevel),
+    estimateBaseline: normalizeString(record.estimateBaseline),
+    estimateRange: normalizeString(record.estimateRange),
+    timeEstimate: normalizeString(record.timeEstimate)
   };
 }
 
@@ -294,22 +337,16 @@ export function scopeProject(args: {
   selection?: ExampleBuildSelection | null;
   stackRecommendation?: ExampleStackRecommendation | null;
   project?: ExampleBuildProject | null;
-  blueprint?: GuidedBuildBlueprint | null;
   title?: string | null;
   summary?: string | null;
   userIntent?: string | null;
 }): BuildSessionScope {
   const project = args.project;
-  const blueprint = args.blueprint;
   const title =
     normalizeString(args.title) ??
-    project?.title ??
-    blueprint?.templateIdeaLabel ??
-    blueprint?.selectedTemplateName ??
-    blueprint?.engineName;
+    project?.title;
   const summary =
     normalizeString(args.summary) ??
-    blueprint?.projectSummary ??
     project?.summary ??
     (args.userIntent ? `Starting intent: ${args.userIntent.trim()}` : undefined);
 
@@ -319,28 +356,18 @@ export function scopeProject(args: {
       normalizeString(args.selection?.productTypeId) ??
       project?.typeId ??
       normalizeString(args.buildTypeId) ??
-      project?.typeId ??
-      blueprint?.buildCategory,
+      project?.typeId,
     productTypeLabel:
       normalizeString(args.productTypeLabel) ??
       project?.typeLabel ??
       normalizeString(args.buildTypeLabel) ??
-      blueprint?.categoryLabel ??
       undefined,
-    buildTypeId: normalizeString(args.buildTypeId) ?? project?.typeId ?? blueprint?.buildCategory,
+    buildTypeId: normalizeString(args.buildTypeId) ?? project?.typeId,
     buildTypeLabel:
       normalizeString(args.buildTypeLabel) ??
-      blueprint?.categoryLabel ??
       project?.typeLabel ??
       undefined,
-    intentMode:
-      args.selection?.intentMode ??
-      project?.intentMode ??
-      (blueprint?.entryMode === "known-industry"
-        ? "known-industry"
-        : blueprint?.entryMode === "exploring"
-          ? "exploring-opportunities"
-          : undefined),
+    intentMode: args.selection?.intentMode ?? project?.intentMode,
     industryId: normalizeString(args.selection?.industryId) ?? project?.industryId,
     industryLabel: project?.industryLabel,
     opportunityAreaId:
@@ -360,35 +387,16 @@ export function scopeProject(args: {
     summary,
     problem: project?.problem,
     audience: project?.audience,
-    coreFeatures: project?.coreFeatures ?? blueprint?.selectedFeatures,
-    keyModules:
-      project?.keyModules ??
-      blueprint?.requiredModuleCards?.map((item) => item.label) ??
-      blueprint?.featureCards.map((item) => item.label),
-    firstBuild: project?.firstBuild ?? blueprint?.buildRoadmap.slice(0, 4),
-    mvpSummary: project?.mvpSummary ?? blueprint?.complexitySummary ?? blueprint?.projectSummary
+    coreFeatures: project?.coreFeatures,
+    keyModules: project?.keyModules,
+    firstBuild: project?.firstBuild,
+    mvpSummary: project?.mvpSummary
   };
 }
 
 export function estimateCredits(args: {
   project?: ExampleBuildProject | null;
-  blueprint?: GuidedBuildBlueprint | null;
 }): BuildSessionCredits {
-  if (args.blueprint?.estimatedTotalCreditsRequired) {
-    return {
-      source: "scoped",
-      estimateLabel: `${args.blueprint.estimatedTotalCreditsRequired.toLocaleString("en-US")} Engine Credits`,
-      estimatedMin: args.blueprint.estimatedTotalCreditsRequired,
-      estimatedMax: args.blueprint.estimatedTotalCreditsRequired,
-      estimatedTotal: args.blueprint.estimatedTotalCreditsRequired,
-      estimatedTimeline: args.blueprint.estimatedTimeline,
-      note:
-        args.blueprint.estimatedTimelineDetail ??
-        args.blueprint.scopeExecutionNote ??
-        args.blueprint.creditPoolWarning
-    };
-  }
-
   if (args.project) {
     const parsed = parseExampleCreditEstimate(args.project.creditEstimate);
     return {
@@ -410,7 +418,6 @@ export function recommendBuildPath(args: {
   selectedPathId?: GuidedBuildPathId | null;
   selectedPathLabel?: string | null;
   project?: ExampleBuildProject | null;
-  blueprint?: GuidedBuildBlueprint | null;
 }): BuildSessionPath {
   const selectedPathId = normalizePathId(args.selectedPathId);
   const selectedPathLabel = normalizeString(args.selectedPathLabel);
@@ -424,25 +431,6 @@ export function recommendBuildPath(args: {
       recommendedPathLabel: recommendedPath?.label,
       recommendationReason: recommendedPath?.summary,
       recommendedDetailId: recommendedPath?.id
-    };
-  }
-
-  if (args.blueprint) {
-    const recommendedPathMode =
-      args.blueprint.managedBuildRecommendation ? "managed" : "diy";
-    const recommendedPathLabel =
-      recommendedPathMode === "managed" ? "Managed Build" : "DIY Build";
-
-    return {
-      selectedPathId,
-      selectedPathLabel,
-      recommendedPathMode,
-      recommendedPathLabel,
-      recommendationReason:
-        args.blueprint.managedBuildRecommendation ??
-        args.blueprint.recommendedCreditPackDetail ??
-        args.blueprint.scopeExecutionNote ??
-        args.blueprint.recommendationReason
     };
   }
 
@@ -551,6 +539,7 @@ export function buildBuildSessionSummary(session: GuidedBuildSession | null) {
     session.scope.productTypeLabel || session.scope.buildTypeLabel
       ? `Product type: ${session.scope.productTypeLabel ?? session.scope.buildTypeLabel}.`
       : null,
+    session.scope.buildStageLabel ? `Build stage: ${session.scope.buildStageLabel}.` : null,
     session.scope.intentMode === "known-industry" && session.scope.industryLabel
       ? `Industry: ${session.scope.industryLabel}.`
       : null,
@@ -564,7 +553,8 @@ export function buildBuildSessionSummary(session: GuidedBuildSession | null) {
       ? `Recommended path: ${session.path.recommendedPathLabel}.`
       : null,
     session.credits.estimateLabel ? `Credits: ${session.credits.estimateLabel}.` : null,
-    session.scope.summary ? `Scope: ${session.scope.summary}.` : null
+    session.scope.summary ? `Scope: ${session.scope.summary}.` : null,
+    session.scope.timeEstimate ? `Timing: ${session.scope.timeEstimate}.` : null
   ].filter((line): line is string => Boolean(line));
 
   return lines.join(" ");

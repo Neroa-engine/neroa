@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import NaruaComposerPresence from "@/components/narua/NaruaComposerPresence";
@@ -67,9 +67,9 @@ export default function NaruaChat({
   onVoiceTranscript,
   onVoiceStatusChange,
   afterPlan,
-  eyebrow = "Naroa Intake",
-  title = "Tell Naroa what you want to build",
-  description = "Start naturally. Naroa will ask only the minimum useful follow-up questions, then assemble the first plan automatically.",
+  eyebrow = "Neroa Intake",
+  title = "Tell Neroa what you want to build",
+  description = "Start naturally. Neroa will ask only the minimum useful follow-up questions, then assemble the first plan automatically.",
   helperText = "Tap the mic and speak naturally. Press Send when ready.",
   composerPlaceholder = "Describe what you want to build...",
   isProcessing = false,
@@ -198,7 +198,7 @@ export default function NaruaChat({
                   message.role === "narua" ? "text-cyan-700" : "text-slate-700"
                 }`}
               >
-                {message.role === "narua" ? "Naroa" : "You"}
+                {message.role === "narua" ? "Neroa" : "You"}
               </p>
               <p
                 className={`mt-3 whitespace-pre-wrap text-sm leading-7 ${
@@ -220,7 +220,7 @@ export default function NaruaChat({
         <div className="mx-auto w-full max-w-[88rem]">
           <div className="floating-plane rounded-[28px] p-4">
             <NaruaComposerPresence
-              title="Naroa"
+              title="Neroa"
               subtitle="Core orchestrator active in this engine"
               speaking={voiceState === "listening"}
               className="mb-4"

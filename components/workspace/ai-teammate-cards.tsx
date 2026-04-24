@@ -22,7 +22,7 @@ const defaultAgents: AiTeammateCardItem[] = [
     badge: "Orchestrator",
     active: true,
     description:
-      "Naroa anchors the Engine, guides the user-facing flow, and decides when specialist systems or backend build-review systems should turn on."
+      "Neroa anchors the Engine, guides the user-facing flow, and decides when specialist systems or backend build-review systems should turn on."
   },
   {
     id: "forge",

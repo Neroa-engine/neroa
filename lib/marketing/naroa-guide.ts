@@ -44,7 +44,7 @@ export const homepageGuideSteps: HomepageGuideStep[] = [
     eyebrow: "Step 1",
     title: "What Neroa is",
     summary:
-      "Neroa is an AI-powered product build system that guides software from idea to scope, MVP, budget, build, and launch.",
+      "Neroa is an AI-powered product build system that guides software from idea to scope, MVP, budget, test, build, launch, and operation.",
     detail:
       "This opening section explains the core promise, the kinds of products Neroa supports, and why the experience is more structured than generic AI prompting.",
     sectionLabel: "Hero"
@@ -84,7 +84,7 @@ export const homepageGuideSteps: HomepageGuideStep[] = [
     eyebrow: "Step 5",
     title: "How the guided path works",
     summary:
-      "The flow moves through Strategy, Scope, MVP, Budget, Build, Launch, and Operate so decisions become more precise before execution gets expensive.",
+      "The flow moves through Strategy, Scope, Budget, Build Definition, Build, Test, Launch, and Operate so decisions get clearer before execution gets expensive.",
     detail:
       "This is where Neroa feels different from a static page. The product is designed to guide the sequence, not just answer questions in isolation.",
     sectionLabel: "Guided flow"
@@ -104,7 +104,7 @@ export const homepageGuideSteps: HomepageGuideStep[] = [
     eyebrow: "Step 7",
     title: "Make the next decision",
     summary:
-      "If you already know your path, jump into DIY or Managed Build. If not, Naroa can point you to the best next page to reduce uncertainty.",
+      "If you already know your path, jump into DIY or Managed Build. If not, Neroa can point you to the best next page to reduce uncertainty.",
     detail:
       "This is the transition from guided understanding into action. The goal is to leave the visitor with a clear next move instead of more ambiguity.",
     sectionLabel: "Final CTA"
@@ -332,7 +332,7 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
       actions: [
         { label: "Understand Pricing", href: "/pricing" },
         { label: "See an Example Build", href: "/example-build" },
-        { label: "Start DIY Build", href: "/start?resume=guided" }
+        { label: "Start a conversation", href: "/start" }
       ]
     };
   }
@@ -348,7 +348,7 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
         "Budget questions usually mean you should compare DIY pricing first. That will show monthly Engine Credits, build pace, and when a managed path starts to make more sense.",
       actions: [
         { label: "Understand Pricing", href: "/pricing" },
-        { label: "Open DIY Pricing", href: "/pricing/diy" },
+        { label: "View DIY Pricing", href: "/pricing/diy" },
         { label: "See an Example Build", href: "/example-build" }
       ]
     };
@@ -365,9 +365,9 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
       message:
         "If you want stronger execution help, the managed path is the right next step. That page explains staged approvals, visibility, and how Neroa keeps the build from becoming a black box.",
       actions: [
-        { label: "Explore Managed Build", href: "/managed-build" },
+        { label: "Start Managed Build", href: "/start" },
         { label: "View Managed Pricing", href: "/pricing/managed" },
-        { label: "Request a Quote", href: "/contact?type=managed-build-quote" }
+        { label: "Start Managed Build", href: "/start" }
       ]
     };
   }
@@ -382,8 +382,8 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
         "The interactive Example Build is the fastest way to see how Neroa frames a product before you commit to a path.",
       actions: [
         { label: "See an Example Build", href: "/example-build" },
-        { label: "Start DIY Build", href: "/start?resume=guided" },
-        { label: "Explore Managed Build", href: "/managed-build" }
+        { label: "Start a conversation", href: "/start" },
+        { label: "Start Managed Build", href: "/start" }
       ]
     };
   }
@@ -400,7 +400,7 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
         "If you are still deciding what kind of product fits, the build-category and use-case pages will narrow the path quickly before you enter the guided builder.",
       actions: [
         { label: "Explore Use Cases", href: "/use-cases" },
-        { label: "Start DIY Build", href: "/start?resume=guided" },
+        { label: "Start a conversation", href: "/start" },
         { label: "See an Example Build", href: "/example-build" }
       ]
     };
@@ -408,11 +408,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
 
   return {
     message:
-      "The clearest next move is to enter the guided builder if you already know you want to build, or open pricing if you still need to compare the pace and support models.",
+      "The clearest next move is to enter the guided builder if you already know you want to build, or review pricing if you still need to compare the pace and support models.",
     actions: [
-      { label: "Start DIY Build", href: "/start?resume=guided" },
+      { label: "Start a conversation", href: "/start" },
       { label: "Understand Pricing", href: "/pricing" },
-      { label: "Explore Managed Build", href: "/managed-build" }
+      { label: "Start Managed Build", href: "/start" }
     ]
   };
 }

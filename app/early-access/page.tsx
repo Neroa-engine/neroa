@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 
 export default function EarlyAccessPage() {
   return (
@@ -14,13 +15,13 @@ export default function EarlyAccessPage() {
               Neroa is live and ready to help you build with coordinated AI.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600 sm:text-xl">
-              Start with Naroa, choose the right build path, and move from idea to MVP, budget, validation, build, and launch using the working Neroa system.
+              Start with Neroa, choose the right build path, and move from idea to MVP, budget, validation, build, and launch using the working Neroa system.
             </p>
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Link href="/start" className="button-primary">
+              <PublicActionLink href="/start" label="Start your build" className="button-primary">
                 Start your build
-              </Link>
+              </PublicActionLink>
               <Link href="/use-cases" className="button-secondary">
                 Explore use cases
               </Link>
@@ -37,7 +38,7 @@ export default function EarlyAccessPage() {
                 ],
                 [
                   "How it works",
-                  "Naroa frames the work first, then specialist AI systems expand execution only where the build needs them."
+                  "Neroa frames the work first, then specialist AI systems expand execution only where the build needs them."
                 ],
                 [
                   "Where to go next",
@@ -65,12 +66,12 @@ export default function EarlyAccessPage() {
                 One focused system from build path to engine creation.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Neroa is live as a coordinated AI build system for SaaS, internal software, and external apps. Start with the build path, move into Naroa intake, and let the system open the right engine structure.
+                Neroa is live as a coordinated AI build system for SaaS, internal software, and external apps. Start with the build path, move into Neroa intake, and let the system open the right engine structure.
               </p>
 
               <div className="mt-6 grid gap-3">
                 {[
-                  "Start with Naroa as the control layer",
+                  "Start with Neroa as the control layer",
                   "Choose the right build category before execution begins",
                   "Use pricing to understand Engine Credits and plan capacity",
                   "Move into support or contact if you need a human answer"
@@ -90,9 +91,13 @@ export default function EarlyAccessPage() {
                   Start your build directly, or use Contact and Support first if you want help choosing the right path before you enter the product flow.
                 </p>
                 <div className="mt-4 flex flex-wrap gap-3">
-                  <Link href="/start" className="text-sm font-medium text-cyan-700 transition hover:text-cyan-800">
+                  <PublicActionLink
+                    href="/start"
+                    label="Start your build"
+                    className="text-sm font-medium text-cyan-700 transition hover:text-cyan-800"
+                  >
                     Start your build
-                  </Link>
+                  </PublicActionLink>
                   <Link href="/instructions" className="text-sm font-medium text-cyan-700 transition hover:text-cyan-800">
                     Read instructions
                   </Link>

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import AiAvatar from "@/components/workspace/ai-avatar";
@@ -47,7 +47,7 @@ export default function NaruaPresence({
   eyebrow,
   title,
   description,
-  status = "Naroa Core Online",
+  status = "Neroa Core Online",
   chips = [],
   actions,
   supportingContent,
@@ -87,7 +87,7 @@ export default function NaruaPresence({
           <div className="relative flex h-full flex-col justify-between">
             <div className="flex items-start justify-between gap-3">
               <span className="premium-pill border-white/10 bg-white/[0.05] text-slate-200">
-                Naroa Presence
+                Neroa Presence
               </span>
               <span className="premium-pill border-cyan-300/18 bg-cyan-300/[0.08] text-cyan-100">
                 {status}
@@ -97,7 +97,7 @@ export default function NaruaPresence({
             <div className="flex flex-1 items-center justify-center py-6">
               <AiAvatar
                 provider="narua"
-                displayName="Naroa"
+                displayName="Neroa"
                 avatarSeed={avatarSeed}
                 size={avatarSize(variant)}
                 emphasis="hero"

@@ -1,8 +1,7 @@
 import type {
-  BuildCategoryId,
-  BuildTemplateFeature,
-  GuidedBuildBlueprint
+  BuildCategoryId
 } from "@/lib/onboarding/guided-build";
+import type { GuidedBuildSession } from "@/lib/onboarding/build-session";
 import type {
   MobileAppWorkspaceBlueprint
 } from "@/lib/onboarding/mobile-app-intake";
@@ -44,7 +43,7 @@ export type BuildModuleSelection = {
 export type BuildConfiguration = {
   workspaceId: string;
   workspaceName: string;
-  sourceFlow: "decision-engine" | "saas-intake" | "mobile-app-intake" | "generic";
+  sourceFlow: "guided-builder" | "saas-intake" | "mobile-app-intake" | "generic";
   templateId: string | null;
   categoryId: BuildCategoryId | "general";
   frameworkId: string | null;
@@ -87,19 +86,6 @@ export type InitialBuildSessionState = {
   };
 };
 
-function normalizeFeatureCard(
-  feature: Pick<BuildTemplateFeature, "id" | "label" | "whatItDoes" | "whyIncluded">,
-  stage: BuildModuleSelection["stage"]
-): BuildModuleSelection {
-  return {
-    id: feature.id,
-    label: feature.label,
-    stage,
-    description: feature.whatItDoes,
-    reason: feature.whyIncluded
-  };
-}
-
 function uniqueModules(modules: BuildModuleSelection[]) {
   const seen = new Set<string>();
 
@@ -126,60 +112,81 @@ function featureModulesFromLabels(
   }));
 }
 
+function normalizeBuildCategoryId(value: string | null | undefined): BuildCategoryId | null {
+  return value === "saas" ||
+    value === "internal-software" ||
+    value === "external-app" ||
+    value === "mobile-app"
+    ? value
+    : null;
+}
+
+function buildModulesFromBuildSession(buildSession: GuidedBuildSession) {
+  const requiredSource =
+    buildSession.scope.keyModules && buildSession.scope.keyModules.length > 0
+      ? buildSession.scope.keyModules
+      : buildSession.scope.coreFeatures ?? [];
+  const expansionSource = buildSession.scope.firstBuild ?? [];
+
+  return {
+    required: uniqueModules(featureModulesFromLabels(requiredSource, "required")),
+    expansion: uniqueModules(featureModulesFromLabels(expansionSource, "expansion")),
+    optional: []
+  };
+}
+
 function buildGuidedConfiguration(
   workspaceId: string,
   workspaceName: string,
-  guidedBuildIntake: GuidedBuildBlueprint
+  buildSession: GuidedBuildSession
 ): BuildConfiguration {
-  const requiredModules = uniqueModules(
-    (guidedBuildIntake.requiredModuleCards ?? guidedBuildIntake.featureCards).map((feature) =>
-      normalizeFeatureCard(feature, "required")
-    )
-  );
-  const expansionModules = uniqueModules(
-    (guidedBuildIntake.expansionModuleCards ?? []).map((feature) =>
-      normalizeFeatureCard(feature, "expansion")
-    )
-  );
-  const optionalModules = uniqueModules(
-    (guidedBuildIntake.optionalModuleCards ?? []).map((feature) =>
-      normalizeFeatureCard(feature, "optional")
-    )
-  );
+  const categoryId =
+    normalizeBuildCategoryId(buildSession.scope.productTypeId ?? buildSession.scope.buildTypeId) ??
+    "general";
+  const modules = buildModulesFromBuildSession(buildSession);
+  const buildPathValue =
+    buildSession.path.selectedPathLabel ?? buildSession.path.recommendedPathLabel ?? null;
+  const buildPathLabel = buildPathValue
+    ? buildSession.path.selectedPathLabel
+      ? "Selected build path"
+      : "Recommended build path"
+    : null;
 
   return {
     workspaceId,
     workspaceName,
-    sourceFlow: "decision-engine",
-    templateId: guidedBuildIntake.templateId,
-    categoryId: guidedBuildIntake.categoryId,
-    frameworkId: guidedBuildIntake.recommendedFrameworkId ?? guidedBuildIntake.selectedTemplateId,
-    frameworkLabel:
-      guidedBuildIntake.recommendedFrameworkLabel ?? guidedBuildIntake.selectedTemplateName,
-    blueprintSummary: guidedBuildIntake.projectSummary,
-    buildPathLabel: guidedBuildIntake.primaryBuildPathLabel,
-    buildPathValue: guidedBuildIntake.primaryBuildPathValue,
-    buildPathDetail: guidedBuildIntake.primaryBuildPathDetail,
-    laneStructure: guidedBuildIntake.laneStructure,
+    sourceFlow: "guided-builder",
+    templateId: null,
+    categoryId,
+    frameworkId: buildSession.scope.frameworkId ?? null,
+    frameworkLabel: buildSession.scope.frameworkLabel ?? null,
+    blueprintSummary:
+      buildSession.scope.summary ??
+      buildSession.userIntent ??
+      "Neroa captured the guided build scope and is ready to move into execution.",
+    buildPathLabel,
+    buildPathValue,
+    buildPathDetail: buildSession.path.recommendationReason ?? null,
+    laneStructure: ["Strategy", "Scope", "Budget", "Build Definition", "Build", "Test", "Launch", "Operate"],
     modules: {
-      required: requiredModules,
-      expansion: expansionModules,
-      optional: optionalModules
+      required: modules.required,
+      expansion: modules.expansion,
+      optional: modules.optional
     },
     connectedServices: getEngineConnectedServices({
-      categoryId: guidedBuildIntake.categoryId,
-      featureCards: guidedBuildIntake.featureCards
+      categoryId: categoryId === "general" ? "external-app" : categoryId,
+      systemLabels: buildSession.scope.stackSystems ?? []
     }),
     orchestrationRouting: getExecutionRoutingModel(),
     reviewLoop: getBuildReviewLoop(),
-    recommendedTierId: guidedBuildIntake.recommendedTierId ?? null,
-    recommendedTierLabel: guidedBuildIntake.recommendedTierLabel ?? null,
-    complexityScore: guidedBuildIntake.complexityScore ?? null,
-    complexityLabel: guidedBuildIntake.complexityLabel ?? null,
-    executionIntensity: guidedBuildIntake.executionIntensity ?? null,
-    variationSeed: guidedBuildIntake.variationSeed ?? null,
-    variationLayoutId: guidedBuildIntake.variationLayoutId ?? null,
-    variationNavigationId: guidedBuildIntake.variationNavigationId ?? null
+    recommendedTierId: null,
+    recommendedTierLabel: null,
+    complexityScore: null,
+    complexityLabel: null,
+    executionIntensity: null,
+    variationSeed: null,
+    variationLayoutId: null,
+    variationNavigationId: null
   };
 }
 
@@ -201,7 +208,7 @@ function buildSaasConfiguration(
     buildPathValue: "Next.js + Supabase" + (saasIntake.answers.takesPayments === "yes" ? " + Stripe" : ""),
     buildPathDetail:
       "Keep the first SaaS release centered on one clear workflow, then widen the system after the commercial loop is proven.",
-    laneStructure: ["Strategy", "Scope", "MVP", "Budget", "Test", "Build", "Launch", "Operate"],
+    laneStructure: ["Strategy", "Scope", "Budget", "Build Definition", "Build", "Test", "Launch", "Operate"],
     modules: {
       required: featureModulesFromLabels(saasIntake.mvpFeatureList, "required"),
       expansion: [],
@@ -242,7 +249,7 @@ function buildMobileConfiguration(
     buildPathLabel: "Recommended App Stack",
     buildPathValue: mobileAppIntake.stackRecommendation.recommendedPathValue,
     buildPathDetail: mobileAppIntake.stackRecommendation.summary,
-    laneStructure: ["Strategy", "Scope", "MVP", "Budget", "Test", "Build", "Launch", "Operate"],
+    laneStructure: ["Strategy", "Scope", "Budget", "Build Definition", "Build", "Test", "Launch", "Operate"],
     modules: {
       required: featureModulesFromLabels(mobileAppIntake.featureList, "required"),
       expansion: [],
@@ -288,7 +295,7 @@ function buildGenericConfiguration(
     buildPathLabel: null,
     buildPathValue: null,
     buildPathDetail: null,
-    laneStructure: ["Strategy", "Scope", "MVP", "Budget", "Test", "Build", "Launch", "Operate"],
+    laneStructure: ["Strategy", "Scope", "Budget", "Build Definition", "Build", "Test", "Launch", "Operate"],
     modules: {
       required: [],
       expansion: [],
@@ -317,12 +324,12 @@ export function buildInitialBuildSessionState(args: {
   projectMetadata?: StoredProjectMetadata | null;
 }): InitialBuildSessionState {
   const metadata = args.projectMetadata ?? null;
-  const guidedBuildIntake = metadata?.guidedBuildIntake ?? null;
+  const buildSession = metadata?.buildSession ?? null;
   const saasIntake = metadata?.saasIntake ?? null;
   const mobileAppIntake = metadata?.mobileAppIntake ?? null;
 
-  const buildConfiguration = guidedBuildIntake
-    ? buildGuidedConfiguration(args.workspaceId, args.workspaceName, guidedBuildIntake)
+  const buildConfiguration = buildSession
+    ? buildGuidedConfiguration(args.workspaceId, args.workspaceName, buildSession)
     : saasIntake
       ? buildSaasConfiguration(args.workspaceId, args.workspaceName, saasIntake)
       : mobileAppIntake

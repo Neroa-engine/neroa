@@ -60,7 +60,7 @@ export default function BuildInternalToolsWithAiPage() {
         title: "Turn messy internal workflows into structured internal software.",
         summary:
           "Neroa helps businesses move from spreadsheets, disconnected forms, and manual work into scoped internal systems with a clearer path through workflow mapping, build planning, and rollout.",
-        primaryAction: { href: "/start", label: "Start DIY Build" },
+    primaryAction: { href: "/start", label: "Start a conversation" },
         secondaryAction: {
           href: "/use-cases/internal-software",
           label: "Explore Internal Software",
@@ -139,8 +139,8 @@ export default function BuildInternalToolsWithAiPage() {
         summary:
           "Use Neroa when you want internal software that is shaped around real operations instead of generic feature sprawl.",
         actions: [
-          { href: "/start", label: "Start DIY Build" },
-          { href: "/managed-build", label: "Explore Managed Build", tone: "secondary" }
+          { href: "/start", label: "Start a conversation" },
+          { href: "/start", label: "Start Managed Build", tone: "secondary" }
         ]
       }}
     />

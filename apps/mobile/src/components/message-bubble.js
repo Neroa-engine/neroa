@@ -1,4 +1,4 @@
-﻿import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { appColors } from "../lib/theme";
 
 export function MessageBubble({ role, content }) {
@@ -7,7 +7,7 @@ export function MessageBubble({ role, content }) {
   return (
     <View style={[styles.base, user ? styles.user : styles.assistant]}>
       <Text style={[styles.badge, user ? styles.userBadge : styles.assistantBadge]}>
-        {user ? "You" : "Naroa"}
+        {user ? "You" : "Neroa"}
       </Text>
       <Text style={styles.content}>{content}</Text>
     </View>

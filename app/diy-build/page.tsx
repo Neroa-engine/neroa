@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import {
-  ConversionStrip,
   FaqSection,
   InfoCardGrid,
   JsonLdScript,
@@ -9,6 +9,12 @@ import {
   SectionHeader,
   StepGrid
 } from "@/components/marketing/public-page-sections";
+import { PublicActionLink } from "@/components/site/public-action-link";
+import { getOptionalUser } from "@/lib/auth";
+import {
+  publicLaunchManagedCta,
+  publicLaunchPrimaryCta
+} from "@/lib/data/public-launch";
 import { buildFaqSchema, buildPublicMetadata, buildWebPageSchema } from "@/lib/marketing/seo";
 import { pricingScopeDisclaimer } from "@/lib/pricing/config";
 
@@ -21,7 +27,7 @@ const diySteps = [
   {
     title: "Neroa scopes the build",
     description:
-      "Naroa shapes the build path, trims the MVP, and turns the idea into a structured plan."
+      "Neroa shapes the build path, trims the MVP, and turns the idea into a structured plan."
   },
   {
     title: "Credits power the work",
@@ -160,7 +166,10 @@ export const metadata: Metadata = buildPublicMetadata({
   ]
 });
 
-export default function DiyBuildPage() {
+export default async function DiyBuildPage() {
+  const user = await getOptionalUser();
+  const initialAuthenticated = Boolean(user);
+
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -176,8 +185,9 @@ export default function DiyBuildPage() {
 
   return (
     <MarketingInfoShell
+      userEmail={user?.email ?? undefined}
       ctaHref="/start"
-      ctaLabel="Start DIY Build"
+      ctaLabel="Start a conversation"
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -187,23 +197,24 @@ export default function DiyBuildPage() {
         <PublicPageHero
           eyebrow="DIY Build Platform"
           title="Build real software at your own pace."
-          summary="Neroa lets users scope and build SaaS, internal software, external apps, and mobile apps through monthly Engine Credits. Start with the budget you have, move at your own speed, and accelerate later when the project earns it."
-          primaryAction={{ href: "/start", label: "Start DIY Build" }}
+          summary="Neroa lets users scope and build real software through monthly Engine Credits. Start with the budget you have, move at your own speed, and accelerate later when the project earns it."
+          primaryAction={{ href: "/start", label: "Start a conversation" }}
           secondaryAction={{ href: "/pricing/diy", label: "View Pricing", tone: "secondary" }}
+          initialAuthenticated={initialAuthenticated}
           highlights={[
             "Build with your current budget",
             "Monthly Engine Credits reset with the plan",
             "Add credits or upgrade when needed"
           ]}
           panelTitle="Why DIY works"
-          panelSummary="DIY is not about pretending software becomes free. It is about making real product building accessible through guided pacing, scoped execution, and visible tradeoffs."
+          panelSummary="DIY is not about pretending software becomes free. It makes real product building accessible through guided pacing, scoped execution, and visible tradeoffs."
           panelItems={[
             "Scope the product before serious execution begins",
             "Build over multiple months when budget is tight",
             "Accelerate with credit packs when launch speed matters"
           ]}
           panelBadge="Budget-aware execution"
-          supportingNote="DIY keeps the product inside one guided operating system, so the customer sees the scope, pace, and tradeoffs before execution gets expensive."
+          supportingNote="DIY keeps the product inside one guided operating system so the customer sees scope, pace, and tradeoffs before execution gets expensive."
           metrics={[
             { label: "Starting point", value: "Use the monthly credit pool already inside the plan" },
             { label: "Acceleration", value: "Add credit packs only when speed matters more" },
@@ -244,24 +255,12 @@ export default function DiyBuildPage() {
         <SectionHeader
           eyebrow="Example build scenarios"
           title="The same kind of product can move at different speeds depending on the budget."
-          summary="These are example scenarios, not fake calculator promises. Neroa scopes each project before execution so the customer sees a realistic path instead of a vague unlimited-build claim."
+          summary="These are example scenarios, not fake calculator promises. Neroa scopes each project before execution so the customer sees a realistic path."
         />
         <div className="mt-8">
           <InfoCardGrid
             items={[...exampleScenarios]}
             guideContext={{ onboardingStep: "public-diy", intentPrefix: "Review DIY example scenario" }}
-          />
-        </div>
-        <div className="mt-8">
-          <ConversionStrip
-            eyebrow="Interactive walkthrough"
-            title="Want to see the guided flow before you start your own build?"
-            summary="The Example Build route shows how Neroa turns a product idea into strategy, scope, MVP, example credits, and build-path choices. It is the fastest way to feel the system before you enter the real DIY flow."
-            actions={[
-              { href: "/example-build", label: "See an Example Build" },
-              { href: "/start", label: "Start DIY Build", tone: "secondary" },
-              { href: "/pricing/diy", label: "View DIY Pricing", tone: "secondary" }
-            ]}
           />
         </div>
       </section>
@@ -296,31 +295,62 @@ export default function DiyBuildPage() {
       </div>
       </section>
 
-      <ConversionStrip
-        eyebrow="Path flexibility"
-        title="Start in DIY and move into Managed Build later if the scope changes."
-        summary="Customers do not have to choose a forever lane on day one. If the project becomes more urgent, more complex, or more business-critical, Neroa can help move it into a managed execution path."
-        actions={[
-          { href: "/start", label: "Start DIY Build" },
-          { href: "/managed-build", label: "Explore Managed Build", tone: "secondary" }
-        ]}
-        aside={
-          <div className="comparison-band">
+      <section className="mt-16">
+        <div className="floating-plane rounded-[38px] p-6 sm:p-8">
+          <div className="floating-wash rounded-[38px]" />
+          <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                Path flexibility
+              </p>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+                Start in DIY and move into Managed Build later if the scope changes.
+              </h2>
+              <p className="mt-4 text-base leading-8 text-slate-600">
+                Customers do not have to choose a forever lane on day one. If the project becomes
+                more urgent, more complex, or more business-critical, Neroa can move it into a
+                managed execution path without restarting the roadmap.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <PublicActionLink
+                href={publicLaunchPrimaryCta.href}
+                label={publicLaunchPrimaryCta.label}
+                className="button-primary"
+                initialAuthenticated={initialAuthenticated}
+              />
+              <PublicActionLink
+                href={publicLaunchManagedCta.href}
+                label={publicLaunchManagedCta.label}
+                className="button-secondary"
+                initialAuthenticated={initialAuthenticated}
+              />
+            </div>
+          </div>
+
+          <div className="comparison-band mt-6">
             <div className="comparison-metric">
               <span className="comparison-label">DIY lane</span>
-              <span className="comparison-value">Shape the product and pace the work with monthly Engine Credits.</span>
+              <span className="comparison-value">
+                Shape the product and pace the work with monthly Engine Credits.
+              </span>
             </div>
             <div className="comparison-metric">
               <span className="comparison-label">Transition point</span>
-              <span className="comparison-value">Move when urgency, integrations, or launch pressure justify more support.</span>
+              <span className="comparison-value">
+                Move when urgency, integrations, or launch pressure justify more support.
+              </span>
             </div>
             <div className="comparison-metric">
               <span className="comparison-label">Managed lane</span>
-              <span className="comparison-value">Add structured execution help, QA visibility, and launch coordination.</span>
+              <span className="comparison-value">
+                Add structured execution help, QA visibility, and launch coordination.
+              </span>
             </div>
           </div>
-        }
-      />
+        </div>
+      </section>
 
       <FaqSection
         eyebrow="DIY FAQ"
@@ -328,17 +358,6 @@ export default function DiyBuildPage() {
         summary="These questions help remove the most common misunderstandings around budget, pacing, and what a DIY software build can realistically do."
         items={diyFaq}
         guideContext={{ onboardingStep: "public-diy", intentPrefix: "Review DIY question" }}
-      />
-
-      <ConversionStrip
-        eyebrow="Next step"
-        title="Start with the budget you have, then increase pace only when the build proves itself."
-        summary="Use DIY Build when you want structured AI guidance, realistic scope, and a path into software without committing to a full managed build on day one."
-        actions={[
-          { href: "/start", label: "Start DIY Build" },
-          { href: "/pricing/diy", label: "View DIY Pricing", tone: "secondary" },
-          { href: "/example-build", label: "See an Example Build", tone: "secondary" }
-        ]}
       />
     </MarketingInfoShell>
   );

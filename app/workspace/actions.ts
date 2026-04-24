@@ -1,15 +1,15 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { cookies } from "next/headers";
 import {
   assertCanCreateEngine,
   consumeEngineCreationCredits,
-  countActiveEnginesForUser,
-  syncAccountPlanAccess,
-  syncActiveEngineUsage
+  syncAccountPlanAccess
 } from "@/lib/account/plan-usage-server";
+import {
+  ACTIVE_PROJECT_COOKIE,
+  clearPersistedActiveProjectId
+} from "@/lib/portal/active-project";
 import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
@@ -21,123 +21,29 @@ import {
   recordOnboardingDecisionAndBuildSession,
   recordPlatformEvent
 } from "@/lib/platform/foundation";
+import {
+  buildDescriptionWithMetadata,
+  getOwnedWorkspace,
+  getReturnTo,
+  parseAssetsPayload,
+  redirectWithError,
+  revalidateWorkspacePaths,
+  safeString,
+  syncWorkspaceUsageSnapshot,
+  uniqueAssets
+} from "./workspace-action-helpers";
 
-function safeString(value: FormDataEntryValue | null) {
-  return typeof value === "string" ? value.trim() : "";
-}
+function workspaceWriteBlockedMessage(action: "archive" | "restore" | "rename" | "delete") {
+  const actionLabel =
+    action === "archive"
+      ? "archive"
+      : action === "restore"
+        ? "restore"
+        : action === "rename"
+          ? "rename"
+          : "delete";
 
-function getReturnTo(formData: FormData, fallback: string) {
-  return safeString(formData.get("returnTo")) || fallback;
-}
-
-function redirectWithError(returnTo: string, message: string): never {
-  const join = returnTo.includes("?") ? "&" : "?";
-  redirect(`${returnTo}${join}error=${encodeURIComponent(message)}`);
-}
-
-function normalizeAsset(value: unknown): StoredProjectAsset | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const id = typeof record.id === "string" ? record.id.trim() : "";
-  const name = typeof record.name === "string" ? record.name.trim() : "";
-  const kind = typeof record.kind === "string" ? record.kind.trim() : "";
-  const sizeLabel =
-    typeof record.sizeLabel === "string" && record.sizeLabel.trim()
-      ? record.sizeLabel.trim()
-      : null;
-  const addedAt = typeof record.addedAt === "string" ? record.addedAt : new Date().toISOString();
-
-  if (!id || !name || !kind) {
-    return null;
-  }
-
-  return {
-    id,
-    name,
-    kind,
-    sizeLabel,
-    addedAt
-  };
-}
-
-function parseAssetsPayload(value: string) {
-  if (!value.trim()) {
-    return [] as StoredProjectAsset[];
-  }
-
-  try {
-    const parsed = JSON.parse(value) as unknown;
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item) => normalizeAsset(item))
-      .filter((item): item is StoredProjectAsset => Boolean(item));
-  } catch {
-    return [];
-  }
-}
-
-function uniqueAssets(items: StoredProjectAsset[]) {
-  const seen = new Set<string>();
-
-  return items.filter((item) => {
-    if (seen.has(item.id)) {
-      return false;
-    }
-
-    seen.add(item.id);
-    return true;
-  });
-}
-
-async function getOwnedWorkspace(workspaceId: string) {
-  const { supabase, user } = await requireUser();
-  const { data: workspace, error } = await supabase
-    .from("workspaces")
-    .select("id, name, description")
-    .eq("id", workspaceId)
-    .eq("owner_id", user.id)
-    .maybeSingle();
-
-  if (error || !workspace) {
-    throw new Error(error?.message ?? "Engine not found.");
-  }
-
-  return { supabase, user, workspace };
-}
-
-function buildDescriptionWithMetadata(args: {
-  workspace: {
-    name: string;
-    description: string | null;
-  };
-  title?: string;
-  archived?: boolean;
-  assets?: StoredProjectAsset[];
-}) {
-  const parsed = parseWorkspaceProjectDescription(args.workspace.description);
-
-  return encodeWorkspaceProjectDescription(
-    parsed.visibleDescription,
-    buildStoredProjectMetadata({
-      title: args.title ?? args.workspace.name,
-      description: parsed.visibleDescription,
-      templateId: parsed.metadata?.templateId ?? null,
-      customLanes: parsed.metadata?.customLanes ?? [],
-      archived: args.archived ?? parsed.metadata?.archived ?? false,
-      assets: args.assets ?? parsed.metadata?.assets ?? [],
-      guidedFlowPreset: parsed.metadata?.guidedFlowPreset,
-      guidedBuildIntake: parsed.metadata?.guidedBuildIntake ?? null,
-      saasIntake: parsed.metadata?.saasIntake ?? null,
-      mobileAppIntake: parsed.metadata?.mobileAppIntake ?? null
-    })
-  );
+  return `Project ${actionLabel} could not be confirmed. The live Supabase workspace owner-write policy still appears to be blocking updates for this account. Confirm the workspace owner write repair migration is applied, then try again.`;
 }
 
 export async function renameWorkspace(formData: FormData) {
@@ -157,8 +63,7 @@ export async function renameWorkspace(formData: FormData) {
   );
 
   const { supabase, workspace } = ownedWorkspace;
-
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("workspaces")
     .update({
       name,
@@ -167,14 +72,27 @@ export async function renameWorkspace(formData: FormData) {
         title: name
       })
     })
-    .eq("id", workspaceId);
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     redirectWithError(returnTo, error.message);
   }
 
-  revalidatePath("/dashboard");
-  revalidatePath(`/workspace/${workspaceId}/project/${workspaceId}`);
+  if (!data) {
+    redirectWithError(returnTo, workspaceWriteBlockedMessage("rename"));
+  }
+
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    "/profile",
+    "/settings",
+    "/billing",
+    "/usage",
+    `/workspace/${workspaceId}/project/${workspaceId}`
+  ]);
 }
 
 export async function archiveWorkspace(formData: FormData) {
@@ -193,7 +111,7 @@ export async function archiveWorkspace(formData: FormData) {
   );
 
   const { supabase, workspace } = ownedWorkspace;
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("workspaces")
     .update({
       description: buildDescriptionWithMetadata({
@@ -201,10 +119,16 @@ export async function archiveWorkspace(formData: FormData) {
         archived: true
       })
     })
-    .eq("id", workspaceId);
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     redirectWithError(returnTo, error.message);
+  }
+
+  if (!data) {
+    redirectWithError(returnTo, workspaceWriteBlockedMessage("archive"));
   }
 
   await recordPlatformEvent({
@@ -219,15 +143,86 @@ export async function archiveWorkspace(formData: FormData) {
     // Optional platform event.
   });
 
-  await syncActiveEngineUsage({
+  if (cookies().get(ACTIVE_PROJECT_COOKIE)?.value === workspaceId) {
+    cookies().delete(ACTIVE_PROJECT_COOKIE);
+  }
+
+  await clearPersistedActiveProjectId({
     supabase,
-    user: ownedWorkspace.user,
-    activeEnginesUsed: await countActiveEnginesForUser(supabase, ownedWorkspace.user.id)
+    userId: ownedWorkspace.user.id,
+    workspaceId
   }).catch(() => {
-    // Keep the archive action successful even if usage metadata refresh fails.
+    // The durable preference should not block archive.
   });
 
-  revalidatePath("/dashboard");
+  await syncWorkspaceUsageSnapshot(ownedWorkspace);
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    "/billing",
+    "/usage",
+    "/profile",
+    "/settings"
+  ]);
+}
+
+export async function restoreWorkspace(formData: FormData) {
+  const workspaceId = safeString(formData.get("workspaceId"));
+  const returnTo = getReturnTo(formData, "/dashboard");
+
+  if (!workspaceId) {
+    redirectWithError(returnTo, "Engine restore requires an id.");
+  }
+
+  const ownedWorkspace = await getOwnedWorkspace(workspaceId).catch((error) =>
+    redirectWithError(
+      returnTo,
+      error instanceof Error ? error.message : "Engine not found."
+    )
+  );
+
+  const { supabase, workspace } = ownedWorkspace;
+  const { data, error } = await supabase
+    .from("workspaces")
+    .update({
+      description: buildDescriptionWithMetadata({
+        workspace,
+        archived: false
+      })
+    })
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    redirectWithError(returnTo, error.message);
+  }
+
+  if (!data) {
+    redirectWithError(returnTo, workspaceWriteBlockedMessage("restore"));
+  }
+
+  await recordPlatformEvent({
+    supabase,
+    userId: ownedWorkspace.user.id,
+    workspaceId,
+    eventType: "engine_restored",
+    details: {
+      returnTo
+    }
+  }).catch(() => {
+    // Optional platform event.
+  });
+
+  await syncWorkspaceUsageSnapshot(ownedWorkspace);
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    "/billing",
+    "/usage",
+    "/profile",
+    "/settings"
+  ]);
 }
 
 export async function duplicateWorkspace(formData: FormData) {
@@ -273,8 +268,13 @@ export async function duplicateWorkspace(formData: FormData) {
     customLanes: parsed.metadata?.customLanes ?? [],
     archived: false,
     assets: parsed.metadata?.assets ?? [],
+    commandCenterDecisions: [],
+    commandCenterChangeReviews: [],
+    commandCenterPreviewState: null,
+    commandCenterApprovedDesignPackage: null,
     guidedFlowPreset: parsed.metadata?.guidedFlowPreset,
-    guidedBuildIntake: parsed.metadata?.guidedBuildIntake ?? null,
+    guidedEntryContext: parsed.metadata?.guidedEntryContext ?? null,
+    buildSession: parsed.metadata?.buildSession ?? null,
     saasIntake: parsed.metadata?.saasIntake ?? null,
     mobileAppIntake: parsed.metadata?.mobileAppIntake ?? null
   });
@@ -343,7 +343,14 @@ export async function duplicateWorkspace(formData: FormData) {
     // Optional platform event.
   });
 
-  revalidatePath("/dashboard");
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    "/billing",
+    "/usage",
+    "/profile",
+    "/settings"
+  ]);
 }
 
 export async function deleteWorkspace(formData: FormData) {
@@ -369,14 +376,20 @@ export async function deleteWorkspace(formData: FormData) {
     .eq("owner_id", user.id)
     .eq("workspace_id", workspaceId);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("workspaces")
     .delete()
     .eq("owner_id", user.id)
-    .eq("id", workspaceId);
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     redirectWithError(returnTo, error.message);
+  }
+
+  if (!data) {
+    redirectWithError(returnTo, workspaceWriteBlockedMessage("delete"));
   }
 
   await recordPlatformEvent({
@@ -392,15 +405,27 @@ export async function deleteWorkspace(formData: FormData) {
     // Optional platform event.
   });
 
-  await syncActiveEngineUsage({
+  if (cookies().get(ACTIVE_PROJECT_COOKIE)?.value === workspaceId) {
+    cookies().delete(ACTIVE_PROJECT_COOKIE);
+  }
+
+  await clearPersistedActiveProjectId({
     supabase,
-    user,
-    activeEnginesUsed: await countActiveEnginesForUser(supabase, user.id)
+    userId: user.id,
+    workspaceId
   }).catch(() => {
-    // Keep deletion successful even if usage metadata refresh fails.
+    // The durable preference should not block delete.
   });
 
-  revalidatePath("/dashboard");
+  await syncWorkspaceUsageSnapshot(ownedWorkspace);
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    "/billing",
+    "/usage",
+    "/profile",
+    "/settings"
+  ]);
 }
 
 export async function registerWorkspaceAssets(formData: FormData) {
@@ -429,7 +454,7 @@ export async function registerWorkspaceAssets(formData: FormData) {
   const parsed = parseWorkspaceProjectDescription(workspace.description);
   const mergedAssets = uniqueAssets([...(parsed.metadata?.assets ?? []), ...incomingAssets]);
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("workspaces")
     .update({
       description: buildDescriptionWithMetadata({
@@ -437,10 +462,19 @@ export async function registerWorkspaceAssets(formData: FormData) {
         assets: mergedAssets
       })
     })
-    .eq("id", workspaceId);
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
 
   if (error) {
     redirectWithError(returnTo, error.message);
+  }
+
+  if (!data) {
+    redirectWithError(
+      returnTo,
+      "Asset upload could not be confirmed. Workspace write verification is still pending."
+    );
   }
 
   await recordPlatformEvent({
@@ -455,6 +489,9 @@ export async function registerWorkspaceAssets(formData: FormData) {
     // Optional platform event.
   });
 
-  revalidatePath("/dashboard");
-  revalidatePath(`/workspace/${workspaceId}/project/${workspaceId}`);
+  revalidateWorkspacePaths([
+    "/dashboard",
+    "/projects",
+    `/workspace/${workspaceId}/project/${workspaceId}`
+  ]);
 }

@@ -1,4 +1,4 @@
-﻿import type { AgentId } from "@/lib/ai/agents";
+import type { AgentId } from "@/lib/ai/agents";
 
 export type MobilePlatformChoice = "iphone" | "android" | "both";
 export type MobileBinaryChoice = "yes" | "no" | "not-sure";
@@ -216,7 +216,7 @@ function buildCostEstimate(
     return {
       rangeLabel: "$8,000 - $24,000",
       summary:
-        "Naroa sees a budget-protected MVP path here. A PWA or lighter mobile-web route may prove the product before a full app-store build expands the spend."
+        "Neroa sees a budget-protected MVP path here. A PWA or lighter mobile-web route may prove the product before a full app-store build expands the spend."
     };
   }
 
@@ -224,7 +224,7 @@ function buildCostEstimate(
     return {
       rangeLabel: "$70,000 - $220,000",
       summary:
-        "This scope is closer to a heavier mobile build with richer backend, testing, native-feature, or app-store readiness needs. Naroa should protect scope hard before execution widens."
+        "This scope is closer to a heavier mobile build with richer backend, testing, native-feature, or app-store readiness needs. Neroa should protect scope hard before execution widens."
     };
   }
 
@@ -259,7 +259,7 @@ function buildStackRecommendation(answers: MobileAppIntakeAnswers): MobileStackR
       recommendedPathLabel: "Secondary MVP Path",
       recommendedPathValue: "PWA / mobile web",
       summary:
-        "Naroa recommends starting with a PWA or mobile-web MVP to protect budget and validate the workflow faster before committing to full app-store delivery.",
+        "Neroa recommends starting with a PWA or mobile-web MVP to protect budget and validate the workflow faster before committing to full app-store delivery.",
       rationale: [
         "Budget protection matters more than immediate app-store packaging.",
         "Native features look light enough to delay full device-specific work.",
@@ -276,11 +276,11 @@ function buildStackRecommendation(answers: MobileAppIntakeAnswers): MobileStackR
       recommendedPathLabel: "Advisory Path",
       recommendedPathValue: "native iOS / native Android",
       summary:
-        "Naroa sees signs that platform-specific capability or performance may matter. React Native + Expo stays the launch default, but native iOS or Android should be reviewed before scope locks.",
+        "Neroa sees signs that platform-specific capability or performance may matter. React Native + Expo stays the launch default, but native iOS or Android should be reviewed before scope locks.",
       rationale: [
         "The requested device capabilities suggest deeper platform access.",
         "Native performance or OS-specific behavior may become a deciding factor.",
-        "Naroa should still scope the MVP in React Native terms first so cost tradeoffs stay visible."
+        "Neroa should still scope the MVP in React Native terms first so cost tradeoffs stay visible."
       ]
     };
   }
@@ -292,7 +292,7 @@ function buildStackRecommendation(answers: MobileAppIntakeAnswers): MobileStackR
     recommendedPathLabel: "Primary Build Path",
     recommendedPathValue: "React Native + Expo",
     summary:
-      "Naroa recommends React Native + Expo as the main mobile build path because it keeps speed, budget discipline, iPhone/Android coverage, and real app-store delivery in one practical stack.",
+      "Neroa recommends React Native + Expo as the main mobile build path because it keeps speed, budget discipline, iPhone/Android coverage, and real app-store delivery in one practical stack.",
     rationale: [
       answers.platformTarget === "both"
         ? "You need a cross-platform route that can cover both iPhone and Android."
@@ -322,7 +322,7 @@ export function buildMobileAppWorkspaceBlueprint(
     projectName,
     projectSummary: `${compactSentence(answers.appSummary)} for ${compactSentence(
       answers.audience
-    )}, scoped toward ${answers.platformTarget === "both" ? "iPhone and Android" : answers.platformTarget}. Naroa is protecting ${compactSentence(
+    )}, scoped toward ${answers.platformTarget === "both" ? "iPhone and Android" : answers.platformTarget}. Neroa is protecting ${compactSentence(
       answers.mvpVersion
     )} as the first launchable version and measuring success against ${compactSentence(
       answers.proofOutcome

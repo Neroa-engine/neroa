@@ -1,4 +1,4 @@
-﻿export type AgentId =
+export type AgentId =
   | "narua"
   | "forge"
   | "atlas"
@@ -9,7 +9,7 @@
 
 export const AGENTS = {
   narua: {
-    name: "Naroa",
+    name: "Neroa",
     role: "Core Orchestrator",
     src: "/avatars/narua.png",
     color: "#35D6FF",

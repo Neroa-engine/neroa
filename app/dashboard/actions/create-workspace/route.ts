@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
+import { buildAuthRedirectPath } from "@/lib/auth/routes";
 import {
   assertCanCreateEngine,
   consumeEngineCreationCredits,
@@ -10,7 +11,7 @@ import {
   recordOnboardingDecisionAndBuildSession,
   recordPlatformEvent
 } from "@/lib/platform/foundation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getServerAuthContext } from "@/lib/auth";
 import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
@@ -50,13 +51,15 @@ export async function POST(request: Request) {
     customLanes
   });
 
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getServerAuthContext();
 
   if (!user) {
-    return redirectTo(request, "/auth");
+    return redirectTo(
+      request,
+      buildAuthRedirectPath({
+        nextPath: "/dashboard"
+      })
+    );
   }
 
   let access;

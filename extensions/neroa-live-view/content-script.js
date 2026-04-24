@@ -21,6 +21,100 @@
     }
   }
 
+  function respondToLiveViewCommand(requestId, payload) {
+    window.dispatchEvent(
+      new CustomEvent("neroa:live-view-command-response", {
+        detail: Object.assign(
+          {
+            requestId: requestId
+          },
+          payload || {}
+        )
+      })
+    );
+  }
+
+  function respondToLiveViewWindowMessage(requestId, payload) {
+    window.postMessage(
+      Object.assign(
+        {
+          source: "neroa-live-view-command-response",
+          requestId: requestId
+        },
+        payload || {}
+      ),
+      window.location.origin
+    );
+  }
+
+  function respondToBrowserRuntimeV2Command(requestId, respond, response, fallbackError) {
+    respond(requestId, {
+      ok: Boolean(response && response.ok),
+      action: response && response.action ? response.action : null,
+      error:
+        response && response.ok
+          ? null
+          : response && response.error
+            ? response.error
+            : fallbackError,
+      target: response && response.target ? response.target : null,
+      state: response && response.state ? response.state : null,
+      output: response && response.output ? response.output : null,
+      notice: response && response.notice ? response.notice : null
+    });
+  }
+
+  function requestBrowserRuntimeV2Command(requestId, respond, command, fallbackError) {
+    try {
+      chrome.runtime.sendMessage(
+        {
+          type: "neroa-browser-runtime-v2:command",
+          command: command
+        },
+        function onCommandResponse(response) {
+          if (chrome.runtime.lastError) {
+            respond(requestId, {
+              ok: false,
+              error:
+                chrome.runtime.lastError.message ||
+                fallbackError ||
+                "Unable to reach the Neroa Browser Runtime."
+            });
+            return;
+          }
+
+          respondToBrowserRuntimeV2Command(
+            requestId,
+            respond,
+            response,
+            fallbackError || "Unable to complete the browser action."
+          );
+        }
+      );
+    } catch (error) {
+      respond(requestId, {
+        ok: false,
+        error:
+          error && error.message
+            ? error.message
+            : fallbackError || "Unable to complete the browser action."
+      });
+    }
+  }
+
+  function requestExplicitInspection(requestId, respond, connectionOverride) {
+    requestBrowserRuntimeV2Command(
+      requestId,
+      respond,
+      {
+        action: "inspect.run",
+        surface: isLiveViewControlPage ? "live_view" : "command_center",
+        connectionOverride: connectionOverride || null
+      },
+      "Unable to trigger an explicit inspection."
+    );
+  }
+
   function injectBridgeScript() {
     if (document.getElementById("neroa-live-view-page-bridge")) {
       return;
@@ -32,6 +126,14 @@
     script.async = false;
     (document.head || document.documentElement).appendChild(script);
     script.remove();
+  }
+
+  function isPotentialLiveViewPage(url) {
+    try {
+      return new URL(url || window.location.href, window.location.origin).pathname.indexOf("/live-view") !== -1;
+    } catch {
+      return window.location.pathname.indexOf("/live-view") !== -1;
+    }
   }
 
   function isVisible(element) {
@@ -83,6 +185,7 @@
     var projectTitle = beacon.getAttribute("data-project-title");
     var bridgeOrigin = beacon.getAttribute("data-bridge-origin");
     var allowedOrigins = beacon.getAttribute("data-allowed-origins");
+    var runtimeTarget = beacon.getAttribute("data-runtime-target");
 
     if (!sessionId || !workspaceId || !projectId || !bridgeOrigin || !token) {
       return null;
@@ -94,6 +197,12 @@
       allowedOrigins = [];
     }
 
+    try {
+      runtimeTarget = runtimeTarget ? JSON.parse(runtimeTarget) : null;
+    } catch {
+      runtimeTarget = null;
+    }
+
     return {
       sessionId: sessionId,
       token: token,
@@ -101,7 +210,8 @@
       projectId: projectId,
       bridgeOrigin: bridgeOrigin,
       projectTitle: projectTitle || document.title || "Neroa Live View",
-      allowedOrigins: Array.isArray(allowedOrigins) ? allowedOrigins : []
+      allowedOrigins: Array.isArray(allowedOrigins) ? allowedOrigins : [],
+      runtimeTarget: runtimeTarget
     };
   }
 
@@ -207,6 +317,97 @@
       });
   }
 
+  function focusableControls() {
+    var selector =
+      "button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex='-1']),[role='button'],[role='link']";
+
+    return Array.prototype.slice
+      .call(document.querySelectorAll(selector))
+      .filter(isVisible);
+  }
+
+  function findWalkthroughTarget(mode) {
+    var controls = focusableControls();
+    if (!controls.length) {
+      return null;
+    }
+
+    var activeElement = document.activeElement;
+    var activeIndex = controls.indexOf(activeElement);
+
+    if (mode === "focus-next") {
+      return controls[(activeIndex + 1 + controls.length) % controls.length];
+    }
+
+    if (mode === "activate-focused") {
+      if (activeElement && controls.indexOf(activeElement) !== -1) {
+        return activeElement;
+      }
+    }
+
+    return controls[0];
+  }
+
+  function describeWalkthroughTarget(target) {
+    if (!target) {
+      return null;
+    }
+
+    return {
+      label:
+        normalizeText(
+          target.innerText ||
+            target.textContent ||
+            target.getAttribute("aria-label") ||
+            target.getAttribute("name") ||
+            ""
+        ) || target.tagName.toLowerCase(),
+      tagName: target.tagName.toLowerCase(),
+      href: target.getAttribute("href"),
+      role: target.getAttribute("role")
+    };
+  }
+
+  function runWalkthroughStep(mode) {
+    var snapshot = createSnapshot("manual-refresh");
+    var target = findWalkthroughTarget(mode);
+    var targetDescription = describeWalkthroughTarget(target);
+    var summary =
+      "Scanned " +
+      snapshot.controls.length +
+      " controls on " +
+      snapshot.page.url +
+      ".";
+    var nextActionLabel = targetDescription
+      ? (mode === "activate-focused" ? "Activated " : "Focus ") + targetDescription.label
+      : "Review the current page and choose the next step.";
+
+    if (mode === "focus-next" && target && typeof target.focus === "function") {
+      target.focus();
+      pushAction("navigation", "Walkthrough focused " + targetDescription.label, null);
+      summary =
+        "Focused the next actionable control: " + targetDescription.label + ".";
+    }
+
+    if (mode === "activate-focused" && target) {
+      if (typeof target.click === "function") {
+        target.click();
+        pushAction("click", "Walkthrough activated " + targetDescription.label, targetDescription.href || null);
+        summary =
+          "Activated the focused control: " + targetDescription.label + ".";
+      }
+    }
+
+    return {
+      ok: true,
+      snapshot: snapshot,
+      target: targetDescription,
+      summary: summary,
+      nextActionLabel: nextActionLabel,
+      mode: mode
+    };
+  }
+
   function detectCurrentStep() {
     var currentStep =
       document.querySelector("[data-onboarding-step]") ||
@@ -261,7 +462,7 @@
   }
 
   function requestInspection(trigger) {
-    if (isLiveViewControlPage) {
+    if (isLiveViewControlPage || isPotentialLiveViewPage(window.location.href)) {
       return;
     }
 
@@ -352,9 +553,108 @@
     if (detail.type === "location" && detail.payload && detail.payload.url !== lastLocationHref) {
       lastLocationHref = detail.payload.url;
       pushAction("navigation", "Route changed", detail.payload.url);
-      scheduleConnectionCheck(250);
+      scheduleConnectionCheck(80);
       scheduleInspection("navigation", 500);
     }
+  });
+
+  window.addEventListener("neroa:live-view-command", function onLiveViewCommand(event) {
+    var detail = event.detail || {};
+    if (!detail || !detail.type || !detail.requestId) {
+      return;
+    }
+
+    if (detail.type === "run-explicit-inspection") {
+      requestExplicitInspection(
+        detail.requestId,
+        respondToLiveViewCommand,
+        detail.connectionOverride || null
+      );
+    }
+  });
+
+  window.addEventListener("neroa:browser-runtime-v2:command", function onBrowserRuntimeV2Command(event) {
+    var detail = event.detail || {};
+    if (!detail || !detail.requestId || !detail.command || !detail.command.action) {
+      return;
+    }
+
+    requestBrowserRuntimeV2Command(
+      detail.requestId,
+      function respondV2(requestId, payload) {
+        window.dispatchEvent(
+          new CustomEvent("neroa:browser-runtime-v2:response", {
+            detail: Object.assign(
+              {
+                requestId: requestId
+              },
+              payload || {}
+            )
+          })
+        );
+      },
+      detail.command,
+      "Unable to complete the Browser Runtime V2 command."
+    );
+  });
+
+  window.addEventListener("message", function onLiveViewCommandMessage(event) {
+    if (event.source !== window) {
+      return;
+    }
+
+    var detail = event.data || {};
+    if (
+      !detail ||
+      detail.source !== "neroa-live-view-command" ||
+      !detail.type ||
+      !detail.requestId
+    ) {
+      return;
+    }
+
+    if (detail.type === "run-explicit-inspection") {
+      requestExplicitInspection(
+        detail.requestId,
+        respondToLiveViewWindowMessage,
+        detail.connectionOverride || null
+      );
+    }
+  });
+
+  window.addEventListener("message", function onBrowserRuntimeV2CommandMessage(event) {
+    if (event.source !== window) {
+      return;
+    }
+
+    var detail = event.data || {};
+    if (
+      !detail ||
+      detail.source !== "neroa-browser-runtime-v2:command" ||
+      !detail.requestId ||
+      !detail.command ||
+      !detail.command.action
+    ) {
+      return;
+    }
+
+    requestBrowserRuntimeV2Command(
+      detail.requestId,
+      function respondV2(requestId, payload) {
+        window.postMessage(
+          Object.assign(
+            {
+              source: "neroa-browser-runtime-v2:response",
+              requestId: requestId
+            },
+            payload || {}
+          ),
+          window.location.origin
+        );
+      },
+      detail.command,
+      "Unable to complete the Browser Runtime V2 command."
+    );
   });
 
   document.addEventListener(
@@ -390,7 +690,7 @@
   );
 
   var observer = new MutationObserver(function onMutation() {
-    scheduleConnectionCheck(200);
+    scheduleConnectionCheck(80);
     scheduleInspection("dom-change", 1200);
   });
 
@@ -413,6 +713,11 @@
       return;
     }
 
+    if (message.type === "neroa-browser-runtime-v2:walkthrough-step") {
+      sendResponse(runWalkthroughStep(message.mode || "scan"));
+      return;
+    }
+
     if (message.type === "neroa-live-view:refresh-connection") {
       initializeConnectionBeacon();
       sendResponse({
@@ -425,6 +730,20 @@
 
   injectBridgeScript();
   initializeConnectionBeacon();
+  window.setTimeout(function delayedConnectionCheck() {
+    initializeConnectionBeacon();
+  }, 150);
+  window.setTimeout(function secondDelayedConnectionCheck() {
+    initializeConnectionBeacon();
+  }, 700);
+  window.addEventListener("load", function onLoad() {
+    scheduleConnectionCheck(60);
+  });
+  document.addEventListener("visibilitychange", function onVisibilityChange() {
+    if (document.visibilityState === "visible") {
+      scheduleConnectionCheck(60);
+    }
+  });
   window.setInterval(function periodicConnectionCheck() {
     initializeConnectionBeacon();
   }, 2500);

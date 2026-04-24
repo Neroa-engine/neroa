@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "stability:audit": "node tools/stability-audit.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",

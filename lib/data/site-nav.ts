@@ -22,8 +22,12 @@ export const publicUtilityNavItems: HeaderLinkItem[] = [
 
 export const authenticatedUtilityNavItems: HeaderLinkItem[] = [
   {
-    label: "Engine Board",
+    label: "Command Center",
     href: "/dashboard"
+  },
+  {
+    label: "Projects",
+    href: "/projects"
   },
   {
     label: "Resources",
@@ -43,26 +47,6 @@ export const mainNavItems: HeaderLinkItem[] = [
   {
     label: "Home",
     href: "/"
-  },
-  {
-    label: "Use Cases",
-    href: "/use-cases"
-  },
-  {
-    label: "Pricing",
-    href: "/pricing"
-  },
-  {
-    label: "DIY Build",
-    href: "/diy-build"
-  },
-  {
-    label: "Managed Build",
-    href: "/managed-build"
-  },
-  {
-    label: "Contact",
-    href: "/contact"
   }
 ];
 
@@ -70,47 +54,47 @@ export const siteNavItems: SiteNavItem[] = [
   {
     label: "Home",
     href: "/",
-    description: "Return to the public homepage and see how Neroa helps users move from idea into build."
+    description: "Return to the public homepage and continue into the real guided builder."
   },
   {
-    label: "Use Cases",
-    href: "/use-cases",
-    description: "Choose between SaaS, internal software, external apps, and mobile app build paths."
+    label: "Projects",
+    href: "/projects",
+    description: "Jump into the active project workspace, review in-flight work, and keep execution moving."
   },
   {
     label: "Pricing",
     href: "/pricing",
-    description: "Choose between DIY pricing with Engine Credits and managed-build pricing with scoped service ranges."
+    description: "Compare the guided paths, understand the commercial model, and choose the right entry point."
+  },
+  {
+    label: "SaaS",
+    href: "/what-is-saas",
+    description: "Read the SaaS explainer and see how NEROA frames product planning and delivery."
+  },
+  {
+    label: "Budget Logic",
+    href: "/budget-pricing-logic",
+    description: "Review the budget logic behind the build paths, delivery scope, and commercial tradeoffs."
   },
   {
     label: "DIY Build",
     href: "/diy-build",
-    description: "See how the DIY path uses monthly Engine Credits to build software over time."
+    description: "Explore the self-directed path for shaping, reviewing, and guiding a build inside NEROA."
   },
   {
     label: "Managed Build",
     href: "/managed-build",
-    description: "See the managed build path with staged approvals, guided visibility, and quote-led execution."
+    description: "See the managed path for teams that want guided delivery with the same premium product flow."
   },
   {
-    label: "How It Works",
-    href: "/how-it-works",
-    description: "See how Naroa frames the work and how Neroa turns that into a structured build flow."
-  },
-  {
-    label: "Naroa",
-    href: "/system/naroa",
-    description: "See how the core orchestrator frames engines and activates the right specialist systems."
-  },
-  {
-    label: "AI Systems",
-    href: "/system/ai",
-    description: "Explore the specialist AI stack that expands from Naroa when the work needs it."
+    label: "Use Cases",
+    href: "/use-cases",
+    description: "Browse the practical use cases that show how NEROA handles planning, review, and approvals."
   },
   {
     label: "Blog",
     href: "/blog",
-    description: "Read product notes, system thinking, and build-focused updates."
+    description: "Read product-led articles, explainers, and thought pieces about guided software delivery."
   },
   {
     label: "Instructions",
@@ -120,16 +104,16 @@ export const siteNavItems: SiteNavItem[] = [
   {
     label: "Support",
     href: "/support",
-    description: "Find help paths, guidance, and ways to contact the Neroa team without leaving the site."
+    description: "Find help paths, guidance, and ways to contact the NEROA team without leaving the site."
   },
   {
     label: "Contact",
     href: "/contact",
-    description: "Send support questions, build inquiries, or partnership notes."
+    description: "Reach the NEROA team directly for questions, support, or next-step guidance."
   },
   {
-    label: "Start your build",
+    label: "Start a project",
     href: "/start",
-    description: "Create your first engine and move into the live Neroa product flow."
+    description: "Enter the guided builder, start at step one, and move into the structured product flow."
   }
 ];

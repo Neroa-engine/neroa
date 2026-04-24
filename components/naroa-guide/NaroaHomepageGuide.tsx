@@ -246,7 +246,7 @@ export function NaroaHomepageGuide() {
 
     const text = guideActive
       ? `${currentStep.title}. ${currentStep.summary}`
-      : "I'm Naroa, your build orchestrator. Want me to guide you through how to build with Neroa?";
+      : "I'm Neroa, your build orchestrator. Want me to guide you through how to build with Neroa?";
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -267,7 +267,7 @@ export function NaroaHomepageGuide() {
     () => `${currentStep.eyebrow} - ${currentStep.sectionLabel}`,
     [currentStep.eyebrow, currentStep.sectionLabel]
   );
-  const launcherLabel = guideActive ? currentStep.sectionLabel : panelOpen ? "Guide open" : "Naroa guide";
+  const launcherLabel = guideActive ? currentStep.sectionLabel : panelOpen ? "Guide open" : "Neroa guide";
 
   const handleMeasurePanel = useCallback((size: { width: number; height: number }) => {
     setBubbleSize((current) => {

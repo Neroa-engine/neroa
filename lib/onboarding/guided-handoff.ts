@@ -1,4 +1,4 @@
-export type GuidedBuildHandoffSource = "homepage-guide" | "example-build";
+export type GuidedBuildHandoffSource = "homepage-guide" | "example-build" | "start";
 export type GuidedBuildPathId = "diy" | "managed" | "pricing";
 
 export type GuidedBuildHandoff = {
@@ -7,6 +7,8 @@ export type GuidedBuildHandoff = {
   productTypeLabel?: string;
   buildTypeId?: string;
   buildTypeLabel?: string;
+  buildStageId?: string;
+  buildStageLabel?: string;
   intentMode?: "known-industry" | "exploring-opportunities";
   industryId?: string;
   industryLabel?: string;
@@ -26,6 +28,14 @@ export type GuidedBuildHandoff = {
   preferences?: string[];
   userIntent?: string;
   onboardingStep?: string;
+  title?: string;
+  summary?: string;
+  businessDirectionSummary?: string;
+  projectDefinitionSummary?: string;
+  experienceDirectionSummary?: string;
+  estimateBaseline?: string;
+  estimateRange?: string;
+  timeEstimate?: string;
   updatedAt: string;
 };
 
@@ -51,7 +61,7 @@ function normalizePathId(value: unknown): GuidedBuildPathId | undefined {
 }
 
 function normalizeSource(value: unknown): GuidedBuildHandoffSource | null {
-  return value === "homepage-guide" || value === "example-build" ? value : null;
+  return value === "homepage-guide" || value === "example-build" || value === "start" ? value : null;
 }
 
 function normalizeStep(value: unknown): string | undefined {
@@ -76,6 +86,8 @@ export function normalizeGuidedBuildHandoff(value: unknown): GuidedBuildHandoff 
     productTypeLabel: normalizeString(record.productTypeLabel),
     buildTypeId: normalizeString(record.buildTypeId),
     buildTypeLabel: normalizeString(record.buildTypeLabel),
+    buildStageId: normalizeString(record.buildStageId),
+    buildStageLabel: normalizeString(record.buildStageLabel),
     intentMode:
       record.intentMode === "known-industry" || record.intentMode === "exploring-opportunities"
         ? record.intentMode
@@ -98,6 +110,14 @@ export function normalizeGuidedBuildHandoff(value: unknown): GuidedBuildHandoff 
     preferences: normalizePreferences(record.preferences),
     userIntent: normalizeString(record.userIntent),
     onboardingStep: normalizeStep(record.onboardingStep),
+    title: normalizeString(record.title),
+    summary: normalizeString(record.summary),
+    businessDirectionSummary: normalizeString(record.businessDirectionSummary),
+    projectDefinitionSummary: normalizeString(record.projectDefinitionSummary),
+    experienceDirectionSummary: normalizeString(record.experienceDirectionSummary),
+    estimateBaseline: normalizeString(record.estimateBaseline),
+    estimateRange: normalizeString(record.estimateRange),
+    timeEstimate: normalizeString(record.timeEstimate),
     updatedAt: normalizeString(record.updatedAt) ?? new Date(0).toISOString(),
   };
 }
@@ -110,10 +130,13 @@ export function buildGuidedBuildHandoffSummary(handoff: GuidedBuildHandoff | nul
   const lines = [
     handoff.source === "example-build"
       ? "Continuing from guided setup via Example Build."
-      : "Continuing from guided setup via the Naroa homepage guide.",
+      : handoff.source === "start"
+        ? "Continuing from the real DIY builder setup."
+        : "Continuing from guided setup via the Neroa homepage guide.",
     handoff.productTypeLabel || handoff.buildTypeLabel
       ? `Product type: ${handoff.productTypeLabel ?? handoff.buildTypeLabel}.`
       : null,
+    handoff.buildStageLabel ? `Build stage: ${handoff.buildStageLabel}.` : null,
     handoff.intentMode === "known-industry" && handoff.industryLabel
       ? `Industry: ${handoff.industryLabel}.`
       : null,
@@ -126,6 +149,12 @@ export function buildGuidedBuildHandoffSummary(handoff: GuidedBuildHandoff | nul
     handoff.recommendedPathLabel ? `Recommended path: ${handoff.recommendedPathLabel}.` : null,
     handoff.stackRecommendationLabel
       ? `Stack direction: ${handoff.stackRecommendationLabel}.`
+      : null,
+    handoff.businessDirectionSummary
+      ? `Business direction: ${handoff.businessDirectionSummary}.`
+      : null,
+    handoff.projectDefinitionSummary
+      ? `Project definition: ${handoff.projectDefinitionSummary}.`
       : null,
     handoff.userIntent ? `Intent carried forward: ${handoff.userIntent}.` : null,
     handoff.preferences && handoff.preferences.length > 0

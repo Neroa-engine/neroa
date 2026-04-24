@@ -2,6 +2,11 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { PublicActionLink } from "@/components/site/public-action-link";
+import {
+  publicLaunchManagedCta,
+  publicLaunchPrimaryCta
+} from "@/lib/data/public-launch";
 import {
   calculateCreditsNeededForTargetMonths,
   calculateScopedBuildMonths,
@@ -78,7 +83,7 @@ export function GrowthLayerPricing() {
             <p className="mt-4 text-base leading-8 text-slate-600">
               Neroa&apos;s pricing layer is designed to stay honest after the plan is chosen. Credits
               do not equal unlimited labor. Growth happens through visible acceleration choices,
-              optional upgrade layers, and a clear managed escalation path when a build crosses the
+              optional support layers, and a clear managed escalation path when a build crosses the
               point where self-serve pacing stops being the best answer.
             </p>
           </div>
@@ -101,13 +106,13 @@ export function GrowthLayerPricing() {
                 Compare the slower base-plan pace against a faster path with a visible credit cost.
               </span>
             </div>
-            <div className="comparison-metric">
-              <span className="comparison-label">Managed escalation</span>
-              <span className="comparison-value">
-                When scope and complexity get heavy, Neroa recommends a managed or hybrid path instead of vague hope.
-              </span>
+              <div className="comparison-metric">
+                <span className="comparison-label">Managed escalation</span>
+                <span className="comparison-value">
+                  When complexity, QA burden, or launch pressure gets heavy, Neroa recommends a managed or hybrid path instead of vague hope.
+                </span>
+              </div>
             </div>
-          </div>
         </div>
       </div>
 
@@ -306,11 +311,15 @@ export function GrowthLayerPricing() {
 
                 <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                   <Link href="/contact?type=credit-pack" className="button-primary">
-                    Talk to Naroa about credits
+                    Talk to Neroa about credits
                   </Link>
-                  <Link href="/start" className="button-secondary">
+                  <PublicActionLink
+                    href={publicLaunchPrimaryCta.href}
+                    label="Start with this plan"
+                    className="button-secondary"
+                  >
                     Start with this plan
-                  </Link>
+                  </PublicActionLink>
                 </div>
               </div>
             </div>
@@ -329,9 +338,9 @@ export function GrowthLayerPricing() {
               Add AI SEO + Marketing Optimization when the build also needs growth support.
             </h3>
             <p className="mt-4 text-base leading-8 text-slate-600">
-              Neroa can extend beyond the build itself. If the product also needs launch positioning,
-              landing-page support, and cleaner organic acquisition structure, this becomes a paid
-              growth layer instead of being buried inside the base plan.
+              Neroa can extend beyond the build itself. If the product also needs SEO review,
+              keyword structure, landing-page optimization, and launch-positioning support, this
+              becomes a paid growth layer instead of being buried inside the base plan.
             </p>
 
             <div className="mt-6 grid gap-4">
@@ -408,8 +417,8 @@ export function GrowthLayerPricing() {
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-600">
                 {managedEscalation
-                  ? "Hybrid path: keep strategy, scope, MVP framing, and lighter execution inside DIY, then move heavy integrations, QA, and launch coordination into Managed Build when the timeline or delivery risk gets tighter."
-                  : "Stay on the DIY path first, then move into managed support later if integrations, launch pressure, or operational risk increase."}
+                  ? "Hybrid path: keep strategy, scope, MVP framing, and lighter execution inside DIY, then move heavier integrations, QA, and launch coordination into Managed Build when delivery pressure or operational importance rises."
+                  : "Stay on the DIY path first, then move into managed support later if integrations, launch pressure, or operational importance increase."}
               </p>
             </div>
 
@@ -433,9 +442,11 @@ export function GrowthLayerPricing() {
             </div>
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-              <Link href="/managed-build" className="button-primary">
-                Explore Managed Build
-              </Link>
+              <PublicActionLink
+                href={publicLaunchManagedCta.href}
+                label={publicLaunchManagedCta.label}
+                className="button-primary"
+              />
               <Link href="/pricing/managed" className="button-secondary">
                 View Managed Pricing
               </Link>

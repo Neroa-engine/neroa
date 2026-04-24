@@ -1,4 +1,4 @@
-﻿import type { AgentId } from "@/lib/ai/agents";
+import type { AgentId } from "@/lib/ai/agents";
 import type { ProjectLaneRecord, ProjectRecord } from "@/lib/workspace/project-lanes";
 
 export type CollaborationAgent = {
@@ -100,13 +100,13 @@ export function getLaneAiCollaboration(
   switch (mode) {
     case "budget":
       return [
-        naruaAgent("Naroa compares plan cost, launch cost, and the next practical budget move."),
+        naruaAgent("Neroa compares plan cost, launch cost, and the next practical budget move."),
         {
           id: "atlas",
           badge: "Active",
           active: true,
           roleLabel: "Context / tradeoffs",
-          description: "Atlas helps Naroa weigh assumptions, scenario tradeoffs, and decision risk."
+          description: "Atlas helps Neroa weigh assumptions, scenario tradeoffs, and decision risk."
         },
         {
           id: "ops",
@@ -118,7 +118,7 @@ export function getLaneAiCollaboration(
       ];
     case "domain":
       return [
-        naruaAgent("Naroa narrows naming direction and keeps the shortlist tied to the Engine."),
+        naruaAgent("Neroa narrows naming direction and keeps the shortlist tied to the Engine."),
         {
           id: "nova",
           badge: "Active",
@@ -136,7 +136,7 @@ export function getLaneAiCollaboration(
       ];
     case "plan":
       return [
-        naruaAgent("Naroa turns the plan into a structured direction with visible assumptions and next steps."),
+        naruaAgent("Neroa turns the plan into a structured direction with visible assumptions and next steps."),
         {
           id: "atlas",
           badge: "Active",
@@ -154,7 +154,7 @@ export function getLaneAiCollaboration(
       ];
     case "branding":
       return [
-        naruaAgent("Naroa keeps the brand direction aligned to the actual offer and audience."),
+        naruaAgent("Neroa keeps the brand direction aligned to the actual offer and audience."),
         {
           id: "nova",
           badge: "Active",
@@ -172,7 +172,7 @@ export function getLaneAiCollaboration(
       ];
     case "website":
       return [
-        naruaAgent("Naroa maps the website into a launch-ready structure instead of loose page ideas."),
+        naruaAgent("Neroa maps the website into a launch-ready structure instead of loose page ideas."),
         {
           id: "nova",
           badge: "Active",
@@ -197,7 +197,7 @@ export function getLaneAiCollaboration(
       ];
     case "operations":
       return [
-        naruaAgent("Naroa converts the workflow into an execution system with clear next steps."),
+        naruaAgent("Neroa converts the workflow into an execution system with clear next steps."),
         {
           id: "ops",
           badge: "Active",
@@ -215,7 +215,7 @@ export function getLaneAiCollaboration(
       ];
     case "launch":
       return [
-        naruaAgent("Naroa turns release planning into a clean launch path with a clear next move."),
+        naruaAgent("Neroa turns release planning into a clean launch path with a clear next move."),
         {
           id: "ops",
           badge: "Active",
@@ -233,7 +233,7 @@ export function getLaneAiCollaboration(
       ];
     case "marketing":
       return [
-        naruaAgent("Naroa narrows the rollout into a practical customer-facing release plan."),
+        naruaAgent("Neroa narrows the rollout into a practical customer-facing release plan."),
         {
           id: "nova",
           badge: "Active",
@@ -251,7 +251,7 @@ export function getLaneAiCollaboration(
       ];
     case "build":
       return [
-        naruaAgent("Naroa translates the lane into a scoped execution path, decides which system should build or review, and keeps the repo work aligned."),
+        naruaAgent("Neroa translates the lane into a scoped execution path, decides which system should build or review, and keeps the repo work aligned."),
         {
           id: "forge",
           badge: "Active",
@@ -270,7 +270,7 @@ export function getLaneAiCollaboration(
     case "strategy":
     default:
       return [
-        naruaAgent("Naroa frames the direction, decides what matters, and keeps the lane focused."),
+        naruaAgent("Neroa frames the direction, decides what matters, and keeps the lane focused."),
         {
           id: "atlas",
           badge: "Active",

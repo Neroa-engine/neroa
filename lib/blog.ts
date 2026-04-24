@@ -76,7 +76,7 @@ const blogPostContent = [
       "A real SaaS build needs more than code generation. It needs strategy, scope, MVP definition, interface logic, backend structure, payments, launch readiness, and iteration after feedback. Coordinated AI can help hold that path together.",
     intro: [
       "A SaaS product is not only a collection of screens and endpoints. It is a chain of decisions: what the product does, who it is for, what the smallest viable version looks like, how the data model works, how accounts and payments behave, and what should happen after the first release.",
-      "That is where a coordinated AI build system becomes more useful than a one-off coding assistant. Neroa starts with Naroa to frame the product, then expands into the right specialist support for scope, build planning, launch prep, and iteration."
+      "That is where a guided build system becomes more useful than a one-off coding assistant. NEROA starts with Neroa to frame the product, then carries the plan through budget, build definition, implementation, testing, launch, and iteration without resetting context."
     ],
     body: [
       {
@@ -85,7 +85,7 @@ const blogPostContent = [
         title: "Start by defining the product before you rush into the stack",
         paragraphs: [
           "The first job in a SaaS build is product definition. What does the product actually do, which customer is it built for, what painful workflow does it improve, and what part of the idea belongs in version one instead of version three?",
-          "Naroa is useful here because it turns messy ambition into a structured product frame. That gives the rest of the system something real to build on instead of forcing every later decision to compensate for a vague starting point."
+          "Neroa is useful here because it turns messy ambition into a structured product frame. That gives the rest of the system something real to build on instead of forcing every later decision to compensate for a vague starting point."
         ],
         bullets: [
           "Clarify the customer and the painful workflow first.",
@@ -118,7 +118,7 @@ const blogPostContent = [
         title: "Backend structure, accounts, subscriptions, and admin logic all need planning",
         paragraphs: [
           "A working SaaS depends on system structure behind the interface. Database entities, permissions, events, account roles, billing logic, subscription states, and admin visibility all influence what can be built cleanly later.",
-          "Coordinated AI helps break this into understandable layers. Forge can help frame implementation and build order. RepoLink can support technical connection logic. Naroa keeps the sequence coherent so data, auth, and payment decisions stay tied to the product brief instead of drifting into isolated technical work."
+          "Guided planning helps break this into understandable layers. Neroa keeps the sequence coherent so data, auth, payment, and implementation decisions stay tied to the product brief instead of drifting into isolated technical work."
         ],
         bullets: [
           "Plan the database and core entities before writing scattered features.",
@@ -132,7 +132,7 @@ const blogPostContent = [
         title: "Testing, launch, and iteration are part of the build path, not an afterthought",
         paragraphs: [
           "A SaaS does not end when the first version is deployed. The product still needs testing priorities, launch sequencing, feedback loops, onboarding refinement, and a way to decide which improvements matter after the first users arrive.",
-          "That is why Neroa treats the workflow as Strategy, Scope, MVP, Budget, Test, Build, Launch, and Operate. AI should help shape the release path and the post-launch loop, not just generate code in the middle."
+          "That is why NEROA treats the workflow as Strategy, Scope, Budget, Build Definition, Build, Test, Launch, and Operate. AI should help shape the release path and the post-launch loop, not just generate code in the middle."
         ],
         bullets: [
           "Create a go-live checklist before release pressure spikes.",
@@ -149,7 +149,7 @@ const blogPostContent = [
     socialTitle: "How AI Can Build a SaaS from Front End to Back End",
     socialDescription:
       "See how coordinated AI can help define, scope, build, test, launch, and improve a SaaS product from first concept to working release.",
-    authorName: "Neroa product team",
+    authorName: "NEROA product team",
     attribution: "Build note",
     heroPanelTitle: "What this article covers",
     heroPanelItems: [
@@ -163,9 +163,7 @@ const blogPostContent = [
       "A guided build path protects the product from wasted complexity."
     ],
     relatedSlugs: [
-      "why-neroa-starts-with-narua-instead-of-a-dashboard",
-      "building-a-coordinated-ai-system-instead-of-one-generic-assistant",
-      "external-apps-launching-customer-facing-products-faster-with-ai"
+      "why-neroa-starts-with-narua-instead-of-a-dashboard"
     ],
     heroImage: null,
     cta: {
@@ -187,7 +185,7 @@ const blogPostContent = [
       "Internal software is often where operational pain hides in plain sight. Coordinated AI can help teams turn spreadsheet chaos into structured systems like CRMs, dashboards, reporting portals, approval flows, and workflow tools.",
     intro: [
       "Many businesses do not realize they need internal software until the spreadsheet stack starts breaking the team. One form feeds another sheet, one approval lives in email, one dashboard gets updated by hand, and no one fully trusts the numbers anymore.",
-      "Neroa is useful here because the job is not generic productivity. The job is building an internal system that matches how the team actually works. Naroa helps frame the workflow, then coordinated AI helps shape the software structure, budget, and rollout path."
+      "Neroa is useful here because the job is not generic productivity. The job is building an internal system that matches how the team actually works. Neroa helps frame the workflow, then coordinated AI helps shape the software structure, budget, and rollout path."
     ],
     body: [
       {
@@ -196,7 +194,7 @@ const blogPostContent = [
         title: "Start with the operational bottleneck, not the tool category",
         paragraphs: [
           "Internal software projects often fail because the team jumps straight to the idea of a CRM, dashboard, or portal without first defining the operational bottleneck that needs to change. The better starting point is the broken workflow: lead tracking, approvals, reporting, inventory, service delivery, or employee operations.",
-          "When Naroa frames the problem first, the system can define what the software needs to do instead of copying features from another tool that only partly fits."
+          "When Neroa frames the problem first, the system can define what the software needs to do instead of copying features from another tool that only partly fits."
         ],
         bullets: [
           "Identify the manual process that is wasting time or creating errors.",
@@ -251,12 +249,12 @@ const blogPostContent = [
     category: "Internal Software",
     tags: ["Internal tools", "Operations software", "CRMs"],
     publishedAt: "2026-04-12",
-    status: "published",
+    status: "draft",
     canonicalUrl: canonical("/blog/internal-software-replacing-broken-spreadsheets-with-ai-built-systems"),
     socialTitle: "Internal Software: Replacing Broken Spreadsheets with AI-Built Systems",
     socialDescription:
       "See how coordinated AI can help replace spreadsheets and disconnected workflows with internal software that teams can actually use.",
-    authorName: "Neroa product team",
+    authorName: "NEROA product team",
     attribution: "Internal systems note",
     heroPanelTitle: "Inside this piece",
     heroPanelItems: [
@@ -303,7 +301,7 @@ const blogPostContent = [
         title: "Start with the customer journey and the outcome the product must deliver",
         paragraphs: [
           "External apps can mean many things: a branded website, a customer portal, a booking flow, a mobile app concept, a digital product experience, or a client dashboard. The common question is what the customer is trying to achieve and what the product needs to make easy.",
-          "Naroa is useful because it can translate a broad product ambition into a clearer user journey, feature boundary, and launch path before the build becomes visually polished but strategically weak."
+          "Neroa is useful because it can translate a broad product ambition into a clearer user journey, feature boundary, and launch path before the build becomes visually polished but strategically weak."
         ],
         bullets: [
           "Define the customer and the job they are trying to complete.",
@@ -358,12 +356,12 @@ const blogPostContent = [
     category: "External Apps",
     tags: ["Customer-facing apps", "Launch", "UX"],
     publishedAt: "2026-04-11",
-    status: "published",
+    status: "draft",
     canonicalUrl: canonical("/blog/external-apps-launching-customer-facing-products-faster-with-ai"),
     socialTitle: "External Apps: Launching Customer-Facing Products Faster with AI",
     socialDescription:
       "See how coordinated AI can guide strategy, scope, UX, build planning, testing, launch, and iteration for customer-facing products.",
-    authorName: "Neroa product team",
+    authorName: "NEROA product team",
     attribution: "Launch note",
     heroPanelTitle: "What this article covers",
     heroPanelItems: [
@@ -393,15 +391,15 @@ const blogPostContent = [
     }
   },
   {
-    title: "Why Neroa starts with Naroa instead of a dashboard",
+    title: "Why NEROA starts with Neroa instead of a dashboard",
     slug: "why-neroa-starts-with-narua-instead-of-a-dashboard",
     excerpt:
-      "Most build workflows break before they start because users are dropped into tools before the system understands what they are trying to build. Neroa begins with Naroa so the work is framed before the interface widens.",
+      "Most build workflows break before they start because users are dropped into tools before the system understands what they are trying to build. NEROA begins with Neroa so the work is framed before the interface widens.",
     dek:
-      "A dashboard looks like software readiness, but it does not tell a founder or builder what to do first. Naroa exists so Neroa can start with the build problem, not just the container around it.",
+      "A dashboard looks like software readiness, but it does not tell a founder or builder what to do first. Neroa exists so NEROA can start with the build problem, not just the container around it.",
     intro: [
       "Dashboards are useful after a build already has structure. They help people revisit work, compare status, and move between known surfaces. They are far less useful when the user is still trying to define the product, the customer, the first version, and the right execution path.",
-      "Neroa starts with Naroa because the first job is framing. Naroa helps define the problem, the audience, the scope, and the right next move before the system expands into Strategy, Scope, MVP, Budget, Test, Build, Launch, and Operate."
+      "NEROA starts with Neroa because the first job is framing. Neroa helps define the problem, the audience, the scope, and the right next move before the system expands into Strategy, Scope, Budget, Build Definition, Build, Test, Launch, and Operate."
     ],
     body: [
       {
@@ -420,16 +418,16 @@ const blogPostContent = [
       },
       {
         id: "narua-frame",
-        eyebrow: "Naroa",
-        title: "Naroa creates the first build brief before the system widens",
+        eyebrow: "Neroa",
+        title: "Neroa creates the first build brief before the system widens",
         paragraphs: [
-          "Naroa is the core orchestrator because it can turn a rough idea into a structured working brief. That means defining what is being built, who it is for, which workflow matters first, and what the smallest credible path looks like.",
+          "Neroa is the core orchestrator because it can turn a rough idea into a structured working brief. That means defining what is being built, who it is for, which workflow matters first, and what the smallest credible path looks like.",
           "Once that frame exists, the rest of Neroa becomes far more useful. The workspace, the lanes, the specialist AI support, and the next actions are all responding to a real build definition instead of a blank starting state."
         ],
         callout: {
           title: "Why this matters",
           content:
-            "Neroa does not ask users to navigate first and think second. Naroa helps users think first so navigation and workflow structure become useful."
+            "Neroa does not ask users to navigate first and think second. Neroa helps users think first so navigation and workflow structure become useful."
         }
       },
       {
@@ -437,11 +435,11 @@ const blogPostContent = [
         eyebrow: "System behavior",
         title: "Specialist AI should activate after the build path is clear",
         paragraphs: [
-          "Forge, Atlas, RepoLink, Nova, Pulse, and Ops matter because each one sharpens a different part of execution. But specialization only creates value if the system brings the right specialist in at the right time.",
-          "Naroa keeps that activation disciplined. It decides when the work needs strategy support, deeper scoping, build logic, launch prep, or operating follow-through. That is what makes Neroa feel like one build system instead of a pile of disconnected assistants."
+          "Specialist support matters because different phases of execution need different kinds of help. But specialization only creates value if the system brings the right depth in at the right time.",
+          "Neroa keeps that activation disciplined. It decides when the work needs deeper strategy support, tighter scoping, build planning, launch preparation, or operating follow-through. That is what makes NEROA feel like one build system instead of a pile of disconnected assistants."
         ],
         bullets: [
-          "Naroa keeps the build path coherent.",
+          "Neroa keeps the build path coherent.",
           "Specialist AI activates only when the work genuinely needs it.",
           "The user sees a clearer next move instead of another menu of tools."
         ]
@@ -451,8 +449,8 @@ const blogPostContent = [
         eyebrow: "Outcome",
         title: "The result is continuity from first idea to real execution",
         paragraphs: [
-          "Starting with Naroa changes the product shape. The user can move from framing into MVP, budget, testing, build, and launch without constantly rebuilding context from scratch.",
-          "That continuity is the difference between a smart-looking interface and a real execution system. Neroa stays anchored to the build itself, not just the screen the user happens to be on."
+          "Starting with Neroa changes the product shape. The user can move from framing into MVP, budget, testing, build, and launch without constantly rebuilding context from scratch.",
+          "That continuity is the difference between a smart-looking interface and a real execution system. NEROA stays anchored to the build itself, not just the screen the user happens to be on."
         ],
         bullets: [
           "One clearer first brief",
@@ -462,35 +460,34 @@ const blogPostContent = [
       }
     ],
     category: "Product System",
-    tags: ["Naroa", "Onboarding", "Build system"],
+    tags: ["Neroa", "Onboarding", "Build system"],
     publishedAt: "2026-04-10",
     status: "published",
     canonicalUrl: canonical("/blog/why-neroa-starts-with-narua-instead-of-a-dashboard"),
-    socialTitle: "Why Neroa starts with Naroa instead of a dashboard",
+    socialTitle: "Why NEROA starts with Neroa instead of a dashboard",
     socialDescription:
-      "Neroa starts with Naroa because a build needs framing before a dashboard can be useful.",
-    authorName: "Neroa product team",
+      "NEROA starts with Neroa because a build needs framing before a dashboard can be useful.",
+    authorName: "NEROA product team",
     attribution: "Product note",
     heroPanelTitle: "In this article",
     heroPanelItems: [
       "Why dashboards are weak starting points for build work",
-      "How Naroa creates the first build brief",
+      "How Neroa creates the first build brief",
       "Why specialist AI should activate only after the path is clearer"
     ],
     keyTakeaways: [
       "A dashboard is useful after structure exists, not before.",
-      "Naroa gives Neroa a build-first entry point instead of a tool-first entry point.",
+      "Neroa gives Neroa a build-first entry point instead of a tool-first entry point.",
       "Better framing creates better specialist AI orchestration later."
     ],
     relatedSlugs: [
-      "building-a-coordinated-ai-system-instead-of-one-generic-assistant",
       "how-ai-can-build-a-saas-from-front-end-to-back-end"
     ],
     heroImage: null,
     cta: {
-      title: "See how Neroa starts the build correctly",
+      title: "See how NEROA starts the build correctly",
       description:
-        "Explore the use-case paths and let Naroa frame the work before the system expands into the full execution flow.",
+        "Explore the use-case path and let Neroa frame the work before the system expands into the full execution flow.",
       primaryLabel: "Explore use cases",
       primaryHref: "/use-cases",
       secondaryLabel: "View pricing",
@@ -503,10 +500,10 @@ const blogPostContent = [
     excerpt:
       "One assistant can answer many questions, but it rarely creates the right operating model for real build work. Neroa is designed around visible AI coordination instead of one undifferentiated assistant.",
     dek:
-      "Generic AI is useful for broad conversation. Coordinated AI is better for sustained execution. Neroa uses Naroa as the control layer so strategy, scope, build, launch, and operations can stay inside one guided system.",
+      "Generic AI is useful for broad conversation. Coordinated AI is better for sustained execution. Neroa uses Neroa as the control layer so strategy, scope, build, launch, and operations can stay inside one guided system.",
     intro: [
       "There is a big difference between getting an answer and building something real. A general assistant may be good at conversation, but real execution work asks for different kinds of help at different moments: product framing, scoping, research, technical planning, design direction, launch readiness, and operating follow-through.",
-      "Neroa is built around the idea that those roles should stay visible. Naroa is the core orchestrator. The supporting systems exist to extend execution when the work truly requires it."
+      "Neroa is built around the idea that those roles should stay visible. Neroa is the core orchestrator. The supporting systems exist to extend execution when the work truly requires it."
     ],
     body: [
       {
@@ -526,15 +523,15 @@ const blogPostContent = [
       {
         id: "narua-control-layer",
         eyebrow: "Orchestration",
-        title: "Naroa coordinates the system and specialist AI expands execution only when needed",
+        title: "Neroa coordinates the system and specialist AI expands execution only when needed",
         paragraphs: [
-          "Naroa frames the build, keeps the engine coherent, and decides when the project needs more specialized help. Atlas strengthens strategy and architecture. Forge sharpens build execution. RepoLink connects GitHub and repository context. Nova supports design direction and customer-facing assets. Pulse handles testing and feedback loops. Ops supports deployment, launch operations, and support workflows.",
+          "Neroa frames the build, keeps the engine coherent, and decides when the project needs more specialized help. Atlas strengthens strategy and architecture. Forge sharpens build execution. RepoLink connects GitHub and repository context. Nova supports design direction and customer-facing assets. Pulse handles testing and feedback loops. Ops supports deployment, launch operations, and support workflows.",
           "This is useful because the system behavior becomes legible. The user can understand why a specialist is active and what kind of contribution it is making."
         ],
         callout: {
           title: "The coordination principle",
           content:
-            "Specialization creates value only when the system also provides orchestration. Naroa is what keeps the AI stack acting like one build system instead of several separate assistants."
+            "Specialization creates value only when the system also provides orchestration. Neroa is what keeps the AI stack acting like one build system instead of several separate assistants."
         }
       },
       {
@@ -567,24 +564,24 @@ const blogPostContent = [
       }
     ],
     category: "AI System",
-    tags: ["Coordinated AI", "Naroa", "Execution"],
+    tags: ["Coordinated AI", "Neroa", "Execution"],
     publishedAt: "2026-04-09",
-    status: "published",
+    status: "draft",
     canonicalUrl: canonical("/blog/building-a-coordinated-ai-system-instead-of-one-generic-assistant"),
     socialTitle: "Building a coordinated AI system instead of one generic assistant",
     socialDescription:
       "Neroa uses coordinated AI so strategy, scope, build, launch, and operations stay inside one guided execution system.",
-    authorName: "Neroa product team",
+    authorName: "NEROA product team",
     attribution: "Architecture note",
     heroPanelTitle: "What this piece covers",
     heroPanelItems: [
       "Why one generic assistant is not enough for real build work",
-      "How Naroa coordinates specialist AI systems",
+      "How Neroa coordinates specialist AI systems",
       "Why coordination leads to better execution output"
     ],
     keyTakeaways: [
       "Specialization helps only when the user can see how the system is coordinated.",
-      "Naroa is the control layer that keeps Neroa coherent.",
+      "Neroa is the control layer that keeps Neroa coherent.",
       "The point of AI coordination is better execution, not more complexity."
     ],
     relatedSlugs: [
@@ -596,7 +593,7 @@ const blogPostContent = [
     cta: {
       title: "Explore the coordinated AI system",
       description:
-        "See how Naroa, Forge, Atlas, RepoLink, Nova, Pulse, and Ops fit together around real build workflows.",
+        "See how Neroa, Forge, Atlas, RepoLink, Nova, Pulse, and Ops fit together around real build workflows.",
       primaryLabel: "Explore AI systems",
       primaryHref: "/system/ai",
       secondaryLabel: "Explore use cases",

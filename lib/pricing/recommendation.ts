@@ -1,4 +1,4 @@
-﻿import { getPricingPlan, type PricingPlan, type PricingPlanId } from "@/lib/pricing/config";
+import { getPricingPlan, type PricingPlan, type PricingPlanId } from "@/lib/pricing/config";
 import type { ProjectTemplateId } from "@/lib/workspace/project-lanes";
 
 export type UsageComplexityBand = "light" | "moderate" | "high" | "intense" | "enterprise";
@@ -240,17 +240,17 @@ export function buildPricingRecommendation(
         : "Planning-heavy"
     } workflow detected from the current strategy inputs.`,
     args.target.trim()
-      ? `Naroa is planning around ${args.target.trim()} as the first audience or user group.`
-      : "Naroa is planning around a still-forming first audience.",
+      ? `Neroa is planning around ${args.target.trim()} as the first audience or user group.`
+      : "Neroa is planning around a still-forming first audience.",
     budgetHint > 0
       ? `The stated budget signal of about $${budgetHint.toLocaleString("en-US")} suggests ${band} support needs.`
-      : "No firm budget was provided yet, so Naroa is using the current scope and lane complexity."
+      : "No firm budget was provided yet, so Neroa is using the current scope and lane complexity."
   ];
 
   const upgradeSignals = [
     recommendedPlan.upgradeTrigger,
     band === "high" || band === "intense" || band === "enterprise"
-      ? "Projected usage is high enough that Naroa should watch for heavier monthly Engine Credit demand."
+      ? "Projected usage is high enough that Neroa should watch for heavier monthly Engine Credit demand."
       : "Upgrade once strategy work turns into deeper multi-lane or build-heavy execution.",
     args.templateId === "saas-build" ||
     args.templateId === "coding-project" ||

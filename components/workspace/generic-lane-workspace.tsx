@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import AiTeammateCards from "@/components/workspace/ai-teammate-cards";
@@ -43,7 +43,7 @@ function ArtifactBlock({
         </div>
 
         <PremiumButton variant="ghost" onClick={() => onRefine(title)}>
-          Refine with Naroa
+          Refine with Neroa
         </PremiumButton>
       </div>
 
@@ -77,7 +77,7 @@ export default function GenericLaneWorkspace({
           title={lane.title}
           description={
             outputs?.summary ||
-            `Describe what should happen in ${lane.title}, and Naroa will generate the first working deliverables, show what changed, and suggest the next move.`
+            `Describe what should happen in ${lane.title}, and Neroa will generate the first working deliverables, show what changed, and suggest the next move.`
           }
           badge={
             <span className="premium-pill text-slate-600">
@@ -95,7 +95,7 @@ export default function GenericLaneWorkspace({
           <SummaryMetricCard
             title="Current output"
             value={outputs?.title ?? "No deliverable yet"}
-            detail={outputs?.summary ?? "Prompt Naroa to generate the first artifact for this lane."}
+            detail={outputs?.summary ?? "Prompt Neroa to generate the first artifact for this lane."}
             emphasized
           />
           <SummaryMetricCard
@@ -111,7 +111,7 @@ export default function GenericLaneWorkspace({
           <SummaryMetricCard
             title="Next move"
             value={outputs ? "Ready" : "Pending"}
-            detail={outputs?.nextMove ?? "Naroa will recommend the next best move once the first output exists."}
+            detail={outputs?.nextMove ?? "Neroa will recommend the next best move once the first output exists."}
           />
         </div>
       </AmbientWorkspaceBackground>
@@ -150,7 +150,7 @@ export default function GenericLaneWorkspace({
                     onClick={() => engine.handlePrompt(prompt)}
                     className="micro-glow premium-surface-soft rounded-[24px] p-5 text-left"
                   >
-                    <p className="text-sm font-semibold text-slate-950">Generate with Naroa</p>
+                    <p className="text-sm font-semibold text-slate-950">Generate with Neroa</p>
                     <p className="mt-3 text-sm leading-7 text-slate-600">{prompt}</p>
                   </button>
                 ))}
@@ -173,7 +173,7 @@ export default function GenericLaneWorkspace({
                 </div>
               ) : (
                 <p className="text-sm leading-7 text-slate-500">
-                  Output changes will appear here after Naroa builds the first artifact.
+                  Output changes will appear here after Neroa builds the first artifact.
                 </p>
               )}
             </SecondaryPanel>
@@ -187,7 +187,7 @@ export default function GenericLaneWorkspace({
                       variant="cta"
                       onClick={() => engine.handlePrompt(outputs.nextMove)}
                     >
-                      Continue with Naroa
+                      Continue with Neroa
                     </PremiumButton>
                     <PremiumButton
                       variant="ghost"
@@ -201,7 +201,7 @@ export default function GenericLaneWorkspace({
                 </>
               ) : (
                 <p className="text-sm leading-7 text-slate-500">
-                  Naroa will recommend the next useful move as soon as the first deliverable exists.
+                  Neroa will recommend the next useful move as soon as the first deliverable exists.
                 </p>
               )}
             </SecondaryPanel>

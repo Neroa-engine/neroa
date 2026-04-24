@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import AiTeammateCards from "@/components/workspace/ai-teammate-cards";
 import type { SaasBinaryChoice, SaasGuidanceMode } from "@/lib/onboarding/saas-intake";
 
@@ -81,7 +82,7 @@ export default function SaasIntakeFlow({
         id: "narua" as const,
         badge: "Core",
         active: true,
-        description: "Naroa frames the product, sequences the work, and keeps the SaaS build moving in the right order."
+        description: "Neroa frames the product, sequences the work, and keeps the SaaS build moving in the right order."
       },
       {
         id: "forge" as const,
@@ -124,7 +125,7 @@ export default function SaasIntakeFlow({
               Let&apos;s shape your SaaS idea into a build plan.
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600">
-              Answer a few focused questions. Naroa will create the SaaS engine, load the right execution lanes, and bring Naroa into the engine with the right specialist agents already assigned.
+              Answer a few focused questions. Neroa will create the SaaS engine, load the right execution lanes, and bring Neroa into the engine with the right specialist agents already assigned.
             </p>
           </div>
 
@@ -188,7 +189,7 @@ export default function SaasIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should help decide whether auth belongs in version one."
+                  description: "Neroa should help decide whether auth belongs in version one."
                 }
               ]}
             />
@@ -212,7 +213,7 @@ export default function SaasIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should help decide whether payments belong in the MVP."
+                  description: "Neroa should help decide whether payments belong in the MVP."
                 }
               ]}
             />
@@ -236,13 +237,13 @@ export default function SaasIntakeFlow({
                 {
                   value: "not-sure",
                   label: "Not sure",
-                  description: "Naroa should decide whether an admin layer is worth the complexity."
+                  description: "Neroa should decide whether an admin layer is worth the complexity."
                 }
               ]}
             />
 
             <ToggleField
-              label="8. Do you want Naroa to create the roadmap only, or guide the build?"
+              label="8. Do you want Neroa to create the roadmap only, or guide the build?"
               name="guidanceMode"
               value={guidanceMode}
               onChange={setGuidanceMode}
@@ -250,21 +251,25 @@ export default function SaasIntakeFlow({
                 {
                   value: "roadmap-only",
                   label: "Roadmap only",
-                  description: "Naroa will shape the plan, MVP, cost view, and next steps."
+                  description: "Neroa will shape the plan, MVP, cost view, and next steps."
                 },
                 {
                   value: "guide-build",
                   label: "Guide the build",
-                  description: "Naroa will shape the plan and keep guiding execution after the engine opens."
+                  description: "Neroa will shape the plan and keep guiding execution after the engine opens."
                 }
               ]}
             />
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Link href="/start" className="button-secondary">
-              Back to Naroa intake
-            </Link>
+            <PublicActionLink
+              href="/start"
+              label="Back to Neroa intake"
+              className="button-secondary"
+            >
+              Back to Neroa intake
+            </PublicActionLink>
             <SubmitButton />
           </div>
         </div>
@@ -300,10 +305,10 @@ export default function SaasIntakeFlow({
           <div className="floating-wash rounded-[34px]" />
           <div className="relative">
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-              Naroa execution stack
+              Neroa execution stack
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              This SaaS intake activates Naroa, Forge, Atlas, RepoLink, and Ops from the first engine pass.
+              This SaaS intake activates Neroa, Forge, Atlas, RepoLink, and Ops from the first engine pass.
             </p>
             <AiTeammateCards agents={agentCards} compact className="mt-5 grid-cols-1" />
           </div>

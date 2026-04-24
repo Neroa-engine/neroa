@@ -12,10 +12,11 @@ export default function BlogPage() {
           Blog
         </p>
         <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[4.9rem]">
-          Product thinking, AI build systems, and launch strategy from Neroa.
+          SaaS planning, build-path thinking, and product notes from NEROA.
         </h1>
         <p className="mx-auto mt-6 max-w-3xl text-lg leading-9 text-slate-600">
-          Read how coordinated AI can help plan, validate, budget, and build SaaS products, internal software, and external apps.
+          Read the public-facing product notes that explain SaaS planning, Neroa-guided entry,
+          cleaner scope, and how the build path should be chosen before execution widens.
         </p>
       </section>
 

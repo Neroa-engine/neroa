@@ -54,8 +54,8 @@ export default function ManagedSoftwareBuildServicePage() {
 
   return (
     <SeoLandingTemplate
-      ctaHref="/contact?type=managed-build-quote"
-      ctaLabel="Request Managed Build Quote"
+      ctaHref="/start"
+      ctaLabel="Start Managed Build"
       schema={schema}
       hero={{
         eyebrow: "Managed software build service",
@@ -63,8 +63,8 @@ export default function ManagedSoftwareBuildServicePage() {
         summary:
           "Managed Build is Neroa's structured path for customers who want more support carrying the build, QA, launch, and operating work without losing visibility into the product.",
         primaryAction: {
-          href: "/contact?type=managed-build-quote",
-          label: "Request Managed Build Quote"
+          href: "/start",
+          label: "Start Managed Build"
         },
         secondaryAction: { href: "/pricing/managed", label: "View Managed Pricing", tone: "secondary" },
         highlights: [
@@ -138,9 +138,9 @@ export default function ManagedSoftwareBuildServicePage() {
         eyebrow: "Next step",
         title: "Open the managed path when the product needs more support than DIY pacing can comfortably provide.",
         summary:
-          "Request a managed quote when the software needs execution help, stronger oversight, and more structured movement toward launch.",
+          "Use the managed path when the software needs execution help, stronger oversight, and more structured movement toward launch.",
         actions: [
-          { href: "/contact?type=managed-build-quote", label: "Request Managed Build Quote" },
+          { href: "/start", label: "Start Managed Build" },
           { href: "/diy-build", label: "Compare with DIY", tone: "secondary" }
         ]
       }}

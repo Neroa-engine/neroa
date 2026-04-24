@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
@@ -73,8 +73,8 @@ export default function EngineIntakeScreen({ navigation }) {
           Start with the right build category.
         </Heading>
         <Body style={{ marginTop: 12 }}>
-          Choose what you want to build and give Naroa the first clean summary. The mobile app keeps
-          the engine structure tight while the heavier execution still syncs back to your Naroa
+          Choose what you want to build and give Neroa the first clean summary. The mobile app keeps
+          the engine structure tight while the heavier execution still syncs back to your Neroa
           system.
         </Body>
       </SurfaceCard>
@@ -99,7 +99,7 @@ export default function EngineIntakeScreen({ navigation }) {
         <SurfaceCard>
           <Eyebrow>Mobile stack</Eyebrow>
           <Heading style={{ marginTop: 12, fontSize: 24, lineHeight: 28 }}>
-            Mobile App support inside Naroa
+            Mobile App support inside Neroa
           </Heading>
           <Body style={{ marginTop: 12 }}>
             Primary Build Path: {mobileSupportSummary.primaryBuildPath}. Secondary MVP Path:{" "}
@@ -120,7 +120,7 @@ export default function EngineIntakeScreen({ navigation }) {
             label="What should this engine help build?"
             value={summary}
             onChangeText={setSummary}
-            placeholder="Describe the product, the first outcome, and what Naroa should shape first."
+            placeholder="Describe the product, the first outcome, and what Neroa should shape first."
             multiline
           />
         </View>

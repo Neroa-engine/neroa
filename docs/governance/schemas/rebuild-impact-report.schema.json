@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neroa.local/docs/governance/schemas/rebuild-impact-report.schema.json",
+  "title": "Rebuild Impact Report",
+  "type": "object",
+  "required": [
+    "requestedChange",
+    "affectedPhases",
+    "affectedSystems",
+    "dependenciesTouched",
+    "impactCategory",
+    "riskLevel",
+    "changeType",
+    "roadmapRevisionRequired",
+    "executionStatus",
+    "whatMustBeRebuilt",
+    "whatCanRemainUntouched",
+    "regressionRisk",
+    "assumptionsAffected",
+    "contradictionsTriggered"
+  ],
+  "properties": {
+    "requestedChange": {
+      "type": "string"
+    },
+    "affectedPhases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "affectedSystems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dependenciesTouched": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "impactCategory": {
+      "type": "string",
+      "enum": [
+        "local",
+        "medium",
+        "high",
+        "architectural"
+      ]
+    },
+    "riskLevel": {
+      "type": "string",
+      "enum": [
+        "low",
+        "moderate",
+        "high",
+        "critical"
+      ]
+    },
+    "changeType": {
+      "type": "string",
+      "enum": [
+        "additive",
+        "modifying",
+        "destructive"
+      ]
+    },
+    "roadmapRevisionRequired": {
+      "type": "boolean"
+    },
+    "executionStatus": {
+      "type": "string",
+      "enum": [
+        "Approved as-is",
+        "Approved but roadmap must be updated first",
+        "Deferred to later phase",
+        "Blocked because it causes architectural conflict"
+      ]
+    },
+    "whatMustBeRebuilt": {
+      "type": "array"
+    },
+    "whatCanRemainUntouched": {
+      "type": "array"
+    },
+    "regressionRisk": {
+      "type": "string"
+    },
+    "assumptionsAffected": {
+      "type": "array"
+    },
+    "contradictionsTriggered": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true
+}

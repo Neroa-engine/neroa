@@ -1,141 +1,142 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
-import { formatRelativeDate } from "@/lib/format";
-import { updateJob } from "@/app/jobs/[id]/actions";
+import { MarketingInfoShell } from "@/components/layout/page-shells";
 
-type JobPageProps = {
-  params: {
-    id: string;
-  };
-  searchParams?: {
-    error?: string;
-    notice?: string;
-  };
-};
-
-export default async function JobPage({ params, searchParams }: JobPageProps) {
-  const { supabase, user } = await requireUser();
-
-  const { data: job, error } = await supabase
-    .from("jobs")
-    .select("id, title, notes, workspace_id, created_at, updated_at")
-    .eq("id", params.id)
-    .eq("owner_id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    redirect(`/dashboard?error=${encodeURIComponent(error.message)}`);
+const instructionSections = [
+  {
+    title: "What Neroa is",
+    paragraphs: [
+      "Neroa is a guided AI build system built around project framing, specialist AI coordination, GitHub-backed execution, and visible delivery structure.",
+      "The public site explains the system clearly and routes people directly into the live build flow when they are ready."
+    ]
+  },
+  {
+    title: "What Neroa does",
+    paragraphs: [
+      "Neroa is the orchestration layer. It frames the project, narrows the first useful question, and activates specialist systems only when they make the output stronger.",
+      "Neroa also decides when one system should implement, when another should review, and when the next move should stay in planning instead of widening too early.",
+      "That is why the public product story starts with Neroa instead of a generic dashboard."
+    ]
+  },
+  {
+    title: "How build orchestration works",
+    paragraphs: [
+      "GitHub is the source-of-truth repository layer. It holds the codebase, branches, commits, pull requests, and deployment-linked history for the Engine.",
+      "Codex is the specialist build agent for implementation work such as repo edits, bug fixes, tests, and PR-style execution. Anthropic or Claude is the specialist review agent for architecture review, requirements critique, UX critique, and second-pass code review.",
+      "The normal loop is build pass, review pass, fix pass, then Neroa summary so the user sees what changed, what was reviewed, what still needs testing, and what should happen next."
+    ]
+  },
+  {
+    title: "How connected services fit in",
+    paragraphs: [
+      "Neroa treats connected services as part of the build model, not an afterthought. GitHub, Supabase, Vercel, Stripe, domain and DNS providers, SMTP, Expo, Apple Developer, and Google Play Console all have a defined role when the Engine needs them.",
+      "That makes Neroa feel like a build command center instead of one generic assistant with disconnected outputs."
+    ]
+  },
+  {
+    title: "How the public site is structured",
+    paragraphs: [
+      "The public site is organized around a few clear paths: homepage, pricing, how it works, Neroa and AI system pages, selected use cases, blog, support, and contact.",
+      "Each page is meant to help a visitor understand the system, choose the right build path, and move into the product without confusion."
+    ]
+  },
+  {
+    title: "How the live product flow works",
+    paragraphs: [
+      "Start on the homepage or use-case pages to choose the kind of product you want to build.",
+      "From there, move into the Neroa-led intake and create an engine that carries the right lanes, AI stack, connected-service setup, and next-step structure."
+    ]
+  },
+  {
+    title: "How pricing works",
+    paragraphs: [
+      "Pricing explains active engine limits, monthly Engine Credits, workflow access, add-on credit packs, and the upgrade path from validation work into build-heavy execution.",
+      "The plans are intentionally designed to show real capacity, and usage notifications warn customers at 80% and 95% of their included monthly Engine Credits."
+    ]
+  },
+  {
+    title: "How to get started and get support",
+    paragraphs: [
+      "Use Start your build when you are ready to move into the working product flow, or use Contact if you need help before you start.",
+      "Use Support for guidance, Contact for direct questions, and the site guide chat for quick help while browsing."
+    ]
   }
+];
 
-  if (!job) {
-    redirect("/dashboard?error=Job not found.");
-  }
-
-  const { data: workspace } = await supabase
-    .from("workspaces")
-    .select("id, name")
-    .eq("id", job.workspace_id)
-    .eq("owner_id", user.id)
-    .maybeSingle();
-
-  const saveAction = updateJob.bind(null, job.id);
-
+export default function InstructionsPage() {
   return (
-    <main className="shell py-8">
-      <section className="surface-main p-6 md:p-8">
-        <div className="flex flex-col gap-6 border-b border-white/10 pb-6 md:flex-row md:items-start md:justify-between">
-          <div>
-            <Link href="/dashboard" className="text-sm font-medium text-white/70 transition hover:text-white">
-              Back to dashboard
-            </Link>
-            <p className="mt-6 text-sm font-semibold uppercase tracking-[0.28em] text-white/55">
-              Saved job
-            </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-white">
-              {job.title}
-            </h1>
-            <p className="mt-3 max-w-2xl text-white/75">
-              Reopen this saved job any time, adjust the notes, and save it again.
-            </p>
-          </div>
-
-          <div className="surface-subtle min-w-[240px] p-5">
-            <p className="text-sm font-medium text-white">Job details</p>
-            <dl className="mt-4 space-y-3 text-sm text-white/75">
-              <div className="flex items-center justify-between gap-4">
-                <dt>Created</dt>
-                <dd>{formatRelativeDate(job.created_at)}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt>Updated</dt>
-                <dd>{formatRelativeDate(job.updated_at)}</dd>
-              </div>
-              <div className="flex items-center justify-between gap-4">
-                <dt>Workspace</dt>
-                <dd>
-                  {workspace ? (
-                    <Link href={`/workspace/${workspace.id}/project/${workspace.id}`} className="text-white underline-offset-4 hover:underline">
-                      {workspace.name}
-                    </Link>
-                  ) : (
-                    "Unavailable"
-                  )}
-                </dd>
-              </div>
-            </dl>
-          </div>
-        </div>
-
-        {searchParams?.error ? (
-          <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {searchParams.error}
-          </div>
-        ) : null}
-
-        {searchParams?.notice ? (
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            {searchParams.notice}
-          </div>
-        ) : null}
-
-        <section className="surface-subtle mt-8 p-6">
-          <h2 className="text-2xl font-semibold text-white">Edit saved job</h2>
-          <p className="mt-3 text-sm leading-7 text-white/85">
-            Update the saved job details here, then save again whenever you need to refresh it.
+    <MarketingInfoShell ctaHref="/support" ctaLabel="Get support" brandVariant="prominent">
+      <section className="mx-auto max-w-6xl">
+        <div className="max-w-4xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-700">
+            Instructions
           </p>
-
-          <form action={saveAction} className="mt-6 space-y-4">
-            <div>
-              <label htmlFor="title" className="mb-2 block text-sm">
-                Job title
-              </label>
-              <input
-                id="title"
-                name="title"
-                defaultValue={job.title}
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="notes" className="mb-2 block text-sm">
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                name="notes"
-                defaultValue={job.notes ?? ""}
-                rows={6}
-              />
-            </div>
-
-            <button className="button-primary" type="submit">
-              Save job again
-            </button>
-          </form>
-        </section>
+          <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5rem] xl:leading-[0.96]">
+            How to use the Neroa public site and move into the live build flow cleanly.
+          </h1>
+          <p className="mt-6 max-w-3xl text-lg leading-9 text-slate-600">
+            This page is the practical walkthrough for the live product: what Neroa is, how Neroa fits in, which pages to use first, how pricing works, and where to go when you need help.
+          </p>
+        </div>
       </section>
-    </main>
+
+      <section className="mt-16 grid gap-6">
+        {instructionSections.map((section, index) => (
+          <div key={section.title} className="floating-plane rounded-[34px] p-6 sm:p-8">
+            <div className="floating-wash rounded-[34px]" />
+            <div className="relative grid gap-6 lg:grid-cols-[140px_1fr]">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                  Step 0{index + 1}
+                </p>
+              </div>
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+                  {section.title}
+                </h2>
+                <div className="mt-5 space-y-4">
+                  {section.paragraphs.map((paragraph) => (
+                    <p key={paragraph} className="text-base leading-8 text-slate-600">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-16 grid gap-6 lg:grid-cols-3">
+        {[
+          {
+            title: "Read pricing",
+            description: "See how plans expand by Engine Credits, active planning engines, build projects, and deeper execution support.",
+            href: "/pricing/diy"
+          },
+          {
+            title: "Start your build",
+            description: "Move into the Neroa-led intake and create your first engine.",
+            href: "/start"
+          },
+          {
+            title: "Get support",
+            description: "Use support or contact if you want help deciding what to do next.",
+            href: "/support"
+          }
+        ].map((item) => (
+          <Link
+            key={item.title}
+            href={item.href}
+            className="micro-glow floating-plane rounded-[28px] p-5"
+          >
+            <div className="floating-wash rounded-[28px]" />
+            <div className="relative">
+              <p className="text-xl font-semibold tracking-tight text-slate-950">{item.title}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
+            </div>
+          </Link>
+        ))}
+      </section>
+    </MarketingInfoShell>
   );
 }

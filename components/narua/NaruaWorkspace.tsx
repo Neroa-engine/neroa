@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -143,7 +143,7 @@ export default function NaruaWorkspace({
   const [draft, setDraft] = useState("");
   const [generatedPlan, setGeneratedPlan] = useState<GeneratedPlan | null>(null);
   const [voiceState, setVoiceState] = useState<VoiceInputState>("idle");
-  const [voiceMessage, setVoiceMessage] = useState("Tap the mic or type to speak with Naroa");
+  const [voiceMessage, setVoiceMessage] = useState("Tap the mic or type to speak with Neroa");
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
@@ -272,7 +272,7 @@ export default function NaruaWorkspace({
         active: true,
         description:
           teammateById.narua?.reason ??
-          "Naroa anchors the engine, listens first, and turns the brief into a usable execution direction."
+          "Neroa anchors the engine, listens first, and turns the brief into a usable execution direction."
       },
       {
         id: "atlas" as const,
@@ -334,10 +334,10 @@ export default function NaruaWorkspace({
               Guided intake
             </p>
             <h2 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-              Build with Naroa
+              Build with Neroa
             </h2>
             <p className="mt-3 text-sm leading-7 text-slate-600">
-              Naroa handles the first engine conversation, narrows the scope, and opens the
+              Neroa handles the first engine conversation, narrows the scope, and opens the
               engine only after the direction is usable for SaaS, internal software, external
               apps, or mobile apps.
             </p>
@@ -353,7 +353,7 @@ export default function NaruaWorkspace({
             <div className="mt-5 flex flex-col gap-3">
               <StageBadge active={stage === "intake"}>1. Describe the build</StageBadge>
               <StageBadge active={stage === "clarification" || stage === "synthesis"}>
-                2. Naroa scopes it
+                2. Neroa scopes it
               </StageBadge>
               <StageBadge active={stage === "review"}>3. Assemble the AI system</StageBadge>
               <StageBadge active={Boolean(generatedPlan)}>4. Open the engine</StageBadge>
@@ -398,7 +398,7 @@ export default function NaruaWorkspace({
       <div className="min-w-0 space-y-8">
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            ["Start naturally", "Use plain language. Naroa will structure the engine from there."],
+            ["Start naturally", "Use plain language. Neroa will structure the engine from there."],
             ["See the first draft", "A usable execution plan appears before you commit to the engine."],
             ["Open cleanly", "Primary and supporting lanes arrive already framed around the brief."]
           ].map(([title, description]) => (
@@ -423,8 +423,8 @@ export default function NaruaWorkspace({
           voiceMessage={voiceMessage}
           onVoiceTranscript={handleVoiceTranscript}
           onVoiceStatusChange={handleVoiceStatusChange}
-          title="Guide the build with Naroa"
-          description="Start naturally. Naroa asks the next useful question, clarifies the path, and turns the intake into a clean execution draft."
+          title="Guide the build with Neroa"
+          description="Start naturally. Neroa asks the next useful question, clarifies the path, and turns the intake into a clean execution draft."
           afterPlan={
             generatedPlan ? (
               <form action={startWorkspaceAction} className="floating-plane rounded-[32px] p-5">
@@ -451,7 +451,7 @@ export default function NaruaWorkspace({
                 <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-950">
-                      Naroa is ready to open the engine
+                      Neroa is ready to open the engine
                     </p>
                     <p className="mt-2 text-sm leading-6 text-slate-600">
                       Primary lane: {primaryLane?.name}
@@ -484,7 +484,7 @@ export default function NaruaWorkspace({
               AI system
             </p>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Naroa leads the flow, then the rest of the system activates only when the brief actually needs it.
+              Neroa leads the flow, then the rest of the system activates only when the brief actually needs it.
             </p>
             <AiTeammateCards agents={aiSystemRoster} compact className="mt-5 grid-cols-1" />
           </div>
@@ -494,19 +494,19 @@ export default function NaruaWorkspace({
           <div className="floating-wash rounded-[34px]" />
           <div className="relative space-y-5">
             <div className="flex items-start gap-3">
-              <AiAvatar provider="chatgpt" displayName="Naroa" avatarSeed="narua-intake" />
+              <AiAvatar provider="chatgpt" displayName="Neroa" avatarSeed="narua-intake" />
               <div className="min-w-0">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700">
                   Current stage
                 </p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {stage === "intake"
-                    ? "Naroa is gathering the initial intent."
+                    ? "Neroa is gathering the initial intent."
                     : stage === "clarification"
-                      ? "Naroa is tightening the direction with one or two focused questions."
+                      ? "Neroa is tightening the direction with one or two focused questions."
                       : stage === "synthesis"
-                        ? "Naroa is assembling the first execution draft."
-                        : "Naroa has a usable plan ready to launch into the engine."}
+                        ? "Neroa is assembling the first execution draft."
+                        : "Neroa has a usable plan ready to launch into the engine."}
                 </p>
               </div>
             </div>
@@ -518,7 +518,7 @@ export default function NaruaWorkspace({
               <p className="mt-2 text-sm font-semibold text-slate-900">
                 {primaryLane
                   ? primaryLane.name
-                  : "Naroa will recommend the primary lane once the brief is clear."}
+                  : "Neroa will recommend the primary lane once the brief is clear."}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-500">
                 {supportingLanes.length > 0

@@ -7,7 +7,7 @@
 - Engine Board
 - Open Engine detail
 - Lane structure view
-- Naroa mobile chat surface
+- Neroa mobile chat surface
 - Support / contact screen
 - Account / settings screen
 
@@ -45,7 +45,7 @@
 
 - Camera: only if a future engine flow requires it
 - Location: only if future mobile builds need location-aware behavior
-- Notifications: only when Naroa mobile notifications are wired for real
+- Notifications: only when Neroa mobile notifications are wired for real
 - Payments: validate app-store billing implications if subscriptions ship in-app
 
 ## Submission readiness

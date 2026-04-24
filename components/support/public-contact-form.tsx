@@ -295,7 +295,7 @@ export function PublicContactForm({
           Request received
         </p>
         <h3 className="mt-4 text-2xl font-semibold tracking-tight text-slate-950">
-          Thanks. The Neroa team has your {selectedInquiryLabel.toLowerCase()} request.
+          Thanks. The NEROA team has your {selectedInquiryLabel.toLowerCase()} request.
         </h3>
         <p className="mt-4 text-sm leading-7 text-slate-600">
           We will follow up through the email you submitted. If you need to send anything directly in the meantime, use{" "}
@@ -313,7 +313,7 @@ export function PublicContactForm({
           <span className="font-medium text-slate-950">
             {authContext.accountEmail ?? "your authenticated account"}
           </span>
-          . Neroa will attach your account email, user ID, and page context separately with this request.
+          . NEROA will attach your account email, user ID, and page context separately with this request.
         </div>
       ) : null}
 
@@ -369,7 +369,7 @@ export function PublicContactForm({
           />
           {authContext.isAuthenticated ? (
             <p className="mt-2 text-xs leading-6 text-slate-500">
-              You can edit this reply email if needed. Neroa will still attach the authenticated account email separately for support context.
+              You can edit this reply email if needed. NEROA will still attach the authenticated account email separately for support context.
             </p>
           ) : null}
           {errors.email ? <p className="mt-2 text-sm text-rose-600">{errors.email}</p> : null}
@@ -399,7 +399,7 @@ export function PublicContactForm({
           value={form.message}
           onChange={(event) => updateField("message", event.target.value)}
           className="input min-h-[180px] resize-y"
-          placeholder="Tell the Neroa team what you need, what page you were on, or what kind of help would be most useful."
+          placeholder="Tell the NEROA team what you need, what page you were on, or what kind of help would be most useful."
           aria-invalid={Boolean(errors.message)}
         />
         {errors.message ? <p className="mt-2 text-sm text-rose-600">{errors.message}</p> : null}
@@ -407,13 +407,25 @@ export function PublicContactForm({
 
       {submissionError ? (
         <div className="rounded-[20px] border border-rose-200/80 bg-rose-50/80 px-4 py-3 text-sm text-rose-700">
-          {submissionError}
+          <p>{submissionError}</p>
+          {submissionError.includes("Contact delivery is not configured") ||
+          submissionError.includes("cannot send") ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              <a href={`mailto:${publicContactEmail}`} className="button-secondary !px-3 !py-2">
+                Email {publicContactEmail}
+              </a>
+              <a href="/support" className="button-secondary !px-3 !py-2">
+                Open support
+              </a>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm leading-7 text-slate-500">
-          The form stays inside the public Neroa flow. Neroa also attaches route and workspace context automatically whenever it is available.
+          The form stays inside the public NEROA flow. NEROA also attaches route and workspace
+          context automatically whenever it is available.
         </p>
 
         <button type="submit" disabled={submitting} className="button-primary whitespace-nowrap">

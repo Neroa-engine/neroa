@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import type { UseCaseFocusPage } from "@/lib/use-case-focus";
 import type { UseCaseDetailPage } from "@/lib/use-cases";
-import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
 
 type UseCaseFocusTemplateProps = {
   parentPage: UseCaseDetailPage;
@@ -10,12 +10,6 @@ type UseCaseFocusTemplateProps = {
 };
 
 export function UseCaseFocusTemplate({ parentPage, page }: UseCaseFocusTemplateProps) {
-  const primaryAction = resolvePublicLaunchAction(page.primaryCtaLabel, page.primaryCtaHref);
-  const secondaryAction = resolvePublicLaunchAction(
-    page.secondaryCtaLabel,
-    page.secondaryCtaHref
-  );
-
   return (
     <MarketingInfoShell ctaHref="/start" ctaLabel="Start your build" brandVariant="prominent">
       <section className="mx-auto max-w-6xl">
@@ -42,12 +36,16 @@ export function UseCaseFocusTemplate({ parentPage, page }: UseCaseFocusTemplateP
             <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">{page.intro}</p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
-              <Link href={secondaryAction.href} className="button-secondary">
-                {secondaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
+              <PublicActionLink
+                href={page.secondaryCtaHref}
+                label={page.secondaryCtaLabel}
+                className="button-secondary"
+              />
             </div>
           </div>
 
@@ -82,7 +80,7 @@ export function UseCaseFocusTemplate({ parentPage, page }: UseCaseFocusTemplateP
           <div className="floating-wash rounded-[34px]" />
           <div className="relative">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-              What Naroa and Neroa do here
+              What Neroa and Neroa do here
             </p>
             <div className="mt-6 grid gap-4">
               {page.whatNeroaDoes.map((item, index) => (
@@ -137,9 +135,11 @@ export function UseCaseFocusTemplate({ parentPage, page }: UseCaseFocusTemplateP
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
               <Link href={`/use-cases/${parentPage.slug}`} className="button-secondary">
                 Back to use case
               </Link>

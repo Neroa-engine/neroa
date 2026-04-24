@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neroa.local/docs/governance/schemas/extraction-snapshot.schema.json",
+  "title": "Extraction Snapshot",
+  "type": "object",
+  "required": [
+    "requestSummary",
+    "primaryBranch",
+    "overlays",
+    "actors",
+    "coreWorkflow",
+    "mvpBoundary",
+    "assumptions",
+    "contradictions",
+    "unknowns",
+    "confidence",
+    "roadmapReadiness",
+    "executionReadiness"
+  ],
+  "properties": {
+    "requestSummary": {
+      "type": "string"
+    },
+    "primaryBranch": {
+      "type": "string"
+    },
+    "secondaryBranches": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "overlays": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "actors": {
+      "type": "object",
+      "properties": {
+        "primaryUsers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primaryBuyers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "primaryAdmins": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "coreWorkflow": {
+      "type": "string"
+    },
+    "mvpBoundary": {
+      "type": "object",
+      "properties": {
+        "inScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "outOfScope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "inScope",
+        "outOfScope"
+      ],
+      "additionalProperties": false
+    },
+    "assumptions": {
+      "type": "array"
+    },
+    "contradictions": {
+      "type": "array"
+    },
+    "unknowns": {
+      "type": "array"
+    },
+    "confidence": {
+      "type": "object"
+    },
+    "roadmapReadiness": {
+      "type": "object"
+    },
+    "executionReadiness": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

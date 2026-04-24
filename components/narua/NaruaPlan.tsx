@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { getPlanModuleDefinitions } from "@/lib/narua/planning";
 import { getLaneById } from "@/lib/workspace/lanes";
@@ -39,7 +39,7 @@ export default function NaruaPlan({ plan, onAction }: NaruaPlanProps) {
       <div className="flex flex-col gap-5 2xl:flex-row 2xl:items-start 2xl:justify-between">
         <div className="max-w-4xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-            Naroa Execution Layer
+            Neroa Execution Layer
           </p>
           <h3 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">{plan.title}</h3>
           <p className="mt-4 text-sm leading-7 text-slate-600">{plan.overview}</p>

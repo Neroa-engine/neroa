@@ -23,7 +23,7 @@ export default function PlanSelectScreen({ navigation }) {
   return (
     <ScreenScroll>
       <SurfaceCard>
-        <Eyebrow>Naroa mobile</Eyebrow>
+        <Eyebrow>Neroa mobile</Eyebrow>
         <Heading style={{ marginTop: 12 }}>
           Start with a plan, then open the product.
         </Heading>

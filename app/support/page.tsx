@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { publicContactEmail, publicContactMailto } from "@/lib/data/public-contact";
 
 export default function SupportPage() {
   return (
-    <MarketingInfoShell ctaHref="/contact" ctaLabel="Contact Us" brandVariant="prominent">
+    <MarketingInfoShell
+      ctaHref="/contact?type=support"
+      ctaLabel="Contact support"
+      brandVariant="prominent"
+    >
       <section className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
           <div className="max-w-3xl">
@@ -12,10 +17,11 @@ export default function SupportPage() {
               Support / Help
             </p>
             <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5rem] xl:leading-[0.96]">
-              Need help understanding the platform, pricing, or where to start?
+              Need help with pricing, routing, or where to go next?
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">
-              Neroa support on the public site is built to guide people through the system clearly: what the pages mean, what pricing covers, how the build flow works, and where to go next if they need a real answer from the team.
+              NEROA support is here to keep the public flow understandable. Use it when you need a
+              clearer next step, a real support contact, or help choosing between DIY and Managed.
             </p>
           </div>
 
@@ -30,31 +36,74 @@ export default function SupportPage() {
                   {
                     title: "AI help chat",
                     description:
-                      "Use the floating guide in the bottom-right corner for page-aware help, quick links, and next-step guidance."
+                      "Open the built-in site guide for page-aware help, quick links, and next-step routing.",
+                    href: "/support?help=open",
+                    ctaLabel: "Open guide chat"
+                  },
+                  {
+                    title: "Contact support",
+                    description:
+                      "Use the support inquiry form when you want a direct response from the team about pricing, routing, or what to do next.",
+                    href: "/contact?type=support",
+                    ctaLabel: "Contact support"
                   },
                   {
                     title: "Email support",
-                    description: `Email ${publicContactEmail} for direct support, build questions, or pricing clarification.`
+                    description: `Email ${publicContactEmail} for direct help, pricing clarification, or route questions.`,
+                    href: publicContactMailto,
+                    ctaLabel: `Email ${publicContactEmail}`,
+                    external: true
                   },
                   {
-                    title: "Contact form",
+                    title: "Start a project",
                     description:
-                      "Use Contact Us for support questions, build inquiries, general contact, or partnership conversations."
-                  },
-                  {
-                    title: "Instructions",
-                    description:
-                      "Use the instructions page for a practical walkthrough of how the public site, AI system, pricing, and build flow work."
+                      "Move into the guided builder when you already know you are ready to start shaping the product directly.",
+                    href: "/start",
+                    ctaLabel: "Start your build"
                   }
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
-                  >
-                    <p className="text-lg font-semibold text-slate-950">{item.title}</p>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
-                  </div>
-                ))}
+                ].map((item) =>
+                  item.external ? (
+                    <a
+                      key={item.title}
+                      href={item.href}
+                      className="micro-glow rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
+                    >
+                      <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700">
+                        {item.ctaLabel}
+                        <span aria-hidden="true">&rarr;</span>
+                      </div>
+                    </a>
+                  ) : item.href.startsWith("/start") ? (
+                    <PublicActionLink
+                      key={item.title}
+                      href={item.href}
+                      label={item.ctaLabel}
+                      className="micro-glow rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
+                    >
+                      <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700">
+                        {item.ctaLabel}
+                        <span aria-hidden="true">&rarr;</span>
+                      </div>
+                    </PublicActionLink>
+                  ) : (
+                    <Link
+                      key={item.title}
+                      href={item.href}
+                      className="micro-glow rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
+                    >
+                      <p className="text-lg font-semibold text-slate-950">{item.title}</p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">{item.description}</p>
+                      <div className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-cyan-700">
+                        {item.ctaLabel}
+                        <span aria-hidden="true">&rarr;</span>
+                      </div>
+                    </Link>
+                  )
+                )}
               </div>
             </div>
           </div>
@@ -71,27 +120,27 @@ export default function SupportPage() {
             <div className="mt-6 grid gap-4">
               {[
                 {
-                  title: "Need help starting your build?",
+                  title: "Need help understanding the SaaS path?",
                   description:
-                    "Start with use cases if you need direction first, then move into the build flow when you are ready to create your first engine.",
-                  href: "/use-cases"
+                    "Use the SaaS explainer first if you need a cleaner product definition before you compare paths or start the builder.",
+                  href: "/what-is-saas"
                 },
                 {
                   title: "Need help choosing a plan?",
                   description:
-                    "The pricing page explains active engine limits, monthly Engine Credits, the hard-cap model, and when to top up versus upgrade.",
+                    "The pricing pages explain realistic pace, monthly Engine Credits, and when DIY stops being the right answer.",
                   href: "/pricing"
                 },
                 {
-                  title: "Need help understanding Naroa or the AI system?",
+                  title: "Need help understanding budget logic?",
                   description:
-                    "The system pages explain Naroa's role, how the supporting AIs activate, and why the product starts with orchestration first.",
-                  href: "/system/ai"
+                    "Use the budget logic page to understand how scope, pace, support, and timing change the right path.",
+                  href: "/budget-pricing-logic"
                 },
                 {
                   title: "Need help deciding what to read next?",
                   description:
-                    "Use the site guide chat or the instructions page to move through the public site in the intended order.",
+                    "Use the instructions page if you want the public-site walkthrough before you start.",
                   href: "/instructions"
                 }
               ].map((item) => (
@@ -115,19 +164,24 @@ export default function SupportPage() {
               Next step
             </p>
             <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-              If you still need help, send the team a message.
+              If you still need help, take the cleanest next step.
             </h2>
             <p className="mt-4 text-sm leading-7 text-slate-600">
-              Use Contact Us for a direct support question, a pricing question, or a build inquiry. You will stay on the public site the whole time.
+              Use Contact support for a direct response, or start the builder if you already know
+              you are ready to move.
             </p>
 
             <div className="mt-6 flex flex-col gap-3">
               <Link href="/contact?type=support" className="button-primary">
                 Contact support
               </Link>
-              <a href={publicContactMailto} className="button-secondary">
-                Email {publicContactEmail}
-              </a>
+              <PublicActionLink
+                href="/start"
+                label="Start your build"
+                className="button-secondary"
+              >
+                Start your build
+              </PublicActionLink>
               <Link href="/instructions" className="button-secondary">
                 Read instructions
               </Link>

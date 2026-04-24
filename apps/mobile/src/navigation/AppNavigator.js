@@ -1,4 +1,4 @@
-﻿import { useMemo } from "react";
+import { useMemo } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -50,7 +50,7 @@ function MainTabs() {
         tabBarIcon: ({ color, size }) => {
           const iconMap = {
             EngineBoard: "grid-outline",
-            Naroa: "sparkles-outline",
+            Neroa: "sparkles-outline",
             Support: "help-circle-outline",
             Account: "person-circle-outline"
           };
@@ -60,7 +60,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="EngineBoard" component={EngineBoardScreen} options={{ title: "Engines" }} />
-      <Tab.Screen name="Naroa" component={NaruaScreen} />
+      <Tab.Screen name="Neroa" component={NaruaScreen} />
       <Tab.Screen name="Support" component={SupportScreen} />
       <Tab.Screen name="Account" component={SettingsScreen} />
     </Tab.Navigator>

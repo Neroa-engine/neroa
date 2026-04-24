@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://neroa.local/docs/governance/schemas/delta-analyzer.schema.json",
+  "title": "Delta Analyzer Worksheet",
+  "type": "object",
+  "required": [
+    "requestedChange",
+    "requestOrigin",
+    "currentApprovedPhase",
+    "affectedPhases",
+    "affectedSystems",
+    "dependenciesTouched",
+    "assumptionsAffected",
+    "contradictionRisk",
+    "rebuildRadius",
+    "impactCategory",
+    "roadmapRevisionRequired",
+    "recommendedGateOutcome"
+  ],
+  "properties": {
+    "requestedChange": {
+      "type": "string"
+    },
+    "requestOrigin": {
+      "type": "string"
+    },
+    "currentApprovedPhase": {
+      "type": "string"
+    },
+    "affectedPhases": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "affectedSystems": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "dependenciesTouched": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "assumptionsAffected": {
+      "type": "array"
+    },
+    "contradictionRisk": {
+      "type": "string",
+      "enum": [
+        "minor",
+        "moderate",
+        "high",
+        "critical"
+      ]
+    },
+    "rebuildRadius": {
+      "type": "string",
+      "enum": [
+        "Local",
+        "Medium",
+        "High",
+        "Architectural"
+      ]
+    },
+    "impactCategory": {
+      "type": "string",
+      "enum": [
+        "local",
+        "medium",
+        "high",
+        "architectural"
+      ]
+    },
+    "roadmapRevisionRequired": {
+      "type": "boolean"
+    },
+    "recommendedGateOutcome": {
+      "type": "string",
+      "enum": [
+        "Approved as-is",
+        "Approved but roadmap must be updated first",
+        "Deferred to later phase",
+        "Blocked because it causes architectural conflict"
+      ]
+    }
+  },
+  "additionalProperties": true
+}

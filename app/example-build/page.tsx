@@ -16,7 +16,7 @@ import { buildPublicMetadata, buildWebPageSchema } from "@/lib/marketing/seo";
 export const metadata: Metadata = buildPublicMetadata({
   title: "See an Example Build | Interactive guided product walkthrough with Neroa",
   description:
-    "Explore an interactive example build in Neroa and see how a product moves through strategy, scope, MVP, budget, build paths, and launch logic.",
+    "Explore an interactive example build in Neroa and see the same five-step builder architecture used by the real DIY flow, with a simulated final build plan.",
   path: "/example-build",
   keywords: [
     "interactive AI software build demo",
@@ -30,7 +30,7 @@ export default function ExampleBuildPage() {
   return (
     <MarketingInfoShell
       ctaHref="/start"
-      ctaLabel="Start DIY Build"
+      ctaLabel="Start a conversation"
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -46,21 +46,21 @@ export default function ExampleBuildPage() {
       <section className="mx-auto max-w-6xl">
         <PublicPageHero
           eyebrow="Interactive Example Build"
-          title="Step into a guided AI build simulation before you start your own."
-          summary="This walkthrough now mirrors Neroa's structured build-entry logic. Start with product type, choose an industry or hot opportunity area, select a system framework, review filtered example projects, and then watch the guided breakdown unfold."
+          title="Step into a guided build simulation that now mirrors the real DIY builder."
+          summary="The simulation now follows the same architecture as Neroa's real builder: Build Setup, Business Direction, Project Definition, Framework + Experience Direction, and a final Build Plan Output that stays clearly illustrative."
           primaryAction={{ href: "#example-build-entry", label: "Open the simulation" }}
-          secondaryAction={{ href: "/start", label: "Start DIY Build", tone: "secondary" }}
+          secondaryAction={{ href: "/start", label: "Start a conversation", tone: "secondary" }}
           highlights={[
-            "Product type comes first, not a generic example list",
-            "Framework logic shapes the example before the breakdown opens",
-            "The real build handoff carries the simulation state forward"
+            "The same five-step architecture now powers both the simulation and the real builder",
+            "Step 1 is the same structured Product Type + Build Stage setup",
+            "The real builder handoff now carries this aligned simulation state forward"
           ]}
           panelTitle="Why this feels real"
           panelSummary="The simulation uses static data for now, but it mirrors the way Neroa turns a rough concept into a structured product plan with visible tradeoffs and next-step choices."
           panelItems={[
             "A guided sequence instead of a passive marketing slideshow",
-            "Industry or opportunity context before framework selection",
-            "Example credit ranges clearly marked as illustrative"
+            "The same state model as the real builder, not a separate example engine",
+            "Reference projects and credit ranges clearly marked as illustrative"
           ]}
           panelBadge="Guided AI build simulation"
           supportingNote="The goal is to make the system feel trustworthy before signup. Later, this same shell can connect to live scoped build data."

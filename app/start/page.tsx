@@ -1,130 +1,97 @@
-import { startGuidedEngineWorkspace } from "@/app/start/actions";
-import GuidedStartFlow from "@/components/onboarding/guided-start-flow";
+import { startEntryWorkspace } from "@/app/start/actions";
+import { FrontDoorHomeHero } from "@/components/front-door/front-door-home-hero";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
-import { resolveAccountPlanAccess } from "@/lib/account/plan-access";
+import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
+import { buildAuthRedirectPath } from "@/lib/auth/routes";
 import { getOptionalUser } from "@/lib/auth";
+import { publicLaunchEntryPath } from "@/lib/data/public-launch";
+import { APP_ROUTES } from "@/lib/routes";
+import { redirect } from "next/navigation";
 
 type StartPageProps = {
   searchParams?: {
     error?: string;
     notice?: string;
-    resume?: string;
-    step?: string;
+    entry?: string;
+    title?: string;
+    summary?: string;
   };
 };
 
-type WizardStep =
-  | "account"
-  | "plan"
-  | "entry"
-  | "industry"
-  | "goal"
-  | "opportunity"
-  | "product"
-  | "experience"
-  | "preference"
-  | "summary";
-
-function isWizardStep(value?: string): value is WizardStep {
-  return (
-    value === "account" ||
-    value === "plan" ||
-    value === "entry" ||
-    value === "industry" ||
-    value === "goal" ||
-    value === "opportunity" ||
-    value === "product" ||
-    value === "experience" ||
-    value === "preference" ||
-    value === "summary"
-  );
-}
-
-function normalizeRequestedStep(value?: string): WizardStep | null {
-  if (value === "product-type") {
-    return "product";
-  }
-
-  return isWizardStep(value) ? value : null;
-}
-
-function isResumeRequested(value?: string) {
-  return (
-    value === "1" ||
-    value === "true" ||
-    value === "guided" ||
-    value === "session" ||
-    value === "resume"
-  );
-}
-
-function resolveInitialStep(args: {
-  authenticated: boolean;
-  hasSelectedPlan: boolean;
-  resumeRequested: boolean;
-  requestedStep?: string;
-}): WizardStep {
-  if (!args.authenticated) {
-    return "account";
-  }
-
-  if (!args.hasSelectedPlan) {
-    return "plan";
-  }
-
-  const requestedStep = normalizeRequestedStep(args.requestedStep);
-
-  if (args.resumeRequested && requestedStep && requestedStep !== "account") {
-    return requestedStep;
-  }
-
-  return "product";
-}
-
 export default async function StartPage({ searchParams }: StartPageProps) {
   const user = await getOptionalUser();
-  const access = resolveAccountPlanAccess(user);
-  const resumeRequested = isResumeRequested(searchParams?.resume);
-  const initialStep = resolveInitialStep({
-    authenticated: Boolean(user),
-    hasSelectedPlan: access.hasSelectedPlan,
-    resumeRequested,
-    requestedStep: searchParams?.step
-  });
+  const entryPathId = searchParams?.entry === "managed" ? "managed" : "diy";
+  const hasExplicitEntry =
+    searchParams?.entry === "managed" || searchParams?.entry === "diy";
+
+  if (!hasExplicitEntry) {
+    return (
+      <MarketingInfoShell
+        userEmail={user?.email ?? undefined}
+        ctaHref={publicLaunchEntryPath}
+        ctaLabel="Open Strategy Room"
+        brandVariant="prominent"
+        brandScale="landing"
+        contentWidth="wide"
+        theme="front-door"
+        minimalHeader
+        showFooter={false}
+        showHelpChat={false}
+      >
+        <FrontDoorHomeHero initialAuthenticated={Boolean(user)} />
+      </MarketingInfoShell>
+    );
+  }
+
+  const nextParams = new URLSearchParams();
+
+  if (searchParams?.entry === "managed") {
+    nextParams.set("entry", "managed");
+  } else if (searchParams?.entry === "diy") {
+    nextParams.set("entry", "diy");
+  }
+
+  if (searchParams?.title) {
+    nextParams.set("title", searchParams.title);
+  }
+
+  if (searchParams?.summary) {
+    nextParams.set("summary", searchParams.summary);
+  }
+
+  if (searchParams?.error) {
+    nextParams.set("error", searchParams.error);
+  }
+
+  if (searchParams?.notice) {
+    nextParams.set("notice", searchParams.notice);
+  }
+
+  const nextPath = nextParams.size > 0 ? `${APP_ROUTES.start}?${nextParams.toString()}` : APP_ROUTES.start;
+
+  if (!user) {
+    redirect(buildAuthRedirectPath({ nextPath }));
+  }
 
   return (
     <MarketingInfoShell
       userEmail={user?.email ?? undefined}
-      ctaHref={user ? "/dashboard" : "/auth?next=/start"}
-      ctaLabel={user ? "Engine Board" : "Sign in"}
+      ctaHref={user ? APP_ROUTES.projects : APP_ROUTES.auth}
+      ctaLabel={user ? "Projects" : "Sign in"}
       brandVariant="prominent"
       contentWidth="wide"
+        showHelpChat={false}
     >
-      <section className="relative mx-auto w-full max-w-[1880px] px-2 py-6 lg:px-4 lg:py-10 xl:px-6">
-        <div className="mx-auto max-w-[1480px] text-center">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
-            Guided system builder
-          </p>
-          <h1 className="mt-5 text-4xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-5xl xl:text-[4.4rem] xl:leading-[0.96]">
-            Neroa architects the business path before it builds the Engine.
-          </h1>
-          <p className="mx-auto mt-6 max-w-4xl text-lg leading-9 text-slate-600">
-            This flow now starts with product type, then market context, then goal, experience level, and build preference so the resulting system feels assembled for the business you want, not copied from a generic template grid.
-          </p>
-        </div>
-
-        <div className="mt-10">
-          <GuidedStartFlow
-            initialUserEmail={user?.email ?? undefined}
-            initialSelectedPlanId={access.selectedPlanId}
-            initialBillingInterval={access.billingInterval}
-            initialStep={initialStep}
-            resumeRequested={resumeRequested}
-            initialError={searchParams?.error ?? null}
-            initialNotice={searchParams?.notice ?? null}
-            startGuidedEngineWorkspaceAction={startGuidedEngineWorkspace}
-          />
-        </div>
+      <section className="relative mx-auto w-full max-w-[2000px] px-0 py-5 sm:px-2 lg:px-4 lg:py-8 xl:px-8">
+        <CanonicalEntryFlow
+          initialUserEmail={user?.email ?? undefined}
+          initialEntryPathId={entryPathId}
+          initialTitle={searchParams?.title}
+          initialSummary={searchParams?.summary}
+          initialError={searchParams?.error ?? null}
+          initialNotice={searchParams?.notice ?? null}
+          startEntryWorkspaceAction={startEntryWorkspace}
+        />
       </section>
     </MarketingInfoShell>
   );

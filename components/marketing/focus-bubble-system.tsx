@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   AnimatePresence,
   motion,
@@ -14,6 +13,7 @@ import {
   useRef,
   useState
 } from "react";
+import { PublicActionLink } from "@/components/site/public-action-link";
 
 export type FocusBubbleAction = {
   href: string;
@@ -169,13 +169,12 @@ export function FocusBubbleContent({
         {bubble.actions?.length ? (
           <div className="flex flex-col gap-3 sm:flex-row">
             {bubble.actions.map((action) => (
-              <Link
+              <PublicActionLink
                 key={`${bubble.id}:${action.href}:${action.label}`}
                 href={action.href}
+                label={action.label}
                 className={action.tone === "secondary" ? "button-secondary" : "button-primary"}
-              >
-                {action.label}
-              </Link>
+              />
             ))}
           </div>
         ) : null}

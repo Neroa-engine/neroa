@@ -23,8 +23,8 @@ export function GuidedModeToggle({
         <p className="text-sm font-semibold text-slate-950">Guided mode</p>
         <p className={`mt-1 ${compact ? "text-xs leading-5" : "text-sm leading-6"} text-slate-500`}>
           {compact
-            ? "Let Naroa react to the current step, or keep things quiet."
-            : "Keep Naroa synchronized with the UI, or switch to self mode for quiet exploration."}
+            ? "Let Neroa react to the current step, or keep things quiet."
+            : "Keep Neroa synchronized with the UI, or switch to self mode for quiet exploration."}
         </p>
       </div>
       <button
@@ -34,7 +34,7 @@ export function GuidedModeToggle({
         onClick={() => onToggle(!guidedMode)}
         className={`relative inline-flex h-8 w-14 flex-shrink-0 items-center rounded-full border transition ${
           guidedMode
-            ? "border-cyan-300/45 bg-[linear-gradient(135deg,rgba(34,211,238,0.88),rgba(139,92,246,0.86))]"
+            ? "border-[rgba(167,136,250,0.45)] bg-[linear-gradient(135deg,rgba(143,124,255,0.9),rgba(167,136,250,0.88),rgba(193,156,255,0.84))]"
             : "border-slate-200/80 bg-slate-100/90"
         }`}
       >

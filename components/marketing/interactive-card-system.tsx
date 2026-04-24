@@ -42,6 +42,8 @@ export type InteractiveFaqItem = {
   answer: string;
 };
 
+type InteractiveAffordanceMode = "label" | "icon";
+
 function getGridClassName(columns: "one" | "two" | "three" | "four") {
   return columns === "one"
     ? "grid gap-4"
@@ -63,6 +65,17 @@ function normalizeSentence(value: string | undefined) {
   }
 
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
+function isDistinctCopy(primary?: string | null, secondary?: string | null) {
+  const normalizedPrimary = primary?.trim().toLowerCase();
+  const normalizedSecondary = secondary?.trim().toLowerCase();
+
+  if (!normalizedPrimary || !normalizedSecondary) {
+    return false;
+  }
+
+  return normalizedPrimary !== normalizedSecondary;
 }
 
 function buildAssistMessage(args: {
@@ -107,6 +120,50 @@ function buildWhyItMatters(args: {
   }
 
   return `${args.title} matters because it changes how Neroa guides the next decision instead of leaving the topic as surface-level marketing copy.`;
+}
+
+function buildFaqSections(item: InteractiveFaqItem): FocusBubbleData["sections"] {
+  const question = item.question.toLowerCase();
+  const sections: NonNullable<FocusBubbleData["sections"]> = [];
+
+  if (question.includes("difference") || question.includes("diy") || question.includes("managed")) {
+    sections.push({
+      label: "DIY vs Managed implication",
+      body:
+        "Use this to decide whether the product should stay in a builder-paced lane or move into a more supported execution model before the work gets too heavy."
+    });
+  }
+
+  if (
+    question.includes("switch") ||
+    question.includes("move") ||
+    question.includes("later") ||
+    question.includes("when")
+  ) {
+    sections.push({
+      label: "When this applies",
+      body:
+        "This usually matters when scope, urgency, integration depth, or launch pressure changes enough that the current lane may no longer be the cleanest fit."
+    });
+  }
+
+  if (question.includes("how")) {
+    sections.push({
+      label: "What this changes",
+      body:
+        "This answer changes how you should think about pacing, support, and the next realistic step rather than treating the page as a static pricing or FAQ sheet."
+    });
+  }
+
+  if (sections.length === 0) {
+    sections.push({
+      label: "Next step guidance",
+      body:
+        "Use this answer to decide whether to keep reading, compare the two paths, or move into the builder with a clearer expectation of what happens next."
+    });
+  }
+
+  return sections.slice(0, 2);
 }
 
 function createBubbleId(prefix: string, title: string, index: number) {
@@ -156,41 +213,96 @@ function getCardFrameClassName(isActive: boolean) {
   }`;
 }
 
+function CardAffordance({
+  isActive,
+  mode = "label"
+}: {
+  isActive: boolean;
+  mode?: InteractiveAffordanceMode;
+}) {
+  if (mode === "icon") {
+    return (
+      <span
+        className={`inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border transition ${
+          isActive
+            ? "border-cyan-300/35 bg-cyan-50/90 text-cyan-700"
+            : "border-slate-200/75 bg-white/82 text-slate-500"
+        }`}
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className={`h-4 w-4 transition ${isActive ? "translate-x-[1px]" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M7 12h10" />
+          <path d="m13 7 5 5-5 5" />
+        </svg>
+        <span className="sr-only">{isActive ? "Focused" : "Open details"}</span>
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex min-h-10 min-w-[5.5rem] items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+        isActive
+          ? "border-cyan-300/35 bg-cyan-50/90 text-cyan-700"
+          : "border-slate-200/75 bg-white/82 text-slate-500"
+      }`}
+    >
+      {isActive ? "Focused" : "View"}
+    </span>
+  );
+}
+
 function buildInfoBubble(args: {
   id: string;
   item: InteractiveMarketingInfoCard;
 }): FocusBubbleData {
   const { item, id } = args;
   const expandedDescription = item.expandedDescription ?? item.description;
+  const whyItMatters = buildWhyItMatters({
+    title: item.title,
+    description: item.description,
+    expandedDescription: item.expandedDescription,
+    details: item.details,
+    footnote: item.footnote
+  });
+  const normalizedFootnote = normalizeSentence(item.footnote);
+  const sections: NonNullable<FocusBubbleData["sections"]> = [];
+
+  if (isDistinctCopy(item.description, expandedDescription)) {
+    sections.push({
+      label: "What this changes",
+      body: expandedDescription
+    });
+  }
+
+  if (!normalizedFootnote && isDistinctCopy(item.description, whyItMatters)) {
+    sections.push({
+      label: "How this affects the build",
+      body: whyItMatters
+    });
+  }
 
   return {
     id,
     eyebrow: item.eyebrow ?? "Focus topic",
     title: item.title,
-    summary: expandedDescription,
-    sections: [
-      {
-        label: "What this means",
-        body: expandedDescription
-      },
-      {
-        label: "How it affects you",
-        body: buildWhyItMatters({
-          title: item.title,
-          description: item.description,
-          expandedDescription: item.expandedDescription,
-          details: item.details,
-          footnote: item.footnote
-        })
-      }
-    ],
+    summary: item.description,
+    sections: sections.length ? sections : undefined,
     details: item.details,
-    footnote: normalizeSentence(item.footnote) ?? undefined,
+    footnote: normalizedFootnote ?? undefined,
     actions: item.href
       ? [
           {
             href: item.href,
-            label: item.ctaLabel ?? "Open",
+            label: item.ctaLabel ?? "View",
             tone: "primary"
           }
         ]
@@ -206,33 +318,40 @@ function buildStepBubble(args: {
 }): FocusBubbleData {
   const { step, id, index } = args;
   const expandedDescription = step.expandedDescription ?? step.description;
+  const whyItMatters = buildWhyItMatters({
+    title: step.title,
+    description: step.description,
+    expandedDescription: step.expandedDescription,
+    details: step.details
+  });
+  const sections: NonNullable<FocusBubbleData["sections"]> = [];
+
+  if (isDistinctCopy(step.description, expandedDescription)) {
+    sections.push({
+      label: "What changes in this stage",
+      body: expandedDescription
+    });
+  }
+
+  if (isDistinctCopy(step.description, whyItMatters)) {
+    sections.push({
+      label: "Why this stage matters",
+      body: whyItMatters
+    });
+  }
 
   return {
     id,
     eyebrow: step.eyebrow ?? `Step 0${index + 1}`,
     title: step.title,
     summary: step.description,
-    sections: [
-      {
-        label: "What happens here",
-        body: expandedDescription
-      },
-      {
-        label: "Why this stage matters",
-        body: buildWhyItMatters({
-          title: step.title,
-          description: step.description,
-          expandedDescription: step.expandedDescription,
-          details: step.details
-        })
-      }
-    ],
+    sections: sections.length ? sections : undefined,
     details: step.details,
     actions: step.href
       ? [
           {
             href: step.href,
-            label: step.ctaLabel ?? "Open step",
+            label: step.ctaLabel ?? "View step",
             tone: "primary"
           }
         ]
@@ -250,16 +369,7 @@ function buildFaqBubble(args: {
     eyebrow: "FAQ",
     title: args.item.question,
     summary: args.item.answer,
-    sections: [
-      {
-        label: "Direct answer",
-        body: args.item.answer
-      },
-      {
-        label: "Why this comes up",
-        body: "This question usually appears when someone is trying to understand pace, scope, support, or what happens next before they commit to a build path."
-      }
-    ],
+    sections: buildFaqSections(args.item),
     returnLabel: "Return"
   };
 }
@@ -267,11 +377,13 @@ function buildFaqBubble(args: {
 function InteractiveCard({
   item,
   index,
-  guideContext
+  guideContext,
+  affordanceMode = "icon"
 }: {
   item: InteractiveMarketingInfoCard;
   index: number;
   guideContext?: InteractiveGuideContext;
+  affordanceMode?: InteractiveAffordanceMode;
 }) {
   const { syncIfGuided } = useGuidedCardSync();
   const details = item.details ?? [];
@@ -322,15 +434,7 @@ function InteractiveCard({
                       {item.badge}
                     </span>
                   ) : null}
-                  <span
-                    className={`inline-flex min-h-10 min-w-[5.5rem] items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-                      isActive
-                        ? "border-cyan-300/35 bg-cyan-50/90 text-cyan-700"
-                        : "border-slate-200/75 bg-white/82 text-slate-500"
-                    }`}
-                  >
-                    {isActive ? "Focused" : "Open"}
-                  </span>
+                  <CardAffordance isActive={isActive} mode={affordanceMode} />
                 </div>
               </div>
             </button>
@@ -344,11 +448,15 @@ function InteractiveCard({
 function InteractiveStepCard({
   step,
   index,
-  guideContext
+  guideContext,
+  showDescriptionAtRest = true,
+  affordanceMode = "icon"
 }: {
   step: InteractiveMarketingStep;
   index: number;
   guideContext?: InteractiveGuideContext;
+  showDescriptionAtRest?: boolean;
+  affordanceMode?: InteractiveAffordanceMode;
 }) {
   const { syncIfGuided } = useGuidedCardSync();
   const details = step.details ?? [];
@@ -395,17 +503,11 @@ function InteractiveStepCard({
                   <h3 className="mt-5 text-xl font-semibold tracking-tight text-slate-950">
                     {step.title}
                   </h3>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">{step.description}</p>
+                  {showDescriptionAtRest ? (
+                    <p className="mt-4 text-sm leading-7 text-slate-600">{step.description}</p>
+                  ) : null}
                 </div>
-                <span
-                  className={`inline-flex min-h-10 min-w-[5.5rem] items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-                    isActive
-                      ? "border-cyan-300/35 bg-cyan-50/90 text-cyan-700"
-                      : "border-slate-200/75 bg-white/82 text-slate-500"
-                  }`}
-                >
-                  {isActive ? "Focused" : "Open"}
-                </span>
+                <CardAffordance isActive={isActive} mode={affordanceMode} />
               </div>
             </button>
           </div>
@@ -458,15 +560,7 @@ function InteractiveFaqCard({
               className="flex w-full items-start justify-between gap-4 px-6 py-6 text-left"
             >
               <h3 className="text-xl font-semibold tracking-tight text-slate-950">{item.question}</h3>
-              <span
-                className={`inline-flex min-h-10 min-w-[5.5rem] flex-shrink-0 items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.16em] transition ${
-                  isActive
-                    ? "border-cyan-300/35 bg-cyan-50/90 text-cyan-700"
-                    : "border-slate-200/75 bg-white/82 text-slate-500"
-                }`}
-              >
-                {isActive ? "Focused" : "Open"}
-              </span>
+              <CardAffordance isActive={isActive} mode="icon" />
             </button>
           </div>
         </article>
@@ -478,11 +572,13 @@ function InteractiveFaqCard({
 export function MarketingInteractiveCardGrid({
   items,
   columns = "three",
-  guideContext
+  guideContext,
+  affordanceMode = "icon"
 }: {
   items: InteractiveMarketingInfoCard[];
   columns?: "one" | "two" | "three" | "four";
   guideContext?: InteractiveGuideContext;
+  affordanceMode?: InteractiveAffordanceMode;
 }) {
   return (
     <div className={getGridClassName(columns)}>
@@ -492,6 +588,7 @@ export function MarketingInteractiveCardGrid({
           item={item}
           index={index}
           guideContext={guideContext}
+          affordanceMode={affordanceMode}
         />
       ))}
     </div>
@@ -500,10 +597,14 @@ export function MarketingInteractiveCardGrid({
 
 export function MarketingInteractiveStepGrid({
   steps,
-  guideContext
+  guideContext,
+  showDescriptionAtRest = true,
+  affordanceMode = "icon"
 }: {
   steps: InteractiveMarketingStep[];
   guideContext?: InteractiveGuideContext;
+  showDescriptionAtRest?: boolean;
+  affordanceMode?: InteractiveAffordanceMode;
 }) {
   const className =
     steps.length >= 6
@@ -522,6 +623,8 @@ export function MarketingInteractiveStepGrid({
           step={step}
           index={index}
           guideContext={guideContext}
+          showDescriptionAtRest={showDescriptionAtRest}
+          affordanceMode={affordanceMode}
         />
       ))}
     </div>

@@ -1,4 +1,4 @@
-﻿export const founderPlans = [
+export const founderPlans = [
   {
     id: "free",
     name: "Free",
@@ -11,7 +11,7 @@
   {
     id: "starter",
     name: "Starter",
-    description: "Validate one idea with Naroa core guidance and a controlled cap.",
+    description: "Validate one idea with Neroa core guidance and a controlled cap.",
     credits: "Moderate monthly Engine Credits",
     engines: "1 active planning engine, 0 active build projects",
     stages: "Strategy, Scope, MVP, Budget, Test",

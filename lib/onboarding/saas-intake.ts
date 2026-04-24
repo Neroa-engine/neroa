@@ -1,4 +1,4 @@
-﻿import type { AgentId } from "@/lib/ai/agents";
+import type { AgentId } from "@/lib/ai/agents";
 import { buildWorkspaceName } from "@/lib/narua/planning";
 
 export type SaasBinaryChoice = "yes" | "no" | "not-sure";
@@ -93,7 +93,7 @@ function estimateComplexity(args: {
     return {
       label: "Lean" as const,
       summary:
-        "This looks like a lean SaaS MVP. Naroa can keep the first release tight around one primary workflow and a smaller delivery surface."
+        "This looks like a lean SaaS MVP. Neroa can keep the first release tight around one primary workflow and a smaller delivery surface."
     };
   }
 
@@ -108,7 +108,7 @@ function estimateComplexity(args: {
   return {
     label: "Advanced" as const,
     summary:
-      "This is an advanced SaaS build. The combination of product scope, admin needs, payments, and delivery depth means Naroa should guide execution closely."
+      "This is an advanced SaaS build. The combination of product scope, admin needs, payments, and delivery depth means Neroa should guide execution closely."
   };
 }
 
@@ -185,7 +185,7 @@ export function buildSaasWorkspaceBlueprint(
       : "Keep internal tooling lean unless operations clearly require an admin layer.",
     answers.guidanceMode === "guide-build"
       ? "Move from roadmap into build guidance with Forge, RepoLink, and Ops active."
-      : "Use Naroa to finalize the roadmap before widening into build execution."
+      : "Use Neroa to finalize the roadmap before widening into build execution."
   ];
 
   return {

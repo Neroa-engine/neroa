@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/auth";
+import { requireApiUser } from "@/lib/auth";
 import { getAccessibleWorkspace } from "@/lib/platform/foundation";
 import { getLiveViewSessionById } from "@/lib/live-view/store";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  const auth = await requireApiUser({
+    message: "Sign in before reading Live View reports."
+  });
+  if (!auth.ok) {
+    return auth.response;
+  }
+
   const workspaceId = request.nextUrl.searchParams.get("workspaceId");
   const sessionId = request.nextUrl.searchParams.get("sessionId");
 
@@ -18,8 +24,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const { user } = await requireUser({ requirePlan: false });
-  const supabase = createSupabaseServerClient();
+  const { supabase, user } = auth;
   const workspace = await getAccessibleWorkspace({
     supabase,
     userId: user.id,

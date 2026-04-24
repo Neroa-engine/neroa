@@ -45,17 +45,17 @@ export function NaroaGuideLauncher({
       <button
         type="button"
         onClick={onClick}
-        aria-label="Open Naroa guided homepage walkthrough"
+        aria-label="Open Neroa guided homepage walkthrough"
         className={`naroa-guide-launcher group ${
           active ? "ring-2 ring-cyan-300/45 ring-offset-4 ring-offset-white/40" : ""
         }`}
       >
         <AgentAvatar id="narua" active size={54} showLabel={false} className="pointer-events-none" />
-        <span className="sr-only">Open Naroa guided homepage walkthrough</span>
+        <span className="sr-only">Open Neroa guided homepage walkthrough</span>
       </button>
       <div className="pointer-events-none mt-2 hidden justify-end md:flex">
         <span className="rounded-full border border-slate-200/70 bg-white/78 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
-          {label ?? (active ? "Guide active" : "Naroa guide")}
+          {label ?? (active ? "Guide active" : "Neroa guide")}
         </span>
       </div>
     </motion.div>

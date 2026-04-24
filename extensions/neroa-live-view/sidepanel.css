@@ -220,6 +220,29 @@ h2 {
   padding: 14px;
 }
 
+.action-note {
+  margin-top: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(255, 255, 255, 0.82);
+  padding: 12px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.action-note.success {
+  border-color: rgba(16, 185, 129, 0.18);
+  background: rgba(236, 253, 245, 0.94);
+  color: var(--success);
+}
+
+.action-note.error {
+  border-color: rgba(244, 63, 94, 0.18);
+  background: rgba(255, 241, 242, 0.94);
+  color: var(--error);
+}
+
 .insight-block h3,
 .finding-title,
 .activity-title {

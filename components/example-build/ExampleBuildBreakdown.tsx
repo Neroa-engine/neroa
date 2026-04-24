@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import { BuildPathComparison } from "@/components/example-build/BuildPathComparison";
 import { ExampleBuildFinalCTA } from "@/components/example-build/ExampleBuildFinalCTA";
 import { ExampleFlowTimeline } from "@/components/example-build/ExampleFlowTimeline";
@@ -30,7 +31,8 @@ export function ExampleBuildBreakdown({
   onBackToFrameworks,
   onBackToIntent,
   onBackToTypes,
-  onSelectPath
+  onSelectPath,
+  finalSection
 }: {
   buildType: ExampleBuildType;
   industry: ExampleIndustry | null;
@@ -42,6 +44,7 @@ export function ExampleBuildBreakdown({
   onBackToIntent: () => void;
   onBackToTypes: () => void;
   onSelectPath: (pathId: "diy" | "managed" | "pricing", pathLabel: string) => void;
+  finalSection?: ReactNode;
 }) {
   const recommendedPath =
     project.buildPaths.find((path) => path.recommended)?.label ?? "Choose the path that fits you";
@@ -318,14 +321,16 @@ export function ExampleBuildBreakdown({
 
       <ExampleFlowTimeline />
       <BuildPathComparison paths={project.buildPaths} />
-      <ExampleBuildFinalCTA
-        buildType={buildType}
-        industry={industry}
-        opportunityArea={opportunityArea}
-        framework={framework}
-        project={project}
-        onSelectPath={onSelectPath}
-      />
+      {finalSection ?? (
+        <ExampleBuildFinalCTA
+          buildType={buildType}
+          industry={industry}
+          opportunityArea={opportunityArea}
+          framework={framework}
+          project={project}
+          onSelectPath={onSelectPath}
+        />
+      )}
     </div>
   );
 }

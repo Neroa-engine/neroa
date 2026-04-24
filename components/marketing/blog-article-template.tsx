@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import { BlogPostCard } from "@/components/marketing/blog-post-card";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { formatBlogDate, type BlogPost } from "@/lib/blog";
-import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
 
 type BlogArticleTemplateProps = {
   post: BlogPost;
@@ -10,12 +10,6 @@ type BlogArticleTemplateProps = {
 };
 
 export function BlogArticleTemplate({ post, relatedPosts }: BlogArticleTemplateProps) {
-  const primaryAction = resolvePublicLaunchAction(post.cta.primaryLabel, post.cta.primaryHref);
-  const secondaryAction = resolvePublicLaunchAction(
-    post.cta.secondaryLabel,
-    post.cta.secondaryHref
-  );
-
   return (
     <MarketingInfoShell ctaHref="/use-cases" ctaLabel="Explore use cases" brandVariant="prominent">
       <article className="mx-auto max-w-6xl">
@@ -58,12 +52,16 @@ export function BlogArticleTemplate({ post, relatedPosts }: BlogArticleTemplateP
             </div>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
-              <Link href={secondaryAction.href} className="button-secondary">
-                {secondaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={post.cta.primaryHref}
+                label={post.cta.primaryLabel}
+                className="button-primary"
+              />
+              <PublicActionLink
+                href={post.cta.secondaryHref}
+                label={post.cta.secondaryLabel}
+                className="button-secondary"
+              />
             </div>
           </div>
 
@@ -184,12 +182,16 @@ export function BlogArticleTemplate({ post, relatedPosts }: BlogArticleTemplateP
                 </h3>
                 <p className="mt-4 text-sm leading-7 text-slate-600">{post.cta.description}</p>
                 <div className="mt-6 flex flex-col gap-3">
-                  <Link href={primaryAction.href} className="button-primary">
-                    {primaryAction.label}
-                  </Link>
-                  <Link href={secondaryAction.href} className="button-secondary">
-                    {secondaryAction.label}
-                  </Link>
+                  <PublicActionLink
+                    href={post.cta.primaryHref}
+                    label={post.cta.primaryLabel}
+                    className="button-primary"
+                  />
+                  <PublicActionLink
+                    href={post.cta.secondaryHref}
+                    label={post.cta.secondaryLabel}
+                    className="button-secondary"
+                  />
                 </div>
               </div>
             </div>
@@ -215,31 +217,6 @@ export function BlogArticleTemplate({ post, relatedPosts }: BlogArticleTemplateP
           </section>
         ) : null}
 
-        <section className="mt-16">
-          <div className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 sm:px-8 sm:py-10">
-            <div className="floating-wash rounded-[38px]" />
-            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                  Next move
-                </p>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                  {post.cta.title}
-                </h2>
-                <p className="mt-4 text-base leading-8 text-slate-600">{post.cta.description}</p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href={primaryAction.href} className="button-primary">
-                  {primaryAction.label}
-                </Link>
-                <Link href="/blog" className="button-secondary">
-                  Back to blog
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
       </article>
     </MarketingInfoShell>
   );

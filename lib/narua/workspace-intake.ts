@@ -1,4 +1,4 @@
-﻿import { getLaneById } from "@/lib/workspace/lanes";
+import { getLaneById } from "@/lib/workspace/lanes";
 import type { LaneId } from "@/lib/workspace/types";
 
 export type WorkspaceIntakeField =
@@ -48,9 +48,9 @@ type WorkspaceIntakeProfile = {
 
 const businessWorkspaceProfile: WorkspaceIntakeProfile = {
   intro:
-    "Naroa is active in this Business NeuroEngine. Give me the business idea first and I will run a guided intake before I build the execution plan.",
+    "Neroa is active in this Business NeuroEngine. Give me the business idea first and I will run a guided intake before I build the execution plan.",
   helperText:
-    "Start intake with Naroa. Tap the mic and speak naturally, then press Send when you are ready.",
+    "Start intake with Neroa. Tap the mic and speak naturally, then press Send when you are ready.",
   questionFields: [
     "businessType",
     "targetCustomer",
@@ -65,9 +65,9 @@ const businessWorkspaceProfile: WorkspaceIntakeProfile = {
 
 const genericWorkspaceProfile: WorkspaceIntakeProfile = {
   intro:
-    "Naroa is active in this NeuroEngine. Start with the core idea and I will gather the minimum context needed before I shape the execution plan.",
+    "Neroa is active in this NeuroEngine. Start with the core idea and I will gather the minimum context needed before I shape the execution plan.",
   helperText:
-    "Start intake with Naroa. Tap the mic and speak naturally, then press Send when you are ready.",
+    "Start intake with Neroa. Tap the mic and speak naturally, then press Send when you are ready.",
   questionFields: [
     "businessType",
     "targetCustomer",
@@ -129,7 +129,7 @@ function buildPrompt(
       case "geographicFocus":
         return "What geographic market do you want to serve first?";
       case "websiteNeeds":
-        return "Do you need Naroa to include website, domain, and brand setup in the plan?";
+        return "Do you need Neroa to include website, domain, and brand setup in the plan?";
       case "idea":
         return "Tell me the business idea first.";
     }
@@ -145,13 +145,13 @@ function buildPrompt(
     case "operationSize":
       return "What size should the first operating scope be?";
     case "startupBudget":
-      return "What budget does Naroa need to plan around?";
+      return "What budget does Neroa need to plan around?";
     case "timeline":
-      return "What timeline should Naroa plan around?";
+      return "What timeline should Neroa plan around?";
     case "geographicFocus":
       return "What market, territory, or user segment matters first?";
     case "websiteNeeds":
-      return "Should Naroa include website, domain, or brand setup in the plan?";
+      return "Should Neroa include website, domain, or brand setup in the plan?";
     case "idea":
       return "Tell me the core idea first.";
   }
@@ -309,7 +309,7 @@ export function createWorkspaceGeneratedSections(
     overview: [
       `${answers.idea} is being structured as a ${businessType}.`,
       `The first customer focus is ${targetCustomer}.`,
-      `Naroa is keeping Business as the lead engine while Website, Marketing, and Operations support execution.`
+      `Neroa is keeping Business as the lead engine while Website, Marketing, and Operations support execution.`
     ],
     businessStrategy: [
       `Start with a narrow market: ${targetCustomer}.`,
@@ -351,5 +351,5 @@ export function createWorkspaceIntakeSynthesisMessage(
 ) {
   const lane = getLaneById(laneId);
 
-  return `Naroa has enough context to draft the ${lane.name.toLowerCase()} execution system for ${answers.idea}. Review the generated strategy, budget, website setup, and roadmap, then refine the next action from there.`;
+  return `Neroa has enough context to draft the ${lane.name.toLowerCase()} execution system for ${answers.idea}. Review the generated strategy, budget, website setup, and roadmap, then refine the next action from there.`;
 }

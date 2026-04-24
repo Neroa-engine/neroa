@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import AgentAvatar from "@/components/ai/AgentAvatar";
 
@@ -10,7 +10,7 @@ type NaruaComposerPresenceProps = {
 };
 
 export default function NaruaComposerPresence({
-  title = "Naroa",
+  title = "Neroa",
   subtitle = "Core orchestrator active in this thread",
   speaking = false,
   className = ""

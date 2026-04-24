@@ -10,11 +10,11 @@ const instructionSections = [
     ]
   },
   {
-    title: "What Naroa does",
+    title: "What Neroa does",
     paragraphs: [
-      "Naroa is the orchestration layer. It frames the project, narrows the first useful question, and activates specialist systems only when they make the output stronger.",
-      "Naroa also decides when one system should implement, when another should review, and when the next move should stay in planning instead of widening too early.",
-      "That is why the public product story starts with Naroa instead of a generic dashboard."
+      "Neroa is the orchestration layer. It frames the project, narrows the first useful question, and activates specialist systems only when they make the output stronger.",
+      "Neroa also decides when one system should implement, when another should review, and when the next move should stay in planning instead of widening too early.",
+      "That is why the public product story starts with Neroa instead of a generic dashboard."
     ]
   },
   {
@@ -22,7 +22,7 @@ const instructionSections = [
     paragraphs: [
       "GitHub is the source-of-truth repository layer. It holds the codebase, branches, commits, pull requests, and deployment-linked history for the Engine.",
       "Codex is the specialist build agent for implementation work such as repo edits, bug fixes, tests, and PR-style execution. Anthropic or Claude is the specialist review agent for architecture review, requirements critique, UX critique, and second-pass code review.",
-      "The normal loop is build pass, review pass, fix pass, then Naroa summary so the user sees what changed, what was reviewed, what still needs testing, and what should happen next."
+      "The normal loop is build pass, review pass, fix pass, then Neroa summary so the user sees what changed, what was reviewed, what still needs testing, and what should happen next."
     ]
   },
   {
@@ -35,7 +35,7 @@ const instructionSections = [
   {
     title: "How the public site is structured",
     paragraphs: [
-      "The public site is organized around a few clear paths: homepage, pricing, how it works, Naroa and AI system pages, selected use cases, blog, support, and contact.",
+      "The public site is organized around a few clear paths: homepage, pricing, how it works, Neroa and AI system pages, selected use cases, blog, support, and contact.",
       "Each page is meant to help a visitor understand the system, choose the right build path, and move into the product without confusion."
     ]
   },
@@ -43,14 +43,14 @@ const instructionSections = [
     title: "How the live product flow works",
     paragraphs: [
       "Start on the homepage or use-case pages to choose the kind of product you want to build.",
-      "From there, move into the Naroa-led intake and create an engine that carries the right lanes, AI stack, connected-service setup, and next-step structure."
+      "From there, move into the Neroa-led intake and create an engine that carries the right lanes, AI stack, connected-service setup, and next-step structure."
     ]
   },
   {
     title: "How pricing works",
     paragraphs: [
       "Pricing explains active engine limits, monthly Engine Credits, workflow access, add-on credit packs, and the upgrade path from validation work into build-heavy execution.",
-      "The plans are intentionally designed to show real capacity, and usage notifications warn customers at 75% and 100% of their included monthly Engine Credits."
+      "The plans are intentionally designed to show real capacity, and usage notifications warn customers at 80% and 95% of their included monthly Engine Credits."
     ]
   },
   {
@@ -74,7 +74,7 @@ export default function InstructionsPage() {
             How to use the Neroa public site and move into the live build flow cleanly.
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-9 text-slate-600">
-            This page is the practical walkthrough for the live product: what Neroa is, how Naroa fits in, which pages to use first, how pricing works, and where to go when you need help.
+            This page is the practical walkthrough for the live product: what Neroa is, how Neroa fits in, which pages to use first, how pricing works, and where to go when you need help.
           </p>
         </div>
       </section>
@@ -115,7 +115,7 @@ export default function InstructionsPage() {
           },
           {
             title: "Start your build",
-            description: "Move into the Naroa-led intake and create your first engine.",
+            description: "Move into the Neroa-led intake and create your first engine.",
             href: "/start"
           },
           {

@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { buildCreditsExceededMessage } from "@/lib/account/plan-access";
 import { consumeAiChatCredits, syncAccountPlanAccess } from "@/lib/account/plan-usage-server";
-import { routeAI } from "@/lib/ai/router";
+import { requireApiUser } from "@/lib/auth";
 import { recordPlatformEvent } from "@/lib/platform/foundation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
   workerId: z.enum(["vector", "axiom", "forge", "anchor"]),
@@ -55,22 +54,27 @@ function normalizeContext(context: unknown) {
   }
 }
 
+function isMissingOpenAIKeyError(error: unknown) {
+  return error instanceof Error && /Missing OPENAI_API_KEY/.test(error.message);
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient();
-    const {
-      data: { user }
-    } = await supabase.auth.getUser();
-
-    if (!user) {
+    const auth = await requireApiUser({
+      message: "Sign in before using guided AI actions."
+    });
+    if (!auth.ok) {
       return NextResponse.json(
         {
           ok: false,
           error: "Sign in before using guided AI actions."
         },
-        { status: 401 }
+        {
+          status: 401
+        }
       );
     }
+    const { supabase, user } = auth;
 
     const json = await request.json();
     console.log("AI_CHAT_RAW_BODY", json);
@@ -128,6 +132,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { routeAI } = await import("@/lib/ai/router");
     const reply = await routeAI({
       workerId: body.workerId,
       message: body.message,
@@ -146,6 +151,16 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("AI_CHAT_ROUTE_ERROR", error);
+
+    if (isMissingOpenAIKeyError(error)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "OPENAI_API_KEY is not configured on the server."
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json(
       {

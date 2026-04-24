@@ -22,12 +22,12 @@ export function generateMetadata({ params }: BlogArticlePageProps): Metadata {
 
   if (!post) {
     return {
-      title: "Blog | Neroa"
+      title: "Blog | NEROA"
     };
   }
 
   return {
-    title: `${post.title} | Neroa`,
+    title: `${post.title} | NEROA`,
     description: post.socialDescription,
     alternates: {
       canonical: post.canonicalUrl

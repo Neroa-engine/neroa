@@ -60,7 +60,7 @@ export default function BuildSaasWithAiPage() {
         title: "Turn a SaaS idea into a structured product path with Neroa.",
         summary:
           "Neroa helps founders move from idea to scope to MVP to budget to launch with a guided AI system built for real SaaS products, not generic prompt output.",
-        primaryAction: { href: "/start", label: "Start DIY Build" },
+    primaryAction: { href: "/start", label: "Start a conversation" },
         secondaryAction: { href: "/use-cases/saas", label: "Explore SaaS Use Case", tone: "secondary" },
         highlights: [
           "Scope before stack",
@@ -85,7 +85,7 @@ export default function BuildSaasWithAiPage() {
           {
             title: "Scope the MVP before the build widens",
             description:
-              "Use Naroa to decide what belongs in the first release, what should wait, and what will increase cost too early."
+              "Use Neroa to decide what belongs in the first release, what should wait, and what will increase cost too early."
           },
           {
             title: "Build on the budget you have now",
@@ -135,7 +135,7 @@ export default function BuildSaasWithAiPage() {
         summary:
           "Use Neroa when you want SaaS planning that connects directly to build decisions instead of stopping at ideas.",
         actions: [
-          { href: "/start", label: "Start DIY Build" },
+          { href: "/start", label: "Start a conversation" },
           { href: "/pricing/diy", label: "View DIY Pricing", tone: "secondary" }
         ]
       }}

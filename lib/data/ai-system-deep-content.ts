@@ -15,8 +15,8 @@ export type AiSystemDeepContent = {
 export const aiSystemDeepContent: Record<AgentId, AiSystemDeepContent> = {
   narua: {
     story: [
-      "Naroa keeps Neroa from feeling like a pile of disconnected tools. It starts with the build itself, frames the real objective, and decides what should happen next.",
-      "Because Naroa stays present across the whole flow, the user does not have to keep resetting context, re-explaining the mission, or manually choosing which specialist, build system, or review system should take over."
+      "Neroa keeps Neroa from feeling like a pile of disconnected tools. It starts with the build itself, frames the real objective, and decides what should happen next.",
+      "Because Neroa stays present across the whole flow, the user does not have to keep resetting context, re-explaining the mission, or manually choosing which specialist, build system, or review system should take over."
     ],
     bestFor: [
       "Starting new Engines with low friction",
@@ -27,7 +27,7 @@ export const aiSystemDeepContent: Record<AgentId, AiSystemDeepContent> = {
       {
         title: "Interpret the build",
         description:
-          "Naroa translates raw input into a usable build direction and the first useful question."
+          "Neroa translates raw input into a usable build direction and the first useful question."
       },
       {
         title: "Open the right specialist path",
@@ -37,7 +37,7 @@ export const aiSystemDeepContent: Record<AgentId, AiSystemDeepContent> = {
       {
         title: "Keep continuity intact",
         description:
-          "Naroa ties every supporting output, execution pass, and review result back into the same Engine flow."
+          "Neroa ties every supporting output, execution pass, and review result back into the same Engine flow."
       }
     ],
     value: [
@@ -186,7 +186,7 @@ export const aiSystemDeepContent: Record<AgentId, AiSystemDeepContent> = {
   nova: {
     story: [
       "Nova helps design and customer-facing content inside Neroa feel intentional instead of ornamental. It sharpens visual direction, UX copy, brand structure, and customer-facing assets without drifting away from the build mission.",
-      "Because Nova sits in the same operating system as Naroa, Atlas, Ops, and Pulse, design choices stay tied to strategy, usability, brand trust, and the actual customer experience."
+      "Because Nova sits in the same operating system as Neroa, Atlas, Ops, and Pulse, design choices stay tied to strategy, usability, brand trust, and the actual customer experience."
     ],
     bestFor: [
       "Brand and identity direction",

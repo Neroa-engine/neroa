@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { getHowItWorksPage, howItWorksPages } from "@/lib/marketing-pages";
 import { publicLaunchPrimaryCta } from "@/lib/data/public-launch";
 import { launchReadyUseCasePages } from "@/lib/use-cases";
@@ -46,9 +47,13 @@ export default function HowItWorksDetailPage({ params }: HowItWorksDetailPagePro
             <p className="mt-5 max-w-2xl text-base leading-8 text-slate-500">{page.summary}</p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={publicLaunchPrimaryCta.href} className="button-primary">
+              <PublicActionLink
+                href={publicLaunchPrimaryCta.href}
+                label={publicLaunchPrimaryCta.label}
+                className="button-primary"
+              >
                 {publicLaunchPrimaryCta.label}
-              </Link>
+              </PublicActionLink>
               <Link href="/use-cases" className="button-secondary">
                 Explore use cases
               </Link>

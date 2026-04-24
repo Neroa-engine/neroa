@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import type { NaruaMessage } from "@/lib/narua/planning";
@@ -59,7 +59,7 @@ export function useNaruaThread({
   storageKey,
   initialMessage,
   buildReply,
-  idleMessage = "Type or speak to Naroa naturally",
+  idleMessage = "Type or speak to Neroa naturally",
   contextTitle = null
 }: UseNaruaThreadArgs) {
   const [messages, setMessages] = useState<NaruaMessage[]>([

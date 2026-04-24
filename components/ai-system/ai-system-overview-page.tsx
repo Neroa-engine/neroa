@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AiGrid } from "@/components/ai-system/ai-grid";
 import NaruaCore from "@/components/ai/NaruaCore";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import { publicLaunchPrimaryCta } from "@/lib/data/public-launch";
 import { getExecutionRoutingModel } from "@/lib/workspace/execution-orchestration";
 
@@ -16,27 +17,31 @@ export function AiSystemOverviewPage() {
             AI System
           </p>
           <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5rem]">
-            Naroa at the core, specialized AI systems in active support.
+            Neroa at the core, specialized AI systems in active support.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">
-            Neroa works as a coordinated AI build system. Naroa leads the user-facing
+            Neroa works as a coordinated AI build system. Neroa leads the user-facing
             flow, the specialist AI systems frame the work, GitHub stores the source of
             truth, and backend build-review systems turn on only when implementation or
             review is required.
           </p>
           <div className="mt-9 flex flex-col gap-3 sm:flex-row">
             <Link href="/system/narua" className="button-primary">
-              Explore Naroa
+              Explore Neroa
             </Link>
-            <Link href={publicLaunchPrimaryCta.href} className="button-secondary">
+            <PublicActionLink
+              href={publicLaunchPrimaryCta.href}
+              label={publicLaunchPrimaryCta.label}
+              className="button-secondary"
+            >
               {publicLaunchPrimaryCta.label}
-            </Link>
+            </PublicActionLink>
           </div>
         </div>
 
         <NaruaCore
           href="/system/narua"
-          ctaLabel="View Naroa system page"
+          ctaLabel="View Neroa system page"
           supportingAgentIds={["forge", "atlas", "repolink", "nova", "pulse", "ops"]}
           className="mx-auto w-full max-w-[620px]"
         />
@@ -51,7 +56,7 @@ export function AiSystemOverviewPage() {
             Neroa coordinates the right system for each stage of the build.
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">
-            The branded Naroa team frames the build, while backend execution and review
+            The branded Neroa team frames the build, while backend execution and review
             systems step in behind the scenes when the work needs code implementation or
             second-pass review.
           </p>
@@ -87,7 +92,7 @@ export function AiSystemOverviewPage() {
           </h2>
           <p className="mt-4 text-base leading-8 text-slate-600">
             These pages explain what each specialist system does, when it becomes active,
-            and how it works with Naroa inside the broader operating model.
+            and how it works with Neroa inside the broader operating model.
           </p>
         </div>
 

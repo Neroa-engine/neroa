@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   MarketingInteractiveCardGrid,
@@ -9,6 +8,7 @@ import {
   type InteractiveMarketingInfoCard,
   type InteractiveMarketingStep
 } from "@/components/marketing/interactive-card-system";
+import { PublicActionLink } from "@/components/site/public-action-link";
 
 export type MarketingPageAction = {
   href: string;
@@ -76,7 +76,8 @@ export function PublicPageHero({
   panelItems,
   supportingNote,
   metrics,
-  panelBadge = "AI-guided path"
+  panelBadge = "AI-guided path",
+  initialAuthenticated
 }: {
   eyebrow: string;
   title: string;
@@ -90,17 +91,20 @@ export function PublicPageHero({
   supportingNote?: string;
   metrics?: MarketingMetric[];
   panelBadge?: string;
+  initialAuthenticated?: boolean;
 }) {
   return (
     <section className="hero-shell">
-      <div className="fade-up-soft max-w-3xl">
+      <div className="fade-up-soft min-w-0 max-w-3xl">
         <span className="premium-pill border-cyan-300/24 bg-cyan-300/12 text-cyan-700">
           {eyebrow}
         </span>
-        <h1 className="mt-6 text-5xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-6xl xl:text-[5rem] xl:leading-[0.96]">
+        <h1 className="mt-6 max-w-[10ch] text-[clamp(2.8rem,11.5vw,5rem)] font-semibold leading-[0.96] tracking-[-0.05em] text-slate-950 [overflow-wrap:anywhere] sm:max-w-[11ch]">
           {title}
         </h1>
-        <p className="mt-6 max-w-2xl text-lg leading-9 text-slate-600">{summary}</p>
+        <p className="mt-6 max-w-2xl text-base leading-8 text-slate-600 [overflow-wrap:anywhere] sm:text-lg sm:leading-9">
+          {summary}
+        </p>
 
         <div className="hero-highlight-grid mt-8">
           {highlights.map((item) => (
@@ -111,16 +115,24 @@ export function PublicPageHero({
         </div>
 
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link href={primaryAction.href} className={getActionClassName(primaryAction.tone)}>
-            {primaryAction.label}
-          </Link>
-          <Link href={secondaryAction.href} className={getActionClassName(secondaryAction.tone)}>
-            {secondaryAction.label}
-          </Link>
+          <PublicActionLink
+            href={primaryAction.href}
+            label={primaryAction.label}
+            className={getActionClassName(primaryAction.tone)}
+            initialAuthenticated={initialAuthenticated}
+          />
+          <PublicActionLink
+            href={secondaryAction.href}
+            label={secondaryAction.label}
+            className={getActionClassName(secondaryAction.tone)}
+            initialAuthenticated={initialAuthenticated}
+          />
         </div>
 
         {supportingNote ? (
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-500">{supportingNote}</p>
+          <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-500 [overflow-wrap:anywhere]">
+            {supportingNote}
+          </p>
         ) : null}
       </div>
 
@@ -168,23 +180,43 @@ export function PublicPageHero({
 export function InfoCardGrid({
   items,
   columns = "three",
-  guideContext
+  guideContext,
+  affordanceMode = "icon"
 }: {
   items: MarketingInfoCard[];
   columns?: "one" | "two" | "three" | "four";
   guideContext?: InteractiveGuideContext;
+  affordanceMode?: "label" | "icon";
 }) {
-  return <MarketingInteractiveCardGrid items={items} columns={columns} guideContext={guideContext} />;
+  return (
+    <MarketingInteractiveCardGrid
+      items={items}
+      columns={columns}
+      guideContext={guideContext}
+      affordanceMode={affordanceMode}
+    />
+  );
 }
 
 export function StepGrid({
   steps,
-  guideContext
+  guideContext,
+  showDescriptionAtRest = true,
+  affordanceMode = "icon"
 }: {
   steps: MarketingStep[];
   guideContext?: InteractiveGuideContext;
+  showDescriptionAtRest?: boolean;
+  affordanceMode?: "label" | "icon";
 }) {
-  return <MarketingInteractiveStepGrid steps={steps} guideContext={guideContext} />;
+  return (
+    <MarketingInteractiveStepGrid
+      steps={steps}
+      guideContext={guideContext}
+      showDescriptionAtRest={showDescriptionAtRest}
+      affordanceMode={affordanceMode}
+    />
+  );
 }
 
 export function FaqSection({
@@ -215,13 +247,15 @@ export function ConversionStrip({
   title,
   summary,
   actions,
-  aside
+  aside,
+  initialAuthenticated
 }: {
   eyebrow: string;
   title: string;
   summary: string;
   actions: MarketingPageAction[];
   aside?: ReactNode;
+  initialAuthenticated?: boolean;
 }) {
   return (
     <section className="mt-16">
@@ -240,13 +274,13 @@ export function ConversionStrip({
 
           <div className="flex flex-col gap-3 sm:flex-row">
             {actions.map((action) => (
-              <Link
+              <PublicActionLink
                 key={`${action.href}-${action.label}`}
                 href={action.href}
+                label={action.label}
                 className={getActionClassName(action.tone)}
-              >
-                {action.label}
-              </Link>
+                initialAuthenticated={initialAuthenticated}
+              />
             ))}
           </div>
         </div>

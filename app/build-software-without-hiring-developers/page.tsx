@@ -60,8 +60,8 @@ export default function BuildSoftwareWithoutHiringDevelopersPage() {
         title: "Start the software build before you are forced into a full traditional team.",
         summary:
           "Neroa gives founders, operators, and teams a guided path into real software without requiring a full agency or dev-team budget on day one.",
-        primaryAction: { href: "/diy-build", label: "Explore DIY Build" },
-        secondaryAction: { href: "/managed-build", label: "Explore Managed Build", tone: "secondary" },
+    primaryAction: { href: "/diy-build", label: "Start a conversation" },
+        secondaryAction: { href: "/start", label: "Start Managed Build", tone: "secondary" },
         highlights: [
           "Lower capital barrier",
           "Structured scope before spend",
@@ -135,7 +135,7 @@ export default function BuildSoftwareWithoutHiringDevelopersPage() {
         summary:
           "Start in DIY if you want budget control, or move into Managed Build if the project needs more execution support than you want to coordinate yourself.",
         actions: [
-          { href: "/diy-build", label: "Explore DIY Build" },
+          { href: "/diy-build", label: "Start a conversation" },
           { href: "/pricing", label: "See Pricing Paths", tone: "secondary" }
         ]
       }}

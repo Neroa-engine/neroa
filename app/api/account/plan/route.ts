@@ -9,20 +9,17 @@ import {
   ensurePlatformAccountState,
   recordPlatformEvent
 } from "@/lib/platform/foundation";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json(
-      { message: "Sign in before selecting a plan." },
-      { status: 401 }
-    );
+  const auth = await requireApiUser({
+    field: "message",
+    message: "Sign in before selecting a plan."
+  });
+  if (!auth.ok) {
+    return auth.response;
   }
+  const { supabase, user } = auth;
 
   let payload: { planId?: unknown; billingInterval?: unknown } | null = null;
 

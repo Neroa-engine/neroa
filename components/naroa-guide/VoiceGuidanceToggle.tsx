@@ -31,7 +31,7 @@ export function VoiceGuidanceToggle({
         disabled={!supported}
         className={`relative inline-flex h-8 w-14 flex-shrink-0 items-center rounded-full border transition ${
           enabled
-            ? "border-cyan-300/45 bg-[linear-gradient(135deg,rgba(34,211,238,0.88),rgba(139,92,246,0.86))]"
+            ? "border-[rgba(167,136,250,0.45)] bg-[linear-gradient(135deg,rgba(143,124,255,0.9),rgba(167,136,250,0.88),rgba(193,156,255,0.84))]"
             : "border-slate-200/80 bg-slate-100/90"
         } ${supported ? "" : "cursor-not-allowed opacity-50"}`}
       >

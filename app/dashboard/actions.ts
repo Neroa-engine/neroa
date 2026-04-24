@@ -14,23 +14,36 @@ import {
   recordPlatformEvent
 } from "@/lib/platform/foundation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { APP_ROUTES } from "@/lib/routes";
 import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
   parseCustomProjectLanes
 } from "@/lib/workspace/project-metadata";
 
+function safeString(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildErrorRedirect(path: string, message: string) {
+  const params = new URLSearchParams();
+  params.set("error", message);
+  const query = params.toString();
+  return query ? `${path}?${query}` : path;
+}
+
 export async function createWorkspace(formData: FormData) {
   const { supabase, user } = await requireUser();
-  const name = String(formData.get("name") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const projectTemplateId = String(formData.get("projectTemplateId") ?? "").trim();
+  const errorPath = safeString(formData.get("errorPath")) || APP_ROUTES.dashboard;
+  const name = safeString(formData.get("name"));
+  const description = safeString(formData.get("description"));
+  const projectTemplateId = safeString(formData.get("projectTemplateId"));
   const customLanes = parseCustomProjectLanes(
-    String(formData.get("customLanes") ?? "").trim()
+    safeString(formData.get("customLanes"))
   );
 
   if (!name) {
-    redirect("/dashboard?error=Engine name is required.");
+    redirect(buildErrorRedirect(errorPath, "Project name is required."));
   }
 
   const access = await syncAccountPlanAccess({
@@ -54,9 +67,10 @@ export async function createWorkspace(formData: FormData) {
     });
 
     redirect(
-      `/dashboard?error=${encodeURIComponent(
-        error instanceof Error ? error.message : "Unable to create engine."
-      )}`
+      buildErrorRedirect(
+        errorPath,
+        error instanceof Error ? error.message : "Unable to create project."
+      )
     );
   }
 
@@ -78,7 +92,7 @@ export async function createWorkspace(formData: FormData) {
     .single();
 
   if (error || !data) {
-    redirect(`/dashboard?error=${encodeURIComponent(error?.message ?? "Unable to create engine.")}`);
+    redirect(buildErrorRedirect(errorPath, error?.message ?? "Unable to create project."));
   }
 
   const tenancy = await ensureWorkspaceTenancyRecords({
@@ -123,7 +137,9 @@ export async function createWorkspace(formData: FormData) {
       activeEnginesUsed: access.activeEnginesUsed + 1
     });
   } catch (usageError) {
-    revalidatePath("/dashboard");
+    revalidatePath(APP_ROUTES.dashboard);
+    revalidatePath(APP_ROUTES.projects);
+    revalidatePath(APP_ROUTES.projectsNew);
     redirect(
       `/workspace/${data.id}/project/${data.id}?error=${encodeURIComponent(
         usageError instanceof Error
@@ -133,7 +149,9 @@ export async function createWorkspace(formData: FormData) {
     );
   }
 
-  revalidatePath("/dashboard");
+  revalidatePath(APP_ROUTES.dashboard);
+  revalidatePath(APP_ROUTES.projects);
+  revalidatePath(APP_ROUTES.projectsNew);
   redirect(`/workspace/${data.id}/project/${data.id}`);
 }
 

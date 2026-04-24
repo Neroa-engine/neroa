@@ -123,7 +123,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      summary: result.summary,
+      summary: result.session.report.summary,
+      sessionSummary: result.summary,
+      snapshot: {
+        id: result.snapshot.id,
+        capturedAt: result.snapshot.capturedAt,
+        screenshotPath: result.snapshot.screenshotPath,
+        page: result.snapshot.page
+      },
       recommendations: result.session.recommendations,
       findings: result.session.findings.slice(0, 12),
       guardrails: result.session.guardrails

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import Link from "next/link";
@@ -86,7 +86,7 @@ function StandardNaruaEnabledEngineLayout({
 }: NaruaEnabledEngineFrameProps) {
   const laneWorkspace = useLaneWorkspaceEngine();
   const panelProps = {
-    contextLabel: "Naroa Guidance",
+    contextLabel: "Neroa Guidance",
     contextTitle: lane.title,
     contextDescription: lane.description,
     statusText: laneWorkspace.statusText,
@@ -274,14 +274,14 @@ export default function EngineShell({
                     Back to engine overview
                   </Link>
                   <span className="rounded-full border border-slate-200 bg-white/75 px-4 py-2 text-xs uppercase tracking-[0.18em] text-slate-500">
-                    Naroa Workspace
+                    Neroa Workspace
                   </span>
                   <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2 text-xs uppercase tracking-[0.18em] text-cyan-700">
                     {lanePhase.label}
                   </span>
                   {!naruaEnabled ? (
                     <span className="rounded-full border border-amber-300/35 bg-amber-50/80 px-4 py-2 text-xs uppercase tracking-[0.18em] text-amber-700">
-                      Naroa excluded
+                      Neroa excluded
                     </span>
                   ) : null}
                 </div>
@@ -299,7 +299,7 @@ export default function EngineShell({
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-950">{lanePhase.label}</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {lanePhase.summary} Naroa keeps this lane tied to {project.title} with a dedicated thread, live deliverables, and a clear next move for the engine.
+                  {lanePhase.summary} Neroa keeps this lane tied to {project.title} with a dedicated thread, live deliverables, and a clear next move for the engine.
                 </p>
               </div>
             </div>

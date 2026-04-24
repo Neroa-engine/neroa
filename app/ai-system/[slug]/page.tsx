@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getAiSystemStaticParams } from "@/lib/data/ai-system";
+import { getAiSystemStaticParams, normalizeAiSystemSlug } from "@/lib/data/ai-system";
 
 type AiSystemDetailPageProps = {
   params: {
@@ -12,5 +12,5 @@ export function generateStaticParams() {
 }
 
 export default function AiSystemDetailPage({ params }: AiSystemDetailPageProps) {
-  redirect(`/system/${params.slug}`);
+  redirect(`/system/${normalizeAiSystemSlug(params.slug)}`);
 }

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { type KeyboardEvent, useEffect, useMemo, useState } from "react";
 import NaruaComposerPresence from "@/components/narua/NaruaComposerPresence";
@@ -205,7 +205,7 @@ export default function BudgetLaneWorkspace({
     storageKey: threadStorageKey,
     initialMessage: initialNaruaMessage,
     buildReply: (message) => createBudgetNaruaReply(model, scenario, message),
-    idleMessage: "Ask Naroa about plan coverage, savings, or how to reduce the budget.",
+    idleMessage: "Ask Neroa about plan coverage, savings, or how to reduce the budget.",
     contextTitle: lane.title
   });
 
@@ -535,13 +535,13 @@ export default function BudgetLaneWorkspace({
         </div>
 
         <div className="space-y-6">
-          <GuidanceRailCard title="Naroa Guidance">
+          <GuidanceRailCard title="Neroa Guidance">
             <div className="flex items-start gap-4">
-              <AiAvatar provider="chatgpt" displayName="Naroa" avatarSeed="narua-budget" />
+              <AiAvatar provider="chatgpt" displayName="Neroa" avatarSeed="narua-budget" />
               <div>
-                <p className="text-lg font-semibold text-slate-950">Naroa Guidance</p>
+                <p className="text-lg font-semibold text-slate-950">Neroa Guidance</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Naroa is separating product cost from real-world launch cost so the budget stays practical.
+                  Neroa is separating product cost from real-world launch cost so the budget stays practical.
                 </p>
               </div>
             </div>
@@ -561,7 +561,7 @@ export default function BudgetLaneWorkspace({
                       message.role === "narua" ? "text-cyan-700" : "text-slate-500"
                     }`}
                   >
-                    {message.role === "narua" ? "Naroa" : "You"}
+                    {message.role === "narua" ? "Neroa" : "You"}
                   </p>
                   <p className="mt-2 text-sm leading-6 text-slate-700">{message.content}</p>
                 </article>
@@ -583,7 +583,7 @@ export default function BudgetLaneWorkspace({
 
             <div className="premium-surface-soft mt-5 p-3">
               <NaruaComposerPresence
-                title="Naroa"
+                title="Neroa"
                 subtitle="Budget guidance active in this lane"
                 speaking={thread.voiceState === "listening"}
                 className="mb-3"
@@ -594,7 +594,7 @@ export default function BudgetLaneWorkspace({
                   value={thread.draft}
                   onChange={(event) => thread.setDraft(event.target.value)}
                   onKeyDown={handleComposerKeyDown}
-                  placeholder="Ask Naroa about plan coverage, savings, or outside spend..."
+                  placeholder="Ask Neroa about plan coverage, savings, or outside spend..."
                   disabled={isThinking}
                   className="input min-h-[84px] flex-1 resize-none disabled:cursor-not-allowed disabled:opacity-60"
                 />
@@ -618,7 +618,7 @@ export default function BudgetLaneWorkspace({
               </div>
               <div className="mt-3 flex items-center justify-between gap-3 text-xs">
                 <span className={feedbackTone(thread.voiceState)}>
-                  {isThinking ? "Naroa is comparing the budget paths now." : composerHint}
+                  {isThinking ? "Neroa is comparing the budget paths now." : composerHint}
                 </span>
                 <span className="text-slate-500">Budget lane thread</span>
               </div>
@@ -661,7 +661,7 @@ export default function BudgetLaneWorkspace({
               }
               className="mt-4 w-full"
             >
-              Ask Naroa for the next best action
+              Ask Neroa for the next best action
             </PremiumButton>
           </GuidanceRailCard>
         </div>

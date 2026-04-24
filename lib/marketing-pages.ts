@@ -54,7 +54,7 @@ export const howItWorksPages: HowItWorksPage[] = [
       {
         title: "Use specialized AI roles",
         description:
-          "Naroa, Forge, Atlas, RepoLink, Nova, Pulse, and Ops each sharpen a different part of the project."
+          "Neroa, Forge, Atlas, RepoLink, Nova, Pulse, and Ops each sharpen a different part of the project."
       },
       {
         title: "Keep the system visible",
@@ -81,7 +81,7 @@ export const howItWorksPages: HowItWorksPage[] = [
       {
         title: "Route work through the right systems",
         description:
-          "Naroa keeps the workflow focused and activates supporting AIs only when they add value."
+          "Neroa keeps the workflow focused and activates supporting AIs only when they add value."
       },
       {
         title: "Keep execution visible",

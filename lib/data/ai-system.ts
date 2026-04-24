@@ -36,20 +36,20 @@ export const aiSystemPages: AiSystemPage[] = [
     slug: "narua",
     id: "narua",
     eyebrow: "AI System",
-    headline: "Naroa is the core orchestrator that turns build intent into the next useful move.",
+    headline: "Neroa is the core orchestrator that turns build intent into the next useful move.",
     description:
-      "Naroa is the main intelligence layer of Neroa. It guides the user-facing flow, frames the Engine, decides which specialist system should widen the work, and routes backend build or review systems only when execution really needs them.",
-    summaryPanelTitle: "What Naroa anchors",
+      "Neroa is the main intelligence layer of Neroa. It guides the user-facing flow, frames the Engine, decides which specialist system should widen the work, and routes backend build or review systems only when execution really needs them.",
+    summaryPanelTitle: "What Neroa anchors",
     summaryPanelItems: [
       "Guided intake, category selection, and Engine creation",
-      "Workflow direction across Strategy, Scope, MVP, Budget, Test, Build, Launch, and Operate",
+      "Workflow direction across Strategy, Scope, Budget, Build Definition, Build, Test, Launch, and Operate",
       "Specialist activation, backend execution routing, and next-step guidance"
     ],
     capabilities: [
       {
         title: "Frame the build",
         description:
-          "Naroa turns a rough SaaS, internal software, external app, or mobile app idea into a defined direction and the right first question."
+          "Neroa turns a rough SaaS, internal software, external app, or mobile app idea into a defined direction and the right first question."
       },
       {
         title: "Guide the Engine flow",
@@ -59,7 +59,7 @@ export const aiSystemPages: AiSystemPage[] = [
       {
         title: "Coordinate the right systems",
         description:
-          "Naroa decides when Atlas, Forge, RepoLink, Nova, Pulse, or Ops should activate, then routes backend execution or review only when the build requires it."
+          "Neroa decides when Atlas, Forge, RepoLink, Nova, Pulse, or Ops should activate, then routes backend execution or review only when the build requires it."
       }
     ],
     activatesWhen: [
@@ -72,19 +72,19 @@ export const aiSystemPages: AiSystemPage[] = [
         id: "atlas",
         label: "Strategy and architecture",
         description:
-          "Naroa pulls in Atlas when the build needs stronger product logic, research, or architecture reasoning before the team commits."
+          "Neroa pulls in Atlas when the build needs stronger product logic, research, or architecture reasoning before the team commits."
       },
       {
         id: "forge",
         label: "Execution planning",
         description:
-          "Naroa activates Forge when the plan must harden into implementation structure, build sequencing, and execution logic."
+          "Neroa activates Forge when the plan must harden into implementation structure, build sequencing, and execution logic."
       },
       {
         id: "repolink",
         label: "GitHub coordination",
         description:
-          "Naroa brings in RepoLink when GitHub, repositories, branches, commits, or pull-request context should shape the next move."
+          "Neroa brings in RepoLink when GitHub, repositories, branches, commits, or pull-request context should shape the next move."
       }
     ],
     outputs: [
@@ -92,13 +92,13 @@ export const aiSystemPages: AiSystemPage[] = [
       "Specialist activation guidance with clearer next steps",
       "A guided path that keeps the user moving instead of stalling in chat"
     ],
-    primaryCtaLabel: "Start with Naroa",
+    primaryCtaLabel: "Start with Neroa",
     primaryCtaHref: "/start",
     secondaryCtaLabel: "Explore all AI systems",
-    secondaryCtaHref: "/system/ai",
-    finalCtaTitle: "Use Naroa as the control layer for the whole build",
+    secondaryCtaHref: "/system",
+    finalCtaTitle: "Use Neroa as the control layer for the whole build",
     finalCtaSummary:
-      "Start in one place, let Naroa define the next useful step, and widen the system only when it improves the build."
+      "Start in one place, let Neroa define the next useful step, and widen the system only when it improves the build."
   },
   {
     slug: "forge",
@@ -106,7 +106,7 @@ export const aiSystemPages: AiSystemPage[] = [
     eyebrow: "AI System",
     headline: "Forge shapes build execution, implementation planning, and delivery structure.",
     description:
-      "Forge is Neroa's build execution system. It takes the work Naroa has framed and turns it into implementation structure, technical sequencing, and a clearer delivery path across SaaS, internal software, external apps, and mobile apps.",
+      "Forge is Neroa's build execution system. It takes the work Neroa has framed and turns it into implementation structure, technical sequencing, and a clearer delivery path across SaaS, internal software, external apps, and mobile apps.",
     summaryPanelTitle: "Where Forge adds value",
     summaryPanelItems: [
       "Implementation structure and execution sequencing",
@@ -140,7 +140,7 @@ export const aiSystemPages: AiSystemPage[] = [
         id: "narua",
         label: "Orchestration",
         description:
-          "Naroa decides when Forge should step in so execution work stays aligned to the product goal."
+          "Neroa decides when Forge should step in so execution work stays aligned to the product goal."
       },
       {
         id: "repolink",
@@ -163,7 +163,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore SaaS builds",
     primaryCtaHref: "/use-cases/saas",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use Forge when the work has to become buildable",
     finalCtaSummary:
       "Bring Forge in when planning alone is no longer enough and the Engine needs a sharper execution structure."
@@ -201,14 +201,14 @@ export const aiSystemPages: AiSystemPage[] = [
     activatesWhen: [
       "An Engine needs stronger strategy, research, or architecture framing.",
       "The team is comparing options, feature boundaries, or roadmap directions.",
-      "Naroa needs a clearer decision base before routing the next move."
+      "Neroa needs a clearer decision base before routing the next move."
     ],
     collaboration: [
       {
         id: "narua",
         label: "Decision flow",
         description:
-          "Naroa uses Atlas to sharpen product thinking before it turns the work into output."
+          "Neroa uses Atlas to sharpen product thinking before it turns the work into output."
       },
       {
         id: "forge",
@@ -231,7 +231,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore internal software",
     primaryCtaHref: "/use-cases/internal-software",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use Atlas when better context changes the decision",
     finalCtaSummary:
       "Bring Atlas into the flow when the work needs sharper reasoning before the team commits to build, launch, or execution."
@@ -288,7 +288,7 @@ export const aiSystemPages: AiSystemPage[] = [
         id: "narua",
         label: "System framing",
         description:
-          "Naroa uses RepoLink when broader build decisions need GitHub and codebase reality attached."
+          "Neroa uses RepoLink when broader build decisions need GitHub and codebase reality attached."
       }
     ],
     outputs: [
@@ -299,7 +299,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore internal software",
     primaryCtaHref: "/use-cases/internal-software",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use RepoLink when the project needs real technical grounding",
     finalCtaSummary:
       "Bring RepoLink into the flow when shipping depends on GitHub, repositories, pull requests, environments, and connected deployment context."
@@ -337,14 +337,14 @@ export const aiSystemPages: AiSystemPage[] = [
     activatesWhen: [
       "The Engine needs brand, UX copy, customer-facing content, or interface clarity.",
       "A website, app, or launch surface needs a more refined experience.",
-      "Naroa needs design support to make the output more usable, credible, or conversion-ready."
+      "Neroa needs design support to make the output more usable, credible, or conversion-ready."
     ],
     collaboration: [
       {
         id: "narua",
         label: "Core framing",
         description:
-          "Naroa brings Nova in when the user-facing layer should sharpen the Engine result."
+          "Neroa brings Nova in when the user-facing layer should sharpen the Engine result."
       },
       {
         id: "atlas",
@@ -367,7 +367,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore external apps",
     primaryCtaHref: "/use-cases/external-apps",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use Nova when the project needs better customer-facing clarity",
     finalCtaSummary:
       "Activate Nova when brand, UX copy, and customer-facing presentation need to rise to the level of the build strategy."
@@ -405,14 +405,14 @@ export const aiSystemPages: AiSystemPage[] = [
     activatesWhen: [
       "The Engine is moving into Test, Launch, or post-launch iteration.",
       "The team needs QA, usability checks, feedback loops, or performance visibility.",
-      "Naroa wants to turn real signals into the next iteration step."
+      "Neroa wants to turn real signals into the next iteration step."
     ],
     collaboration: [
       {
         id: "narua",
         label: "Orchestration",
         description:
-          "Naroa activates Pulse when the work should expand from planning into validation, testing, or feedback-driven iteration."
+          "Neroa activates Pulse when the work should expand from planning into validation, testing, or feedback-driven iteration."
       },
       {
         id: "atlas",
@@ -435,7 +435,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore mobile apps",
     primaryCtaHref: "/use-cases/mobile-apps",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use Pulse when the work needs testing and feedback clarity",
     finalCtaSummary:
       "Bring Pulse in when the build needs QA, launch-readiness checks, and feedback loops before the next iteration begins."
@@ -473,14 +473,14 @@ export const aiSystemPages: AiSystemPage[] = [
     activatesWhen: [
       "The Engine needs deployment readiness, launch operations, or connected-service setup.",
       "The team needs support workflows, checklists, or blocker visibility around release work.",
-      "Naroa wants to turn a plan into a more reliable operating sequence."
+      "Neroa wants to turn a plan into a more reliable operating sequence."
     ],
     collaboration: [
       {
         id: "narua",
         label: "Execution framing",
         description:
-          "Naroa keeps Ops tied to the actual build objective so the process stays useful."
+          "Neroa keeps Ops tied to the actual build objective so the process stays useful."
       },
       {
         id: "forge",
@@ -503,7 +503,7 @@ export const aiSystemPages: AiSystemPage[] = [
     primaryCtaLabel: "Explore mobile apps",
     primaryCtaHref: "/use-cases/mobile-apps",
     secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system/ai",
+    secondaryCtaHref: "/system",
     finalCtaTitle: "Use Ops when launch readiness matters more than more ideas",
     finalCtaSummary:
       "Bring Ops into the system when deployment, connected services, launch coordination, and support workflows need to tighten up."
@@ -518,7 +518,9 @@ export const aiSystemCards = aiSystemPages.map((page) => ({
   description: page.description
 }));
 
-function normalizeAiSystemSlug(slug: string) {
+export function normalizeAiSystemSlug(slug: string) {
+  // Preserve the retired "naroa" slug as a read-only alias while directing
+  // all canonical system routes through the current "narua" page.
   return slug === "naroa" ? "narua" : slug;
 }
 
@@ -528,9 +530,5 @@ export function getAiSystemPage(slug: string) {
 }
 
 export function getAiSystemStaticParams() {
-  return aiSystemPages.flatMap((page) =>
-    page.slug === "narua"
-      ? [{ slug: "narua" }, { slug: "naroa" }]
-      : [{ slug: page.slug }]
-  );
+  return aiSystemPages.map((page) => ({ slug: page.slug }));
 }

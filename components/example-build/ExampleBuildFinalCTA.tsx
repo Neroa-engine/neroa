@@ -2,12 +2,17 @@
 
 import { useRouter } from "next/navigation";
 import { useAIOnboardingControl } from "@/components/onboarding/ai-onboarding-control-provider";
+import { storePublicEntryIntent } from "@/lib/front-door/public-entry-intent";
 import {
   createBuildSession,
   estimateCredits,
   recommendBuildPath,
   scopeProject
 } from "@/lib/onboarding/build-session";
+import {
+  publicLaunchManagedCta,
+  publicLaunchPrimaryCta
+} from "@/lib/data/public-launch";
 import type {
   ExampleBuildProject,
   ExampleBuildType,
@@ -18,7 +23,7 @@ import type {
 
 const conversionChoices = [
   {
-    title: "Start DIY Build",
+    title: publicLaunchPrimaryCta.label,
     description:
       "Open the real guided build flow, define your product, and let Neroa scope the work around your budget and pace.",
     href: "/start?resume=guided",
@@ -27,10 +32,10 @@ const conversionChoices = [
     pathLabel: "DIY Build"
   },
   {
-    title: "Explore Managed Build",
+    title: publicLaunchManagedCta.label,
     description:
-      "See how staged approvals, structured visibility, QA support, and launch coordination work when you want Neroa more involved.",
-    href: "/managed-build",
+      "Open the shared guided intake with the Managed lane already carried forward so scope, support, and roadmap logic stay aligned.",
+    href: "/start?resume=guided",
     tone: "secondary",
     pathId: "managed",
     pathLabel: "Managed Build"
@@ -78,6 +83,9 @@ export function ExampleBuildFinalCTA({
     const recommendedExamplePath = project.buildPaths.find((path) => path.recommended) ?? null;
 
     onSelectPath(choice.pathId, choice.pathLabel);
+    if (choice.pathId === "managed" || choice.pathId === "diy") {
+      storePublicEntryIntent(choice.pathId);
+    }
     setGuidedBuildHandoff({
       source: "example-build",
       productTypeId: buildType.id,

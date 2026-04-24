@@ -7,7 +7,7 @@ export const workerRegistry: Record<WorkerId, WorkerConfig> = {
     provider: "openai",
     role: "Strategy / Execution",
     systemPrompt:
-      "You are Vector, a fast, commercially minded AI operator focused on planning, execution, writing, and strategic problem solving."
+      "Provide direct, structured planning and execution guidance. Stay commercially grounded, concise, and focused on the user's project."
   },
   axiom: {
     id: "axiom",
@@ -15,7 +15,7 @@ export const workerRegistry: Record<WorkerId, WorkerConfig> = {
     provider: "anthropic",
     role: "Research / Long-form Reasoning",
     systemPrompt:
-      "You are Axiom, a rigorous reasoning and research specialist focused on analysis, depth, clarity, and long-context synthesis."
+      "Provide rigorous, structured analysis for project planning and build decisions. Stay clear, concise, and focused on the user's project."
   },
   forge: {
     id: "forge",

@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { MarketingInfoShell } from "@/components/layout/page-shells";
 import { JsonLdScript } from "@/components/marketing/public-page-sections";
 import { PublicPricingContent } from "@/components/pricing/public-pricing-content";
+import { buildBillingIntentPath } from "@/lib/billing/catalog";
+import { getOptionalUser } from "@/lib/auth";
 import { buildPublicMetadata, buildWebPageSchema } from "@/lib/marketing/seo";
 import {
   executionCreditPacks,
@@ -22,9 +24,22 @@ export const metadata: Metadata = buildPublicMetadata({
   ]
 });
 
-export default function DiyPricingPage() {
+export default async function DiyPricingPage() {
+  const user = await getOptionalUser();
+  const ctaHref = user
+    ? buildBillingIntentPath({
+        kind: "plan",
+        planId: "builder"
+      })
+    : "/start";
+
   return (
-    <MarketingInfoShell ctaHref="/start" ctaLabel="Start DIY Build" brandVariant="prominent">
+    <MarketingInfoShell
+      userEmail={user?.email ?? undefined}
+      ctaHref={ctaHref}
+      ctaLabel={user ? "Open billing" : "Start a conversation"}
+      brandVariant="prominent"
+    >
       <JsonLdScript
         data={buildWebPageSchema({
           name: "Neroa DIY Pricing",
@@ -37,6 +52,7 @@ export default function DiyPricingPage() {
         plans={getLaunchPricingPlans()}
         billingIntervals={publicBillingIntervals}
         topUpBundles={executionCreditPacks}
+        initialAuthenticated={Boolean(user)}
       />
     </MarketingInfoShell>
   );

@@ -7,11 +7,11 @@ import {
   SectionHeader,
   StepGrid
 } from "@/components/marketing/public-page-sections";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import AiTeammateCards from "@/components/workspace/ai-teammate-cards";
 import { buildFaqSchema, buildWebPageSchema } from "@/lib/marketing/seo";
 import type { HowItWorksPage } from "@/lib/marketing-pages";
 import type { UseCaseDetailPage } from "@/lib/use-cases";
-import { resolvePublicLaunchAction } from "@/lib/data/public-launch";
 
 type UseCaseTemplateProps = {
   page: UseCaseDetailPage;
@@ -19,9 +19,6 @@ type UseCaseTemplateProps = {
 };
 
 export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps) {
-  const primaryAction = resolvePublicLaunchAction(page.primaryCtaLabel, page.primaryCtaHref);
-  const secondaryAction = resolvePublicLaunchAction(page.secondaryCtaLabel, page.secondaryCtaHref);
-
   function getFocusHref(detailSlug?: string) {
     return detailSlug ? `/use-cases/${page.slug}/${detailSlug}` : null;
   }
@@ -29,7 +26,7 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
   return (
     <MarketingInfoShell
       ctaHref="/start"
-      ctaLabel="Start DIY Build"
+      ctaLabel="Start a conversation"
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -77,12 +74,16 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
             </div>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
-              <Link href={secondaryAction.href} className="button-secondary">
-                {secondaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
+              <PublicActionLink
+                href={page.secondaryCtaHref}
+                label={page.secondaryCtaLabel}
+                className="button-secondary"
+              />
             </div>
           </div>
 
@@ -122,7 +123,7 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
                 </div>
                 <div className="comparison-metric">
                   <span className="comparison-label">Best first move</span>
-                  <span className="comparison-value">{primaryAction.label}</span>
+                  <span className="comparison-value">{page.primaryCtaLabel}</span>
                 </div>
               </div>
             </div>
@@ -190,7 +191,7 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
                 description:
                   "Use DIY when you want to shape the scope, pace the work with monthly Engine Credits, and keep control over how quickly the build moves.",
                 href: "/diy-build",
-                ctaLabel: "Explore DIY Build",
+                ctaLabel: "Start a conversation",
                 details: ["View DIY pricing to compare pacing and monthly credits."]
               },
               {
@@ -198,8 +199,8 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
                 title: "Move this use case into a managed execution path when the build needs more help.",
                 description:
                   "Use Managed Build when the software needs faster execution, staged approvals, QA visibility, launch coordination, or more support than a self-paced lane can comfortably provide.",
-                href: "/managed-build",
-                ctaLabel: "Explore Managed Build",
+                href: "/start",
+                ctaLabel: "Start Managed Build",
                 details: ["View managed pricing when the project needs more direct execution support."]
               }
             ]}
@@ -221,7 +222,7 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
                 The supporting stack that helps this use case move
               </h2>
               <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-                Naroa stays at the center, but the supporting AIs widen the work when the page needs stronger research, build logic, design direction, or execution structure.
+                Neroa stays at the center, but the supporting AIs widen the work when the page needs stronger research, build logic, design direction, or execution structure.
               </p>
 
               <AiTeammateCards
@@ -365,9 +366,11 @@ export function UseCaseTemplate({ page, howItWorksPages }: UseCaseTemplateProps)
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href={primaryAction.href} className="button-primary">
-                {primaryAction.label}
-              </Link>
+              <PublicActionLink
+                href={page.primaryCtaHref}
+                label={page.primaryCtaLabel}
+                className="button-primary"
+              />
               <Link href="/use-cases" className="button-secondary">
                 Explore all use cases
               </Link>

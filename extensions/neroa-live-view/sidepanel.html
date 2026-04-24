@@ -58,14 +58,23 @@
       <section class="card">
         <div class="card-header">
           <div>
-            <p class="eyebrow">Latest inspection</p>
-            <h2 id="inspection-title">No live app inspected yet</h2>
+            <p class="eyebrow">Inspection status</p>
+            <h2 id="inspection-title">No explicit inspection yet</h2>
           </div>
         </div>
         <p id="inspection-detail" class="card-copy">
-          Once you move through a supported localhost app, Naroa will summarize the current page,
-          report findings, and suggest the next best action here.
+          Background observation may still collect from supported runtime target pages, but current
+          inspection results only appear here after a supported explicit inspection trigger.
         </p>
+        <div class="button-row">
+          <button id="inspection-button" class="secondary-button" type="button" disabled>
+            Run explicit inspection
+          </button>
+        </div>
+        <p id="inspection-action-copy" class="card-copy">
+          Wait for Neroa to bind the current browser session before running an explicit inspection.
+        </p>
+        <div id="inspection-action-notice" class="action-note hidden"></div>
         <div id="recommendation-block" class="insight-block hidden"></div>
         <div id="guardrail-block" class="pill-row"></div>
       </section>
@@ -73,8 +82,29 @@
       <section class="card">
         <div class="card-header">
           <div>
-            <p class="eyebrow">QA findings</p>
-            <h2>Pass / fail summary</h2>
+            <p class="eyebrow">Browser Runtime V2</p>
+            <h2>Walkthrough and output</h2>
+          </div>
+        </div>
+        <p id="runtime-actions-copy" class="card-copy">
+          Run bounded walkthrough/testing and generate structured SOP output from the same current browser session.
+        </p>
+        <div class="button-row">
+          <button id="walkthrough-button" class="secondary-button" type="button" disabled>
+            Run AI walkthrough
+          </button>
+          <button id="sop-button" class="secondary-button" type="button" disabled>
+            Generate SOP output
+          </button>
+        </div>
+        <div id="runtime-action-notice" class="action-note hidden"></div>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <div>
+            <p class="eyebrow">Inspection findings</p>
+            <h2 id="findings-title">Explicit or latest history</h2>
           </div>
         </div>
         <div id="findings-list" class="list-block empty-state">

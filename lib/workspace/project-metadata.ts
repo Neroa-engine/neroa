@@ -1,18 +1,6 @@
 ﻿import { normalizeLaneId } from "@/lib/workspace/lanes";
 import type { LaneId } from "@/lib/workspace/types";
 import type { AgentId } from "@/lib/ai/agents";
-import type {
-  BuildEntryMode,
-  BuildCategoryId,
-  BuildExperienceLevelId,
-  BuildGoalId,
-  BuildIndustryId,
-  BuildPreferenceId,
-  BuildTemplateFeature,
-  ComplexityLabel,
-  GuidedBuildBlueprint
-} from "@/lib/onboarding/guided-build";
-import type { PricingPlanId } from "@/lib/pricing/config";
 import type { SaasWorkspaceBlueprint } from "@/lib/onboarding/saas-intake";
 import type { MobileAppWorkspaceBlueprint } from "@/lib/onboarding/mobile-app-intake";
 import {
@@ -30,6 +18,24 @@ import {
   type ProjectLaneStatus,
   type ProjectTemplateId
 } from "@/lib/workspace/project-lanes";
+import {
+  normalizeStoredCommandCenterDecision,
+  type StoredCommandCenterDecision
+} from "@/lib/workspace/command-center-decisions";
+import {
+  normalizeStoredCommandCenterChangeReview,
+  type StoredCommandCenterChangeReview
+} from "@/lib/workspace/command-center-change-impact";
+import {
+  normalizeStoredCommandCenterApprovedDesignPackage,
+  normalizeStoredCommandCenterPreviewState,
+  type StoredCommandCenterApprovedDesignPackage,
+  type StoredCommandCenterPreviewState
+} from "@/lib/workspace/command-center-design-preview";
+import {
+  normalizeStoredCommandCenterTask,
+  type StoredCommandCenterTask
+} from "@/lib/workspace/command-center-tasks";
 
 const METADATA_PREFIX = "<!--NEROA_PROJECT_META:";
 const METADATA_SUFFIX = "-->";
@@ -40,8 +46,13 @@ export type StoredProjectMetadata = {
   customLanes: CustomProjectLaneInput[];
   archived?: boolean;
   assets?: StoredProjectAsset[];
+  commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
+  commandCenterDecisions?: StoredCommandCenterDecision[];
+  commandCenterChangeReviews?: StoredCommandCenterChangeReview[];
+  commandCenterTasks?: StoredCommandCenterTask[];
+  commandCenterPreviewState?: StoredCommandCenterPreviewState | null;
+  commandCenterApprovedDesignPackage?: StoredCommandCenterApprovedDesignPackage | null;
   guidedFlowPreset?: "saas-app" | "mobile-app";
-  guidedBuildIntake?: GuidedBuildBlueprint | null;
   guidedEntryContext?: GuidedBuildHandoff | null;
   buildSession?: GuidedBuildSession | null;
   saasIntake?: SaasWorkspaceBlueprint | null;
@@ -54,6 +65,24 @@ export type StoredProjectAsset = {
   kind: string;
   sizeLabel: string | null;
   addedAt: string;
+};
+
+export type StoredCommandCenterBrandColors = {
+  primary: string | null;
+  secondary: string | null;
+  accent: string | null;
+  background: string | null;
+  text: string | null;
+};
+
+export type StoredCommandCenterBrandSystem = {
+  identityMode: string | null;
+  motto: string | null;
+  typographyPreference: string | null;
+  visualMood: string | null;
+  buttonStylePreference: string | null;
+  colors: StoredCommandCenterBrandColors;
+  updatedAt: string | null;
 };
 
 export type ParsedWorkspaceProjectDescription = {
@@ -107,488 +136,87 @@ function normalizeStringArray(value: unknown) {
   return items.length > 0 ? items : undefined;
 }
 
-function normalizeBuildCategoryId(value: unknown): BuildCategoryId | null {
-  if (
-    value === "saas" ||
-    value === "internal-app" ||
-    value === "external-app" ||
-    value === "mobile-app"
-  ) {
-    return value;
+function normalizeBrandColorValue(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) {
+    return null;
   }
 
-  return null;
+  const normalized = value.trim();
+
+  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(normalized)) {
+    return normalized.toUpperCase();
+  }
+
+  return normalized.slice(0, 64);
 }
 
-function normalizeEntryMode(value: unknown): BuildEntryMode | undefined {
-  return value === "known-industry" || value === "exploring" ? value : undefined;
+export function defaultStoredCommandCenterBrandSystem(): StoredCommandCenterBrandSystem {
+  return {
+    identityMode: null,
+    motto: null,
+    typographyPreference: null,
+    visualMood: null,
+    buttonStylePreference: null,
+    colors: {
+      primary: null,
+      secondary: null,
+      accent: null,
+      background: null,
+      text: null
+    },
+    updatedAt: null
+  };
 }
 
-function normalizeIndustryId(value: unknown): BuildIndustryId | undefined {
-  return value === "crypto-web3" ||
-    value === "ai-automation" ||
-    value === "saas-software" ||
-    value === "finance-trading" ||
-    value === "ecommerce" ||
-    value === "local-services" ||
-    value === "content-media" ||
-    value === "health-wellness" ||
-    value === "custom"
-    ? value
-    : undefined;
-}
-
-function normalizeGoalId(value: unknown): BuildGoalId | undefined {
-  return value === "fast-revenue" ||
-    value === "scalable-platform" ||
-    value === "learn-experiment"
-    ? value
-    : undefined;
-}
-
-function normalizeExperienceLevelId(value: unknown): BuildExperienceLevelId | undefined {
-  return value === "beginner" || value === "intermediate" || value === "advanced"
-    ? value
-    : undefined;
-}
-
-function normalizeBuildPreferenceId(value: unknown): BuildPreferenceId | undefined {
-  return value === "recommend-best-path" ||
-    value === "manual-modules" ||
-    value === "start-lean-upgrade-later"
-    ? value
-    : undefined;
-}
-
-function normalizePricingPlanId(value: unknown): PricingPlanId | undefined {
-  return value === "free" ||
-    value === "starter" ||
-    value === "builder" ||
-    value === "pro" ||
-    value === "command-center"
-    ? value
-    : undefined;
-}
-
-function normalizeComplexityLabel(value: unknown): ComplexityLabel | undefined {
-  return value === "Lean" || value === "Moderate" || value === "Advanced"
-    ? value
-    : undefined;
-}
-
-function normalizeFeatureCard(value: unknown): BuildTemplateFeature | null {
+export function normalizeStoredCommandCenterBrandSystem(
+  value: unknown
+): StoredCommandCenterBrandSystem | null {
   if (!value || typeof value !== "object") {
     return null;
   }
 
   const record = value as Record<string, unknown>;
-  const id = typeof record.id === "string" ? record.id.trim() : "";
-  const label = typeof record.label === "string" ? record.label.trim() : "";
-  const whatItDoes =
-    typeof record.whatItDoes === "string" ? record.whatItDoes.trim() : "";
-  const whyIncluded =
-    typeof record.whyIncluded === "string" ? record.whyIncluded.trim() : "";
-  const stage = record.stage === "Later" ? "Later" : record.stage === "MVP" ? "MVP" : null;
+  const colorRecord =
+    record.colors && typeof record.colors === "object"
+      ? (record.colors as Record<string, unknown>)
+      : {};
 
-  if (!id || !label || !whatItDoes || !whyIncluded || !stage) {
-    return null;
-  }
-
-  return {
-    id,
-    label,
-    whatItDoes,
-    whyIncluded,
-    stage
+  const normalized: StoredCommandCenterBrandSystem = {
+    identityMode: typeof record.identityMode === "string" ? record.identityMode.trim() || null : null,
+    motto: typeof record.motto === "string" ? record.motto.trim() || null : null,
+    typographyPreference:
+      typeof record.typographyPreference === "string"
+        ? record.typographyPreference.trim() || null
+        : null,
+    visualMood:
+      typeof record.visualMood === "string" ? record.visualMood.trim() || null : null,
+    buttonStylePreference:
+      typeof record.buttonStylePreference === "string"
+        ? record.buttonStylePreference.trim() || null
+        : null,
+    colors: {
+      primary: normalizeBrandColorValue(colorRecord.primary),
+      secondary: normalizeBrandColorValue(colorRecord.secondary),
+      accent: normalizeBrandColorValue(colorRecord.accent),
+      background: normalizeBrandColorValue(colorRecord.background),
+      text: normalizeBrandColorValue(colorRecord.text)
+    },
+    updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : null
   };
+
+  const hasMeaningfulContent =
+    Boolean(
+      normalized.identityMode ||
+        normalized.motto ||
+        normalized.typographyPreference ||
+        normalized.visualMood ||
+        normalized.buttonStylePreference ||
+        Object.values(normalized.colors).some(Boolean)
+    ) || Boolean(normalized.updatedAt);
+
+  return hasMeaningfulContent ? normalized : null;
 }
 
-function normalizeGuidedBuildIntake(value: unknown): GuidedBuildBlueprint | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const categoryId = normalizeBuildCategoryId(record.categoryId);
-  const buildCategory = normalizeBuildCategoryId(record.buildCategory) ?? categoryId;
-  const categoryLabel =
-    typeof record.categoryLabel === "string" ? record.categoryLabel.trim() : "";
-  const templateKind =
-    record.templateKind === "custom" ? "custom" : "predefined";
-  const templateIdeaId =
-    typeof record.templateIdeaId === "string" ? record.templateIdeaId.trim() : "";
-  const templateIdeaLabel =
-    typeof record.templateIdeaLabel === "string"
-      ? record.templateIdeaLabel.trim()
-      : "";
-  const selectedTemplateId =
-    typeof record.selectedTemplateId === "string" && record.selectedTemplateId.trim()
-      ? record.selectedTemplateId.trim()
-      : templateIdeaId;
-  const selectedTemplateName =
-    typeof record.selectedTemplateName === "string" && record.selectedTemplateName.trim()
-      ? record.selectedTemplateName.trim()
-      : templateIdeaLabel;
-  const customTemplateName =
-    typeof record.customTemplateName === "string" && record.customTemplateName.trim()
-      ? record.customTemplateName.trim()
-      : undefined;
-  const customBuildGoal =
-    typeof record.customBuildGoal === "string" && record.customBuildGoal.trim()
-      ? record.customBuildGoal.trim()
-      : undefined;
-  const customDescription =
-    typeof record.customDescription === "string" && record.customDescription.trim()
-      ? record.customDescription.trim()
-      : undefined;
-  const customProblem =
-    typeof record.customProblem === "string" && record.customProblem.trim()
-      ? record.customProblem.trim()
-      : undefined;
-  const customAudience =
-    typeof record.customAudience === "string" && record.customAudience.trim()
-      ? record.customAudience.trim()
-      : undefined;
-  const customFeatureIdeas =
-    typeof record.customFeatureIdeas === "string" && record.customFeatureIdeas.trim()
-      ? record.customFeatureIdeas.trim()
-      : undefined;
-  const engineName =
-    typeof record.engineName === "string" ? record.engineName.trim() : "";
-  const generatedSummary =
-    typeof record.generatedSummary === "string" && record.generatedSummary.trim()
-      ? record.generatedSummary.trim()
-      : "";
-  const projectSummary =
-    typeof record.projectSummary === "string" ? record.projectSummary.trim() : "";
-  const templateId = normalizeProjectTemplateId(record.templateId);
-  const laneStructure = normalizeStringArray(record.laneStructure) ?? [];
-  const primaryBuildPathLabel =
-    record.primaryBuildPathLabel === "Primary Build Path" ||
-    record.primaryBuildPathLabel === "Recommended App Stack"
-      ? "Recommended App Stack"
-      : null;
-  const primaryBuildPathValue =
-    typeof record.primaryBuildPathValue === "string"
-      ? record.primaryBuildPathValue.trim()
-      : "";
-  const primaryBuildPathDetail =
-    typeof record.primaryBuildPathDetail === "string"
-      ? record.primaryBuildPathDetail.trim()
-      : "";
-  const secondaryPathLabel =
-    typeof record.secondaryPathLabel === "string" && record.secondaryPathLabel.trim()
-      ? record.secondaryPathLabel.trim()
-      : undefined;
-  const secondaryPathValue =
-    typeof record.secondaryPathValue === "string" && record.secondaryPathValue.trim()
-      ? record.secondaryPathValue.trim()
-      : undefined;
-  const secondaryPathDetail =
-    typeof record.secondaryPathDetail === "string" && record.secondaryPathDetail.trim()
-      ? record.secondaryPathDetail.trim()
-      : undefined;
-  const advisoryPathLabel =
-    typeof record.advisoryPathLabel === "string" && record.advisoryPathLabel.trim()
-      ? record.advisoryPathLabel.trim()
-      : undefined;
-  const advisoryPathValue =
-    typeof record.advisoryPathValue === "string" && record.advisoryPathValue.trim()
-      ? record.advisoryPathValue.trim()
-      : undefined;
-  const advisoryPathDetail =
-    typeof record.advisoryPathDetail === "string" && record.advisoryPathDetail.trim()
-      ? record.advisoryPathDetail.trim()
-      : undefined;
-  const featureCards = Array.isArray(record.featureCards)
-    ? record.featureCards
-        .map((item) => normalizeFeatureCard(item))
-        .filter((item): item is BuildTemplateFeature => Boolean(item))
-    : [];
-  const selectedModuleIds = normalizeStringArray(record.selectedModuleIds) ?? [];
-  const selectedFeatures = normalizeStringArray(record.selectedFeatures) ?? [];
-  const recommendedBuildPath =
-    typeof record.recommendedBuildPath === "string" && record.recommendedBuildPath.trim()
-      ? record.recommendedBuildPath.trim()
-      : primaryBuildPathValue;
-  const naroaRecommendation =
-    typeof record.naroaRecommendation === "string" && record.naroaRecommendation.trim()
-      ? record.naroaRecommendation.trim()
-      : typeof record.naruwaRecommendation === "string" && record.naruwaRecommendation.trim()
-        ? record.naruwaRecommendation.trim()
-        : "Naroa selected this structure because this product type needs a clear dashboard, secure user access, core workflow modules, admin controls, billing, and a launch-ready setup path.";
-  const buildRoadmap = normalizeStringArray(record.buildRoadmap) ?? [];
-  const nextStepChecklist = normalizeStringArray(record.nextStepChecklist) ?? [];
-  const entryMode = normalizeEntryMode(record.entryMode);
-  const industryId = normalizeIndustryId(record.industryId);
-  const industryLabel =
-    typeof record.industryLabel === "string" && record.industryLabel.trim()
-      ? record.industryLabel.trim()
-      : undefined;
-  const customIndustry =
-    typeof record.customIndustry === "string" && record.customIndustry.trim()
-      ? record.customIndustry.trim()
-      : typeof record.custom_industry === "string" && record.custom_industry.trim()
-        ? record.custom_industry.trim()
-        : undefined;
-  const industryGroup =
-    typeof record.industryGroup === "string" && record.industryGroup.trim()
-      ? record.industryGroup.trim()
-      : typeof record.industry_group === "string" && record.industry_group.trim()
-        ? record.industry_group.trim()
-        : undefined;
-  const industryDetail =
-    typeof record.industryDetail === "string" && record.industryDetail.trim()
-      ? record.industryDetail.trim()
-      : typeof record.industry_detail === "string" && record.industry_detail.trim()
-        ? record.industry_detail.trim()
-        : undefined;
-  const goalId = normalizeGoalId(record.goalId);
-  const goalLabel =
-    typeof record.goalLabel === "string" && record.goalLabel.trim()
-      ? record.goalLabel.trim()
-      : undefined;
-  const experienceLevelId = normalizeExperienceLevelId(record.experienceLevelId);
-  const experienceLevelLabel =
-    typeof record.experienceLevelLabel === "string" && record.experienceLevelLabel.trim()
-      ? record.experienceLevelLabel.trim()
-      : undefined;
-  const buildPreferenceId = normalizeBuildPreferenceId(record.buildPreferenceId);
-  const buildPreferenceLabel =
-    typeof record.buildPreferenceLabel === "string" && record.buildPreferenceLabel.trim()
-      ? record.buildPreferenceLabel.trim()
-      : undefined;
-  const recommendedFrameworkId =
-    typeof record.recommendedFrameworkId === "string" && record.recommendedFrameworkId.trim()
-      ? record.recommendedFrameworkId.trim()
-      : undefined;
-  const recommendedFrameworkLabel =
-    typeof record.recommendedFrameworkLabel === "string" && record.recommendedFrameworkLabel.trim()
-      ? record.recommendedFrameworkLabel.trim()
-      : undefined;
-  const recommendedTierId = normalizePricingPlanId(record.recommendedTierId);
-  const recommendedTierLabel =
-    typeof record.recommendedTierLabel === "string" && record.recommendedTierLabel.trim()
-      ? record.recommendedTierLabel.trim()
-      : undefined;
-  const selectedPlanId = normalizePricingPlanId(record.selectedPlanId);
-  const selectedPlanLabel =
-    typeof record.selectedPlanLabel === "string" && record.selectedPlanLabel.trim()
-      ? record.selectedPlanLabel.trim()
-      : undefined;
-  const includedMonthlyEngineCredits =
-    typeof record.includedMonthlyEngineCredits === "number" &&
-    Number.isFinite(record.includedMonthlyEngineCredits)
-      ? record.includedMonthlyEngineCredits
-      : undefined;
-  const estimatedTotalCreditsRequired =
-    typeof record.estimatedTotalCreditsRequired === "number" &&
-    Number.isFinite(record.estimatedTotalCreditsRequired)
-      ? record.estimatedTotalCreditsRequired
-      : undefined;
-  const estimatedCreditOverage =
-    typeof record.estimatedCreditOverage === "number" &&
-    Number.isFinite(record.estimatedCreditOverage)
-      ? record.estimatedCreditOverage
-      : undefined;
-  const estimatedTimeline =
-    typeof record.estimatedTimeline === "string" && record.estimatedTimeline.trim()
-      ? record.estimatedTimeline.trim()
-      : undefined;
-  const estimatedTimelineDetail =
-    typeof record.estimatedTimelineDetail === "string" && record.estimatedTimelineDetail.trim()
-      ? record.estimatedTimelineDetail.trim()
-      : undefined;
-  const recommendedCreditPackLabel =
-    typeof record.recommendedCreditPackLabel === "string" && record.recommendedCreditPackLabel.trim()
-      ? record.recommendedCreditPackLabel.trim()
-      : undefined;
-  const recommendedCreditPackDetail =
-    typeof record.recommendedCreditPackDetail === "string" && record.recommendedCreditPackDetail.trim()
-      ? record.recommendedCreditPackDetail.trim()
-      : undefined;
-  const managedBuildRecommendation =
-    typeof record.managedBuildRecommendation === "string" && record.managedBuildRecommendation.trim()
-      ? record.managedBuildRecommendation.trim()
-      : undefined;
-  const creditPoolWarning =
-    typeof record.creditPoolWarning === "string" && record.creditPoolWarning.trim()
-      ? record.creditPoolWarning.trim()
-      : undefined;
-  const scopeExecutionNote =
-    typeof record.scopeExecutionNote === "string" && record.scopeExecutionNote.trim()
-      ? record.scopeExecutionNote.trim()
-      : undefined;
-  const recommendationReason =
-    typeof record.recommendationReason === "string" && record.recommendationReason.trim()
-      ? record.recommendationReason.trim()
-      : undefined;
-  const pricingGateNotice =
-    typeof record.pricingGateNotice === "string" && record.pricingGateNotice.trim()
-      ? record.pricingGateNotice.trim()
-      : undefined;
-  const complexityScore =
-    typeof record.complexityScore === "number" && Number.isFinite(record.complexityScore)
-      ? record.complexityScore
-      : undefined;
-  const complexityLabel = normalizeComplexityLabel(record.complexityLabel);
-  const complexitySummary =
-    typeof record.complexitySummary === "string" && record.complexitySummary.trim()
-      ? record.complexitySummary.trim()
-      : undefined;
-  const executionIntensity =
-    typeof record.executionIntensity === "string" && record.executionIntensity.trim()
-      ? record.executionIntensity.trim()
-      : undefined;
-  const uiDensity =
-    record.uiDensity === "calm" || record.uiDensity === "balanced" || record.uiDensity === "dense"
-      ? record.uiDensity
-      : undefined;
-  const variationSeed =
-    typeof record.variationSeed === "string" && record.variationSeed.trim()
-      ? record.variationSeed.trim()
-      : undefined;
-  const variationLayoutId =
-    record.variationLayoutId === "mission-control" ||
-    record.variationLayoutId === "guided-operator" ||
-    record.variationLayoutId === "focus-column"
-      ? record.variationLayoutId
-      : undefined;
-  const variationLayoutLabel =
-    typeof record.variationLayoutLabel === "string" && record.variationLayoutLabel.trim()
-      ? record.variationLayoutLabel.trim()
-      : undefined;
-  const variationNavigationId =
-    record.variationNavigationId === "left-rail" ||
-    record.variationNavigationId === "hybrid" ||
-    record.variationNavigationId === "top-tabs"
-      ? record.variationNavigationId
-      : undefined;
-  const requiredModuleCards = Array.isArray(record.requiredModuleCards)
-    ? record.requiredModuleCards
-        .map((item) => normalizeFeatureCard(item))
-        .filter((item): item is BuildTemplateFeature => Boolean(item))
-    : [];
-  const expansionModuleCards = Array.isArray(record.expansionModuleCards)
-    ? record.expansionModuleCards
-        .map((item) => normalizeFeatureCard(item))
-        .filter((item): item is BuildTemplateFeature => Boolean(item))
-    : [];
-  const optionalModuleCards = Array.isArray(record.optionalModuleCards)
-    ? record.optionalModuleCards
-        .map((item) => normalizeFeatureCard(item))
-        .filter((item): item is BuildTemplateFeature => Boolean(item))
-    : [];
-  const assignedAgents =
-    (normalizeStringArray(record.assignedAgents) ?? []).filter(
-      (item): item is AgentId =>
-        item === "narua" ||
-        item === "forge" ||
-        item === "atlas" ||
-        item === "repolink" ||
-        item === "nova" ||
-        item === "pulse" ||
-        item === "ops"
-    );
-
-  if (
-    !categoryId ||
-    !categoryLabel ||
-    !templateIdeaId ||
-    !templateIdeaLabel ||
-    !engineName ||
-    !projectSummary ||
-    !templateId ||
-    laneStructure.length === 0 ||
-    !primaryBuildPathLabel ||
-    !primaryBuildPathValue ||
-    !primaryBuildPathDetail
-  ) {
-    return null;
-  }
-
-  return {
-    categoryId,
-    buildCategory: buildCategory ?? categoryId,
-    categoryLabel,
-    templateKind,
-    templateIdeaId,
-    templateIdeaLabel,
-    selectedTemplateId,
-    selectedTemplateName,
-    customTemplateName,
-    customBuildGoal,
-    customDescription,
-    customProblem,
-    customAudience,
-    customFeatureIdeas,
-    engineName,
-    generatedSummary: generatedSummary || projectSummary,
-    projectSummary,
-    templateId,
-    laneStructure,
-    primaryBuildPathLabel,
-    primaryBuildPathValue,
-    primaryBuildPathDetail,
-    secondaryPathLabel,
-    secondaryPathValue,
-    secondaryPathDetail,
-    advisoryPathLabel,
-    advisoryPathValue,
-    advisoryPathDetail,
-    featureCards,
-    selectedModuleIds,
-    selectedFeatures: selectedFeatures.length > 0 ? selectedFeatures : featureCards.map((item) => item.label),
-    recommendedBuildPath,
-    naroaRecommendation,
-    buildRoadmap,
-    nextStepChecklist,
-    assignedAgents,
-    createdFromOnboarding: true,
-    entryMode,
-    industryId,
-    industryLabel,
-    customIndustry,
-    industryGroup,
-    industryDetail,
-    goalId,
-    goalLabel,
-    experienceLevelId,
-    experienceLevelLabel,
-    buildPreferenceId,
-    buildPreferenceLabel,
-    recommendedFrameworkId,
-    recommendedFrameworkLabel,
-    recommendedTierId,
-    recommendedTierLabel,
-    selectedPlanId,
-    selectedPlanLabel,
-    includedMonthlyEngineCredits,
-    estimatedTotalCreditsRequired,
-    estimatedCreditOverage,
-    estimatedTimeline,
-    estimatedTimelineDetail,
-    recommendedCreditPackLabel,
-    recommendedCreditPackDetail,
-    managedBuildRecommendation,
-    creditPoolWarning,
-    scopeExecutionNote,
-    recommendationReason,
-    pricingGateNotice,
-    complexityScore,
-    complexityLabel,
-    complexitySummary,
-    executionIntensity,
-    uiDensity,
-    variationSeed,
-    variationLayoutId,
-    variationLayoutLabel,
-    variationNavigationId,
-    requiredModuleCards,
-    expansionModuleCards,
-    optionalModuleCards
-  };
-}
 
 function normalizeSaasIntake(value: unknown): SaasWorkspaceBlueprint | null {
   if (!value || typeof value !== "object") {
@@ -949,8 +577,13 @@ export function buildStoredProjectMetadata(args: {
   customLanes?: CustomProjectLaneInput[];
   archived?: boolean;
   assets?: StoredProjectAsset[];
+  commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
+  commandCenterDecisions?: StoredCommandCenterDecision[];
+  commandCenterChangeReviews?: StoredCommandCenterChangeReview[];
+  commandCenterTasks?: StoredCommandCenterTask[];
+  commandCenterPreviewState?: StoredCommandCenterPreviewState | null;
+  commandCenterApprovedDesignPackage?: StoredCommandCenterApprovedDesignPackage | null;
   guidedFlowPreset?: "saas-app" | "mobile-app";
-  guidedBuildIntake?: GuidedBuildBlueprint | null;
   guidedEntryContext?: GuidedBuildHandoff | null;
   buildSession?: GuidedBuildSession | null;
   saasIntake?: SaasWorkspaceBlueprint | null;
@@ -973,8 +606,13 @@ export function buildStoredProjectMetadata(args: {
     customLanes: args.customLanes ?? [],
     archived: args.archived ?? false,
     assets: args.assets ?? [],
+    commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
+    commandCenterDecisions: args.commandCenterDecisions ?? [],
+    commandCenterChangeReviews: args.commandCenterChangeReviews ?? [],
+    commandCenterTasks: args.commandCenterTasks ?? [],
+    commandCenterPreviewState: args.commandCenterPreviewState ?? null,
+    commandCenterApprovedDesignPackage: args.commandCenterApprovedDesignPackage ?? null,
     guidedFlowPreset: args.guidedFlowPreset,
-    guidedBuildIntake: args.guidedBuildIntake ?? null,
     guidedEntryContext: args.guidedEntryContext ?? null,
     buildSession: args.buildSession ?? null,
     saasIntake: args.saasIntake ?? null,
@@ -1014,11 +652,35 @@ function decodeMetadata(value: string) {
             .map((item) => normalizeAsset(item))
             .filter((item): item is StoredProjectAsset => Boolean(item))
         : [],
+      commandCenterBrandSystem: normalizeStoredCommandCenterBrandSystem(
+        parsed.commandCenterBrandSystem
+      ),
+      commandCenterDecisions: Array.isArray(parsed.commandCenterDecisions)
+        ? parsed.commandCenterDecisions
+            .map((item) => normalizeStoredCommandCenterDecision(item))
+            .filter((item): item is StoredCommandCenterDecision => Boolean(item))
+        : [],
+      commandCenterChangeReviews: Array.isArray(parsed.commandCenterChangeReviews)
+        ? parsed.commandCenterChangeReviews
+            .map((item) => normalizeStoredCommandCenterChangeReview(item))
+            .filter((item): item is StoredCommandCenterChangeReview => Boolean(item))
+        : [],
+      commandCenterTasks: Array.isArray(parsed.commandCenterTasks)
+        ? parsed.commandCenterTasks
+            .map((item) => normalizeStoredCommandCenterTask(item))
+            .filter((item): item is StoredCommandCenterTask => Boolean(item))
+        : [],
+      commandCenterPreviewState: normalizeStoredCommandCenterPreviewState(
+        parsed.commandCenterPreviewState
+      ),
+      commandCenterApprovedDesignPackage:
+        normalizeStoredCommandCenterApprovedDesignPackage(
+          parsed.commandCenterApprovedDesignPackage
+        ),
       guidedFlowPreset:
         parsed.guidedFlowPreset === "saas-app" || parsed.guidedFlowPreset === "mobile-app"
           ? parsed.guidedFlowPreset
           : undefined,
-      guidedBuildIntake: normalizeGuidedBuildIntake(parsed.guidedBuildIntake),
       guidedEntryContext: normalizeGuidedBuildHandoff(parsed.guidedEntryContext),
       buildSession: normalizeBuildSession(parsed.buildSession),
       saasIntake: normalizeSaasIntake(parsed.saasIntake),

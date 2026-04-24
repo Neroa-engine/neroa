@@ -103,9 +103,9 @@ const scenarioSummaries: Record<BudgetScenario, BudgetScenarioSummary> = {
   lean: {
     id: "lean",
     label: "Lean Launch",
-    headline: "Keep the launch narrow, protect cash, and use Naroa to replace light outside planning work.",
+    headline: "Keep the launch narrow, protect cash, and use Neroa to replace light outside planning work.",
     assumptions: [
-      "Use Naroa for most planning, structure, and budget work.",
+      "Use Neroa for most planning, structure, and budget work.",
       "Add only the minimum outside spend needed to launch credibly.",
       "Delay non-essential tooling, design, and scale-up costs."
     ]
@@ -116,7 +116,7 @@ const scenarioSummaries: Record<BudgetScenario, BudgetScenarioSummary> = {
     headline: "Balance speed and quality with a fuller launch surface and clearer operating readiness.",
     assumptions: [
       "Add moderate outside spend where it directly improves launch readiness.",
-      "Use Naroa to keep scope disciplined and reduce unnecessary vendor work.",
+      "Use Neroa to keep scope disciplined and reduce unnecessary vendor work.",
       "Fund the first operating layer, website path, and launch support systems."
     ]
   },
@@ -155,7 +155,7 @@ const laneLogicProfiles: Record<BudgetLaneLogicKey, LaneLogicProfile> = {
     noOutsideSpend: true,
     currentTierCopy: "Structured budget planning is included in Starter and above.",
     upgradeCopy: "Upgrade recommended if you want stronger scenario modeling, more active workspaces, or deeper execution budgeting.",
-    outsideSpendCopy: "Naroa can complete the planning step internally. Outside spend appears only when the project itself needs it."
+    outsideSpendCopy: "Neroa can complete the planning step internally. Outside spend appears only when the project itself needs it."
   },
   branding: {
     label: "Branding",
@@ -179,7 +179,7 @@ const laneLogicProfiles: Record<BudgetLaneLogicKey, LaneLogicProfile> = {
     noOutsideSpend: false,
     currentTierCopy: "SaaS and build-heavy planning belong in Builder or Pro.",
     upgradeCopy: "Upgrade recommended for heavier feature scoping, more exports, and deeper multi-agent execution support.",
-    outsideSpendCopy: "Expect possible outside tooling, infra, and engineering costs even when Naroa reduces planning overhead."
+    outsideSpendCopy: "Expect possible outside tooling, infra, and engineering costs even when Neroa reduces planning overhead."
   },
   automation: {
     label: "Automation",
@@ -194,7 +194,7 @@ const laneLogicProfiles: Record<BudgetLaneLogicKey, LaneLogicProfile> = {
 const budgetItemCatalog: BudgetItem[] = [
   {
     id: "business-strategy-core",
-    name: "Naroa strategy synthesis",
+    name: "Neroa strategy synthesis",
     category: "Planning",
     laneType: "business-strategy",
     required: true,
@@ -213,7 +213,7 @@ const budgetItemCatalog: BudgetItem[] = [
     oneTimeCost: 0,
     monthlyCost: 0,
     coveredByNeroa: true,
-    notes: "Naroa can build the business plan internally without outside spend.",
+    notes: "Neroa can build the business plan internally without outside spend.",
     scenarioVisibility: ["lean", "standard", "growth"]
   },
   {
@@ -225,7 +225,7 @@ const budgetItemCatalog: BudgetItem[] = [
     oneTimeCost: 0,
     monthlyCost: 0,
     coveredByNeroa: true,
-    notes: "Naroa covers the planning layer and keeps budget logic in one place.",
+    notes: "Neroa covers the planning layer and keeps budget logic in one place.",
     scenarioVisibility: ["lean", "standard", "growth"]
   },
   {
@@ -249,7 +249,7 @@ const budgetItemCatalog: BudgetItem[] = [
     oneTimeCost: 450,
     monthlyCost: 39,
     coveredByNeroa: false,
-    notes: "Naroa reduces planning and copy effort, but domain, hosting, and build tools still cost money.",
+    notes: "Neroa reduces planning and copy effort, but domain, hosting, and build tools still cost money.",
     scenarioVisibility: ["lean", "standard", "growth"]
   },
   {
@@ -578,7 +578,7 @@ export function getBudgetLaneModel(args: {
         ? "Moderate execution load with some outside spend likely."
         : "Light planning load that can mostly stay inside Neroa.";
   const outsideSpendMessage = outsideSpendRequired
-    ? "Outside spend is likely for the launch path shown here, even though Naroa reduces planning, scoping, and coordination cost."
+    ? "Outside spend is likely for the launch path shown here, even though Neroa reduces planning, scoping, and coordination cost."
     : "No outside spend required for this step unless you choose optional extras.";
   const scenarioCards = (Object.keys(scenarioSummaries) as BudgetScenario[]).map((scenarioId) => scenarioSummaries[scenarioId]);
   const comparisonCards = createComparisonCards(
@@ -612,16 +612,16 @@ export function getBudgetLaneModel(args: {
     comparisonCards,
     recommendedAction: upgradeRequired
       ? `Upgrade to ${recommendedPlan.label} before execution-heavy work expands beyond your current plan.`
-      : "Stay on the current tier and keep using Naroa to reduce unnecessary outside spend.",
+      : "Stay on the current tier and keep using Neroa to reduce unnecessary outside spend.",
     savingsGuidance:
       estimatedSavings > 0
-        ? "Naroa is replacing early consultant, planner, and coordination work so you do not have to buy that clarity from multiple outside sources."
-        : "Use Naroa to tighten scope first, then reassess whether the outside spend is truly necessary."
+        ? "Neroa is replacing early consultant, planner, and coordination work so you do not have to buy that clarity from multiple outside sources."
+        : "Use Neroa to tighten scope first, then reassess whether the outside spend is truly necessary."
   } satisfies BudgetLaneModel;
 }
 
 export function createBudgetNaruaWelcome(model: BudgetLaneModel, scenario: BudgetScenario) {
-  return `Naroa is active in Budget. I’m looking at the ${scenarioSummaries[scenario].label.toLowerCase()} path, your current plan, and the real-world launch budget so we can separate Neroa cost from outside spend.`;
+  return `Neroa is active in Budget. I’m looking at the ${scenarioSummaries[scenario].label.toLowerCase()} path, your current plan, and the real-world launch budget so we can separate Neroa cost from outside spend.`;
 }
 
 export function createBudgetNaruaReply(
@@ -634,7 +634,7 @@ export function createBudgetNaruaReply(
     : `The Budget lane is not fully covered by ${model.currentPlan.label}.`;
 
   return [
-    `Naroa is evaluating the ${scenarioSummaries[scenario].label.toLowerCase()} budget path.`,
+    `Neroa is evaluating the ${scenarioSummaries[scenario].label.toLowerCase()} budget path.`,
     coverageCopy,
     model.outsideSpendMessage,
     `Based on "${message.trim()}", the next useful move is to tighten the required line items, compare that against ${model.recommendedPlan.label}, and decide whether you want the leaner or heavier launch path.`

@@ -1,12 +1,18 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { resolveAccountPlanAccess } from "@/lib/account/plan-access";
 import { requireUser } from "@/lib/auth";
 import {
   countActiveEnginesForUser,
   syncAccountPlanAccess
 } from "@/lib/account/plan-usage-server";
-import { DashboardBoardShell } from "@/components/layout/page-shells";
+import { OuterPortalShell } from "@/components/portal/portal-shells";
+import {
+  PortalActionRow,
+  PortalSummaryRow
+} from "@/components/portal/outer-portal-ui";
+import { APP_ROUTES } from "@/lib/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { unstable_noStore as noStore } from "next/cache";
 
 function formatPlanStatus(value: string | null) {
   if (!value) {
@@ -17,7 +23,10 @@ function formatPlanStatus(value: string | null) {
 }
 
 export default async function SettingsPage() {
-  const { user } = await requireUser();
+  noStore();
+  const { user } = await requireUser({
+    nextPath: APP_ROUTES.settings
+  });
   const supabase = createSupabaseServerClient();
   const activeEnginesUsed = await countActiveEnginesForUser(supabase, user.id).catch(() => 0);
   const usage = await syncAccountPlanAccess({
@@ -31,144 +40,133 @@ export default async function SettingsPage() {
   );
 
   return (
-    <DashboardBoardShell
+    <OuterPortalShell
+      currentPath={APP_ROUTES.settings}
       userEmail={user.email ?? undefined}
-      ctaHref="/dashboard"
-      ctaLabel="Open engines"
+      showActiveProjectPanel={false}
+      showActiveProjectChip={false}
     >
       <div className="space-y-6">
-        <section className="floating-plane relative overflow-hidden rounded-[38px] px-6 py-8 xl:px-8">
-          <div className="floating-wash rounded-[38px]" />
+        <section className="floating-plane relative overflow-hidden rounded-[34px] px-6 py-8 xl:px-8">
+          <div className="floating-wash rounded-[34px]" />
           <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
             <div className="max-w-4xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-cyan-700">
-                Account settings
+                Settings
               </p>
-              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-slate-950 xl:text-6xl">
-                Keep your Neroa access, engine board entry, and support paths organized.
+              <h1 className="mt-4 text-4xl font-semibold tracking-[-0.05em] text-white xl:text-6xl">
+                Account controls, billing access, and support paths in one place.
               </h1>
-              <p className="mt-5 max-w-3xl text-base leading-8 text-slate-600">
-                This page gives the header account menu a real destination today while leaving room for fuller settings controls as the product expands.
+              <p className="mt-5 max-w-3xl text-base leading-8 text-[color:var(--front-door-text-secondary)]">
+                Keep this page operational and direct: move between Projects, billing, usage, and
+                support without extra filler or duplicated controls.
               </p>
             </div>
 
-            <div className="premium-surface-soft min-w-[240px] p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Active account
+            <div className="rounded-[22px] border border-[color:var(--front-door-border)] bg-[linear-gradient(140deg,rgba(11,18,33,0.94),rgba(8,11,24,0.96))] px-5 py-5 shadow-[0_18px_42px_rgba(7,10,20,0.3),0_0_0_1px_rgba(112,211,252,0.08)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--front-door-text-secondary)]">
+                Signed-in account
               </p>
-              <p className="mt-3 text-lg font-semibold text-slate-950">
+              <p className="mt-3 text-lg font-semibold text-white">
                 {user.email ?? "Neroa account"}
               </p>
-              <p className="mt-3 text-sm leading-6 text-slate-600">
+              <p className="mt-2 text-sm leading-7 text-[color:var(--front-door-text-secondary)]">
                 {usage.planName ?? "Plan required"} ·{" "}
                 {usage.engineCreditsRemaining === null
-                  ? "Custom Engine Credits"
+                  ? "Custom credits"
                   : `${usage.engineCreditsRemaining.toLocaleString("en-US")} credits left`}
               </p>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <div className="floating-plane rounded-[34px] p-6 sm:p-8">
-            <div className="floating-wash rounded-[34px]" />
+        <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+          <div className="floating-plane rounded-[28px] p-5 sm:p-6">
+            <div className="floating-wash rounded-[28px]" />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Available now
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
+                Control surfaces
               </p>
-              <div className="mt-6 grid gap-4">
-                {[ 
-                  [
-                    "Engine access",
-                  "Jump directly into your dashboard and open your active Neroa engines."
-                  ],
-                  [
-                    "Usage visibility",
-                    "See the current plan, Engine Credits, and active Engine limit without guessing what the account can do next."
-                  ],
-                  [
-                    "Support routing",
-                    "Use the public support and contact flow without getting pushed into broken routes."
-                  ],
-                  [
-                    "Session control",
-                    "Sign out cleanly when you want to close the current account session."
-                  ]
-                ].map(([title, description]) => (
-                  <div key={title} className="premium-surface-soft p-5">
-                    <p className="text-base font-semibold text-slate-950">{title}</p>
-                    <p className="mt-3 text-sm leading-7 text-slate-600">{description}</p>
-                  </div>
-                ))}
+              <div className="mt-5 space-y-3">
+                <PortalActionRow
+                  title="Projects"
+                  detail="Open the outer project portal, review active work, and switch the project Neroa should resume."
+                  href={APP_ROUTES.projects}
+                  actionLabel="Open"
+                />
+                <PortalActionRow
+                  title="Resume Project"
+                  detail="Jump back into the currently active project using the smart resume route."
+                  href={APP_ROUTES.projectsResume}
+                  actionLabel="Resume"
+                />
+                <PortalActionRow
+                  title="Billing and Usage"
+                  detail="Review plan access, credits used, credits saved, and purchase flows."
+                  href={APP_ROUTES.billing}
+                  actionLabel="Open"
+                />
+                <PortalActionRow
+                  title="Support"
+                  detail="Use the standard support path without leaving the signed-in surface."
+                  href="/support"
+                  actionLabel="Open"
+                />
               </div>
             </div>
           </div>
 
-          <div className="floating-plane rounded-[34px] p-6">
-            <div className="floating-wash rounded-[34px]" />
+          <div className="floating-plane rounded-[28px] p-5 sm:p-6">
+            <div className="floating-wash rounded-[28px]" />
             <div className="relative">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Account usage
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
+                Account summary
               </p>
-              <div className="mt-6 space-y-4 rounded-[24px] border border-slate-200/70 bg-white/78 p-5">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">Current plan</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {formatPlanStatus(usage.planStatus)}
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-cyan-700">
-                    {usage.planName ?? "Select a plan"}
-                  </p>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">Engine Credits</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {usage.engineCreditsUsed.toLocaleString("en-US")} used this month
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-cyan-700">
-                    {usage.engineCreditsRemaining === null
+              <div className="mt-5 rounded-[20px] border border-[color:var(--front-door-border)] bg-[linear-gradient(140deg,rgba(11,18,33,0.96),rgba(8,11,24,0.96))] px-5 py-4 shadow-[0_18px_42px_rgba(7,10,20,0.32),0_0_0_1px_rgba(112,211,252,0.1)]">
+                <PortalSummaryRow
+                  label="Current plan"
+                  detail={formatPlanStatus(usage.planStatus)}
+                  value={usage.planName ?? "Select a plan"}
+                  variant="stack"
+                />
+                <PortalSummaryRow
+                  label="Credits"
+                  detail={`${usage.engineCreditsUsed.toLocaleString("en-US")} used this cycle`}
+                  value={
+                    usage.engineCreditsRemaining === null
                       ? "Custom"
-                      : `${usage.engineCreditsRemaining.toLocaleString("en-US")} left`}
-                  </p>
-                </div>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">Active Planning Engines</p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {usage.activeEnginesUsed.toLocaleString("en-US")} active now
-                    </p>
-                  </div>
-                  <p className="text-sm font-semibold text-cyan-700">
-                    {usage.activeEngineLimit === null
+                      : `${usage.engineCreditsRemaining.toLocaleString("en-US")} left`
+                  }
+                  variant="stack"
+                />
+                <PortalSummaryRow
+                  label="Active engines"
+                  detail="Currently counted against the account allowance"
+                  value={
+                    usage.activeEngineLimit === null
                       ? "Custom"
-                      : `${usage.activeEnginesUsed}/${usage.activeEngineLimit}`}
-                  </p>
-                </div>
-                <Link href="/pricing/diy" className="button-secondary justify-between">
-                  <span>Upgrade plan</span>
-                  <span className="text-cyan-700">View pricing</span>
-                </Link>
+                      : `${usage.activeEnginesUsed}/${usage.activeEngineLimit}`
+                  }
+                  variant="stack"
+                />
               </div>
-              <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+
+              <p className="mt-8 text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
                 Account actions
               </p>
               <div className="mt-4 grid gap-3">
-                <Link href="/profile" className="button-secondary justify-between">
-                  <span>View profile</span>
-                  <span className="text-cyan-700">Open</span>
+                <Link href={APP_ROUTES.profile} className="button-secondary justify-between">
+                  <span>Profile</span>
+                  <span className="text-cyan-200">Open</span>
                 </Link>
-                <Link href="/dashboard" className="button-secondary justify-between">
-                  <span>Dashboard / Engines</span>
-                  <span className="text-cyan-700">Go</span>
+                <Link href={APP_ROUTES.usage} className="button-secondary justify-between">
+                  <span>Usage / Credits</span>
+                  <span className="text-cyan-200">Open</span>
                 </Link>
                 <form method="post" action="/auth/sign-out">
                   <button type="submit" className="button-secondary w-full justify-between">
                     <span>Sign out</span>
-                    <span className="text-cyan-700">Exit</span>
+                    <span className="text-cyan-200">Exit</span>
                   </button>
                 </form>
               </div>
@@ -176,6 +174,7 @@ export default async function SettingsPage() {
           </div>
         </section>
       </div>
-    </DashboardBoardShell>
+    </OuterPortalShell>
   );
 }
+

@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { MarketingInteractiveCardGrid } from "@/components/marketing/interactive-card-system";
 import { GrowthLayerPricing } from "@/components/pricing/growth-layer-pricing";
+import { PublicActionLink } from "@/components/site/public-action-link";
+import { buildBillingIntentPath } from "@/lib/billing/catalog";
+import {
+  publicLaunchManagedCta,
+  publicLaunchPrimaryCta
+} from "@/lib/data/public-launch";
 import {
   calculateIntervalPrice,
   executionCreditActions,
@@ -27,15 +34,16 @@ type PublicPricingContentProps = {
   plans: PricingPlan[];
   billingIntervals: BillingInterval[];
   topUpBundles: ExecutionCreditPack[];
+  initialAuthenticated?: boolean;
 };
 
 const workflowStages = [
   "Strategy",
   "Scope",
-  "MVP",
   "Budget",
-  "Test",
+  "Build Definition",
   "Build",
+  "Test",
   "Launch",
   "Operate"
 ] as const;
@@ -67,18 +75,60 @@ function getPlanTone(category: PricingPlan["category"]) {
   }
 }
 
-function getPlanAction(planId: PricingPlanId) {
+function getPlanAction(planId: PricingPlanId, authenticated = false) {
+  if (authenticated) {
+    if (planId === "command-center") {
+      return {
+        href: buildBillingIntentPath({
+          kind: "addon",
+          addOnId: "done-for-you-support"
+        }),
+        label: "Open managed billing",
+        className: "button-primary"
+      };
+    }
+
+    return {
+      href: buildBillingIntentPath({
+        kind: "plan",
+        planId
+      }),
+      label: planId === "free" ? "Review plan in billing" : "Upgrade in billing",
+      className: "button-primary"
+    };
+  }
+
   switch (planId) {
     case "free":
-      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
+      return {
+        href: publicLaunchPrimaryCta.href,
+        label: "Continue with Free",
+        className: "button-primary"
+      };
     case "starter":
-      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
+      return {
+        href: publicLaunchPrimaryCta.href,
+        label: "Start with Starter",
+        className: "button-primary"
+      };
     case "builder":
-      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
+      return {
+        href: publicLaunchPrimaryCta.href,
+        label: "Choose Builder",
+        className: "button-primary"
+      };
     case "pro":
-      return { href: "/start", label: "Start DIY Build", className: "button-primary" };
+      return {
+        href: publicLaunchPrimaryCta.href,
+        label: "Choose Pro",
+        className: "button-primary"
+      };
     case "command-center":
-      return { href: "/start", label: "Start Agency", className: "button-primary" };
+      return {
+        href: publicLaunchManagedCta.href,
+        label: "Start Managed Build",
+        className: "button-primary"
+      };
   }
 }
 
@@ -124,15 +174,17 @@ function getExtraSeatDisplay(plan: PricingPlan) {
 
 function PricingCard({
   plan,
-  intervalId
+  intervalId,
+  initialAuthenticated
 }: {
   plan: PricingPlan;
   intervalId: BillingIntervalId;
+  initialAuthenticated?: boolean;
 }) {
   const pricing = calculateIntervalPrice(plan.priceMonthly, intervalId);
   const isMonthly = intervalId === "monthly";
   const isFree = plan.priceMonthly === 0;
-  const action = getPlanAction(plan.id);
+  const action = getPlanAction(plan.id, initialAuthenticated);
   const displayedPrice = isFree
     ? "Free"
     : pricing.effectiveMonthlyPrice === null
@@ -291,9 +343,14 @@ function PricingCard({
         ) : null}
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href={action.href} className={action.className}>
+          <PublicActionLink
+            href={action.href}
+            label={action.label}
+            className={action.className}
+            initialAuthenticated={initialAuthenticated}
+          >
             {action.label}
-          </Link>
+          </PublicActionLink>
           {plan.id === "command-center" ? (
             <Link href="/support" className="button-secondary">
               Get plan help
@@ -308,7 +365,8 @@ function PricingCard({
 export function PublicPricingContent({
   plans,
   billingIntervals,
-  topUpBundles
+  topUpBundles,
+  initialAuthenticated
 }: PublicPricingContentProps) {
   const [billingIntervalId, setBillingIntervalId] = useState<BillingIntervalId>("monthly");
 
@@ -323,7 +381,7 @@ export function PublicPricingContent({
             Build with Neroa&apos;s guided AI system at your own pace.
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-lg leading-9 text-slate-600">
-            Choose a DIY plan based on how much guided build capacity, planning throughput, and monthly Engine Credit coverage you need.
+            Choose a DIY plan based on how much guided build capacity, planning throughput, and monthly Engine Credit coverage your current budget can realistically support.
           </p>
           <p className="mx-auto mt-4 max-w-2xl text-sm font-medium text-slate-500">
             No plan includes flat-rate full-build labor for SaaS, apps, or platforms.
@@ -425,35 +483,48 @@ export function PublicPricingContent({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            {pricingTermDefinitions.map((item) => (
-              <div
-                key={item.term}
-                className="rounded-[22px] border border-slate-200/70 bg-white/72 px-5 py-5"
-              >
-                <p className="text-sm font-semibold text-slate-950">{item.term}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{item.definition}</p>
-              </div>
-            ))}
+          <div className="mt-6">
+            <MarketingInteractiveCardGrid
+              items={pricingTermDefinitions.map((item) => ({
+                eyebrow: "Pricing term",
+                title: item.term,
+                description: item.definition,
+                expandedDescription:
+                  item.term === "Subscription"
+                    ? "A Neroa subscription gives access to the guided system plus a recurring monthly Engine Credit pool. It sets the default pace, not an unlimited labor promise."
+                    : item.term === "Credits"
+                      ? "Engine Credits measure guided planning and execution activity inside Neroa. They make pace, monthly capacity, and acceleration visible without exposing raw token math to customers."
+                      : "Managed Build is a separate support layer for scopes that need Neroa or a partner team to carry more execution, QA, deployment, and operating responsibility directly.",
+                details:
+                  item.term === "Subscription"
+                    ? ["Sets recurring access", "Includes a monthly credit pool", "Determines baseline pacing"]
+                    : item.term === "Credits"
+                      ? ["Visible monthly usage", "Used for planning and execution workflows", "Can be expanded with top-up packs"]
+                      : ["Scope-led quote", "Heavier execution support", "Stronger QA and launch coverage"]
+              }))}
+              columns="three"
+              affordanceMode="icon"
+            />
           </div>
         </div>
       </section>
 
       <section className="mt-16">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {executionCreditActions.map((action) => (
-            <div key={action.id} className="floating-plane rounded-[26px] p-5">
-              <div className="floating-wash rounded-[26px]" />
-              <div className="relative">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
-                  {action.creditsLabel}
-                </p>
-                <p className="mt-3 text-lg font-semibold text-slate-950">{action.label}</p>
-                <p className="mt-3 text-sm leading-7 text-slate-600">{action.detail}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <MarketingInteractiveCardGrid
+          items={executionCreditActions.map((action) => ({
+            eyebrow: action.creditsLabel,
+            title: action.label,
+            description: action.detail,
+            expandedDescription: `${action.detail} This is an example usage band, not a universal promise. Real scope, integrations, review loops, and launch pressure still affect how much guided work the project needs.`,
+            details: [
+              "Example usage band only",
+              "Scope and integrations can move the estimate",
+              "Useful for understanding what a heavier month may contain"
+            ]
+          }))}
+          columns="three"
+          affordanceMode="icon"
+        />
       </section>
 
       <section className="mt-16">
@@ -472,8 +543,20 @@ export function PublicPricingContent({
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {plans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} intervalId={billingIntervalId} />
+            <PricingCard
+              key={plan.id}
+              plan={plan}
+              intervalId={billingIntervalId}
+              initialAuthenticated={initialAuthenticated}
+            />
           ))}
+        </div>
+
+        <div className="mx-auto mt-8 max-w-4xl rounded-[28px] border border-cyan-200/70 bg-[linear-gradient(135deg,rgba(240,249,255,0.94),rgba(255,255,255,0.84))] px-6 py-5">
+          <p className="text-sm leading-7 text-slate-700">
+            If you&apos;re not sure which plan you need, start with the free plan. NEROA will
+            recommend when to upgrade based on your scope, pace, and build needs.
+          </p>
         </div>
       </section>
 
@@ -492,28 +575,23 @@ export function PublicPricingContent({
               execution in a busy month, top up instead of assuming the subscription includes unlimited build labor.
             </p>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              {topUpBundles.map((bundle) => (
-                <div
-                  key={bundle.id}
-                  className="rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
-                    {bundle.label}
-                  </p>
-                  <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-                    {bundle.credits.toLocaleString()}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-slate-600">Engine Credits</p>
-                  <p className="mt-4 text-lg font-semibold text-slate-950">
-                    {formatMoney(bundle.price)}
-                  </p>
-                  <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
-                    {formatMoney(getExecutionCreditPackUnitPrice(bundle))} per credit
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-500">{bundle.detail}</p>
-                </div>
-              ))}
+            <div className="mt-6">
+              <MarketingInteractiveCardGrid
+                items={topUpBundles.map((bundle) => ({
+                  eyebrow: bundle.label,
+                  title: `${bundle.credits.toLocaleString()} Engine Credits`,
+                  description: `${formatMoney(bundle.price)} one-time top-up`,
+                  footnote: `${formatMoney(getExecutionCreditPackUnitPrice(bundle))} per credit`,
+                  expandedDescription: bundle.detail,
+                  details: [
+                    "One-time acceleration, not recurring plan capacity",
+                    "Useful for heavier months or launch pushes",
+                    "Still depends on scoped work, not unlimited delivery"
+                  ]
+                }))}
+                columns="four"
+                affordanceMode="icon"
+              />
             </div>
           </div>
         </div>
@@ -522,7 +600,7 @@ export function PublicPricingContent({
           <div className="floating-wash rounded-[34px]" />
           <div className="relative">
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-              Controls and expansion
+              Support options and limits
             </p>
             <div className="mt-6 grid gap-4">
               {hardCapPolicyPoints.map((item) => (
@@ -534,21 +612,21 @@ export function PublicPricingContent({
                 </div>
               ))}
 
-              {pricingAddOns.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-[24px] border border-slate-200/70 bg-white/72 px-5 py-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <p className="text-lg font-semibold text-slate-950">{item.label}</p>
-                    <p className="text-sm font-semibold text-cyan-700">{item.pricing}</p>
-                  </div>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{item.detail}</p>
-                  <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
-                  {item.availability}
-                  </p>
-                </div>
-              ))}
+              <MarketingInteractiveCardGrid
+                items={pricingAddOns.map((item) => ({
+                  eyebrow: item.availability,
+                  title: `${item.label} - ${item.pricing}`,
+                  description: item.detail,
+                  expandedDescription: `${item.detail} Neroa keeps this separate from the base plan so customers can see whether they need more capacity, more team access, or a heavier support layer.`,
+                  details: [
+                    `Availability: ${item.availability}`,
+                    "Separate from the base subscription",
+                    "Best added when the scope proves the need"
+                  ]
+                }))}
+                columns="one"
+                affordanceMode="icon"
+              />
             </div>
           </div>
         </div>
@@ -664,19 +742,24 @@ export function PublicPricingContent({
                 Start your build
               </p>
               <h2 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-                Choose the plan that matches your planning throughput and build capacity now, then expand only when the work proves it.
+                Choose a starting capacity now, then expand only when the scope proves it.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Neroa pricing is designed to stay legible: visible workflow access, visible Engine
-                Credits, visible planning-engine and build-project limits, and clear hard-cap controls.
+                If you&apos;re uncertain, start with Free and let NEROA recommend when to upgrade
+                based on scope, pace, and execution needs.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/start" className="button-primary">
-                Start DIY Build
-              </Link>
+              <PublicActionLink
+                href={publicLaunchPrimaryCta.href}
+                label="Continue with Free"
+                className="button-primary"
+                initialAuthenticated={initialAuthenticated}
+              >
+                Continue with Free
+              </PublicActionLink>
               <Link href="/managed-build" className="button-secondary">
-                View Managed Build Services
+                Compare with Managed
               </Link>
             </div>
           </div>

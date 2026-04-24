@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { AiSystemOverviewPage } from "@/components/ai-system/ai-system-overview-page";
 
 export default function SystemIndexPage() {
-  redirect("/system/ai");
+  return <AiSystemOverviewPage />;
 }

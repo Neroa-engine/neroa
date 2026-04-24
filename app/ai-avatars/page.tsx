@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { APP_ROUTES } from "@/lib/routes";
 
 export default function AiAvatarsPage() {
-  redirect("/system/ai");
+  redirect(APP_ROUTES.system);
 }

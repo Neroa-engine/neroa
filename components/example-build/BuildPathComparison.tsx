@@ -7,13 +7,14 @@ import {
   type FocusBubbleData
 } from "@/components/marketing/focus-bubble-system";
 import { useAIOnboardingControl } from "@/components/onboarding/ai-onboarding-control-provider";
+import { publicLaunchManagedCta } from "@/lib/data/public-launch";
 import type { ExampleBuildPath } from "@/lib/marketing/example-build-data";
 
 function getPathAction(path: ExampleBuildPath): FocusBubbleAction {
   if (path.id === "managed") {
     return {
-      href: "/managed-build",
-      label: "Explore Managed Build",
+      href: publicLaunchManagedCta.href,
+      label: publicLaunchManagedCta.label,
       tone: "primary"
     };
   }
@@ -28,7 +29,7 @@ function getPathAction(path: ExampleBuildPath): FocusBubbleAction {
 
   return {
     href: "/start",
-    label: "Start DIY Build",
+  label: "Start a conversation",
     tone: "primary"
   };
 }
@@ -55,7 +56,7 @@ function buildPathBubble(path: ExampleBuildPath): FocusBubbleData {
       `Best for: ${path.bestFor}`
     ],
     footnote: path.recommended
-      ? "Naroa recommends this route for the current example because it balances speed, support, and the shape of the product most effectively."
+      ? "Neroa recommends this route for the current example because it balances speed, support, and the shape of the product most effectively."
       : "This route stays available when your budget, urgency, or desired support level points in a different direction.",
     actions: [
       getPathAction(path),

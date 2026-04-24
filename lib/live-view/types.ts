@@ -1,11 +1,5 @@
-export const liveViewAllowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:3001",
-  "http://localhost:3002",
-  "http://127.0.0.1:3000",
-  "http://127.0.0.1:3001",
-  "http://127.0.0.1:3002"
-] as const;
+import type { BrowserRuntimeV2SessionState } from "@/lib/browser-runtime-v2/contracts";
+import type { BrowserRuntimeV2RuntimeTarget } from "@/lib/browser-runtime-v2/runtime-target";
 
 export type LiveViewStatus = "active" | "complete";
 export type LiveViewMode = "guided" | "self";
@@ -142,6 +136,25 @@ export type LiveViewRecommendation = {
   ctaHref: string | null;
 };
 
+export type LiveViewInspectionMode = "background" | "explicit";
+
+export type LiveViewInspectionResult = {
+  mode: LiveViewInspectionMode;
+  capturedAt: string;
+  trigger: string;
+  pageUrl: string;
+  pageTitle: string | null;
+  summary: string | null;
+  recommendations: LiveViewRecommendation[];
+  findings: LiveViewFinding[];
+  guardrails: LiveViewGuardrail[];
+};
+
+export type LiveViewInspectionState = {
+  latestObserved: LiveViewInspectionResult | null;
+  latestExplicit: LiveViewInspectionResult | null;
+};
+
 export type LiveViewReportPage = {
   url: string;
   title: string;
@@ -196,6 +209,8 @@ export type LiveViewSession = {
   lastPageTitle: string | null;
   currentStep: string | null;
   extensionConnection: LiveViewExtensionConnection;
+  inspectionState: LiveViewInspectionState;
+  runtimeV2: BrowserRuntimeV2SessionState;
   walkthrough: LiveViewWalkthroughCheckpoint[];
   recommendations: LiveViewRecommendation[];
   guardrails: LiveViewGuardrail[];
@@ -242,6 +257,7 @@ export type LiveViewConnectionPayload = {
   projectTitle: string;
   bridgeOrigin: string;
   allowedOrigins: string[];
+  runtimeTarget: BrowserRuntimeV2RuntimeTarget;
 };
 
 export type LiveViewBindPayload = {

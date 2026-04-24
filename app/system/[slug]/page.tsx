@@ -1,6 +1,10 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { AiDetailTemplate } from "@/components/ai-system/ai-detail-template";
-import { getAiSystemPage, getAiSystemStaticParams } from "@/lib/data/ai-system";
+import {
+  getAiSystemPage,
+  getAiSystemStaticParams,
+  normalizeAiSystemSlug
+} from "@/lib/data/ai-system";
 
 type SystemDetailPageProps = {
   params: {
@@ -13,7 +17,13 @@ export function generateStaticParams() {
 }
 
 export default function SystemDetailPage({ params }: SystemDetailPageProps) {
-  const page = getAiSystemPage(params.slug);
+  const canonicalSlug = normalizeAiSystemSlug(params.slug);
+
+  if (canonicalSlug !== params.slug) {
+    redirect(`/system/${canonicalSlug}`);
+  }
+
+  const page = getAiSystemPage(canonicalSlug);
 
   if (!page) {
     notFound();

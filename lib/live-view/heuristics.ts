@@ -118,14 +118,14 @@ function buildWalkthrough(session: LiveViewSession, snapshot: LiveViewSnapshot, 
       case "cta-buttons":
         passed =
           snapshot.page.pathname === "/" &&
-          includesText(controlText, /start diy build/i) &&
+          includesText(controlText, /start diy build|start a conversation/i) &&
           includesText(controlText, /managed build|explore managed/i);
         notes = passed ? "Primary CTAs are visible from the homepage." : notes;
         break;
       case "pricing-tier-buttons":
         passed =
           /\/pricing/.test(snapshot.page.pathname) &&
-          includesText(controlText, /pricing|start diy build|request managed/i);
+          includesText(controlText, /pricing|start diy build|start a conversation|request managed/i);
         notes = passed ? "Pricing interactions are visible and clickable." : notes;
         break;
       case "signup-login":
@@ -345,7 +345,7 @@ function buildRecommendations(snapshot: LiveViewSnapshot, findings: LiveViewFind
         id: "homepage-next-action",
         title: "Choose the next guided path",
         detail: "From the homepage, the clearest next move is to enter the guided build flow or inspect Example Build to watch the system think.",
-        ctaLabel: "Start DIY Build",
+        ctaLabel: "Start a conversation",
         ctaHref: "/start"
       }
     ];
@@ -383,8 +383,8 @@ function buildRecommendations(snapshot: LiveViewSnapshot, findings: LiveViewFind
         id: `guardrail-next-action-${snapshot.page.pathname}`,
         title: "Review scope guardrails before pushing further",
         detail: "The current page suggests a more complex build. Slow down, confirm the path, and consider a managed or hybrid route if launch speed matters.",
-        ctaLabel: "Explore Managed Build",
-        ctaHref: "/managed-build"
+        ctaLabel: "Start Managed Build",
+        ctaHref: "/start"
       }
     ];
   }
@@ -428,7 +428,7 @@ function buildReportSummary(walkthrough: LiveViewWalkthroughCheckpoint[], findin
   const critical = findings.filter((finding) => finding.severity === "critical").length;
   const warnings = findings.filter((finding) => finding.severity === "warning").length;
 
-  return `Naroa inspected ${passed} walkthrough checkpoints, surfaced ${critical} critical issues, ${warnings} warnings, and ${guardrails.length} guardrail signals.`;
+  return `Neroa inspected ${passed} walkthrough checkpoints, surfaced ${critical} critical issues, ${warnings} warnings, and ${guardrails.length} guardrail signals.`;
 }
 
 export function analyzeLiveViewUpdate({
@@ -516,7 +516,7 @@ export function createInitialReport(startedAt: string): LiveViewReport {
         url: ""
       }
     ],
-    summary: "Naroa is ready to inspect the live app."
+    summary: "Neroa is ready to inspect the live app."
   };
 }
 
@@ -546,7 +546,7 @@ export function createBootstrapRecommendation(title = "Connect Neroa Live View t
   return {
     id: "bootstrap-live-view",
     title,
-    detail: "Open the Live View page inside the active workspace, then inspect a localhost app tab to start real-time QA guidance.",
+    detail: "Open the Live View page inside the active workspace, then inspect the current runtime target tab to start real-time QA guidance.",
     ctaLabel: null,
     ctaHref: null
   };

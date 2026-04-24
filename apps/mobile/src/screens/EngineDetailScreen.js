@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { getTemplateSummary, parseWorkspaceDescription } from "../lib/engine-templates";
 import { supabase } from "../lib/supabase";
@@ -59,7 +59,7 @@ export default function EngineDetailScreen({ navigation, route }) {
         <Heading style={{ marginTop: 12 }}>{engine.title}</Heading>
         <Body style={{ marginTop: 12 }}>
           {engine.description ||
-            "Naroa will keep this engine focused on the next execution move without losing the lane structure."}
+            "Neroa will keep this engine focused on the next execution move without losing the lane structure."}
         </Body>
       </SurfaceCard>
 
@@ -95,10 +95,10 @@ export default function EngineDetailScreen({ navigation, route }) {
       </SurfaceCard>
 
       <PrimaryButton
-        label="Open Naroa"
+        label="Open Neroa"
         onPress={() =>
           navigation.navigate("MainTabs", {
-            screen: "Naroa",
+            screen: "Neroa",
             params: { engineTitle: engine.title, workspaceId: engine.id }
           })
         }

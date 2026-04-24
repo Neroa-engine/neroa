@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { usePathname } from "next/navigation";
+import { PublicActionLink } from "@/components/site/public-action-link";
 import {
   answerPublicHelpQuestion,
   getPublicHelpContext,
@@ -19,8 +19,8 @@ type ChatMessage = {
 };
 
 const defaultStarterQuestions = [
-  "What is Neroa?",
-  "What does Naroa do?",
+  "What is NEROA?",
+  "What does Neroa do?",
   "Which plan is right for me?",
   "How do I get started?",
   "Which use case should I start with?",
@@ -184,6 +184,18 @@ export function PublicHelpChat() {
   }, [pathname]);
 
   useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("help") === "open" || params.get("chat") === "open") {
+      setOpen(true);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setOpen(false);
@@ -260,8 +272,8 @@ export function PublicHelpChat() {
         <button
           type="button"
           onClick={() => setOpen((current) => !current)}
-          aria-label={open ? "Close Neroa site help" : "Open Neroa site help"}
-          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-cyan-300/22 bg-[linear-gradient(135deg,rgba(34,211,238,0.92),rgba(59,130,246,0.92),rgba(139,92,246,0.9))] text-white shadow-[0_24px_60px_rgba(59,130,246,0.25)] transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
+          aria-label={open ? "Close NEROA site help" : "Open NEROA site help"}
+          className="group inline-flex h-14 w-14 items-center justify-center rounded-full border border-[rgba(167,136,250,0.3)] bg-[linear-gradient(135deg,rgba(143,124,255,0.96),rgba(167,136,250,0.94),rgba(193,156,255,0.92))] text-white shadow-[0_24px_60px_rgba(148,122,255,0.28)] transition hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
         >
           <motion.div
             animate={
@@ -294,11 +306,11 @@ export function PublicHelpChat() {
                 <div className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-200/70 pb-4">
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-cyan-700">
-                      Ask Naroa
+                      Ask Neroa
                     </p>
                     <p className="mt-2 text-lg font-semibold text-slate-950">{context.title}</p>
                     <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                      Public-site help for pricing, Naroa, use cases, support, and next steps.
+                      Public-site help for pricing, Neroa, use cases, support, and next steps.
                     </p>
                   </div>
 
@@ -351,7 +363,7 @@ export function PublicHelpChat() {
                           }`}
                         >
                           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                            {message.role === "assistant" ? "Naroa guide" : "You"}
+                            {message.role === "assistant" ? "Neroa guide" : "You"}
                           </p>
                           <p className="mt-2 break-words whitespace-pre-wrap text-sm leading-7 text-inherit">
                             {message.content}
@@ -360,13 +372,12 @@ export function PublicHelpChat() {
                           {message.quickLinks?.length ? (
                             <div className="mt-3 flex flex-wrap gap-2">
                               {message.quickLinks.map((link) => (
-                                <Link
+                                <PublicActionLink
                                   key={`${message.id}-${link.href}`}
                                   href={link.href}
+                                  label={link.label}
                                   className="rounded-full border border-slate-200/75 bg-slate-50/85 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-cyan-700 transition hover:border-cyan-300/45 hover:text-cyan-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/45"
-                                >
-                                  {link.label}
-                                </Link>
+                                />
                               ))}
                             </div>
                           ) : null}
@@ -415,7 +426,7 @@ export function PublicHelpChat() {
                       value={draft}
                       onChange={(event) => setDraft(event.target.value)}
                       className="input min-h-[92px] flex-1 resize-none border-0 bg-transparent px-0 py-0 shadow-none focus:border-0 focus:bg-transparent focus:shadow-none"
-                      placeholder="Ask about pricing, Naroa, support, build paths, or what page to visit next."
+                      placeholder="Ask about pricing, Neroa, support, build paths, or what page to visit next."
                     />
 
                     <div className="flex shrink-0 items-center gap-2 pb-1">
@@ -444,13 +455,12 @@ export function PublicHelpChat() {
                     <p className="text-sm leading-6 text-slate-500">{micHint}</p>
                     <div className="flex flex-wrap gap-3">
                       {publicSupportLinks.map((link) => (
-                        <Link
+                        <PublicActionLink
                           key={link.href}
                           href={link.href}
+                          label={link.label}
                           className="text-sm font-medium text-cyan-700 transition hover:text-cyan-800"
-                        >
-                          {link.label}
-                        </Link>
+                        />
                       ))}
                     </div>
                   </div>

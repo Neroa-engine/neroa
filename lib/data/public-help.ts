@@ -1,8 +1,5 @@
 export type PublicInquiryType =
   | "saas-project"
-  | "internal-software-project"
-  | "external-app-project"
-  | "mobile-app-project"
   | "agency-partner"
   | "managed-build-quote"
   | "support"
@@ -29,32 +26,20 @@ export const publicInquiryTypeOptions: Array<{
   {
     value: "saas-project",
     label: "SaaS project",
-    description: "Talk to Neroa about scoping, validating, budgeting, and building a SaaS product."
-  },
-  {
-    value: "internal-software-project",
-    label: "Internal software project",
-    description: "Discuss internal tools, admin systems, CRMs, reporting portals, or workflow software."
-  },
-  {
-    value: "external-app-project",
-    label: "External app / customer-facing product",
-    description: "Plan customer-facing apps, portals, booking tools, websites, or branded digital products."
-  },
-  {
-    value: "mobile-app-project",
-    label: "Mobile app project",
-    description: "Discuss iPhone apps, Android apps, cross-platform MVPs, app-store planning, or mobile product execution."
+    description:
+      "Talk to NEROA about scoping, validating, budgeting, and building a serious SaaS product."
   },
   {
     value: "agency-partner",
     label: "Agency / builder partnership",
-    description: "Discuss builder partnerships, client delivery workflows, or agency use of Neroa."
+    description:
+      "Discuss builder partnerships, client-delivery workflows, or agency use of NEROA."
   },
   {
     value: "managed-build-quote",
     label: "Managed build quote",
-    description: "Request a scoped quote for Neroa or a partner team to help execute, QA, deploy, and manage the software."
+    description:
+      "Request a scoped quote for NEROA or a partner team to help execute, QA, deploy, and manage the software."
   },
   {
     value: "support",
@@ -70,42 +55,40 @@ export const publicInquiryTypeOptions: Array<{
 
 export const publicSupportLinks: PublicQuickLink[] = [
   { label: "Start your build", href: "/start" },
-  { label: "Contact Us", href: "/contact" },
-  { label: "Support", href: "/support" },
+  { label: "Contact support", href: "/contact?type=support" },
+  { label: "Pricing", href: "/pricing" },
   { label: "Instructions", href: "/instructions" }
 ];
 
 const pricingLinks: PublicQuickLink[] = [
   { label: "DIY Pricing", href: "/pricing/diy" },
   { label: "Managed Pricing", href: "/pricing/managed" },
-  { label: "Start your build", href: "/start" },
-  { label: "Request quote", href: "/contact?type=managed-build-quote" },
-  { label: "Contact Us", href: "/contact?type=other" },
-  { label: "Instructions", href: "/instructions" }
+  { label: "Compare build paths", href: "/pricing" },
+  { label: "Start Managed Build", href: "/start" }
 ];
 
 const gettingStartedLinks: PublicQuickLink[] = [
   { label: "Start your build", href: "/start" },
+  { label: "What is SaaS?", href: "/what-is-saas" },
   { label: "Use Cases", href: "/use-cases" },
-  { label: "Support", href: "/support" },
-  { label: "Instructions", href: "/instructions" }
+  { label: "Pricing", href: "/pricing" }
 ];
 
 const aiSystemLinks: PublicQuickLink[] = [
-  { label: "Naroa", href: "/system/naroa" },
+  { label: "Neroa", href: "/system/narua" },
   { label: "AI Systems", href: "/system/ai" },
   { label: "Support", href: "/support" }
 ];
 
 const useCaseLinks: PublicQuickLink[] = [
   { label: "Use Cases", href: "/use-cases" },
-  { label: "DIY Pricing", href: "/pricing/diy" },
-  { label: "Contact Us", href: "/contact?type=other" }
+  { label: "What is SaaS?", href: "/what-is-saas" },
+  { label: "Compare build paths", href: "/pricing" }
 ];
 
 const blogLinks: PublicQuickLink[] = [
   { label: "Blog", href: "/blog" },
-  { label: "Instructions", href: "/instructions" },
+  { label: "What is SaaS?", href: "/what-is-saas" },
   { label: "Start your build", href: "/start" }
 ];
 
@@ -113,14 +96,14 @@ const defaultContext: PublicHelpContext = {
   id: "default",
   title: "Neroa site guide",
   intro:
-    "I can explain how Neroa helps build SaaS products, internal software, external apps, and mobile apps, then point you to the right page or contact path.",
+    "I can explain how NEROA helps shape SaaS products, compare DIY versus Managed, and point you to the right public page or support path.",
   suggestions: [
     "Which build path fits me?",
     "How do I get started?",
     "Where can I get support?"
   ],
   quickLinks: [
-    { label: "How It Works", href: "/how-it-works" },
+    { label: "What is SaaS?", href: "/what-is-saas" },
     { label: "Use Cases", href: "/use-cases" },
     { label: "Pricing", href: "/pricing" }
   ]
@@ -132,7 +115,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "pricing",
       title: "Pricing help",
       intro:
-        "I can explain DIY vs managed pricing, Engine Credits, planning engines, build-project limits, and when to move from subscription guidance into a managed quote.",
+        "I can explain DIY versus Managed, monthly Engine Credits, realistic build pace, and when a project should move out of self-serve execution.",
       suggestions: [
         "Which plan fits a SaaS build?",
         "What happens when credits run out?",
@@ -147,7 +130,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "get-started",
       title: "Get started help",
       intro:
-        "I can explain how to start your build, choose the right product category, and move into the live Neroa flow for SaaS, internal software, external apps, or mobile apps.",
+        "I can explain how to start your build, where the SaaS path begins, and which page to use before you move into the guided builder.",
       suggestions: [
         "How do I get started?",
         "Which build path fits me?",
@@ -159,14 +142,14 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
 
   if (pathname.startsWith("/system/naroa") || pathname.startsWith("/system/narua")) {
     return {
-      id: "naroa",
-      title: "Naroa guide",
+      id: "neroa",
+      title: "Neroa guide",
       intro:
-        "I can explain Naroa's role as the orchestration layer that helps move product ideas into MVP, budget, validation, build, and launch decisions.",
+        "I can explain Neroa's role as the orchestration layer that helps turn a SaaS idea into the next useful planning or build decision.",
       suggestions: [
-        "What does Naroa actually do?",
+        "What does Neroa actually do?",
         "When do specialist AIs activate?",
-        "How does Naroa help with a build?"
+        "How does Neroa help with a build?"
       ],
       quickLinks: aiSystemLinks
     };
@@ -177,7 +160,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "ai-system",
       title: "AI system help",
       intro:
-        "I can explain how Naroa, Atlas, Forge, Nova, Pulse, Ops, and RepoLink coordinate around SaaS products, internal software, external apps, and mobile apps.",
+        "I can explain how Neroa leads the product flow and how the supporting systems widen the work only when the build needs more depth.",
       suggestions: [
         "How do the AI systems work together?",
         "Which AI helps with build planning?",
@@ -192,10 +175,10 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "use-cases",
       title: "Use-case help",
       intro:
-        "I can explain which build path fits best, what outputs each use case creates, and which coordinated AI stack supports it.",
+        "I can explain what NEROA helps build, how the path differs between DIY and Managed, and which page should come next before you start.",
       suggestions: [
-        "Should I start with SaaS, internal software, external apps, or mobile apps?",
-        "What outputs does this workflow produce?",
+        "What does NEROA help build?",
+        "Should I use DIY or Managed?",
         "Which plan fits this build path?"
       ],
       quickLinks: useCaseLinks
@@ -207,7 +190,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "blog",
       title: "Blog guide",
       intro:
-        "I can summarize the article, connect it back to the product, and point you to the next page if you want pricing, use cases, or the live build flow.",
+        "I can summarize the article, connect it back to the product, and point you to the next page if you want SaaS education, pricing clarity, or the live build flow.",
       suggestions: [
         "Summarize this article",
         "What page should I read next?",
@@ -222,7 +205,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "support",
       title: "Support help",
       intro:
-        "I can help you choose the right support path, point you to the contact form, or explain which build path and plan fit your project.",
+        "I can help you open the site guide, route you to the right support path, or point you to pricing and contact when you need a real answer.",
       suggestions: [
         "How do I contact the team?",
         "Which inquiry type should I use?",
@@ -237,7 +220,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "instructions",
       title: "Instructions guide",
       intro:
-        "I can help you move through the public site, understand the live product flow, and choose the right path for SaaS, internal software, external apps, or mobile apps.",
+        "I can help you move through the public site, understand the live product flow, and choose the right SaaS, pricing, or support page next.",
       suggestions: [
         "How should I move through the site?",
         "How do I get started?",
@@ -252,7 +235,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "contact",
       title: "Contact help",
       intro:
-        "I can help you choose the right inquiry type for a SaaS project, internal software, an external app, a mobile app, a managed build quote, support, or an agency partnership.",
+        "I can help you choose the right inquiry type for a SaaS project, a managed build quote, a partnership conversation, or a support request.",
       suggestions: [
         "Which inquiry type should I pick?",
         "Is this the right place for support?",
@@ -277,7 +260,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "Neroa pricing is built around visible capacity: coordinated AI access, active engine limits, monthly Engine Credits, hard caps by default, and clear top-up or upgrade paths for SaaS, internal software, external app, and mobile app builds.",
+        "NEROA pricing is built around visible capacity. DIY shows monthly Engine Credits and realistic pacing. Managed is the better path when scope, urgency, or support needs outgrow self-serve execution.",
       quickLinks: pricingLinks
     };
   }
@@ -290,15 +273,15 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "Neroa is live. The right next step is to start your build directly, or use Contact if you want help choosing the best SaaS, internal software, or external app path before you begin.",
+        "NEROA is live. The right next step is to start your build directly, or use Contact if you want help choosing between DIY and Managed before you begin.",
       quickLinks: gettingStartedLinks
     };
   }
 
-  if (normalized.includes("naroa") || normalized.includes("narua")) {
+  if (normalized.includes("neroa") || normalized.includes("naroa") || normalized.includes("narua")) {
     return {
       message:
-        "Naroa is the core orchestration layer of Neroa. It frames the product direction first, then activates specialist systems only when the work needs deeper validation, build logic, launch support, or operating structure.",
+        "Neroa is the core orchestration layer of NEROA. It helps frame the SaaS, tighten the next decision, and keep the product path structured before the build widens.",
       quickLinks: aiSystemLinks
     };
   }
@@ -314,7 +297,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "The Neroa AI system is intentionally role-based. Naroa orchestrates, Atlas strengthens validation and research, Forge supports build structure, Nova shapes interface direction, Pulse helps launch motion, Ops keeps execution organized, and RepoLink connects system context.",
+        "The NEROA system is intentionally guided instead of chat-only. Neroa leads the path, and the supporting systems widen the work only when build planning, research, launch support, or operations need more depth.",
       quickLinks: aiSystemLinks
     };
   }
@@ -326,7 +309,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "For public-site help, the cleanest routes are Contact Us for direct inquiries, Support for guided help paths, and Instructions for the practical walkthrough of how the public site and live build flow work.",
+        "For public-site help, the cleanest routes are Support for guided help, Contact for direct questions, and Instructions when you want the practical walkthrough before you start.",
       quickLinks: publicSupportLinks
     };
   }
@@ -338,7 +321,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "Use-case pages explain how Neroa supports SaaS products, internal software, external apps, and mobile apps, including the outputs, AI stack, and next steps behind each build path.",
+        "Use Cases explains what NEROA helps build, how the path differs, and when DIY or Managed is the better fit before you enter the guided builder.",
       quickLinks: useCaseLinks
     };
   }
@@ -346,7 +329,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   if (normalized.includes("blog") || normalized.includes("article")) {
     return {
       message:
-        "The blog explains why Neroa starts with Naroa, how the AI system is coordinated, and how public use-case pages connect back into workspace lanes.",
+        "The blog explains SaaS planning, why Neroa leads the product flow, and how build-path clarity affects scope, budget, and execution decisions.",
       quickLinks: blogLinks
     };
   }

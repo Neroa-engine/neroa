@@ -9,7 +9,7 @@ This folder contains the React Native + Expo mobile app path for Neroa itself.
 - Engine Board
 - Open an Engine
 - View lane structure
-- Naroa chat / guidance view
+- Neroa chat / guidance view
 - Support / contact access
 - Account / settings
 

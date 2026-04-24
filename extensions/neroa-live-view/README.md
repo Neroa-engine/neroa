@@ -1,6 +1,6 @@
 # Neroa Live View
 
-Local unpacked Chrome extension for inspecting localhost apps during Neroa build sessions.
+Internal unpacked Chrome extension for inspecting local, preview, and production runtime targets during Neroa build sessions.
 
 ## Load it
 
@@ -16,7 +16,7 @@ Local unpacked Chrome extension for inspecting localhost apps during Neroa build
    - `/workspace/<workspaceId>/project/<projectId>/live-view`
 2. Open the extension side panel.
 3. The extension will bind itself to the active workspace/session automatically.
-4. Switch to any supported localhost app tab on port `3000`, `3001`, or `3002`.
+4. Switch to the current runtime target tab you want Neroa to inspect.
 
 ## What it does
 

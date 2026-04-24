@@ -457,7 +457,7 @@ export function resolveAccountPlanAccess(
       getMetadataValue(user?.app_metadata, ["selected_plan", "plan", "subscription_tier", "tier"]) ??
         getMetadataValue(user?.user_metadata, ["selected_plan", "plan", "subscription_tier", "tier"])
     ) ?? null;
-  const selectedPlanId = isAdmin ? "command-center" : metadataPlan;
+  const selectedPlanId = isAdmin ? "command-center" : metadataPlan ?? "free";
   const policy = resolvePlanPolicy(selectedPlanId);
   const billingInterval = normalizeBillingInterval(
     getMetadataValue(user?.app_metadata, ["billing_interval"]) ??

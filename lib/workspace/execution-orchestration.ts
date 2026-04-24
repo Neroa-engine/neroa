@@ -1,4 +1,4 @@
-﻿import type { BuildCategoryId, BuildTemplateFeature } from "@/lib/onboarding/guided-build";
+import type { BuildCategoryId, BuildTemplateFeature } from "@/lib/onboarding/guided-build";
 import type {
   MobileCompanionChoice,
   MobilePlatformChoice
@@ -10,10 +10,16 @@ export type ConnectedService = {
   id:
     | "github"
     | "supabase"
+    | "nextjs"
     | "domain-provider"
     | "dns-provider"
     | "smtp"
+    | "resend"
     | "stripe"
+    | "posthog"
+    | "auth"
+    | "database"
+    | "cms"
     | "vercel"
     | "expo"
     | "apple-developer"
@@ -41,6 +47,7 @@ export type BuildReviewLoopItem = {
 export type EngineExecutionModelInput = {
   categoryId: BuildCategoryId;
   featureCards?: Array<Pick<BuildTemplateFeature, "id">>;
+  systemLabels?: string[] | null;
   mobilePlatformTarget?: MobilePlatformChoice | null;
   companionSurface?: MobileCompanionChoice | null;
   paymentsEnabled?: boolean | null;
@@ -51,14 +58,188 @@ function hasFeature(featureCards: EngineExecutionModelInput["featureCards"], fea
   return featureCards?.some((item) => item.id === featureId) ?? false;
 }
 
+function normalizeSystemLabel(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function serviceFromSystemLabel(label: string): ConnectedService | null {
+  const value = normalizeSystemLabel(label);
+
+  if (value === "github") {
+    return {
+      id: "github",
+      label: "GitHub",
+      statusLabel: "Source of truth",
+      state: "core",
+      description:
+        "Stores the repository, pull requests, review history, and implementation trail for this Engine."
+    };
+  }
+
+  if (value === "supabase") {
+    return {
+      id: "supabase",
+      label: "Supabase",
+      statusLabel: "Core backend",
+      state: "core",
+      description:
+        "Handles auth, data, storage, and backend orchestration for the guided build path."
+    };
+  }
+
+  if (value === "next.js" || value === "nextjs") {
+    return {
+      id: "nextjs",
+      label: "Next.js",
+      statusLabel: "App framework",
+      state: "core",
+      description:
+        "Provides the web application shell, routing model, and UI execution surface for this build."
+    };
+  }
+
+  if (value === "vercel") {
+    return {
+      id: "vercel",
+      label: "Vercel",
+      statusLabel: "Deploy path",
+      state: "conditional",
+      description:
+        "Connects the repository to preview and production deployment for the live app experience."
+    };
+  }
+
+  if (value === "stripe") {
+    return {
+      id: "stripe",
+      label: "Stripe",
+      statusLabel: "Commerce enabled",
+      state: "conditional",
+      description:
+        "Handles subscriptions, payments, deposits, and monetization flows when revenue belongs in the build."
+    };
+  }
+
+  if (value === "resend") {
+    return {
+      id: "resend",
+      label: "Resend",
+      statusLabel: "Transactional email",
+      state: "conditional",
+      description:
+        "Supports transactional email delivery for auth flows, notifications, and customer communication."
+    };
+  }
+
+  if (value === "posthog") {
+    return {
+      id: "posthog",
+      label: "PostHog",
+      statusLabel: "Product analytics",
+      state: "conditional",
+      description:
+        "Adds product analytics, event tracking, and growth instrumentation once the MVP starts learning from usage."
+    };
+  }
+
+  if (value === "auth system" || value === "auth layer" || value === "auth") {
+    return {
+      id: "auth",
+      label: "Auth system",
+      statusLabel: "Access control",
+      state: "core",
+      description:
+        "Controls secure user access, roles, sessions, and guarded product flows."
+    };
+  }
+
+  if (value === "database layer" || value === "database") {
+    return {
+      id: "database",
+      label: "Database layer",
+      statusLabel: "Data model",
+      state: "core",
+      description:
+        "Shapes the underlying data model, records, and entity relationships that support the product workflow."
+    };
+  }
+
+  if (value === "cms" || value === "cms layer") {
+    return {
+      id: "cms",
+      label: "CMS",
+      statusLabel: "Content layer",
+      state: "conditional",
+      description:
+        "Adds structured content editing when the product needs managed publishing or content operations."
+    };
+  }
+
+  if (value === "expo") {
+    return {
+      id: "expo",
+      label: "Expo",
+      statusLabel: "Primary mobile path",
+      state: "core",
+      description:
+        "Supports the disciplined React Native + Expo path for real iOS and Android execution."
+    };
+  }
+
+  if (value === "apple developer") {
+    return {
+      id: "apple-developer",
+      label: "Apple Developer",
+      statusLabel: "iOS launch",
+      state: "launch",
+      description:
+        "Required for TestFlight, App Store submission, and production iPhone release work."
+    };
+  }
+
+  if (value === "google play console" || value === "google play") {
+    return {
+      id: "google-play",
+      label: "Google Play Console",
+      statusLabel: "Android launch",
+      state: "launch",
+      description:
+        "Required for internal testing, Play submission, and Android release management."
+    };
+  }
+
+  return null;
+}
+
+function uniqueServices(services: ConnectedService[]) {
+  const seen = new Set<string>();
+
+  return services.filter((service) => {
+    if (seen.has(service.id)) {
+      return false;
+    }
+
+    seen.add(service.id);
+    return true;
+  });
+}
+
 export function getEngineConnectedServices(
   input: EngineExecutionModelInput
 ): ConnectedService[] {
+  const explicitServices =
+    input.systemLabels
+      ?.map((label) => serviceFromSystemLabel(label))
+      .filter((service): service is ConnectedService => Boolean(service)) ?? [];
   const mobile = input.categoryId === "mobile-app";
   const accounts =
-    input.accountsEnabled === true || hasFeature(input.featureCards, "auth");
+    input.accountsEnabled === true ||
+    hasFeature(input.featureCards, "auth") ||
+    explicitServices.some((service) => service.id === "auth" || service.id === "supabase");
   const payments =
-    input.paymentsEnabled === true || hasFeature(input.featureCards, "checkout");
+    input.paymentsEnabled === true ||
+    hasFeature(input.featureCards, "checkout") ||
+    explicitServices.some((service) => service.id === "stripe");
   const hasWebCompanion =
     input.companionSurface === "admin-dashboard" ||
     input.companionSurface === "web-companion" ||
@@ -71,7 +252,8 @@ export function getEngineConnectedServices(
       input.mobilePlatformTarget === "both" ||
       input.mobilePlatformTarget == null);
 
-  return [
+  return uniqueServices([
+    ...explicitServices,
     {
       id: "github",
       label: "GitHub",
@@ -152,17 +334,17 @@ export function getEngineConnectedServices(
       description:
         "Required for internal testing, beta rollout, Play submission, and Android release management."
     }
-  ];
+  ]);
 }
 
 export function getExecutionRoutingModel(): OrchestrationRoutingItem[] {
   return [
     {
       id: "narua",
-      label: "Naroa",
+      label: "Neroa",
       badge: "Orchestrator",
       description:
-        "Naroa decides which AI system should frame, implement, review, or summarize the work at each stage."
+        "Neroa decides which AI system should frame, implement, review, or summarize the work at each stage."
     },
     {
       id: "github",
@@ -213,10 +395,10 @@ export function getBuildReviewLoop(): BuildReviewLoopItem[] {
     },
     {
       step: "04",
-      title: "Naroa summary",
-      owner: "Naroa",
+      title: "Neroa summary",
+      owner: "Neroa",
       description:
-        "Naroa reports what changed, what was reviewed, what still needs testing, and the next recommended move."
+        "Neroa reports what changed, what was reviewed, what still needs testing, and the next recommended move."
     }
   ];
 }

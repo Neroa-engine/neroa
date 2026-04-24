@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { MessageBubble } from "../components/message-bubble";
@@ -9,18 +9,18 @@ function buildAssistantReply(input, engineTitle) {
   const normalized = input.toLowerCase();
 
   if (normalized.includes("mobile")) {
-    return "Naroa recommends keeping React Native + Expo as the primary mobile path, using a PWA only when speed and budget protection matter more than app-store delivery.";
+    return "Neroa recommends keeping React Native + Expo as the primary mobile path, using a PWA only when speed and budget protection matter more than app-store delivery.";
   }
 
   if (normalized.includes("budget")) {
-    return "Naroa would tighten the scope first, compare the protected MVP against the budget guardrail, then decide whether the engine should stay lean or move deeper into build execution.";
+    return "Neroa would tighten the scope first, compare the protected MVP against the budget guardrail, then decide whether the engine should stay lean or move deeper into build execution.";
   }
 
   if (normalized.includes("launch")) {
     return "The next useful move is to line up testing, release readiness, and the first launch checklist before widening the engine.";
   }
 
-  return `Naroa is treating ${engineTitle || "this engine"} as the active context. The next move is to clarify the immediate outcome, keep the lane sequence tight, and open only the execution step that earns it.`;
+  return `Neroa is treating ${engineTitle || "this engine"} as the active context. The next move is to clarify the immediate outcome, keep the lane sequence tight, and open only the execution step that earns it.`;
 }
 
 export default function NaruaScreen({ route }) {
@@ -30,8 +30,8 @@ export default function NaruaScreen({ route }) {
       id: "welcome",
       role: "narua",
       content: engineTitle
-        ? `Naroa is ready inside ${engineTitle}. Ask for the next move, the MVP cut line, the budget signal, or the build-path recommendation.`
-        : "Naroa is ready. Ask what to build next, which lane should lead, or how to move from strategy into execution."
+        ? `Neroa is ready inside ${engineTitle}. Ask for the next move, the MVP cut line, the budget signal, or the build-path recommendation.`
+        : "Neroa is ready. Ask what to build next, which lane should lead, or how to move from strategy into execution."
     }
   ]);
   const [draft, setDraft] = useState("");
@@ -68,12 +68,12 @@ export default function NaruaScreen({ route }) {
   return (
     <ScreenScroll>
       <SurfaceCard>
-        <Eyebrow>Naroa mobile</Eyebrow>
+        <Eyebrow>Neroa mobile</Eyebrow>
         <Heading style={{ marginTop: 12 }}>
           {engineTitle ? `Guide ${engineTitle}` : "Guide the next execution move"}
         </Heading>
         <Body style={{ marginTop: 12 }}>
-          This mobile Naroa view is built for guidance, lane decisions, and next-step clarity. It is
+          This mobile Neroa view is built for guidance, lane decisions, and next-step clarity. It is
           not the full desktop build surface.
         </Body>
       </SurfaceCard>
@@ -103,7 +103,7 @@ export default function NaruaScreen({ route }) {
       </SurfaceCard>
 
       <SurfaceCard>
-        <Eyebrow>Message Naroa</Eyebrow>
+        <Eyebrow>Message Neroa</Eyebrow>
         <View style={styles.inputRow}>
           <TextInput
             value={draft}
@@ -118,7 +118,7 @@ export default function NaruaScreen({ route }) {
             onPress={() =>
               Alert.alert(
                 "Voice input",
-                "Voice capture can be wired next. The control is in place so the mobile input pattern matches the rest of Naroa."
+                "Voice capture can be wired next. The control is in place so the mobile input pattern matches the rest of Neroa."
               )
             }
             style={styles.iconButton}

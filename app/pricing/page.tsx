@@ -17,15 +17,17 @@ import {
   managedBuildPackages,
   pricingScopeDisclaimer
 } from "@/lib/pricing/config";
+import { getOptionalUser } from "@/lib/auth";
+import { buildBillingIntentPath } from "@/lib/billing/catalog";
 
 const pricingSplitCards = [
   {
     eyebrow: "DIY Build Pricing",
     title: "Monthly access plus Engine Credits",
     description:
-      "DIY pricing is for customers who want guided structure, budget control, and the ability to build over time instead of funding the entire product upfront.",
+      "DIY pricing is for customers who want guided structure, visible monthly pace, and the option to build over time instead of funding the whole product upfront.",
     href: "/pricing/diy",
-    ctaLabel: "Open DIY pricing"
+    ctaLabel: "See DIY pricing"
   },
   {
     eyebrow: "Managed Build Pricing",
@@ -33,46 +35,43 @@ const pricingSplitCards = [
     description:
       "Managed pricing is for customers who want structured execution help, QA visibility, launch coordination, and a quote-led delivery path.",
     href: "/pricing/managed",
-    ctaLabel: "Open managed pricing"
+    ctaLabel: "See Managed pricing"
   }
 ] as const;
 
-const diyLogicCards = [
+const diyLogicMetrics = [
   {
-    title: "Plans include monthly Engine Credits",
-    description:
-      "The credit pool defines how much guided build activity can happen in a month. The pool resets with the plan instead of pretending the subscription includes endless labor."
+    label: "Monthly credits",
+    value:
+      "Every DIY plan includes a recurring Engine Credit pool that defines how much guided build activity fits inside the month."
   },
   {
-    title: "Scope determines pace",
-    description:
-      "The same kind of software can move at very different speeds depending on scope. Neroa shows the estimate after the build is defined so customers can choose the right pacing path."
+    label: "Scope sets pace",
+    value:
+      "The same product can move at very different speeds depending on how much feature depth, workflow logic, and integration work belongs in the current phase."
   },
   {
-    title: "Scale up only when the work proves it",
-    description:
-      "Customers can start lower, add credits for heavier months, or upgrade when the project becomes more serious."
+    label: "Add capacity carefully",
+    value:
+      "Customers can add credits or upgrade when the work justifies it, instead of carrying oversized monthly cost before the product proves itself."
   }
 ] as const;
 
-const pacingExamples = [
+const pacingMetrics = [
   {
-    eyebrow: "Lean path",
-    title: "Lower monthly budget",
-    description:
-      "Best for customers who want to move carefully, stay inside monthly plan limits, and let the product mature over time."
+    label: "Lean pace",
+    value:
+      "Best when the product can move carefully, stay inside the base plan rhythm, and mature over time without forcing a rushed first release."
   },
   {
-    eyebrow: "Balanced path",
-    title: "Monthly credits plus occasional top-ups",
-    description:
-      "Useful when launch timing matters sometimes, but the customer still wants to stay largely inside the DIY model."
+    label: "Balanced pace",
+    value:
+      "Best when launch timing matters sometimes and occasional credit top-ups make sense without leaving the DIY lane."
   },
   {
-    eyebrow: "Fast path",
-    title: "Higher plan, more credits, or managed support",
-    description:
-      "Best when the product needs to move faster, the integration depth is higher, or the software is becoming business-critical."
+    label: "Fast pace",
+    value:
+      "Best when higher urgency, deeper integrations, or heavier business risk justify a larger plan, more credits, or managed support."
   }
 ] as const;
 
@@ -91,7 +90,7 @@ const pathFitCards = [
   {
     title: "Choose Managed if you want structured execution help",
     description:
-      "Managed fits customers who want Neroa to help carry execution, QA visibility, and launch coordination with a clearer delivery path."
+      "Managed fits customers who want NEROA to carry more execution, QA visibility, and launch coordination when the build is too heavy for steady self-serve pacing."
   }
 ] as const;
 
@@ -102,12 +101,12 @@ const growthLayerCards = [
       "Customers can buy additional Engine Credits when they want to compress a build window instead of pretending the subscription includes unlimited speed."
   },
   {
-    title: "Growth upgrades stay separate from the base build plan",
+    title: "Growth support stays separate from the base build plan",
     description:
-      "AI SEO + Marketing Optimization is positioned as a paid upgrade so product growth work does not get confused with core build capacity."
+      "SEO review, keyword structure, landing-page optimization, and launch-positioning support stay in a separate paid layer so product growth work does not get confused with core build capacity."
   },
   {
-    title: "Managed escalation happens when the scope gets heavy",
+    title: "Managed escalation starts when credits stop being the right tool",
     description:
       "When a project crosses the complexity comfort line, Neroa recommends managed or hybrid execution instead of relying on more credits alone."
   }
@@ -149,7 +148,16 @@ export const metadata: Metadata = buildPublicMetadata({
   ]
 });
 
-export default function PricingPage() {
+export default async function PricingPage() {
+  const user = await getOptionalUser();
+  const initialAuthenticated = Boolean(user);
+  const ctaHref = user
+    ? buildBillingIntentPath({
+        kind: "plan",
+        planId: "builder"
+      })
+    : "/start";
+
   const schema = {
     "@context": "https://schema.org",
     "@graph": [
@@ -165,8 +173,9 @@ export default function PricingPage() {
 
   return (
     <MarketingInfoShell
-      ctaHref="/start"
-      ctaLabel="Start DIY Build"
+      userEmail={user?.email ?? undefined}
+      ctaHref={ctaHref}
+      ctaLabel={user ? "Open billing" : "Start a conversation"}
       brandVariant="prominent"
       contentWidth="wide"
     >
@@ -176,16 +185,17 @@ export default function PricingPage() {
         <PublicPageHero
           eyebrow="Pricing"
           title="Choose the build path and pace that fits your product."
-          summary="Neroa pricing is designed to make the model legible: DIY subscriptions give access plus monthly Engine Credits, while Managed Build uses separate scoped pricing for customers who want more execution support."
+          summary="Use pricing to answer three questions clearly: should this stay in DIY, should it move into Managed, and what pace can the current budget realistically support?"
           primaryAction={{ href: "/pricing/diy", label: "View DIY Pricing" }}
           secondaryAction={{ href: "/pricing/managed", label: "View Managed Pricing", tone: "secondary" }}
+          initialAuthenticated={initialAuthenticated}
           highlights={[
             "DIY for flexible monthly pacing",
             "Managed for scoped execution support",
             "No fake unlimited-build pricing language"
           ]}
           panelTitle="How to read Neroa pricing"
-          panelSummary="Pricing is easiest to understand when the customer separates monthly guided build capacity from managed execution support."
+          panelSummary="Pricing gets clearer when you separate monthly guided capacity from managed execution support and compare pace honestly."
           panelItems={[
             "DIY plans define monthly pace through Engine Credits",
             "Managed Build is scoped separately from DIY subscriptions",
@@ -208,18 +218,6 @@ export default function PricingPage() {
           summary="The DIY and Managed paths are connected, but they should not be confused. One is paced by monthly credits. The other is quote-led and support-heavy."
         />
         <div className="mt-8">
-          <ConversionStrip
-            eyebrow="See it in motion"
-            title="Want to see how a build gets framed before you compare plans?"
-            summary="Open the interactive Example Build to watch Neroa move a product through strategy, scope, MVP, example credits, and build-path decisions before you pick the pricing lane that fits."
-            actions={[
-              { href: "/example-build", label: "See an Example Build" },
-              { href: "/pricing/diy", label: "Open DIY Pricing", tone: "secondary" },
-              { href: "/pricing/managed", label: "Open Managed Pricing", tone: "secondary" }
-            ]}
-          />
-        </div>
-        <div className="mt-8">
           <InfoCardGrid
             items={[...pricingSplitCards]}
             columns="two"
@@ -235,13 +233,15 @@ export default function PricingPage() {
             title="Monthly credits define pace and capacity."
             summary={pricingScopeDisclaimer}
           />
-        <div className="mt-8">
-          <InfoCardGrid
-            items={[...diyLogicCards]}
-            guideContext={{ onboardingStep: "public-pricing", intentPrefix: "Explore DIY pricing logic" }}
-          />
+          <div className="comparison-band mt-8">
+            {diyLogicMetrics.map((item) => (
+              <div key={item.label} className="comparison-metric">
+                <span className="comparison-label">{item.label}</span>
+                <span className="comparison-value">{item.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
         <div>
           <SectionHeader
@@ -249,13 +249,15 @@ export default function PricingPage() {
             title="Different budgets create different build rhythms."
             summary="Neroa helps customers understand how a project can move slowly, steadily, or quickly depending on plan level, added credits, and whether the build stays DIY."
           />
-        <div className="mt-8">
-          <InfoCardGrid
-            items={[...pacingExamples]}
-            guideContext={{ onboardingStep: "public-pricing", intentPrefix: "Review pricing pace" }}
-          />
+          <div className="comparison-band mt-8">
+            {pacingMetrics.map((item) => (
+              <div key={item.label} className="comparison-metric">
+                <span className="comparison-label">{item.label}</span>
+                <span className="comparison-value">{item.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
       </section>
 
       <section className="mt-16">
@@ -308,7 +310,7 @@ export default function PricingPage() {
             <span className="comparison-value">Scope still governs execution, and heavy builds may need a higher tier or managed path.</span>
           </div>
         </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-8">
           <InfoCardGrid
             items={executionCreditPacks.map((pack) => ({
               eyebrow: pack.label,
@@ -329,11 +331,11 @@ export default function PricingPage() {
 
       <section className="mt-16 grid gap-6 lg:grid-cols-[1fr_0.96fr]">
         <div>
-          <SectionHeader
-            eyebrow="Growth layer"
-            title="Pricing expands through credits, upgrades, and smarter escalation."
-            summary="The base plan gets someone into Neroa. The growth layer explains how they accelerate, when they add revenue support, and when the scope should move into managed execution."
-          />
+        <SectionHeader
+          eyebrow="Growth layer"
+          title="Pricing expands through acceleration, optional growth support, and smarter escalation."
+          summary="The base plan gets someone into Neroa. The growth layer explains how they accelerate, when they add launch-positioning support, and when the scope should move into managed execution."
+        />
         <div className="mt-8">
           <InfoCardGrid
             items={[...growthLayerCards]}
@@ -372,7 +374,7 @@ export default function PricingPage() {
               <div className="comparison-metric">
                 <span className="comparison-label">Escalate to managed</span>
                 <span className="comparison-value">
-                  Switch to a hybrid or managed path when execution risk gets heavier than credits alone should solve.
+                  Switch to a hybrid or managed path when complexity, QA burden, or launch pressure outgrow credits alone.
                 </span>
               </div>
             </div>
@@ -384,7 +386,7 @@ export default function PricingPage() {
         <SectionHeader
           eyebrow="Paid upgrade layer"
           title="Optional growth services can sit on top of the build."
-          summary="Neroa can add growth-focused work as a separate paid layer when the product also needs search positioning, landing-page generation, and content optimization."
+          summary="Neroa can add growth-focused work as a separate paid layer when the product also needs SEO review, launch positioning support, landing-page optimization, and content structure."
         />
         <div className="mt-8">
           <InfoCardGrid
@@ -414,9 +416,8 @@ export default function PricingPage() {
         title="Start where the budget and urgency are honest."
         summary="DIY works when the customer wants flexible monthly pacing. Managed works when the project needs more direct execution help. Neroa supports both without blending the pricing into one confusing promise."
         actions={[
-          { href: "/pricing/diy", label: "Open DIY Pricing" },
-          { href: "/pricing/managed", label: "Open Managed Pricing", tone: "secondary" },
-          { href: "/example-build", label: "See an Example Build", tone: "secondary" }
+          { href: "/pricing/diy", label: "View DIY Pricing" },
+          { href: "/pricing/managed", label: "View Managed Pricing", tone: "secondary" }
         ]}
         aside={
           <div className="comparison-band">
