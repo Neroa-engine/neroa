@@ -13,6 +13,7 @@ import {
   mapLiveViewSessionToRuntimeTarget,
   mapLiveViewSessionSummaries
 } from "@/lib/live-view/store";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
 
 export const runtime = "nodejs";
@@ -155,29 +156,41 @@ export async function POST(request: NextRequest) {
     return access.response;
   }
 
-  const session = parsed.data.reuseExisting
+  try {
+    const session = parsed.data.reuseExisting
       ? await getOrCreateProjectLiveViewSession({
-        workspaceId: parsed.data.workspaceId,
-        projectId: parsed.data.projectId,
-        projectTitle: parsed.data.projectTitle ?? access.workspace.name,
-        bridgeOrigin: requestOrigin,
-        preferredOrigin: requestOrigin,
-        createdByUserId: access.user.id,
-        createdByEmail: access.user.email ?? null
-      })
-    : await createLiveViewSession({
-        workspaceId: parsed.data.workspaceId,
-        projectId: parsed.data.projectId,
-        projectTitle: parsed.data.projectTitle ?? access.workspace.name,
-        bridgeOrigin: requestOrigin,
-        createdByUserId: access.user.id,
-        createdByEmail: access.user.email ?? null
-      });
+          workspaceId: parsed.data.workspaceId,
+          projectId: parsed.data.projectId,
+          projectTitle: parsed.data.projectTitle ?? access.workspace.name,
+          bridgeOrigin: requestOrigin,
+          preferredOrigin: requestOrigin,
+          createdByUserId: access.user.id,
+          createdByEmail: access.user.email ?? null
+        })
+      : await createLiveViewSession({
+          workspaceId: parsed.data.workspaceId,
+          projectId: parsed.data.projectId,
+          projectTitle: parsed.data.projectTitle ?? access.workspace.name,
+          bridgeOrigin: requestOrigin,
+          createdByUserId: access.user.id,
+          createdByEmail: access.user.email ?? null
+        });
 
-  const mappedSession = mapLiveViewSessionToRuntimeTarget(session, requestOrigin);
+    const mappedSession = mapLiveViewSessionToRuntimeTarget(session, requestOrigin);
 
-  return NextResponse.json({
-    session: mappedSession,
-    connection: buildLiveViewConnectionPayload(mappedSession)
-  });
+    return NextResponse.json({
+      session: mappedSession,
+      connection: buildLiveViewConnectionPayload(mappedSession)
+    });
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to create or attach the live browser session."
+      },
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
+    );
+  }
 }

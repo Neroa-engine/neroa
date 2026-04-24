@@ -12,6 +12,7 @@ export type BrowserRuntimeBridgeState =
   | "preview_active"
   | "session_stale"
   | "reconnect_needed"
+  | "unsupported"
   | "error";
 
 type RoomDataState = "stable" | "partial" | "degraded";
@@ -22,6 +23,7 @@ type BrowserRuntimeBridgeArgs = {
   previewSessionId: string | null;
   approvedPackageStatus: CommandCenterApprovedDesignPackageStatus | "none";
   roomDataState: RoomDataState;
+  runtimeSupported?: boolean;
   launchRequested?: boolean;
 };
 
@@ -144,8 +146,34 @@ export function buildBrowserRuntimeBridgeSnapshot(
     previewSessionId,
     approvedPackageStatus,
     roomDataState,
+    runtimeSupported = true,
     launchRequested = false
   } = args;
+  const liveSessionId = liveSession?.id ?? previewSessionId ?? null;
+  const lastHeartbeatAt = liveSession?.extensionConnection.lastHeartbeatAt ?? null;
+  const lastSeenOrigin = liveSession?.extensionConnection.lastSeenOrigin ?? null;
+
+  if (!runtimeSupported) {
+    return {
+      state: "unsupported",
+      liveSessionId,
+      lastHeartbeatAt,
+      lastSeenOrigin,
+      statusLabel: "Localhost Only",
+      detail: withRoomStateNote(
+        "Browser Runtime, Live View session persistence, Browser Runtime V2 output, and local QC storage are disabled in this deployed environment. Use localhost or another persistent runtime when you need real browser-session tooling.",
+        roomDataState
+      ),
+      connectionState:
+        "No local browser session can be created here. Command Center is showing planning truth only until you move this workflow onto localhost or another persistent runtime.",
+      inspectionState:
+        "Explicit inspection, Record, Walkthrough, and SOP output stay unavailable here because Neroa does not write local browser-runtime session data on Vercel/serverless deployments.",
+      qcState:
+        "QC reports, recordings, and browser-runtime output storage stay disabled in this deployment. Use localhost when you need browser-backed review artifacts.",
+      ctaLabel: "Localhost only"
+    };
+  }
+
   const connectionIsLive = hasFreshConnection(liveSession);
   const previewUsesLiveSession =
     Boolean(liveSession) &&
@@ -157,9 +185,6 @@ export function buildBrowserRuntimeBridgeSnapshot(
   const explicitInspectionIsCurrent = hasExplicitInspection(liveSession);
   const observedInspectionExists = hasObservedInspection(liveSession);
   const currentLaunchAttempt = isCurrentLaunchAttempt(liveSession, launchRequested);
-  const liveSessionId = liveSession?.id ?? previewSessionId ?? null;
-  const lastHeartbeatAt = liveSession?.extensionConnection.lastHeartbeatAt ?? null;
-  const lastSeenOrigin = liveSession?.extensionConnection.lastSeenOrigin ?? null;
 
   let state: BrowserRuntimeBridgeState;
 
@@ -344,6 +369,10 @@ export function buildBrowserRuntimeErrorSnapshot(
 ): BrowserRuntimeBridgeSnapshot {
   const baseline = buildBrowserRuntimeBridgeSnapshot(args);
 
+  if (baseline.state === "unsupported") {
+    return baseline;
+  }
+
   return {
     ...baseline,
     state: "error",
@@ -360,7 +389,13 @@ export function buildBrowserRuntimeErrorSnapshot(
 export function buildDesignLibraryRuntimeTarget(
   args: BrowserRuntimeBridgeArgs
 ): DesignLibraryRuntimeTarget {
-  const { liveSession, previewState, previewSessionId, launchRequested = false } = args;
+  const {
+    liveSession,
+    previewState,
+    previewSessionId,
+    runtimeSupported = true,
+    launchRequested = false
+  } = args;
   const liveSessionId = liveSession?.id ?? previewSessionId ?? null;
   const connectionIsLive = hasFreshConnection(liveSession);
   const previewUsesLiveSession =
@@ -369,6 +404,14 @@ export function buildDesignLibraryRuntimeTarget(
     liveSession?.id === previewSessionId;
   const sessionWasBound = hasExistingBind(liveSession);
   const currentLaunchAttempt = isCurrentLaunchAttempt(liveSession, launchRequested);
+
+  if (!runtimeSupported) {
+    return {
+      runtimeTargetLabel: "Local browser runtime unavailable",
+      runtimeTargetDetail:
+        "Design Library preview and package staging only run against a real local live session. This deployed environment keeps that local runtime storage disabled."
+    };
+  }
 
   if (!previewSessionId && !liveSession) {
     return {

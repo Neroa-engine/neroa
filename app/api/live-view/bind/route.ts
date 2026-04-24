@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { bindLiveViewSession } from "@/lib/live-view/store";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function POST(request: NextRequest) {
         ok: false,
         error: error instanceof Error ? error.message : "Unable to bind the Live View session."
       },
-      { status: 400 }
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
     );
   }
 }

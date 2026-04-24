@@ -27,6 +27,10 @@ import {
   type LiveViewSessionSummary,
   type LiveViewSnapshot
 } from "@/lib/live-view/types";
+import {
+  assertLocalRuntimeStorageEnabled,
+  isLocalRuntimeStorageEnabled
+} from "@/lib/runtime/local-runtime-storage";
 
 const liveViewRoot = path.join(process.cwd(), ".neroa-live-view");
 const liveViewSessionsDir = path.join(liveViewRoot, "sessions");
@@ -34,6 +38,7 @@ const liveViewRecordingsDir = path.join(liveViewRoot, "recordings");
 const sessionReuseWindowMs = 1000 * 60 * 60 * 4;
 const liveViewConnectionFreshWindowMs = 1000 * 60 * 2;
 const sessionMutationQueues = new Map<string, Promise<void>>();
+const liveViewStorageScope = "Live View local session storage";
 
 function normalizeOrigin(value: string | null | undefined) {
   const trimmed = value?.trim();
@@ -303,6 +308,7 @@ function getSessionFilePath(sessionId: string) {
 }
 
 async function ensureLiveViewDirectories() {
+  assertLocalRuntimeStorageEnabled(liveViewStorageScope);
   await mkdir(liveViewSessionsDir, { recursive: true });
   await mkdir(liveViewRecordingsDir, { recursive: true });
 }
@@ -498,6 +504,10 @@ export async function listLiveViewSessionsForProject(args: {
   projectId: string;
   preferredOrigin?: string | null;
 }) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return [];
+  }
+
   await ensureLiveViewDirectories();
   const files = await readdir(liveViewSessionsDir);
   const sessions = await Promise.all(
@@ -528,6 +538,10 @@ export async function listLiveViewSessionsForProject(args: {
   }
 
 export async function getLiveViewSessionById(sessionId: string) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return null;
+  }
+
   await ensureLiveViewDirectories();
   try {
     return await readSessionFile(getSessionFilePath(sessionId));
@@ -537,6 +551,10 @@ export async function getLiveViewSessionById(sessionId: string) {
 }
 
 export async function getLiveViewSessionByToken(token: string) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return null;
+  }
+
   const files = await readdir(liveViewSessionsDir).catch(() => []);
 
   for (const file of files) {
@@ -561,6 +579,7 @@ export async function createLiveViewSession(args: {
   createdByUserId?: string | null;
   createdByEmail?: string | null;
 }) {
+  assertLocalRuntimeStorageEnabled(liveViewStorageScope);
   const createdAt = new Date().toISOString();
   const runtimeTarget = resolveBrowserRuntimeV2RuntimeTarget(args.bridgeOrigin);
   const session: LiveViewSession = {
@@ -650,6 +669,7 @@ export async function inspectLiveViewSession(args: {
   token: string;
   payload: LiveViewInspectPayload;
 }) {
+  assertLocalRuntimeStorageEnabled(liveViewStorageScope);
   const session = await getLiveViewSessionByToken(args.token);
 
   if (!session) {
@@ -777,6 +797,7 @@ export async function bindLiveViewSession(args: {
   token: string;
   payload: LiveViewBindPayload;
 }) {
+  assertLocalRuntimeStorageEnabled(liveViewStorageScope);
   const session = await getLiveViewSessionByToken(args.token);
 
   if (!session) {
@@ -846,6 +867,10 @@ export async function bindLiveViewSession(args: {
 }
 
 export async function completeLiveViewSession(sessionId: string) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return null;
+  }
+
   const session = await getLiveViewSessionById(sessionId);
 
   if (!session) {
@@ -865,6 +890,7 @@ export async function patchLiveViewRuntimeV2State(args: {
   token: string;
   patch: LiveViewRuntimeV2Patch;
 }) {
+  assertLocalRuntimeStorageEnabled(liveViewStorageScope);
   const session = await getLiveViewSessionByToken(args.token);
 
   if (!session) {

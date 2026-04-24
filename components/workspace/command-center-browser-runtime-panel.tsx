@@ -49,6 +49,15 @@ function buildLaunchingState(panel: CommandCenterBrowserPanel): BrowserRuntimeBr
 }
 
 function buildPreviewStateDisplay(browserStatus: CommandCenterBrowserPanel) {
+  if (browserStatus.runtimeState === "unsupported") {
+    return {
+      label: "Preview state",
+      value: "Localhost runtime required",
+      detail:
+        "Browser preview stays disabled here because Neroa does not create local Live View sessions or QC disk storage inside this deployed environment."
+    };
+  }
+
   const hasLiveConnection =
     browserStatus.runtimeState === "connected" || browserStatus.runtimeState === "preview_active";
 
@@ -124,6 +133,12 @@ function buildInspectionTruthDisplay(
   }
 
   switch (browserStatus.runtimeState) {
+    case "unsupported":
+      return {
+        label: "Inspection truth",
+        value: "Localhost runtime only",
+        detail: browserStatus.inspectionState
+      };
     case "connected":
       return {
         label: "Inspection truth",
@@ -170,6 +185,15 @@ function buildInspectionTruthDisplay(
 }
 
 function buildPendingToolDisplay(browserStatus: CommandCenterBrowserPanel) {
+  if (browserStatus.runtimeState === "unsupported") {
+    return {
+      label: "Browser runtime actions",
+      value: "Unavailable in this deployment",
+      detail:
+        "Inspect, Record, Walkthrough, SOP output, and QC artifact capture depend on local browser-runtime storage and stay disabled on Vercel/serverless deployments."
+    };
+  }
+
   if (
     browserStatus.runtimeState === "connected" ||
     browserStatus.runtimeState === "preview_active"
@@ -243,6 +267,7 @@ export function CommandCenterBrowserRuntimePanel({
   initialLiveViewSession,
   presentation = "panel"
 }: CommandCenterBrowserRuntimePanelProps) {
+  const runtimeSupported = initialBrowserStatus.runtimeState !== "unsupported";
   const [activeSession, setActiveSession] = useState<LiveViewSession | null>(initialLiveViewSession);
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchIntentSessionId, setLaunchIntentSessionId] = useState<string | null>(null);
@@ -284,6 +309,7 @@ export function CommandCenterBrowserRuntimePanel({
         previewSessionId: initialBrowserStatus.previewSessionId,
         approvedPackageStatus: initialBrowserStatus.approvedPackageStatus,
         roomDataState: initialBrowserStatus.dataState,
+        runtimeSupported,
         launchRequested:
           Boolean(launchIntentSessionId) &&
           launchIntentSessionId === (activeSession?.id ?? initialBrowserStatus.liveSessionId),
@@ -297,6 +323,7 @@ export function CommandCenterBrowserRuntimePanel({
       previewSessionId: initialBrowserStatus.previewSessionId,
       approvedPackageStatus: initialBrowserStatus.approvedPackageStatus,
       roomDataState: initialBrowserStatus.dataState,
+      runtimeSupported,
       launchRequested:
         Boolean(launchIntentSessionId) &&
         launchIntentSessionId === (activeSession?.id ?? initialBrowserStatus.liveSessionId)
@@ -475,7 +502,9 @@ export function CommandCenterBrowserRuntimePanel({
         activeSession?.runtimeV2.sopOutput.outputId
     );
   const inspectionActionHelper = !trackedSessionId
-    ? "Open Browser first so Neroa can attach a live session for this project."
+    ? browserStatus.runtimeState === "unsupported"
+      ? "Explicit inspection is disabled in this deployed environment because Neroa does not persist local Live View session storage here. Use localhost to run it."
+      : "Open Browser first so Neroa can attach a live session for this project."
     : !extensionConnected
       ? "Reconnect the Neroa Live View extension first. Explicit inspection only runs once the session is actively connected."
       : canRunExplicitInspection
@@ -590,6 +619,13 @@ export function CommandCenterBrowserRuntimePanel({
   }, [runRuntimeAction]);
 
   async function handleOpenBrowser() {
+    if (browserStatus.runtimeState === "unsupported") {
+      setErrorMessage(
+        "Browser Runtime and Live View session storage are disabled in this deployed environment. Use localhost to open Browser and attach a real live session."
+      );
+      return;
+    }
+
     setIsLaunching(true);
     setErrorMessage(null);
 
@@ -752,7 +788,7 @@ export function CommandCenterBrowserRuntimePanel({
           onClick={() => {
             void handleOpenBrowser();
           }}
-          disabled={isLaunching}
+          disabled={isLaunching || browserStatus.runtimeState === "unsupported"}
           className={buttonClasses}
         >
           {browserStatus.ctaLabel}
@@ -893,7 +929,7 @@ export function CommandCenterBrowserRuntimePanel({
                 Browser Runtime
               </p>
               <span className="rounded-full border border-sky-300/40 bg-sky-400/16 px-2 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-sky-100">
-                Open
+                {browserStatus.runtimeState === "unsupported" ? "Local only" : "Open"}
               </span>
             </div>
             <p className="mt-1 text-sm font-semibold text-white">{browserStatus.ctaLabel}</p>

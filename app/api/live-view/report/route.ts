@@ -2,11 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { getAccessibleWorkspace } from "@/lib/platform/foundation";
 import { getLiveViewSessionById } from "@/lib/live-view/store";
+import {
+  createLocalRuntimeStorageUnavailableError,
+  isLocalRuntimeStorageEnabled,
+  resolveLocalRuntimeStorageStatusCode
+} from "@/lib/runtime/local-runtime-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    const error = createLocalRuntimeStorageUnavailableError("Live View local session storage");
+
+    return NextResponse.json(
+      { error: error.message },
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
+    );
+  }
+
   const auth = await requireApiUser({
     message: "Sign in before reading Live View reports."
   });

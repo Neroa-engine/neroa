@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { getOrCreateProjectLiveViewSession } from "@/lib/live-view/store";
 import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
+import { isLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import {
   normalizeCommandCenterDecisionStatus,
   type StoredCommandCenterDecision
@@ -626,6 +627,16 @@ export async function updateCommandCenterPreviewState(formData: FormData) {
     ].includes(mutation)
   ) {
     redirectWithError(returnTo, "Preview-state update could not be applied.");
+  }
+
+  if (
+    (mutation === "start_preview" || mutation === "update_preview") &&
+    !isLocalRuntimeStorageEnabled()
+  ) {
+    redirectWithError(
+      returnTo,
+      "Browser preview and Live View session storage are disabled in this deployed environment. Use localhost to stage a real preview session."
+    );
   }
 
   const ownedWorkspace = await getOwnedWorkspace(workspaceId).catch((error) =>

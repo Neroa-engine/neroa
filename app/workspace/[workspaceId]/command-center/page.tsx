@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ActiveProjectPortalShell } from "@/components/portal/portal-shells";
 import { ProjectCommandCenterV1 } from "@/components/workspace/project-command-center-v1";
 import { listLiveViewSessionsForProject, mapLiveViewSessionToRuntimeTarget } from "@/lib/live-view/store";
+import { isLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import { APP_ROUTES } from "@/lib/routes";
 import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
 import {
@@ -22,6 +23,7 @@ type CommandCenterPageProps = {
 export default async function CommandCenterPage({ params }: CommandCenterPageProps) {
   noStore();
   const requestOrigin = resolveBrowserRuntimeRequestOrigin(headers());
+  const browserRuntimeSupported = isLocalRuntimeStorageEnabled();
 
   const { supabase, user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
     params.workspaceId,
@@ -41,7 +43,8 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
   const commandCenter = buildCommandCenterSummary({
     project,
     projectMetadata,
-    liveViewSession: runtimeTargetSession
+    liveViewSession: runtimeTargetSession,
+    browserRuntimeSupported
   });
   const portalProjects = await loadPortalProjectSummariesForUser({
     supabase,

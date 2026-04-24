@@ -6,6 +6,7 @@ import {
   registerProjectQcAssetInMetadata,
   writeProjectQcRecording
 } from "@/lib/workspace/project-qc-library";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 import { requireProjectQcRouteContext } from "../route-helpers";
 
 export const runtime = "nodejs";
@@ -71,28 +72,38 @@ export async function POST(request: Request, { params }: ProjectQcRecordingRoute
     );
   }
 
-  const { recording, asset } = await writeProjectQcRecording({
-    workspaceId: params.workspaceId,
-    projectId: params.projectId,
-    input: parsed.data
-  });
+  try {
+    const { recording, asset } = await writeProjectQcRecording({
+      workspaceId: params.workspaceId,
+      projectId: params.projectId,
+      input: parsed.data
+    });
 
-  const metadataRegistration = await registerProjectQcAssetInMetadata({
-    supabase: access.context.supabase,
-    userId: access.context.user.id,
-    workspaceId: params.workspaceId,
-    asset
-  });
+    const metadataRegistration = await registerProjectQcAssetInMetadata({
+      supabase: access.context.supabase,
+      userId: access.context.user.id,
+      workspaceId: params.workspaceId,
+      asset
+    });
 
-  revalidatePath(`/workspace/${params.workspaceId}/project/${params.projectId}`);
-  revalidatePath(`/workspace/${params.workspaceId}/project/${params.projectId}/library`);
+    revalidatePath(`/workspace/${params.workspaceId}/project/${params.projectId}`);
+    revalidatePath(`/workspace/${params.workspaceId}/project/${params.projectId}/library`);
 
-  return NextResponse.json(
-    {
-      recording,
-      asset,
-      metadataRegistration
-    },
-    { status: parsed.data.id ? 200 : 201 }
-  );
+    return NextResponse.json(
+      {
+        recording,
+        asset,
+        metadataRegistration
+      },
+      { status: parsed.data.id ? 200 : 201 }
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Unable to write the QC recording."
+      },
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
+    );
+  }
 }

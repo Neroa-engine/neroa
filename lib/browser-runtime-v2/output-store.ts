@@ -11,12 +11,17 @@ import type {
   BrowserRuntimeV2OutputSummary
 } from "@/lib/browser-runtime-v2/contracts";
 import type { BrowserRuntimeV2RuntimeTarget } from "@/lib/browser-runtime-v2/runtime-target";
+import {
+  assertLocalRuntimeStorageEnabled,
+  isLocalRuntimeStorageEnabled
+} from "@/lib/runtime/local-runtime-storage";
 
 const browserRuntimeLibraryRoot = path.join(
   process.cwd(),
   ".neroa-project-library",
   "browser-runtime-v2"
 );
+const browserRuntimeOutputStorageScope = "Browser Runtime V2 local output storage";
 
 export const browserRuntimeV2OutputKindValues = [
   "inspection_result",
@@ -117,6 +122,7 @@ function outputFilePath(workspaceId: string, projectId: string, outputId: string
 }
 
 async function ensureOutputDirectory(workspaceId: string, projectId: string) {
+  assertLocalRuntimeStorageEnabled(browserRuntimeOutputStorageScope);
   await mkdir(outputDirectory(workspaceId, projectId), { recursive: true });
 }
 
@@ -177,6 +183,10 @@ export async function listBrowserRuntimeV2Outputs(args: {
   workspaceId: string;
   projectId: string;
 }) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return [];
+  }
+
   const dir = outputDirectory(args.workspaceId, args.projectId);
 
   try {

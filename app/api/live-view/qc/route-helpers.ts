@@ -3,6 +3,7 @@ import {
   requireLiveViewQcSession,
   type LiveViewQcPageAssociationInput
 } from "@/lib/live-view/qc-library-bridge";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 
 function readBearerToken(request: NextRequest) {
   const header = request.headers.get("authorization") ?? "";
@@ -41,7 +42,7 @@ export async function requireLiveViewQcRouteSession(request: NextRequest) {
               ? error.message
               : "Live View session not found."
         },
-        { status: 404 }
+        { status: resolveLocalRuntimeStorageStatusCode(error, 404) }
       )
     };
   }

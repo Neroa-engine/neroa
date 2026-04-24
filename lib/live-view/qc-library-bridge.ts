@@ -4,6 +4,7 @@ import type {
   LiveViewGuardrail,
   LiveViewSession
 } from "@/lib/live-view/types";
+import { assertLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import { getLiveViewSessionByToken } from "@/lib/live-view/store";
 import {
   getProjectQcRecordingById,
@@ -143,6 +144,7 @@ export function buildLiveViewQcPageAssociation(input: {
 }
 
 export async function requireLiveViewQcSession(token: string) {
+  assertLocalRuntimeStorageEnabled("Live View QC local storage");
   const session = await getLiveViewSessionByToken(token);
 
   if (!session) {

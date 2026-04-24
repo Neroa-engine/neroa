@@ -10,9 +10,14 @@ import {
   type StoredProjectAsset,
   type StoredProjectMetadata
 } from "@/lib/workspace/project-metadata";
+import {
+  assertLocalRuntimeStorageEnabled,
+  isLocalRuntimeStorageEnabled
+} from "@/lib/runtime/local-runtime-storage";
 
 const projectLibraryRoot = path.join(process.cwd(), ".neroa-project-library");
 const projectQcLibraryRoot = path.join(projectLibraryRoot, "qc");
+const projectQcStorageScope = "Project QC local library storage";
 
 export const projectQcReportOutcomeValues = ["pass", "warning", "fail"] as const;
 export const projectQcReportLifecycleValues = [
@@ -435,6 +440,7 @@ async function ensureProjectQcDirectories(args: {
   workspaceId: string;
   projectId: string;
 }) {
+  assertLocalRuntimeStorageEnabled(projectQcStorageScope);
   await mkdir(getProjectQcReportsDirectory(args), { recursive: true });
   await mkdir(getProjectQcRecordingsDirectory(args), { recursive: true });
 }
@@ -536,6 +542,10 @@ async function readProjectQcReports(args: {
   workspaceId: string;
   projectId: string;
 }) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return [];
+  }
+
   await ensureProjectQcDirectories(args);
   const files = await readdir(getProjectQcReportsDirectory(args));
   const reports = await Promise.all(
@@ -562,6 +572,10 @@ async function readProjectQcRecordings(args: {
   workspaceId: string;
   projectId: string;
 }) {
+  if (!isLocalRuntimeStorageEnabled()) {
+    return [];
+  }
+
   await ensureProjectQcDirectories(args);
   const files = await readdir(getProjectQcRecordingsDirectory(args));
   const recordings = await Promise.all(

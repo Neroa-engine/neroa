@@ -2547,6 +2547,7 @@ function buildBrowserPanel(args: {
   roomState: CommandCenterRoomState;
   designPreviewArchitecture: CommandCenterDesignPreviewArchitecture;
   liveViewSession?: LiveViewSession | null;
+  browserRuntimeSupported?: boolean;
 }) {
   const previewState = args.designPreviewArchitecture.previewState;
   const approvedPackage = args.designPreviewArchitecture.approvedPackage;
@@ -2555,7 +2556,8 @@ function buildBrowserPanel(args: {
     previewState: previewState.state,
     previewSessionId: previewState.previewSessionId,
     approvedPackageStatus: approvedPackage.status,
-    roomDataState: args.roomState.dataState
+    roomDataState: args.roomState.dataState,
+    runtimeSupported: args.browserRuntimeSupported ?? true
   });
 
   return {
@@ -2584,6 +2586,7 @@ function buildDesignLibraryPanel(args: {
   roomState: CommandCenterRoomState;
   designPreviewArchitecture: CommandCenterDesignPreviewArchitecture;
   liveViewSession?: LiveViewSession | null;
+  browserRuntimeSupported?: boolean;
 }) {
   const previewState = args.designPreviewArchitecture.previewState;
   const approvedPackage = args.designPreviewArchitecture.approvedPackage;
@@ -2592,7 +2595,8 @@ function buildDesignLibraryPanel(args: {
     previewState: previewState.state,
     previewSessionId: previewState.previewSessionId,
     approvedPackageStatus: approvedPackage.status,
-    roomDataState: args.roomState.dataState
+    roomDataState: args.roomState.dataState,
+    runtimeSupported: args.browserRuntimeSupported ?? true
   });
   const runtimeReady = isBrowserRuntimeReadyForPreview(runtimeBridge.state);
   const runtimeTarget = buildDesignLibraryRuntimeTarget({
@@ -2600,11 +2604,14 @@ function buildDesignLibraryPanel(args: {
     previewState: previewState.state,
     previewSessionId: previewState.previewSessionId,
     approvedPackageStatus: approvedPackage.status,
-    roomDataState: args.roomState.dataState
+    roomDataState: args.roomState.dataState,
+    runtimeSupported: args.browserRuntimeSupported ?? true
   });
   const statusLabel =
     !runtimeReady
-      ? runtimeBridge.state === "awaiting_bind"
+      ? runtimeBridge.state === "unsupported"
+        ? "Localhost runtime only"
+        : runtimeBridge.state === "awaiting_bind"
         ? "Blocked pending browser bind"
         : runtimeBridge.state === "session_stale"
           ? "Refresh live session"
@@ -2622,7 +2629,9 @@ function buildDesignLibraryPanel(args: {
             ? "Latest package implemented"
             : "Live session ready";
   const detail =
-    args.roomState.dataState === "degraded"
+    !runtimeReady && runtimeBridge.state === "unsupported"
+      ? "Design Library preview and package staging stay local-only because this deployed environment does not keep Browser Runtime session storage or QC artifact storage on disk."
+      : args.roomState.dataState === "degraded"
       ? "Design controls are ready to stage, but approvals should wait until the project picture is stronger."
       : !runtimeReady
         ? runtimeBridge.state === "awaiting_bind"
@@ -2666,7 +2675,12 @@ function buildDesignLibraryPanel(args: {
     workflowSteps: args.designPreviewArchitecture.workflowSteps,
     boundaryRules: args.designPreviewArchitecture.boundaryRules,
     ctaLabel,
-    approvalCtaLabel: runtimeReady ? "Approve package" : "Preview needs live session",
+    approvalCtaLabel:
+      runtimeReady
+        ? "Approve package"
+        : runtimeBridge.state === "unsupported"
+          ? "Localhost runtime required"
+          : "Preview needs live session",
     source: "preview-control-truth" as const,
     dataState: args.roomState.dataState
   };
@@ -2778,6 +2792,7 @@ export function buildCommandCenterSummary(args: {
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
   liveViewSession?: LiveViewSession | null;
+  browserRuntimeSupported?: boolean;
 }): CommandCenterSummary {
   const laneCount = getOrderedProjectLanes(args.project).length;
   const projectContext = buildProjectContextSnapshot(args);
@@ -2884,12 +2899,14 @@ export function buildCommandCenterSummary(args: {
   const browserStatus = buildBrowserPanel({
     roomState,
     designPreviewArchitecture,
-    liveViewSession: args.liveViewSession ?? null
+    liveViewSession: args.liveViewSession ?? null,
+    browserRuntimeSupported: args.browserRuntimeSupported ?? true
   });
   const designLibrary = buildDesignLibraryPanel({
     roomState,
     designPreviewArchitecture,
-    liveViewSession: args.liveViewSession ?? null
+    liveViewSession: args.liveViewSession ?? null,
+    browserRuntimeSupported: args.browserRuntimeSupported ?? true
   });
   const brandSystem = buildBrandSystemPanel({
     roomState,

@@ -872,7 +872,9 @@ function CommandCenterSmartOperatorTopStripView({
   const projectPictureIssues = roomState.issues.slice(0, 3);
   const browserReady = isBrowserRuntimeReadyForPreview(browserStatus.runtimeState);
   const previewUnavailableBody =
-    browserStatus.runtimeState === "awaiting_bind"
+    browserStatus.runtimeState === "unsupported"
+      ? "Browser preview is local-only in the current architecture. This deployed environment does not persist the Live View session storage or QC artifacts the preview flow depends on."
+      : browserStatus.runtimeState === "awaiting_bind"
       ? "Preview controls are waiting for the Live View extension heartbeat. Open Browser and keep the Live View window active until the runtime turns Connected."
       : browserStatus.runtimeState === "session_stale" ||
           browserStatus.runtimeState === "reconnect_needed"
@@ -883,6 +885,8 @@ function CommandCenterSmartOperatorTopStripView({
   const pendingRuntimeToolsBody =
     browserStatus.runtimeState === "connected" || browserStatus.runtimeState === "preview_active"
       ? "Live inspection is active and Design Library can use this same session, but Review, QC, and Record stay in the pending-tool lane until fresh bind is consistently stable and their producer paths are truly live."
+      : browserStatus.runtimeState === "unsupported"
+        ? "This deployed environment keeps Browser Runtime, Record, Review, QC artifact capture, and walkthrough storage disabled. Use localhost when you need real browser-backed operator tooling."
       : browserStatus.runtimeState === "awaiting_bind"
         ? "Smart Operator is still waiting for the first real bind on this session. Inspect traffic alone is not enough to promote Review, QC, or Record into primary operator controls yet."
         : browserStatus.runtimeState === "session_stale" ||
@@ -1034,6 +1038,8 @@ function CommandCenterDesignPreviewChatControlView({
   const summaryPrimaryLine = canManage
     ? runtimeReady
       ? "Open preview controls"
+      : designLibrary.runtimeState === "unsupported"
+        ? "Localhost runtime only"
       : designLibrary.runtimeState === "awaiting_bind"
         ? "Waiting for browser bind"
         : designLibrary.runtimeState === "reconnect_needed" ||
@@ -1044,6 +1050,8 @@ function CommandCenterDesignPreviewChatControlView({
             : "Open Browser first"
     : runtimeReady
       ? "Owner access required"
+      : designLibrary.runtimeState === "unsupported"
+        ? "Localhost runtime only"
       : designLibrary.runtimeState === "awaiting_bind"
         ? "Waiting for browser bind"
         : designLibrary.runtimeState === "reconnect_needed" ||
@@ -1053,7 +1061,9 @@ function CommandCenterDesignPreviewChatControlView({
             ? "Browser runtime error"
             : designLibrary.ctaLabel;
   const summaryDetail =
-    !runtimeReady && designLibrary.runtimeState === "awaiting_bind"
+    !runtimeReady && designLibrary.runtimeState === "unsupported"
+      ? `${designLibrary.statusLabel} - Local runtime storage unavailable here`
+      : !runtimeReady && designLibrary.runtimeState === "awaiting_bind"
       ? `${designLibrary.statusLabel} - Inspect-only until the first real bind lands`
       : !runtimeReady && designLibrary.runtimeState === "reconnect_needed"
         ? `${designLibrary.statusLabel} - Prior session context only`
@@ -1167,13 +1177,17 @@ function CommandCenterDesignPreviewChatControlView({
           {!runtimeReady ? (
             <div className="rounded-[20px] border border-amber-300/30 bg-amber-500/10 px-4 py-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
-                Live session required
+                {designLibrary.runtimeState === "unsupported"
+                  ? "Localhost runtime required"
+                  : "Live session required"}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-200">
                 {designLibrary.runtimeTargetDetail}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-300">
-                Use the Browser Runtime control first. Inspect traffic alone does not unlock Design Library preview or package actions until that same live session is truly connected.
+                {designLibrary.runtimeState === "unsupported"
+                  ? "Preview and package actions stay disabled here because Neroa does not write local browser-session or QC storage inside this deployed environment."
+                  : "Use the Browser Runtime control first. Inspect traffic alone does not unlock Design Library preview or package actions until that same live session is truly connected."}
               </p>
             </div>
           ) : canManage ? (
@@ -2393,7 +2407,7 @@ export function CommandCenterBrowserBrandTopStripView({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            {canManage ? (
+            {canManage && browserStatus.runtimeState !== "unsupported" ? (
               <form action={updateCommandCenterPreviewState}>
                 <input type="hidden" name="workspaceId" value={workspaceId} />
                 <input type="hidden" name="returnTo" value={returnTo} />
@@ -2412,7 +2426,11 @@ export function CommandCenterBrowserBrandTopStripView({
                 disabled
                 className="rounded-full border border-slate-200 bg-white/82 px-4 py-3 text-sm font-medium text-slate-400"
               >
-                Preview controls need owner access
+                {browserStatus.runtimeState === "unsupported"
+                  ? "Preview needs localhost runtime"
+                  : canManage
+                  ? "Preview needs localhost runtime"
+                  : "Preview controls need owner access"}
               </button>
             )}
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { browserRuntimeV2OutputWriteSchema, writeBrowserRuntimeV2Output } from "@/lib/browser-runtime-v2/output-store";
 import { requireLiveViewQcSession } from "@/lib/live-view/qc-library-bridge";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 import { resolveBrowserRuntimeV2RuntimeTarget } from "@/lib/browser-runtime-v2/runtime-target";
 
 export const runtime = "nodejs";
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Unable to write the Browser Runtime V2 output."
       },
-      { status: 400 }
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
     );
   }
 }

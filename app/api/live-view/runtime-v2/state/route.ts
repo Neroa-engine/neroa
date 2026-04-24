@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { browserRuntimeV2ActionValues } from "@/lib/browser-runtime-v2/contracts";
 import { patchLiveViewRuntimeV2State } from "@/lib/live-view/store";
+import { resolveLocalRuntimeStorageStatusCode } from "@/lib/runtime/local-runtime-storage";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -107,7 +108,7 @@ export async function POST(request: NextRequest) {
             ? error.message
             : "Unable to update Browser Runtime V2 session state."
       },
-      { status: 400 }
+      { status: resolveLocalRuntimeStorageStatusCode(error, 400) }
     );
   }
 }
