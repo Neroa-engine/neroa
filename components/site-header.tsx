@@ -21,24 +21,6 @@ type SiteHeaderProps = {
   tone?: "light" | "dark";
 };
 
-function resolveMainNavHref(href: string, pathname: string) {
-  if (href === "/pricing") {
-    if (
-      pathname.startsWith("/diy-build") ||
-      pathname.startsWith("/diy") ||
-      pathname.startsWith("/pricing/diy")
-    ) {
-      return "/pricing/diy";
-    }
-
-    if (pathname.startsWith("/managed-build") || pathname.startsWith("/pricing/managed")) {
-      return "/pricing/managed";
-    }
-  }
-
-  return href;
-}
-
 function HeaderLink({
   href,
   label,
@@ -127,7 +109,7 @@ export function SiteHeader({
 
   const isAuthenticated = Boolean(resolvedEmail);
   const accountButton = isAuthenticated
-    ? { href: "/dashboard", label: "Project Board" }
+    ? { href: "/projects", label: "Project Board" }
     : { href: "/auth", label: "Sign in" };
   const showAccountButton =
     accountButton.href !== ctaHref || accountButton.label !== ctaLabel;
@@ -140,10 +122,8 @@ export function SiteHeader({
       ? "button-primary px-5 py-2.5 text-sm"
       : "button-secondary px-5 py-2.5 text-sm";
   const homeNavItem = mainNavItems.find((item) => item.label === "Home");
-  const resolvedHomeHref = homeNavItem ? resolveMainNavHref(homeNavItem.href, pathname) : "/";
-  const homeActive = resolvedHomeHref.includes("#")
-    ? false
-    : pathname === resolvedHomeHref || pathname.startsWith(`${resolvedHomeHref}/`);
+  const resolvedHomeHref = homeNavItem?.href ?? "/";
+  const homeActive = pathname === resolvedHomeHref;
   const homeAccentClassName =
     tone === "dark" ? "!text-[#d5c6ff] hover:!text-[#f3edff]" : "";
   const projectBoardAccentClassName =

@@ -6,7 +6,7 @@ export default function BlogPage() {
   const posts = getPublishedBlogPosts();
 
   return (
-    <MarketingInfoShell ctaHref="/use-cases" ctaLabel="Explore use cases" brandVariant="prominent">
+    <MarketingInfoShell ctaHref="/start" ctaLabel="Start planning" brandVariant="prominent">
       <section className="mx-auto max-w-5xl text-center">
         <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-cyan-700">
           Blog

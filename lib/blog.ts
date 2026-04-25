@@ -170,8 +170,8 @@ const blogPostContent = [
       title: "Explore the SaaS build path",
       description:
         "See how Neroa helps shape SaaS ideas into an MVP, budget, build plan, and launch path with coordinated AI support.",
-      primaryLabel: "Explore SaaS",
-      primaryHref: "/use-cases/saas",
+      primaryLabel: "Start SaaS planning",
+      primaryHref: "/start",
       secondaryLabel: "View pricing",
       secondaryHref: "/pricing"
     }
@@ -277,8 +277,8 @@ const blogPostContent = [
       title: "Explore internal software builds",
       description:
         "See how Neroa helps plan CRMs, admin dashboards, workflow systems, reporting portals, and custom internal tools.",
-      primaryLabel: "Explore Internal Software",
-      primaryHref: "/use-cases/internal-software",
+      primaryLabel: "Start internal software planning",
+      primaryHref: "/start",
       secondaryLabel: "View pricing",
       secondaryHref: "/pricing"
     }
@@ -384,8 +384,8 @@ const blogPostContent = [
       title: "Explore external app builds",
       description:
         "See how Neroa helps shape portals, booking systems, branded websites, and customer-facing digital products from concept to launch.",
-      primaryLabel: "Explore External Apps",
-      primaryHref: "/use-cases/external-apps",
+      primaryLabel: "Start external app planning",
+      primaryHref: "/start",
       secondaryLabel: "View pricing",
       secondaryHref: "/pricing"
     }
@@ -488,8 +488,8 @@ const blogPostContent = [
       title: "See how NEROA starts the build correctly",
       description:
         "Explore the use-case path and let Neroa frame the work before the system expands into the full execution flow.",
-      primaryLabel: "Explore use cases",
-      primaryHref: "/use-cases",
+      primaryLabel: "Start planning",
+      primaryHref: "/start",
       secondaryLabel: "View pricing",
       secondaryHref: "/pricing"
     }
@@ -594,10 +594,10 @@ const blogPostContent = [
       title: "Explore the coordinated AI system",
       description:
         "See how Neroa, Forge, Atlas, RepoLink, Nova, Pulse, and Ops fit together around real build workflows.",
-      primaryLabel: "Explore AI systems",
-      primaryHref: "/system/ai",
-      secondaryLabel: "Explore use cases",
-      secondaryHref: "/use-cases"
+      primaryLabel: "Start planning",
+      primaryHref: "/start",
+      secondaryLabel: "View pricing",
+      secondaryHref: "/pricing"
     }
   }
 ] satisfies BlogPost[];

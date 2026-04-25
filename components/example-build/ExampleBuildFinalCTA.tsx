@@ -26,7 +26,7 @@ const conversionChoices = [
     title: publicLaunchPrimaryCta.label,
     description:
       "Open the real guided build flow, define your product, and let Neroa scope the work around your budget and pace.",
-    href: "/start?resume=guided",
+    href: publicLaunchPrimaryCta.href,
     tone: "primary",
     pathId: "diy",
     pathLabel: "DIY Build"
@@ -35,7 +35,7 @@ const conversionChoices = [
     title: publicLaunchManagedCta.label,
     description:
       "Open the shared guided intake with the Managed lane already carried forward so scope, support, and roadmap logic stay aligned.",
-    href: "/start?resume=guided",
+    href: publicLaunchManagedCta.href,
     tone: "secondary",
     pathId: "managed",
     pathLabel: "Managed Build"
@@ -87,7 +87,7 @@ export function ExampleBuildFinalCTA({
       storePublicEntryIntent(choice.pathId);
     }
     setGuidedBuildHandoff({
-      source: "example-build",
+      source: "start",
       productTypeId: buildType.id,
       productTypeLabel: buildType.label,
       buildTypeId: buildType.id,
@@ -123,7 +123,7 @@ export function ExampleBuildFinalCTA({
     setBuildSession(
       createBuildSession({
         sessionId: buildSession?.sessionId,
-        source: "example-build",
+        source: "start",
         userIntent: nextIntent,
         preferences: [
           guidedMode ? "Guided mode active" : "Self-directed exploration",

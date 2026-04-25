@@ -114,7 +114,7 @@ export const homepageGuideSteps: HomepageGuideStep[] = [
 export const homepageGuidePromptSuggestions = [
   "Which plan fits my budget?",
   "Should I start DIY or Managed Build?",
-  "Show me an example first"
+  "Show me the path first"
 ] as const;
 
 export const homepageGuideStorageKeys = {
@@ -328,11 +328,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
   if (!normalized) {
     return {
       message:
-        "If you want a fast recommendation, the best starting points are pricing for budget questions, Managed Build for execution help, and Example Build if you want to see the system in motion first.",
+        "If you want a fast recommendation, the best starting points are pricing for budget questions, contact when you want direct help, and the live planning flow when you are ready to begin.",
       actions: [
         { label: "Understand Pricing", href: "/pricing" },
-        { label: "See an Example Build", href: "/example-build" },
-        { label: "Start a conversation", href: "/start" }
+        { label: "Start a conversation", href: "/start" },
+        { label: "Contact the team", href: "/contact?type=support" }
       ]
     };
   }
@@ -345,11 +345,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
   ) {
     return {
       message:
-        "Budget questions usually mean you should compare DIY pricing first. That will show monthly Engine Credits, build pace, and when a managed path starts to make more sense.",
+        "Budget questions usually mean you should compare pricing first. That will show monthly Engine Credits, build pace, and when a managed path starts to make more sense.",
       actions: [
         { label: "Understand Pricing", href: "/pricing" },
-        { label: "View DIY Pricing", href: "/pricing/diy" },
-        { label: "See an Example Build", href: "/example-build" }
+        { label: "Start a conversation", href: "/start" },
+        { label: "Contact the team", href: "/contact?type=support" }
       ]
     };
   }
@@ -363,11 +363,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
   ) {
     return {
       message:
-        "If you want stronger execution help, the managed path is the right next step. That page explains staged approvals, visibility, and how Neroa keeps the build from becoming a black box.",
+        "If you want stronger execution help, the best next step is to start the planning flow or contact the team so Neroa can route the right build handoff.",
       actions: [
         { label: "Start Managed Build", href: "/start" },
-        { label: "View Managed Pricing", href: "/pricing/managed" },
-        { label: "Start Managed Build", href: "/start" }
+        { label: "Contact the team", href: "/contact?type=support" },
+        { label: "Understand Pricing", href: "/pricing" }
       ]
     };
   }
@@ -379,11 +379,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
   ) {
     return {
       message:
-        "The interactive Example Build is the fastest way to see how Neroa frames a product before you commit to a path.",
+        "The cleanest way to see Neroa in motion is to start the guided planning flow. That keeps the real product path visible without sending you into retired marketing pages.",
       actions: [
-        { label: "See an Example Build", href: "/example-build" },
         { label: "Start a conversation", href: "/start" },
-        { label: "Start Managed Build", href: "/start" }
+        { label: "Understand Pricing", href: "/pricing" },
+        { label: "Contact the team", href: "/contact?type=support" }
       ]
     };
   }
@@ -397,11 +397,11 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
   ) {
     return {
       message:
-        "If you are still deciding what kind of product fits, the build-category and use-case pages will narrow the path quickly before you enter the guided builder.",
+        "If you are still deciding what kind of product fits, the best next move is to start the guided planning flow and explain the software in plain language before you commit to scope.",
       actions: [
-        { label: "Explore Use Cases", href: "/use-cases" },
         { label: "Start a conversation", href: "/start" },
-        { label: "See an Example Build", href: "/example-build" }
+        { label: "Understand Pricing", href: "/pricing" },
+        { label: "Contact the team", href: "/contact?type=support" }
       ]
     };
   }
@@ -412,7 +412,7 @@ export function resolveGuidePrompt(input: string): GuidePromptResolution {
     actions: [
       { label: "Start a conversation", href: "/start" },
       { label: "Understand Pricing", href: "/pricing" },
-      { label: "Start Managed Build", href: "/start" }
+      { label: "Contact the team", href: "/contact?type=support" }
     ]
   };
 }

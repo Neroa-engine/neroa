@@ -67,8 +67,8 @@ function buildTimelineBubble(
     ],
     actions: [
       {
-        href: "/example-build",
-        label: "Return to Example Build",
+        href: "/start",
+        label: "Open live planning flow",
         tone: "secondary"
       }
     ],

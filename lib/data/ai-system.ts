@@ -94,8 +94,8 @@ export const aiSystemPages: AiSystemPage[] = [
     ],
     primaryCtaLabel: "Start with Neroa",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "Explore all AI systems",
-    secondaryCtaHref: "/system",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Neroa as the control layer for the whole build",
     finalCtaSummary:
       "Start in one place, let Neroa define the next useful step, and widen the system only when it improves the build."
@@ -160,10 +160,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Technical maps, execution scaffolds, and stack-shaping notes",
       "Cleaner handoffs into repository work, review, and delivery"
     ],
-    primaryCtaLabel: "Explore SaaS builds",
-    primaryCtaHref: "/use-cases/saas",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Forge when the work has to become buildable",
     finalCtaSummary:
       "Bring Forge in when planning alone is no longer enough and the Engine needs a sharper execution structure."
@@ -228,10 +228,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Clearer product logic, system boundaries, and roadmap guidance",
       "Decision support that improves the rest of the build system"
     ],
-    primaryCtaLabel: "Explore internal software",
-    primaryCtaHref: "/use-cases/internal-software",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Atlas when better context changes the decision",
     finalCtaSummary:
       "Bring Atlas into the flow when the work needs sharper reasoning before the team commits to build, launch, or execution."
@@ -296,10 +296,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Branch, commit, and pull-request visibility",
       "Cleaner coordination across build-heavy lanes and connected services"
     ],
-    primaryCtaLabel: "Explore internal software",
-    primaryCtaHref: "/use-cases/internal-software",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use RepoLink when the project needs real technical grounding",
     finalCtaSummary:
       "Bring RepoLink into the flow when shipping depends on GitHub, repositories, pull requests, environments, and connected deployment context."
@@ -364,10 +364,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Interface, UX-copy, and website guidance",
       "Sharper assets that support launch, usability, and credibility"
     ],
-    primaryCtaLabel: "Explore external apps",
-    primaryCtaHref: "/use-cases/external-apps",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Nova when the project needs better customer-facing clarity",
     finalCtaSummary:
       "Activate Nova when brand, UX copy, and customer-facing presentation need to rise to the level of the build strategy."
@@ -432,10 +432,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Feedback summaries, usage signals, and performance observations",
       "Next-step guidance grounded in what users and the product are actually doing"
     ],
-    primaryCtaLabel: "Explore mobile apps",
-    primaryCtaHref: "/use-cases/mobile-apps",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Pulse when the work needs testing and feedback clarity",
     finalCtaSummary:
       "Bring Pulse in when the build needs QA, launch-readiness checks, and feedback loops before the next iteration begins."
@@ -500,10 +500,10 @@ export const aiSystemPages: AiSystemPage[] = [
       "Connected-service visibility with blockers and dependencies surfaced",
       "Next-step guidance that keeps launch and operations moving"
     ],
-    primaryCtaLabel: "Explore mobile apps",
-    primaryCtaHref: "/use-cases/mobile-apps",
-    secondaryCtaLabel: "Back to AI systems",
-    secondaryCtaHref: "/system",
+    primaryCtaLabel: "Start planning",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Ops when launch readiness matters more than more ideas",
     finalCtaSummary:
       "Bring Ops into the system when deployment, connected services, launch coordination, and support workflows need to tighten up."

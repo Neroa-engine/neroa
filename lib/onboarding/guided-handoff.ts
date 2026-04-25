@@ -129,7 +129,7 @@ export function buildGuidedBuildHandoffSummary(handoff: GuidedBuildHandoff | nul
 
   const lines = [
     handoff.source === "example-build"
-      ? "Continuing from guided setup via Example Build."
+      ? "Continuing from a legacy example-build handoff."
       : handoff.source === "start"
         ? "Continuing from the real DIY builder setup."
         : "Continuing from guided setup via the Neroa homepage guide.",

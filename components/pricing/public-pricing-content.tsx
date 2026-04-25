@@ -352,8 +352,8 @@ function PricingCard({
             {action.label}
           </PublicActionLink>
           {plan.id === "command-center" ? (
-            <Link href="/support" className="button-secondary">
-              Get plan help
+            <Link href="/contact?type=support" className="button-secondary">
+              Contact support
             </Link>
           ) : null}
         </div>
@@ -671,8 +671,8 @@ export function PublicPricingContent({
                   <Link href={teamPricingCallout.actionHref} className="button-primary">
                     {teamPricingCallout.actionLabel}
                   </Link>
-                  <Link href="/support" className="button-secondary">
-                    Get pricing help
+                  <Link href="/contact?type=support" className="button-secondary">
+                    Contact support
                   </Link>
                 </div>
               </div>
@@ -758,9 +758,14 @@ export function PublicPricingContent({
               >
                 Continue with Free
               </PublicActionLink>
-              <Link href="/managed-build" className="button-secondary">
-                Compare with Managed
-              </Link>
+              <PublicActionLink
+                href={publicLaunchManagedCta.href}
+                label={publicLaunchManagedCta.label}
+                className="button-secondary"
+                initialAuthenticated={initialAuthenticated}
+              >
+                {publicLaunchManagedCta.label}
+              </PublicActionLink>
             </div>
           </div>
         </div>

@@ -174,8 +174,8 @@ export function ManagedPricingContent({
                 Open the managed path when the build needs stronger execution support.
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                Use the Managed Build page to start in the right lane first, then continue through
-                account access and the tracked managed intake when you are ready to move.
+                Use the managed planning path to start in the right lane first, then continue
+                through account access and the tracked managed intake when you are ready to move.
               </p>
             </div>
 
@@ -186,8 +186,8 @@ export function ManagedPricingContent({
                 className="button-primary"
                 initialAuthenticated={initialAuthenticated}
               />
-              <Link href="/diy-build" className="button-secondary">
-                View DIY Build Platform
+              <Link href="/pricing" className="button-secondary">
+                Compare pricing
               </Link>
             </div>
           </div>

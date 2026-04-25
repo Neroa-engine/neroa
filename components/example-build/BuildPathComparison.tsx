@@ -21,8 +21,8 @@ function getPathAction(path: ExampleBuildPath): FocusBubbleAction {
 
   if (path.id === "diy-accelerated") {
     return {
-      href: "/pricing/diy",
-      label: "View DIY Pricing",
+      href: "/pricing",
+      label: "View pricing",
       tone: "primary"
     };
   }
@@ -61,8 +61,8 @@ function buildPathBubble(path: ExampleBuildPath): FocusBubbleData {
     actions: [
       getPathAction(path),
       {
-        href: "/example-build",
-        label: "Return to Example Build",
+        href: "/start",
+        label: "Open live planning flow",
         tone: "secondary"
       }
     ]

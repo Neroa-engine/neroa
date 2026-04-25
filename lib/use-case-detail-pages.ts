@@ -122,8 +122,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Start with Neroa",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "See how Neroa works",
-    secondaryCtaHref: "/how-it-works",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use one workspace for planning, research, and writing",
     finalCtaSummary:
       "Open a project, let Neroa define the first useful question, and turn the result into a real plan instead of another disconnected document."
@@ -228,8 +228,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Start a SaaS build",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "Explore use cases",
-    secondaryCtaHref: "/use-cases",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Start the SaaS build in one coordinated system",
     finalCtaSummary:
       "Start with Neroa, shape the MVP, clarify the budget, and let the build and launch workflow open around the real product.",
@@ -351,8 +351,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Explore internal software",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "Back to use cases",
-    secondaryCtaHref: "/use-cases",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Turn internal workflow problems into a structured software plan",
     finalCtaSummary:
       "Use Neroa to shape the workflow, feature logic, budget, and rollout path before the internal system becomes another messy build.",
@@ -473,8 +473,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Explore external apps",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "Back to use cases",
-    secondaryCtaHref: "/use-cases",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Move from concept to customer-facing launch with one coordinated system",
     finalCtaSummary:
       "Use Neroa to clarify the audience, shape the release, understand the cost, and move the external product into a cleaner launch path.",
@@ -605,9 +605,9 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
       "A launch path that stays honest about supported mobile stacks"
     ],
     primaryCtaLabel: "Start a mobile app build",
-    primaryCtaHref: "/start?flow=mobile-app",
-    secondaryCtaLabel: "Back to use cases",
-    secondaryCtaHref: "/use-cases",
+    primaryCtaHref: "/start",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Open the mobile app engine with the right build path from the start",
     finalCtaSummary:
       "Use Neroa to shape the app, protect the budget, recommend the stack, and carry the work into beta and launch without losing the execution thread.",
@@ -728,8 +728,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Start a blockchain project",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "Explore how Neroa works",
-    secondaryCtaHref: "/how-it-works",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Keep protocol, build, and launch decisions in one operating layer",
     finalCtaSummary:
       "Use Neroa when blockchain work needs tighter reasoning, cleaner technical sequencing, and a launch path grounded in the actual system."
@@ -833,8 +833,8 @@ export const useCaseDetailPages: UseCaseDetailPage[] = [
     ],
     primaryCtaLabel: "Start an operations workspace",
     primaryCtaHref: "/start",
-    secondaryCtaLabel: "See the system flow",
-    secondaryCtaHref: "/how-it-works",
+    secondaryCtaLabel: "View pricing",
+    secondaryCtaHref: "/pricing",
     finalCtaTitle: "Use Neroa as the operating layer for execution work",
     finalCtaSummary:
       "Bring workflow structure, recurring coordination, and next-step clarity into one project so operations work stays visible and actionable."

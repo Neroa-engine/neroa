@@ -2,24 +2,25 @@ import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { PublicActionLink } from "@/components/site/public-action-link";
 
+function shouldUsePublicActionLink(href: string) {
+  return href === "/projects" || href === "/roadmap" || href.startsWith("/start");
+}
+
 const footerSections = [
   {
     title: "Explore",
     links: [
       { label: "Home", href: "/" },
       { label: "Pricing", href: "/pricing" },
-      { label: "DIY Build", href: "/diy-build" },
-      { label: "Managed Build", href: "/managed-build" },
-      { label: "Blog", href: "/blog" }
+      { label: "Contact", href: "/contact" }
     ]
   },
   {
-    title: "Help",
+    title: "Next Steps",
     links: [
-      { label: "Start with NEROA", href: "/start" },
-      { label: "Contact Us", href: "/contact" },
-      { label: "Support", href: "/support" },
-      { label: "Instructions", href: "/instructions" }
+      { label: "Start planning", href: "/start" },
+      { label: "Projects", href: "/projects" },
+      { label: "Sign in", href: "/auth" }
     ]
   }
 ];
@@ -84,7 +85,7 @@ export function PublicFooter({
                 </p>
                 <div className="mt-4 grid gap-2">
                   {section.links.map((link) =>
-                    link.href.startsWith("/start") ? (
+                    shouldUsePublicActionLink(link.href) ? (
                       <PublicActionLink
                         key={link.href}
                         href={link.href}

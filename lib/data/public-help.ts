@@ -54,58 +54,58 @@ export const publicInquiryTypeOptions: Array<{
 ];
 
 export const publicSupportLinks: PublicQuickLink[] = [
-  { label: "Start your build", href: "/start" },
-  { label: "Contact support", href: "/contact?type=support" },
+  { label: "Start planning", href: "/start" },
+  { label: "Open projects", href: "/projects" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Instructions", href: "/instructions" }
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const pricingLinks: PublicQuickLink[] = [
-  { label: "DIY Pricing", href: "/pricing/diy" },
-  { label: "Managed Pricing", href: "/pricing/managed" },
-  { label: "Compare build paths", href: "/pricing" },
-  { label: "Start Managed Build", href: "/start" }
+  { label: "Compare pricing", href: "/pricing" },
+  { label: "Start planning", href: "/start" },
+  { label: "Open projects", href: "/projects" },
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const gettingStartedLinks: PublicQuickLink[] = [
-  { label: "Start your build", href: "/start" },
-  { label: "What is SaaS?", href: "/what-is-saas" },
-  { label: "Use Cases", href: "/use-cases" },
-  { label: "Pricing", href: "/pricing" }
+  { label: "Start planning", href: "/start" },
+  { label: "Compare pricing", href: "/pricing" },
+  { label: "Open projects", href: "/projects" },
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const aiSystemLinks: PublicQuickLink[] = [
-  { label: "Neroa", href: "/system/narua" },
-  { label: "AI Systems", href: "/system/ai" },
-  { label: "Support", href: "/support" }
+  { label: "Start planning", href: "/start" },
+  { label: "Compare pricing", href: "/pricing" },
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const useCaseLinks: PublicQuickLink[] = [
-  { label: "Use Cases", href: "/use-cases" },
-  { label: "What is SaaS?", href: "/what-is-saas" },
-  { label: "Compare build paths", href: "/pricing" }
+  { label: "Start planning", href: "/start" },
+  { label: "Compare pricing", href: "/pricing" },
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const blogLinks: PublicQuickLink[] = [
-  { label: "Blog", href: "/blog" },
-  { label: "What is SaaS?", href: "/what-is-saas" },
-  { label: "Start your build", href: "/start" }
+  { label: "Start planning", href: "/start" },
+  { label: "Compare pricing", href: "/pricing" },
+  { label: "Contact support", href: "/contact?type=support" }
 ];
 
 const defaultContext: PublicHelpContext = {
   id: "default",
   title: "Neroa site guide",
   intro:
-    "I can explain how NEROA helps shape SaaS products, compare DIY versus Managed, and point you to the right public page or support path.",
+    "I can explain how NEROA helps shape a software product path, compare the current planning routes, and point you to the right live page or support handoff.",
   suggestions: [
     "Which build path fits me?",
     "How do I get started?",
     "Where can I get support?"
   ],
   quickLinks: [
-    { label: "What is SaaS?", href: "/what-is-saas" },
-    { label: "Use Cases", href: "/use-cases" },
-    { label: "Pricing", href: "/pricing" }
+    { label: "Start planning", href: "/start" },
+    { label: "Pricing", href: "/pricing" },
+    { label: "Open projects", href: "/projects" }
   ]
 };
 
@@ -115,7 +115,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "pricing",
       title: "Pricing help",
       intro:
-        "I can explain DIY versus Managed, monthly Engine Credits, realistic build pace, and when a project should move out of self-serve execution.",
+        "I can explain the planning paths, monthly Engine Credits, realistic build pace, and when a project should move beyond self-serve execution.",
       suggestions: [
         "Which plan fits a SaaS build?",
         "What happens when credits run out?",
@@ -130,7 +130,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "get-started",
       title: "Get started help",
       intro:
-        "I can explain how to start your build, where the SaaS path begins, and which page to use before you move into the guided builder.",
+        "I can explain how to start planning, where the live product path begins, and which current page should come next before you move into the builder.",
       suggestions: [
         "How do I get started?",
         "Which build path fits me?",
@@ -175,7 +175,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "use-cases",
       title: "Use-case help",
       intro:
-        "I can explain what NEROA helps build, how the path differs between DIY and Managed, and which page should come next before you start.",
+        "I can explain what NEROA helps build, how the planning path changes with scope, and which current route should come next before you start.",
       suggestions: [
         "What does NEROA help build?",
         "Should I use DIY or Managed?",
@@ -190,7 +190,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "blog",
       title: "Blog guide",
       intro:
-        "I can summarize the article, connect it back to the product, and point you to the next page if you want SaaS education, pricing clarity, or the live build flow.",
+        "I can summarize the article, connect it back to the current product flow, and point you to the right live page for planning, pricing, or support.",
       suggestions: [
         "Summarize this article",
         "What page should I read next?",
@@ -205,7 +205,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "support",
       title: "Support help",
       intro:
-        "I can help you open the site guide, route you to the right support path, or point you to pricing and contact when you need a real answer.",
+        "I can help you choose the cleanest support path, route you to the contact form, or point you to pricing and the live planning flow when you need a clear next step.",
       suggestions: [
         "How do I contact the team?",
         "Which inquiry type should I use?",
@@ -220,7 +220,7 @@ export function getPublicHelpContext(pathname: string): PublicHelpContext {
       id: "instructions",
       title: "Instructions guide",
       intro:
-        "I can help you move through the public site, understand the live product flow, and choose the right SaaS, pricing, or support page next.",
+        "I can help you move through the current public site, understand the live product flow, and choose the right planning, pricing, or support route next.",
       suggestions: [
         "How should I move through the site?",
         "How do I get started?",
@@ -273,7 +273,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "NEROA is live. The right next step is to start your build directly, or use Contact if you want help choosing between DIY and Managed before you begin.",
+        "NEROA is live. The right next step is to start planning directly, or use Contact if you want help choosing between DIY and Managed before you begin.",
       quickLinks: gettingStartedLinks
     };
   }
@@ -309,7 +309,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "For public-site help, the cleanest routes are Support for guided help, Contact for direct questions, and Instructions when you want the practical walkthrough before you start.",
+        "For public-site help, the cleanest routes are Contact for direct questions, Pricing for plan clarity, and Start planning when you are ready to move.",
       quickLinks: publicSupportLinks
     };
   }
@@ -321,7 +321,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   ) {
     return {
       message:
-        "Use Cases explains what NEROA helps build, how the path differs, and when DIY or Managed is the better fit before you enter the guided builder.",
+        "NEROA helps shape SaaS and software product paths before execution. The clearest next move is to start planning or review pricing if you still need to compare support levels.",
       quickLinks: useCaseLinks
     };
   }
@@ -329,7 +329,7 @@ export function answerPublicHelpQuestion(question: string, pathname: string) {
   if (normalized.includes("blog") || normalized.includes("article")) {
     return {
       message:
-        "The blog explains SaaS planning, why Neroa leads the product flow, and how build-path clarity affects scope, budget, and execution decisions.",
+        "The public experience now stays focused on planning, pricing, and the guided start, so the fastest next step is to enter the planning flow or compare the pricing paths.",
       quickLinks: blogLinks
     };
   }

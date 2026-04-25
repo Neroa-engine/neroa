@@ -165,10 +165,7 @@ export default function GuidedStartFlow({
 
     const shouldResume =
       resumeRequested &&
-      (resumeSession?.source === "start" ||
-        resumeSession?.source === "example-build" ||
-        resumeHandoff?.source === "start" ||
-        resumeHandoff?.source === "example-build");
+      (resumeSession?.source === "start" || resumeHandoff?.source === "start");
 
     if (shouldResume) {
       const restored = restoreRealBuilderStateFromSession({
@@ -232,12 +229,8 @@ export default function GuidedStartFlow({
         selectedPathId: trackedPathId,
         currentRoute:
           entryPathId === "managed"
-            ? resumeRequested
-              ? "/start?entry=managed&resume=guided"
-              : "/start?entry=managed"
-            : resumeRequested
-              ? "/start?resume=guided"
-              : "/start",
+            ? "/start?entry=managed"
+            : "/start?entry=diy",
         currentStep: activeStep
       }),
     [activeStep, entryPathId, resumeRequested, state, trackedPathId]
@@ -685,8 +678,15 @@ export default function GuidedStartFlow({
                     <button type="button" className="button-secondary" onClick={() => setActiveStep("project-definition")}>
                       Adjust scope
                     </button>
-                    <Link href={effectivePath === "managed" ? "/managed-build" : "/pricing/diy"} className="button-secondary">
-                      {effectivePath === "managed" ? "Explore managed path" : "Understand pricing"}
+                    <Link
+                      href={
+                        effectivePath === "managed"
+                          ? "/contact?type=managed-build-quote"
+                          : "/pricing"
+                      }
+                      className="button-secondary"
+                    >
+                      {effectivePath === "managed" ? "Contact the team" : "Understand pricing"}
                     </Link>
                   </form>
                   {savedNotice ? <p className="text-sm leading-7 text-emerald-700">{savedNotice}</p> : null}

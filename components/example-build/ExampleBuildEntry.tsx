@@ -117,7 +117,7 @@ export function ExampleBuildEntry() {
       buildRealBuilderSession({
         state,
         selectedPathId: effectivePath,
-        currentRoute: "/example-build",
+        currentRoute: "/start",
         currentStep: activeStep,
         sessionId: buildSession?.source === "example-build" ? buildSession.sessionId : undefined,
         source: "example-build"
@@ -191,18 +191,19 @@ export function ExampleBuildEntry() {
     selectedPathLabel?: string;
   }) {
     const nextPathId = args.selectedPathId ?? effectivePath;
+    const handoffSource = args.href.startsWith("/start") ? "start" : "example-build";
     const nextSession = buildRealBuilderSession({
       state,
       selectedPathId: nextPathId,
-      currentRoute: "/example-build",
+      currentRoute: args.href,
       currentStep: activeStep,
       sessionId: currentSession.sessionId,
-      source: "example-build"
+      source: handoffSource
     });
     const nextHandoff = buildRealBuilderHandoff({
       state,
       selectedPathId: nextPathId,
-      source: "example-build"
+      source: handoffSource
     });
 
     setBuildSession(nextSession);

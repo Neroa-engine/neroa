@@ -447,9 +447,13 @@ export function GrowthLayerPricing() {
                 label={publicLaunchManagedCta.label}
                 className="button-primary"
               />
-              <Link href="/pricing/managed" className="button-secondary">
-                View Managed Pricing
-              </Link>
+              <PublicActionLink
+                href={publicLaunchManagedCta.href}
+                label={publicLaunchManagedCta.label}
+                className="button-secondary"
+              >
+                {publicLaunchManagedCta.label}
+              </PublicActionLink>
             </div>
           </div>
         </div>

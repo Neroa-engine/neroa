@@ -337,7 +337,7 @@ export function ExampleBuildEntryPlanStep({
                                     if (choice.title === publicLaunchPrimaryCta.label) {
                                       storePublicEntryIntent("diy");
                                       persistForRoute({
-                                        href: "/start?resume=guided",
+                                        href: publicLaunchPrimaryCta.href,
                                         selectedPathId: effectivePath
                                       });
                                       return;
@@ -346,7 +346,7 @@ export function ExampleBuildEntryPlanStep({
                                     if (choice.title === publicLaunchManagedCta.label) {
                                       storePublicEntryIntent("managed");
                                       persistForRoute({
-                                        href: "/start?resume=guided",
+                                        href: publicLaunchManagedCta.href,
                                         selectedPathId: "managed",
                                         selectedPathLabel: "Managed Build"
                                       });

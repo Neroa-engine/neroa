@@ -45,7 +45,11 @@ export default function ContactPage({ searchParams }: ContactPageProps) {
   const initialInquiryType = getInitialInquiryType(searchParams?.type);
 
   return (
-    <MarketingInfoShell ctaHref="/support" ctaLabel="Get support" brandVariant="prominent">
+    <MarketingInfoShell
+      ctaHref="/contact?type=support"
+      ctaLabel="Contact support"
+      brandVariant="prominent"
+    >
       <section className="mx-auto max-w-6xl">
         <div className="grid gap-8 lg:grid-cols-[1.02fr_0.98fr] lg:items-start">
           <div className="max-w-3xl">
@@ -129,8 +133,8 @@ export default function ContactPage({ searchParams }: ContactPageProps) {
               Need guidance first?
             </p>
             <div className="mt-6 grid gap-3">
-              <Link href="/support" className="button-secondary">
-                Open support page
+              <Link href="/contact?type=support" className="button-secondary">
+                Contact support
               </Link>
               <Link href="/pricing" className="button-secondary">
                 Compare build paths
