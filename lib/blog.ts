@@ -163,7 +163,7 @@ const blogPostContent = [
       "A guided build path protects the product from wasted complexity."
     ],
     relatedSlugs: [
-      "why-neroa-starts-with-narua-instead-of-a-dashboard"
+      "why-neroa-starts-with-neroa-instead-of-a-dashboard"
     ],
     heroImage: null,
     cta: {
@@ -392,7 +392,7 @@ const blogPostContent = [
   },
   {
     title: "Why NEROA starts with Neroa instead of a dashboard",
-    slug: "why-neroa-starts-with-narua-instead-of-a-dashboard",
+    slug: "why-neroa-starts-with-neroa-instead-of-a-dashboard",
     excerpt:
       "Most build workflows break before they start because users are dropped into tools before the system understands what they are trying to build. NEROA begins with Neroa so the work is framed before the interface widens.",
     dek:
@@ -417,7 +417,7 @@ const blogPostContent = [
         ]
       },
       {
-        id: "narua-frame",
+        id: "neroa-frame",
         eyebrow: "Neroa",
         title: "Neroa creates the first build brief before the system widens",
         paragraphs: [
@@ -463,7 +463,7 @@ const blogPostContent = [
     tags: ["Neroa", "Onboarding", "Build system"],
     publishedAt: "2026-04-10",
     status: "published",
-    canonicalUrl: canonical("/blog/why-neroa-starts-with-narua-instead-of-a-dashboard"),
+    canonicalUrl: canonical("/blog/why-neroa-starts-with-neroa-instead-of-a-dashboard"),
     socialTitle: "Why NEROA starts with Neroa instead of a dashboard",
     socialDescription:
       "NEROA starts with Neroa because a build needs framing before a dashboard can be useful.",
@@ -521,7 +521,7 @@ const blogPostContent = [
         ]
       },
       {
-        id: "narua-control-layer",
+        id: "neroa-control-layer",
         eyebrow: "Orchestration",
         title: "Neroa coordinates the system and specialist AI expands execution only when needed",
         paragraphs: [
@@ -585,7 +585,7 @@ const blogPostContent = [
       "The point of AI coordination is better execution, not more complexity."
     ],
     relatedSlugs: [
-      "why-neroa-starts-with-narua-instead-of-a-dashboard",
+      "why-neroa-starts-with-neroa-instead-of-a-dashboard",
       "how-ai-can-build-a-saas-from-front-end-to-back-end",
       "internal-software-replacing-broken-spreadsheets-with-ai-built-systems"
     ],
