@@ -65,10 +65,6 @@ export const mainNavItems: HeaderLinkItem[] = [
     href: "/managed-build"
   },
   {
-    label: "Use Cases",
-    href: "/use-cases"
-  },
-  {
     label: "Blog",
     href: "/blog"
   },
@@ -108,11 +104,6 @@ export const siteNavItems: SiteNavItem[] = [
     label: "Managed Build",
     href: "/managed-build",
     description: "Review the managed execution path, staged visibility, and scope-led delivery support."
-  },
-  {
-    label: "Use Cases",
-    href: "/use-cases",
-    description: "See what NEROA helps build and when DIY or Managed is the better path."
   },
   {
     label: "Blog",

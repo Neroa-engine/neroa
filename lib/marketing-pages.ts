@@ -1,5 +1,3 @@
-export { getUseCasePage, getUseCaseStaticParams, useCasePages } from "@/lib/use-cases";
-
 export type HowItWorksPage = {
   slug: string;
   index: string;
