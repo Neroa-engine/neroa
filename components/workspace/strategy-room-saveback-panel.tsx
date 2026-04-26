@@ -1,18 +1,12 @@
 import type { ReactNode } from "react";
-import {
-  approveStrategyScope,
-  saveStrategyRevision
-} from "@/app/workspace/[workspaceId]/strategy-room/actions";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
-import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 import { buildStrategyQuestionRows } from "@/lib/workspace/strategy-room-support";
 
 type StrategyRoomSavebackPanelProps = {
-  project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
@@ -179,7 +173,6 @@ function labelForQuestionSource(
 }
 
 function StrategyRoomSavebackPanel({
-  project,
   projectMetadata,
   projectBrief,
   architectureBlueprint,
@@ -361,29 +354,10 @@ function StrategyRoomSavebackPanel({
       <div className="mt-4 rounded-[22px] border border-white/10 bg-slate-950/56 px-4 py-4">
         <p className="text-sm font-medium text-white">Actions stay in the header</p>
         <p className="mt-1 text-sm leading-7 text-slate-300">
-          Save revision and approve roadmap scope stay visible at the top of the room. Core blocker
-          answers should happen in chat, not in side inputs.
+          Save revision and approve roadmap scope stay mounted in the header with the shared
+          Strategy Room actions. Core blocker answers should happen in chat, not in side inputs.
         </p>
       </div>
-
-      <form id="strategy-saveback-form" action={saveStrategyRevision} className="hidden">
-        <input type="hidden" name="workspaceId" value={project.workspaceId} />
-        <input
-          type="hidden"
-          name="returnTo"
-          value={`/workspace/${project.workspaceId}/strategy-room`}
-        />
-        <input type="hidden" name="saveMode" value="chat_checkpoint" />
-      </form>
-
-      <form id="strategy-approve-form" action={approveStrategyScope} className="hidden">
-        <input type="hidden" name="workspaceId" value={project.workspaceId} />
-        <input
-          type="hidden"
-          name="returnTo"
-          value={`/workspace/${project.workspaceId}/strategy-room`}
-        />
-      </form>
     </section>
   );
 }

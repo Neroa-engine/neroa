@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
+import { StrategyRoomHeaderActions } from "@/components/workspace/strategy-room-header-actions";
 import { StrategyRoomSavebackPanel } from "@/components/workspace/strategy-room-saveback-panel";
 import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import {
@@ -391,23 +392,10 @@ export function ProjectStrategyRoomV1({
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <button
-                  type="submit"
-                  form="strategy-saveback-form"
-                  className="rounded-full border border-white/10 bg-white/8 px-5 py-2.5 text-sm font-medium text-white transition hover:border-cyan-300/40 hover:bg-white/12"
-                >
-                  Save revision
-                </button>
-                <button
-                  type="submit"
-                  form="strategy-approve-form"
-                  disabled={!governancePolicy.approvalReadiness.approvalAllowed}
-                  className="rounded-full bg-cyan-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
-                >
-                  Approve roadmap scope
-                </button>
-              </div>
+              <StrategyRoomHeaderActions
+                workspaceId={project.workspaceId}
+                approvalAllowed={governancePolicy.approvalReadiness.approvalAllowed}
+              />
             </div>
 
             <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -648,7 +636,6 @@ export function ProjectStrategyRoomV1({
                 </IntelligenceSurface>
 
                 <StrategyRoomSavebackPanel
-                  project={project}
                   projectMetadata={projectMetadata}
                   projectBrief={projectBrief}
                   architectureBlueprint={architectureBlueprint}
