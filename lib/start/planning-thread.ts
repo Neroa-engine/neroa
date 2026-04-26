@@ -52,6 +52,12 @@ export type PlanningSignalState = {
   shouldDeriveTitle: boolean;
 };
 
+export type PlanningThreadNormalizationOptions = {
+  suppressStarterPrompts?: boolean;
+  founderNameKnown?: boolean;
+  productDirectionKnown?: boolean;
+};
+
 const PLANNING_RESET_COMMAND_PATTERN =
   /^\s*(?:start over|start over please|clear this|clear this chat|clear chat|clear thread|reset|reset this|reset this chat|reset this thread|delete that|delete this|wipe this|wipe this chat)\s*[.!?]*\s*$/i;
 const CASUAL_KICKOFF_PATTERN =
@@ -66,6 +72,12 @@ const WORKFLOW_SIGNAL_PATTERN =
   /\b(?:onboarding|dashboard|portal|checkout|booking|payment|billing|approval|reporting|sync|upload|search|messaging|workflow|login|auth|crm|subscription|analytics)\b/i;
 const CONSTRAINT_SIGNAL_PATTERN =
   /\b(?:budget|timeline|deadline|constraint|integration|migration|compliance|permission|auth|technical|ops|staffing|handoff|launch risk)\b/i;
+const STARTER_NAME_PROMPT_PATTERN = /\bwhat should i call you\b/i;
+const STARTER_BUILD_PROMPT_PATTERN = /\bwhat are you thinking about building\b/i;
+const STARTER_HELLO_PATTERN = /\b(?:hi|hello|love that|absolutely)\b/i;
+const GOOD_TO_MEET_YOU_PATTERN = /\bgood to meet you\b/i;
+const STARTER_SYSTEM_INTRO_PATTERN =
+  /\bopen naturally, learn the person's name if they have not shared it yet\b/i;
 const SYNTHETIC_PLANNING_MESSAGE_IDS = new Set([
   "assistant-intro",
   "user-initial-summary",
@@ -95,6 +107,82 @@ function hasMeaningfulPlanningText(value?: string | null) {
 
 function hasMeaningfulPlanningList(values?: readonly string[] | null) {
   return Boolean(values?.some((value) => hasMeaningfulPlanningText(value)));
+}
+
+function messageHasStarterNamePrompt(value?: string | null) {
+  return STARTER_NAME_PROMPT_PATTERN.test(cleanPlanningText(value));
+}
+
+function messageHasStarterBuildPrompt(value?: string | null) {
+  return STARTER_BUILD_PROMPT_PATTERN.test(cleanPlanningText(value));
+}
+
+function messageLooksLikeStarterAssistantPrompt(message: PlanningMessage) {
+  if (message.role !== "assistant") {
+    return false;
+  }
+
+  if (message.id === "assistant-intro") {
+    return true;
+  }
+
+  const content = cleanPlanningText(message.content);
+
+  if (!content) {
+    return false;
+  }
+
+  if (STARTER_SYSTEM_INTRO_PATTERN.test(content)) {
+    return true;
+  }
+
+  if (
+    messageHasStarterNamePrompt(content) &&
+    (/i['’]?m neroa/i.test(content) || /i am neroa/i.test(content) || STARTER_HELLO_PATTERN.test(content))
+  ) {
+    return true;
+  }
+
+  if (messageHasStarterNamePrompt(content)) {
+    return true;
+  }
+
+  if (messageHasStarterBuildPrompt(content) && GOOD_TO_MEET_YOU_PATTERN.test(content)) {
+    return true;
+  }
+
+  if (messageHasStarterBuildPrompt(content)) {
+    return true;
+  }
+
+  return false;
+}
+
+function isLikelyPlanningNameOnlyResponse(value?: string | null) {
+  const cleanValue = cleanPlanningText(value).replace(/[.!?]+$/g, "").trim();
+
+  if (!cleanValue) {
+    return false;
+  }
+
+  if (cleanValue.split(/\s+/).length > 4) {
+    return false;
+  }
+
+  if (/[0-9]/.test(cleanValue)) {
+    return false;
+  }
+
+  if (
+    PRODUCT_SIGNAL_PATTERN.test(cleanValue) ||
+    AUDIENCE_SIGNAL_PATTERN.test(cleanValue) ||
+    OUTCOME_SIGNAL_PATTERN.test(cleanValue) ||
+    WORKFLOW_SIGNAL_PATTERN.test(cleanValue)
+  ) {
+    return false;
+  }
+
+  return /^[a-zA-Z][a-zA-Z .'-]*$/.test(cleanValue);
 }
 
 function parseConversationState(value: unknown) {
@@ -144,6 +232,107 @@ function sanitizePlanningMessages(messages: unknown) {
   }
 
   return sanitizedMessages.slice(-20);
+}
+
+export function hasKnownPlanningFounderName(
+  conversationState?: ConversationSessionState | null,
+  projectBrief?: ProjectBrief | null
+) {
+  return Boolean(
+    cleanPlanningText(conversationState?.founderName) ||
+      cleanPlanningText(projectBrief?.founderName)
+  );
+}
+
+export function hasKnownPlanningProductDirection(args: {
+  conversationState?: ConversationSessionState | null;
+  projectBrief?: ProjectBrief | null;
+  projectTitle?: string | null;
+  projectSummary?: string | null;
+  planningThreadState?: PlanningThreadState | null;
+}) {
+  return Boolean(
+    cleanPlanningText(args.projectSummary) ||
+      cleanPlanningText(args.planningThreadState?.metadata.perceivedProject) ||
+      cleanPlanningText(args.conversationState?.productCategory) ||
+      cleanPlanningText(args.conversationState?.problemStatement) ||
+      cleanPlanningText(args.conversationState?.outcomePromise) ||
+      cleanPlanningText(args.projectBrief?.productCategory) ||
+      cleanPlanningText(args.projectBrief?.problemStatement) ||
+      cleanPlanningText(args.projectBrief?.outcomePromise) ||
+      hasMeaningfulPlanningList(args.projectBrief?.buyerPersonas) ||
+      hasMeaningfulPlanningList(args.projectBrief?.operatorPersonas) ||
+      hasMeaningfulProjectTitle(args.projectTitle ?? args.projectBrief?.projectName)
+  );
+}
+
+export function normalizePlanningThreadState(args: {
+  threadState?: PlanningThreadState | null;
+  options?: PlanningThreadNormalizationOptions;
+}): PlanningThreadState | null {
+  const threadState = args.threadState ?? null;
+  const options = args.options ?? {};
+
+  if (!threadState) {
+    return null;
+  }
+
+  const normalizedMessages = sanitizePlanningMessages(threadState.messages);
+
+  if (normalizedMessages.length === 0) {
+    return null;
+  }
+
+  let skipLikelyNameResponse = false;
+  const filteredMessages: PlanningMessage[] = [];
+
+  for (const message of normalizedMessages) {
+    const content = cleanPlanningText(message.content);
+    const suppressSyntheticStarterSummary =
+      options.suppressStarterPrompts && message.id === "user-initial-summary";
+    const suppressStarterPrompt =
+      options.suppressStarterPrompts && messageLooksLikeStarterAssistantPrompt(message);
+    const suppressFounderPrompt =
+      message.role === "assistant" &&
+      options.founderNameKnown &&
+      messageHasStarterNamePrompt(content);
+    const suppressProductPrompt =
+      message.role === "assistant" &&
+      options.productDirectionKnown &&
+      messageHasStarterBuildPrompt(content);
+
+    if (suppressSyntheticStarterSummary) {
+      continue;
+    }
+
+    if (suppressStarterPrompt || suppressFounderPrompt || suppressProductPrompt) {
+      skipLikelyNameResponse = message.role === "assistant" && messageHasStarterNamePrompt(content);
+      continue;
+    }
+
+    if (
+      skipLikelyNameResponse &&
+      message.role === "user" &&
+      isLikelyPlanningNameOnlyResponse(content)
+    ) {
+      skipLikelyNameResponse = false;
+      continue;
+    }
+
+    skipLikelyNameResponse = false;
+    filteredMessages.push(message);
+  }
+
+  const finalMessages = sanitizePlanningMessages(filteredMessages);
+
+  if (finalMessages.length === 0) {
+    return null;
+  }
+
+  return {
+    ...threadState,
+    messages: finalMessages
+  };
 }
 
 function parsePlanningMetadata(
@@ -280,6 +469,7 @@ export function hasPlanningThreadHistory(value: PlanningThreadState | null | und
   return value.messages.some(
     (message) =>
       !SYNTHETIC_PLANNING_MESSAGE_IDS.has(message.id) &&
+      !messageLooksLikeStarterAssistantPrompt(message) &&
       cleanPlanningText(message.content).length > 0
   );
 }
@@ -415,7 +605,6 @@ export function buildProjectResumePlanningThread(args: {
     threadId: cleanPlanningText(args.threadId) || `project-thread-${Date.now()}`,
     lane: args.lane,
     messages: [
-      buildPlanningIntroMessage(args.lane),
       {
         id: "project-resume-summary",
         role: "user",
@@ -486,13 +675,47 @@ export function buildStrategyRoomInitialThreadState(args: {
   nextStep?: string | null;
   fallbackThreadId?: string | null;
 }) {
-  if (hasPlanningThreadHistory(args.planningThreadState ?? null)) {
-    return args.planningThreadState ?? null;
+  const founderNameKnown = hasKnownPlanningFounderName(
+    args.conversationState ?? args.planningThreadState?.conversationState ?? null,
+    args.projectBrief ?? null
+  );
+  const productDirectionKnown = hasKnownPlanningProductDirection({
+    conversationState:
+      args.conversationState ?? args.planningThreadState?.conversationState ?? null,
+    projectBrief: args.projectBrief ?? null,
+    projectTitle: args.projectTitle,
+    projectSummary: args.projectSummary,
+    planningThreadState: args.planningThreadState ?? null
+  });
+  const meaningfulExistingProjectState = hasSavedProjectPlanningState({
+    planningThreadState: args.planningThreadState,
+    conversationState: args.conversationState,
+    projectBrief: args.projectBrief,
+    hasStrategyOverrides: args.hasStrategyOverrides,
+    hasRevisionHistory: args.hasRevisionHistory,
+    hasSavedPlanningArtifacts: args.hasSavedPlanningArtifacts,
+    projectTitle: args.projectTitle,
+    projectSummary: args.projectSummary,
+    currentFocus: args.currentFocus,
+    blockers: args.blockers,
+    nextStep: args.nextStep
+  });
+  const normalizedPlanningThreadState = normalizePlanningThreadState({
+    threadState: args.planningThreadState ?? null,
+    options: {
+      suppressStarterPrompts: meaningfulExistingProjectState,
+      founderNameKnown,
+      productDirectionKnown
+    }
+  });
+
+  if (hasPlanningThreadHistory(normalizedPlanningThreadState)) {
+    return normalizedPlanningThreadState;
   }
 
   if (
     !hasSavedProjectPlanningState({
-      planningThreadState: args.planningThreadState,
+      planningThreadState: normalizedPlanningThreadState,
       conversationState: args.conversationState,
       projectBrief: args.projectBrief,
       hasStrategyOverrides: args.hasStrategyOverrides,
@@ -511,6 +734,7 @@ export function buildStrategyRoomInitialThreadState(args: {
   return buildProjectResumePlanningThread({
     threadId:
       cleanPlanningText(args.fallbackThreadId) ||
+      normalizedPlanningThreadState?.threadId ||
       args.planningThreadState?.threadId ||
       `project-thread-${Date.now()}`,
     lane: args.lane,
@@ -519,7 +743,11 @@ export function buildStrategyRoomInitialThreadState(args: {
     currentFocus: args.currentFocus,
     blockers: args.blockers,
     nextStep: args.nextStep,
-    conversationState: args.conversationState ?? args.planningThreadState?.conversationState ?? null
+    conversationState:
+      args.conversationState ??
+      normalizedPlanningThreadState?.conversationState ??
+      args.planningThreadState?.conversationState ??
+      null
   });
 }
 

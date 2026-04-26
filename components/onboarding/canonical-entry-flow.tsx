@@ -28,6 +28,7 @@ import {
   buildPlanningThreadStorageKey,
   choosePreferredPlanningThreadState,
   hasMeaningfulPlanningConversationState,
+  normalizePlanningThreadState,
   isPlanningResetCommand,
   isWeakPlanningInput,
   loadPlanningThreadState,
@@ -339,8 +340,18 @@ export function CanonicalEntryFlow({
       }),
     [initialEntryPathId, initialSummary, initialTitle, initialUserEmail, storageKeyOverride]
   );
-  const seededThreadState =
+  const seededThreadStateCandidate =
     initialThreadState?.lane === initialEntryPathId ? initialThreadState : null;
+  const seededThreadState = normalizePlanningThreadState({
+    threadState: seededThreadStateCandidate,
+    options: {
+      suppressStarterPrompts: !allowStarterThread,
+      founderNameKnown: Boolean(seededThreadStateCandidate?.conversationState?.founderName),
+      productDirectionKnown: Boolean(
+        seededThreadStateCandidate?.metadata.perceivedProject?.trim() || initialSummary.trim()
+      )
+    }
+  });
   const [title, setTitle] = useState(
     seededThreadState?.metadata.projectTitle?.trim() || initialTitle
   );
@@ -464,8 +475,23 @@ export function CanonicalEntryFlow({
     try {
       const raw = window.localStorage.getItem(storageKey);
       const parsed = raw ? (JSON.parse(raw) as Partial<PlanningThreadState> | null) : null;
-      const localThreadState =
+      const localThreadStateCandidate =
         parsed && parsed.lane === initialEntryPathId ? loadPlanningThreadState(parsed) : null;
+      const localThreadState = normalizePlanningThreadState({
+        threadState: localThreadStateCandidate,
+        options: {
+          suppressStarterPrompts: !allowStarterThread,
+          founderNameKnown: Boolean(
+            seededThreadState?.conversationState?.founderName ??
+              localThreadStateCandidate?.conversationState?.founderName
+          ),
+          productDirectionKnown: Boolean(
+            seededThreadState?.metadata.perceivedProject?.trim() ||
+              localThreadStateCandidate?.metadata.perceivedProject?.trim() ||
+              initialSummary.trim()
+          )
+        }
+      });
       const preferredThreadState = choosePreferredPlanningThreadState({
         persistedThreadState: seededThreadState,
         localThreadState,
@@ -485,7 +511,7 @@ export function CanonicalEntryFlow({
         setTitle(preferredThreadState.metadata.projectTitle?.trim() || initialTitle);
       }
 
-      if (parsed && preferredThreadState === localThreadState) {
+      if (parsed && localThreadState && preferredThreadState === localThreadState) {
         setProjectBrief(loadProjectBrief(parsed.projectBrief));
         setArchitectureBlueprint(loadArchitectureBlueprint(parsed.architectureBlueprint));
         setRoadmapPlan(loadRoadmapPlan(parsed.roadmapPlan));
@@ -496,7 +522,14 @@ export function CanonicalEntryFlow({
     } finally {
       didHydrateRef.current = true;
     }
-  }, [initialEntryPathId, initialSummary, initialTitle, seededThreadState, storageKey]);
+  }, [
+    allowStarterThread,
+    initialEntryPathId,
+    initialSummary,
+    initialTitle,
+    seededThreadState,
+    storageKey
+  ]);
 
   useEffect(() => {
     if (!didHydrateRef.current || typeof window === "undefined") {
@@ -700,17 +733,33 @@ export function CanonicalEntryFlow({
         throw new Error(payload.error || "Unable to send the planning message to Neroa.");
       }
 
-      setThreadId(payload.threadId ?? payload.threadState.threadId);
-      setMessages(payload.threadState.messages);
-      setThreadMetadata(payload.threadState.metadata);
-      setConversationState(payload.threadState.conversationState ?? null);
+      const normalizedThreadState =
+        normalizePlanningThreadState({
+          threadState: payload.threadState,
+          options: {
+            suppressStarterPrompts: !allowStarterThread,
+            founderNameKnown: Boolean(payload.threadState.conversationState?.founderName),
+            productDirectionKnown: Boolean(
+              payload.threadState.metadata.perceivedProject?.trim() ||
+                payload.threadState.projectBrief?.productCategory ||
+                payload.threadState.projectBrief?.problemStatement ||
+                payload.threadState.projectBrief?.outcomePromise ||
+                initialSummary.trim()
+            )
+          }
+        }) ?? payload.threadState;
+
+      setThreadId(payload.threadId ?? normalizedThreadState.threadId);
+      setMessages(normalizedThreadState.messages);
+      setThreadMetadata(normalizedThreadState.metadata);
+      setConversationState(normalizedThreadState.conversationState ?? null);
       setProjectBrief(payload.threadState.projectBrief ?? null);
       setArchitectureBlueprint(payload.threadState.architectureBlueprint ?? null);
       setRoadmapPlan(payload.threadState.roadmapPlan ?? null);
       setGovernancePolicy(payload.threadState.governancePolicy ?? null);
 
-      if (!title.trim() && payload.threadState.metadata.projectTitle) {
-        setTitle(payload.threadState.metadata.projectTitle);
+      if (!title.trim() && normalizedThreadState.metadata.projectTitle) {
+        setTitle(normalizedThreadState.metadata.projectTitle);
       }
     } catch (error) {
       setMessages(previousMessages);

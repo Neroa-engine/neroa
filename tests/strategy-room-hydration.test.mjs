@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildConversationSessionState } from "../lib/intelligence/conversation/index.ts";
 import { buildWorkspaceProjectIntelligence } from "../lib/intelligence/project-brief-generator.ts";
+import { runPlanningChat } from "../lib/start/planning-chat.ts";
 import {
   buildInitialPlanningMessages,
   buildStrategyRoomInitialThreadState,
@@ -231,6 +232,10 @@ test("existing project with meaningful intelligence but no real transcript build
   });
 
   assert.ok(resumedThreadState);
+  assert.equal(
+    resumedThreadState?.messages.some((message) => message.id === "assistant-intro"),
+    false
+  );
   assert.equal(resumedThreadState?.messages.some((message) => message.id === "project-resume-summary"), true);
   assert.equal(
     resumedThreadState?.messages.some((message) =>
@@ -243,6 +248,113 @@ test("existing project with meaningful intelligence but no real transcript build
       /What should I call you\?|What are you thinking about building\?/i.test(message.content)
     ),
     false
+  );
+});
+
+test("existing project with leaked starter prompts strips onboarding duplicates and keeps real planning messages", () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const projectTitle = "Tom Crypto Risk";
+  const projectDescription = messages.join(" ");
+  const project = buildProjectRecord(projectTitle, projectDescription);
+  const conversationBuild = buildConversationState(messages);
+  const projectMetadata = buildStoredProjectMetadata({
+    title: projectTitle,
+    description: projectDescription,
+    conversationState: conversationBuild.state
+  });
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    projectTitle,
+    projectDescription,
+    projectMetadata
+  });
+  const leakedThreadState = createPersistedPlanningThreadState({
+    threadId: "project-thread-leaked-intro",
+    lane: "managed",
+    messages: [
+      {
+        id: "assistant-leak-1",
+        role: "assistant",
+        content: "Hi - I'm Neroa. What should I call you?"
+      },
+      {
+        id: "user-leak-name",
+        role: "user",
+        content: "Tom"
+      },
+      {
+        id: "assistant-leak-2",
+        role: "assistant",
+        content: "Good to meet you, Tom. What are you thinking about building?"
+      },
+      {
+        id: "assistant-leak-3",
+        role: "assistant",
+        content: "Hi - I'm Neroa. What should I call you?"
+      },
+      {
+        id: "user-real-1",
+        role: "user",
+        content: "We need investor watchlist filtering in the MVP."
+      },
+      {
+        id: "assistant-real-1",
+        role: "assistant",
+        content:
+          "Then the product web lane stays focused on watchlists and search filters for the first release."
+      }
+    ],
+    metadata: {
+      lane: "managed",
+      projectTitle,
+      perceivedProject: "Crypto risk analytics planning",
+      scopeNotes: ["Investor watchlist filtering in MVP"],
+      recommendedNextStep: "Confirm the launch score inputs."
+    },
+    conversationState: conversationBuild.state,
+    updatedAt: "2026-04-26T15:00:00.000Z"
+  });
+  const resumedThreadState = buildStrategyRoomInitialThreadState({
+    lane: "managed",
+    planningThreadState: leakedThreadState,
+    conversationState: conversationBuild.state,
+    projectBrief: projectIntelligence.projectBrief,
+    hasSavedPlanningArtifacts: true,
+    projectTitle,
+    projectSummary: "Resume the crypto risk planning room.",
+    currentFocus: "Clarifying launch watchlist behavior",
+    blockers: projectIntelligence.governancePolicy.approvalReadiness.blockers,
+    nextStep: "Confirm the launch score inputs.",
+    fallbackThreadId: "project-strategy-leaked"
+  });
+
+  assert.ok(resumedThreadState);
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      /What should I call you\?|What are you thinking about building\?/i.test(message.content)
+    ),
+    false
+  );
+  assert.equal(
+    resumedThreadState?.messages.some((message) => message.content === "Tom"),
+    false
+  );
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      message.content.includes("watchlist filtering in the MVP")
+    ),
+    true
+  );
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      message.content.includes("product web lane stays focused")
+    ),
+    true
   );
 });
 
@@ -353,6 +465,40 @@ test("founder name already known forces resume mode instead of asking what to ca
     ),
     false
   );
+});
+
+test("existing project with known founder name never re-emits the name prompt on the next turn", async () => {
+  const conversationBuild = buildConversationState(["Hi, my name is Tom."]);
+  const result = await runPlanningChat({
+    threadId: "planning-founder-known",
+    lane: "managed",
+    title: "Untitled project",
+    summary: null,
+    messages: [],
+    message: "Hey",
+    conversationState: conversationBuild.state,
+    existingProjectContext: true
+  });
+
+  assert.doesNotMatch(result.assistantMessage.content, /What should I call you\?/i);
+});
+
+test("existing project with known product direction never re-emits the build starter prompt", async () => {
+  const conversationBuild = buildConversationState([
+    "I want a donor portal for churches."
+  ]);
+  const result = await runPlanningChat({
+    threadId: "planning-product-known",
+    lane: "managed",
+    title: "Church donor portal",
+    summary: "Donor portal for churches.",
+    messages: [],
+    message: "Okay",
+    conversationState: conversationBuild.state,
+    existingProjectContext: true
+  });
+
+  assert.doesNotMatch(result.assistantMessage.content, /What are you thinking about building\?/i);
 });
 
 test("fallback only appears when a project truly has no saved planning state", () => {

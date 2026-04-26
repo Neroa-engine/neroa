@@ -22,7 +22,12 @@ import type {
   PlanningThreadMetadata,
   PlanningThreadState
 } from "@/lib/start/planning-thread";
-import { analyzePlanningInputs, isWeakPlanningInput } from "@/lib/start/planning-thread";
+import {
+  analyzePlanningInputs,
+  hasMeaningfulPlanningConversationState,
+  hasMeaningfulProjectTitle,
+  isWeakPlanningInput
+} from "@/lib/start/planning-thread";
 
 type PlanningMessageInput = {
   id?: string | null;
@@ -85,6 +90,47 @@ function truncate(value: string, maxLength: number) {
   }
 
   return `${value.slice(0, Math.max(0, maxLength - 3)).trimEnd()}...`;
+}
+
+function hasKnownPlanningFounderName(value?: ConversationSessionState | null) {
+  return Boolean(cleanText(value?.founderName));
+}
+
+function hasKnownPlanningProductDirection(args: {
+  conversationState?: ConversationSessionState | null;
+  title?: string | null;
+  summary?: string | null;
+  metadata?: PlanningThreadMetadata | null;
+}) {
+  return Boolean(
+    cleanText(args.summary) ||
+      cleanText(args.metadata?.perceivedProject) ||
+      cleanText(args.conversationState?.productCategory) ||
+      cleanText(args.conversationState?.problemStatement) ||
+      cleanText(args.conversationState?.outcomePromise) ||
+      args.conversationState?.audience.buyerPersonas.length ||
+      args.conversationState?.audience.operatorPersonas.length ||
+      hasMeaningfulProjectTitle(args.title)
+  );
+}
+
+function hasMeaningfulExistingProjectContext(args: {
+  existingProjectContext?: boolean;
+  conversationState?: ConversationSessionState | null;
+  title?: string | null;
+  summary?: string | null;
+  metadata?: PlanningThreadMetadata | null;
+}) {
+  if (!args.existingProjectContext) {
+    return false;
+  }
+
+  return Boolean(
+    cleanText(args.summary) ||
+      cleanText(args.metadata?.perceivedProject) ||
+      hasMeaningfulProjectTitle(args.title) ||
+      hasMeaningfulPlanningConversationState(args.conversationState ?? null)
+  );
 }
 
 function buildMessageId(role: PlanningMessageRole) {
@@ -695,18 +741,33 @@ function buildWarmGuidedPlanningReply(args: {
   maxQuestions?: number;
   controlledNextQuestions?: string[] | null;
   controlledLeadIn?: string | null;
+  suppressStarterPrompts?: boolean;
+  founderNameKnown?: boolean;
+  productDirectionKnown?: boolean;
 }) {
   const likelyName = extractLikelyName(args.latestUserMessage);
+  const suppressNamePrompt = Boolean(args.suppressStarterPrompts || args.founderNameKnown);
+  const suppressBuildPrompt = Boolean(args.suppressStarterPrompts || args.productDirectionKnown);
 
-  if (args.meaningfulTurnCount === 0 && likelyName && !INTRODUCTION_PATTERN.test(args.latestUserMessage)) {
+  if (
+    !suppressBuildPrompt &&
+    args.meaningfulTurnCount === 0 &&
+    likelyName &&
+    !INTRODUCTION_PATTERN.test(args.latestUserMessage)
+  ) {
     return buildWarmNameReply(likelyName);
   }
 
-  if (args.meaningfulTurnCount === 0 && isCasualOpeningMessage(args.latestUserMessage)) {
+  if (
+    !suppressNamePrompt &&
+    args.meaningfulTurnCount === 0 &&
+    isCasualOpeningMessage(args.latestUserMessage)
+  ) {
     return buildWarmGreetingReply(args.latestUserMessage);
   }
 
   if (
+    !suppressBuildPrompt &&
     args.meaningfulTurnCount === 0 &&
     assistantAskedForName(args.threadMessages) &&
     !INTRODUCTION_PATTERN.test(args.latestUserMessage)
@@ -747,6 +808,9 @@ function buildWarmGuidedPlanningReply(args: {
         });
   const baseOpeningLine = isOffTopicMessage(args.latestUserMessage)
     ? "I can help with product strategy here. Bring me the product idea, and I'll help you shape it."
+    : (args.suppressStarterPrompts || args.productDirectionKnown) &&
+        args.meaningfulTurnCount === 0
+      ? "I'm back in the current project context, so let's keep tightening what matters next."
     : args.meaningfulTurnCount === 0
       ? "I'm here with you. Give me the rough shape of what you want to build."
       : !args.hasWorkflow && !args.hasAudience
@@ -891,6 +955,7 @@ export async function runPlanningChat(args: {
   messages: PlanningMessageInput[];
   message: string;
   conversationState?: ConversationSessionState | null;
+  existingProjectContext?: boolean;
 }) {
   const now = new Date().toISOString();
   const cleanMessage = cleanText(args.message);
@@ -946,16 +1011,35 @@ export async function runPlanningChat(args: {
     hiddenBundle: visibleStrategistDecision.bundle
   });
   const useConversationPlanner = Boolean(conversationGuidance.question);
+  const founderNameKnown = hasKnownPlanningFounderName(conversationSessionBuild.state);
+  const productDirectionKnown = hasKnownPlanningProductDirection({
+    conversationState: conversationSessionBuild.state,
+    title: args.title,
+    summary: args.summary,
+    metadata
+  });
+  const meaningfulExistingProjectContext = hasMeaningfulExistingProjectContext({
+    existingProjectContext: args.existingProjectContext,
+    conversationState: conversationSessionBuild.state,
+    title: args.title,
+    summary: args.summary,
+    metadata
+  });
   const latestLikelyName =
     conversationSessionBuild.state.founderName ?? extractLikelyName(cleanMessage);
   const casualGreetingMode =
     planningSignals.meaningfulTurnCount === 0 &&
     isCasualOpeningMessage(cleanMessage) &&
-    !latestLikelyName;
+    !latestLikelyName &&
+    !meaningfulExistingProjectContext &&
+    !founderNameKnown &&
+    !productDirectionKnown;
   const greetingHandoffMode =
     planningSignals.meaningfulTurnCount === 0 &&
     !INTRODUCTION_PATTERN.test(cleanMessage) &&
-    !!latestLikelyName;
+    !!latestLikelyName &&
+    !meaningfulExistingProjectContext &&
+    !productDirectionKnown;
   const preserveLegacyGreetingFlow =
     (casualGreetingMode || greetingHandoffMode) && !useConversationPlanner;
   const visibleConversationState = inferVisibleConversationStateFromSignals({
@@ -1114,7 +1198,10 @@ export async function runPlanningChat(args: {
             ? conversationGuidance.leadIn
             : useHiddenVisibleStrategist
             ? visibleStrategistDecision.strategistLeadIn
-            : null
+            : null,
+          suppressStarterPrompts: meaningfulExistingProjectContext,
+          founderNameKnown,
+          productDirectionKnown
         }),
     allowExecutionPath
   );

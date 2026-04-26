@@ -45,7 +45,8 @@ export async function POST(request: NextRequest) {
       summary: body.summary,
       message: body.message,
       messages: body.messages,
-      conversationState: body.conversationState ?? null
+      conversationState: body.conversationState ?? null,
+      existingProjectContext: Boolean(body.workspaceId?.trim())
     });
 
     if (body.workspaceId?.trim()) {
