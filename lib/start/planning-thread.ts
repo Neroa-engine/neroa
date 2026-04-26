@@ -6,6 +6,10 @@ import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
+import {
+  loadBlockerRuntimeState,
+  type BlockerRuntimeState
+} from "@/lib/intent-library/runtime-types";
 
 export type PlanningLaneId = "diy" | "managed";
 
@@ -36,6 +40,7 @@ export type PlanningThreadState = {
   architectureBlueprint?: ArchitectureBlueprint | null;
   roadmapPlan?: RoadmapPlan | null;
   governancePolicy?: GovernancePolicy | null;
+  runtimeState?: BlockerRuntimeState | null;
   updatedAt: string;
 };
 
@@ -437,6 +442,7 @@ export function loadPlanningThreadState(value: unknown): PlanningThreadState | n
     messages,
     metadata,
     conversationState: parseConversationState(record.conversationState),
+    runtimeState: loadBlockerRuntimeState(record.runtimeState),
     updatedAt
   };
 }
@@ -457,6 +463,7 @@ export function createPersistedPlanningThreadState(
     messages: normalizedMessages,
     metadata,
     conversationState: threadState.conversationState ?? null,
+    runtimeState: threadState.runtimeState ?? null,
     updatedAt: cleanPlanningText(threadState.updatedAt) || new Date().toISOString()
   };
 }
@@ -628,6 +635,7 @@ export function buildProjectResumePlanningThread(args: {
         "Keep tightening the scope and approval blockers in this room."
     },
     conversationState: args.conversationState ?? null,
+    runtimeState: null,
     updatedAt: now
   } satisfies PlanningThreadState;
 }

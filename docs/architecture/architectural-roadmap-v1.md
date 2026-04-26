@@ -70,6 +70,7 @@ This promoted scope does **not** include:
   - product truth capture formats
   - universal domain generalization inside the shared ProjectBrief spine when it enriches product truth with system archetypes, capability profiles, optional vertical overlays, and backward-compatible compatibility mapping for later planning layers
   - shared blocker-definition libraries, blocker-specific schemas, normalization rules, provider adapters, and eval fixtures when they constrain Strategy Room answer extraction to typed write-safe contracts before the shared revision spine persists updates
+  - blocker-runtime schemas, deterministic blocker queues, governed question-planning, clarification/completion rules, and reopen policies when app code remains the authority for blocker priority, completion criteria, clarify-vs-advance decisions, and allowed write targets
 - Not allowed to touch:
   - billing/account behavior
   - protected routing behavior
@@ -77,6 +78,7 @@ This promoted scope does **not** include:
 - Boundary: Phase 1 can collect truth and raise contradictions, but it cannot approve execution on its own. Universal archetype and capability inference may extend shared product truth now when it preserves the existing ProjectBrief contract for downstream planning, governance, execution, QA, and billing layers rather than replacing them with a second intelligence path.
   Phase 1 also owns the blocker-library and schema-driven extraction foundation for Strategy Room when app code remains the authority for active blocker selection, allowed schemas/tools, slot write targets, validation, and clarify-vs-advance decisions instead of allowing freeform model-directed state mutation.
   Phase 1 may now expand that blocker-library foundation with broader blocker-family coverage, stricter normalization for real customer phrasing, safe multi-part secondary-hint capture, and larger eval suites when those additions keep blocker-scoped write targets authoritative and do not let the model freestyle unrelated slot mutation.
+  Phase 1 may also define the deterministic blocker-runtime contract itself when that runtime layers on top of the shared blocker library, keeps queue construction and question planning app-controlled, and exposes only typed blocker/question state to later Strategy Room surfaces.
 
 ### Phase 2 - Roadmap and Change Control
 
@@ -114,6 +116,7 @@ This promoted scope does **not** include:
   - Strategy Room chat-submit reliability corrections when valid short semantic answers must stay visible in-thread, persist through the shared revision spine, update blocker/readiness state when possible, and surface explicit save failures instead of silently disappearing
   - Strategy Room short-answer persistence hardening when valid negative or null-style answers such as "no constraint," "none," or "not in MVP" must count as real blocker responses, remain visible in-thread, and either advance, clarify, or show an explicit save error instead of silently no-oping
   - Strategy Room blocker-orchestrator integration when the room resolves the active blocker from the shared blocker library, runs only the blocker-specific extraction contract, persists safe patches through the existing revision spine, and keeps message rendering separate from structured save logic
+  - Strategy Room blocker-runtime integration when the room derives a deterministic blocker queue, active blocker, question plan, clarification loop, completion decision, and reopen behavior from the shared intelligence spine and blocker library without changing the chat-first UI or backend contracts
   - Browser Runtime Core V2 and Live Session Design Library Bridge when they stay inside the promoted exception above
 - Not allowed to touch:
   - unapproved new branches
@@ -124,6 +127,7 @@ This promoted scope does **not** include:
 - Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 also owns deterministic execution-packet generation, pending-execution release, typed QA/completion validation, persisted Strategy Room thread continuity, chat-primary Strategy Room blocker resolution, and Strategy Room chat-submit reliability corrections when they derive from the approved ProjectBrief, ArchitectureBlueprint, RoadmapPlan, GovernancePolicy, Strategy revision spine, and existing Build Room task/run/artifact records, then map back into the current Build Room pipeline without redefining execution gates, trust-layer rules, or backend contracts. That includes treating valid short semantic answers as real project-room blocker responses, persisting them through the shared save-back spine, and surfacing explicit save failures instead of silently dropping them. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
   Strategy Room may now integrate the shared blocker library and typed extraction orchestrator from Phase 1 when that integration preserves the current chat-first UI, uses the shared revision/save-back spine as the only write authority, and does not create a second mutation path beside the approved project intelligence loader.
   Strategy Room may also consume broader blocker coverage, stronger clarification rules, and safe secondary-hint capture from that same Phase 1 library when those runtime integrations remain blocker-scoped, preserve chat-first delivery, and keep unrelated write targets blocked by app code instead of model preference.
+  Strategy Room may also consume a deterministic blocker-runtime layer from that same Phase 1 foundation when queue construction, blocker priority, next-question planning, clarification/completion decisions, and reopen rules remain app-controlled and continue to persist changes only through the approved shared revision spine.
 
 ### Phase 4 - Platform Trust and Commerce Control
 

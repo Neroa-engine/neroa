@@ -6,7 +6,12 @@ import type { ProjectBriefSlotId } from "@/lib/intelligence/domain-contracts";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
-import { resolveBlockerIdFromQuestion, type BlockerId } from "@/lib/intent-library";
+import {
+  buildBlockerRuntimeState,
+  buildStrategyPlanningRuntimeSummary,
+  type BlockerId,
+  type BlockerQueueSourceLayer
+} from "@/lib/intent-library";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 
 export type StrategyRoomSupportIntent = {
@@ -27,11 +32,19 @@ export type StrategyRoomSupportIntent = {
 
 export type StrategyQuestionRow = {
   blockerId: BlockerId;
-  inputId: ProjectBriefSlotId | ArchitectureInputId;
+  inputId: ProjectBriefSlotId | ArchitectureInputId | string | null;
   label: string;
   question: string;
   value: string;
-  source: "project_brief" | "architecture" | "roadmap";
+  source: BlockerQueueSourceLayer;
+  status:
+    | "unresolved"
+    | "active"
+    | "partially_resolved"
+    | "resolved"
+    | "blocked"
+    | "deferred";
+  canAskNow: boolean;
 };
 
 export type StrategyRoomChatHelper = {
@@ -219,62 +232,36 @@ export function buildStrategyQuestionRows(args: {
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
 }) {
-  const seen = new Set<string>();
-  const rows: StrategyQuestionRow[] = [];
+  const runtimeState = buildBlockerRuntimeState({
+    projectMetadata: args.projectMetadata ?? null,
+    projectBrief: args.projectBrief,
+    architectureBlueprint: args.architectureBlueprint,
+    roadmapPlan: args.roadmapPlan,
+    governancePolicy: args.governancePolicy,
+    previousRuntimeState:
+      args.projectMetadata?.strategyState?.planningThreadState?.runtimeState ?? null
+  });
 
-  const addQuestion = (
-    source: StrategyQuestionRow["source"],
-    inputId: ProjectBriefSlotId | ArchitectureInputId,
-    label: string,
-    question: string
-  ) => {
-    if (!inputId) {
-      return;
-    }
-
-    const blockerId = resolveBlockerIdFromQuestion({
-      inputId,
-      label,
-      question
-    });
-
-    if (!blockerId) {
-      return;
-    }
-
-    if (seen.has(blockerId)) {
-      return;
-    }
-
-    seen.add(blockerId);
-    rows.push({
-      blockerId,
-      inputId,
-      label,
-      question,
-      value: readStrategyQuestionValue({
-        inputId,
-        projectBrief: args.projectBrief,
-        projectMetadata: args.projectMetadata
-      }),
-      source
-    });
-  };
-
-  for (const question of args.roadmapPlan.openQuestions) {
-    addQuestion("roadmap", question.inputId, question.label, question.question);
-  }
-
-  for (const question of args.architectureBlueprint.openQuestions) {
-    addQuestion("architecture", question.inputId, question.label, question.question);
-  }
-
-  for (const question of args.projectBrief.openQuestions) {
-    addQuestion("project_brief", question.slotId, question.label, question.question);
-  }
-
-  return rows;
+  return runtimeState.queue.entries
+    .filter((entry) => entry.status !== "resolved")
+    .map((entry) => ({
+      blockerId: entry.blockerId,
+      inputId: entry.inputId,
+      label: entry.label,
+      question: entry.currentQuestionText,
+      value:
+        entry.currentValue ??
+        readStrategyQuestionValue({
+          inputId: (entry.inputId ?? "") as ProjectBriefSlotId | ArchitectureInputId,
+          projectBrief: args.projectBrief,
+          projectMetadata: args.projectMetadata
+        }),
+      source: entry.sourceLayer,
+      status: entry.status,
+      canAskNow: entry.canAskNow
+    }));
 }
 
 export function buildStrategyRoomChatHelper(args: {
@@ -284,17 +271,26 @@ export function buildStrategyRoomChatHelper(args: {
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
 }) {
-  const questionRows = buildStrategyQuestionRows(args);
-  const primaryQuestion = questionRows[0] ?? null;
-  const primaryBlocker = cleanText(args.governancePolicy.approvalReadiness.blockers[0]);
+  const runtimeState = buildBlockerRuntimeState({
+    projectMetadata: args.projectMetadata ?? null,
+    projectBrief: args.projectBrief,
+    architectureBlueprint: args.architectureBlueprint,
+    roadmapPlan: args.roadmapPlan,
+    governancePolicy: args.governancePolicy,
+    previousRuntimeState:
+      args.projectMetadata?.strategyState?.planningThreadState?.runtimeState ?? null
+  });
+  const runtimeSummary = buildStrategyPlanningRuntimeSummary(runtimeState);
 
-  if (primaryQuestion) {
+  if (runtimeState.currentQuestion && runtimeSummary.activeBlockerLabel) {
     return {
       eyebrow: "Current blocker to resolve",
-      title: primaryQuestion.label,
-      description: `${primaryQuestion.question} Answer here and Neroa will update the shared project plan automatically.`
+      title: runtimeSummary.activeBlockerLabel,
+      description: `${runtimeState.currentQuestion} ${runtimeState.currentHelperText ?? "Answer here and Neroa will update the shared project plan automatically."}`
     } satisfies StrategyRoomChatHelper;
   }
+
+  const primaryBlocker = cleanText(args.governancePolicy.approvalReadiness.blockers[0]);
 
   if (primaryBlocker) {
     return {

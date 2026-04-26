@@ -22,6 +22,7 @@ import {
   loadRoadmapPlan,
   type RoadmapPlan
 } from "@/lib/intelligence/roadmap";
+import { type BlockerRuntimeState } from "@/lib/intent-library/runtime-types";
 import { APP_ROUTES } from "@/lib/routes";
 import {
   analyzePlanningInputs,
@@ -393,6 +394,9 @@ export function CanonicalEntryFlow({
   const [roadmapPlan, setRoadmapPlan] = useState<RoadmapPlan | null>(null);
   const [governancePolicy, setGovernancePolicy] =
     useState<GovernancePolicy | null>(null);
+  const [runtimeState, setRuntimeState] = useState<BlockerRuntimeState | null>(
+    seededThreadState?.runtimeState ?? null
+  );
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatNotice, setChatNotice] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -517,6 +521,7 @@ export function CanonicalEntryFlow({
             ? preferredThreadState.conversationState ?? null
             : null
         );
+        setRuntimeState(preferredThreadState.runtimeState ?? null);
         setSeedSummary(initialSummary);
         setTitle(preferredThreadState.metadata.projectTitle?.trim() || initialTitle);
       }
@@ -556,6 +561,7 @@ export function CanonicalEntryFlow({
       architectureBlueprint,
       roadmapPlan,
       governancePolicy,
+      runtimeState,
       updatedAt: new Date().toISOString()
     };
 
@@ -568,6 +574,7 @@ export function CanonicalEntryFlow({
     planningMetadata,
     projectBrief,
     roadmapPlan,
+    runtimeState,
     governancePolicy,
     storageKey,
     threadId
@@ -609,6 +616,7 @@ export function CanonicalEntryFlow({
           ? seededThreadState.conversationState ?? null
           : null
       );
+      setRuntimeState(seededThreadState.runtimeState ?? null);
       setProjectBrief(null);
       setArchitectureBlueprint(null);
       setRoadmapPlan(null);
@@ -630,6 +638,7 @@ export function CanonicalEntryFlow({
           architectureBlueprint: null,
           roadmapPlan: null,
           governancePolicy: null,
+          runtimeState: seededThreadState.runtimeState ?? null,
           updatedAt: new Date().toISOString()
         };
 
@@ -658,6 +667,7 @@ export function CanonicalEntryFlow({
     setMessages(clearedThread.messages);
     setThreadMetadata(null);
     setConversationState(null);
+    setRuntimeState(null);
     setProjectBrief(null);
     setArchitectureBlueprint(null);
     setRoadmapPlan(null);
@@ -681,6 +691,7 @@ export function CanonicalEntryFlow({
         architectureBlueprint: null,
         roadmapPlan: null,
         governancePolicy: null,
+        runtimeState: null,
         updatedAt: new Date().toISOString()
       };
 
@@ -763,6 +774,7 @@ export function CanonicalEntryFlow({
       setMessages(normalizedThreadState.messages);
       setThreadMetadata(normalizedThreadState.metadata);
       setConversationState(normalizedThreadState.conversationState ?? null);
+      setRuntimeState(normalizedThreadState.runtimeState ?? null);
       setProjectBrief(payload.threadState.projectBrief ?? null);
       setArchitectureBlueprint(payload.threadState.architectureBlueprint ?? null);
       setRoadmapPlan(payload.threadState.roadmapPlan ?? null);

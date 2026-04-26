@@ -106,16 +106,28 @@ function QuestionCard(args: {
   label: string;
   question: string;
   source: string;
+  status:
+    | "unresolved"
+    | "active"
+    | "partially_resolved"
+    | "resolved"
+    | "blocked"
+    | "deferred";
+  canAskNow: boolean;
   currentValue?: string;
-  currentIndex: number;
 }) {
   return (
     <div className="rounded-[20px] border border-white/10 bg-slate-950/52 px-4 py-4">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-medium text-white">{args.label}</p>
-        {args.currentIndex === 0 ? (
+        {args.status === "active" ? (
           <span className="rounded-full border border-cyan-400/20 bg-cyan-400/10 px-2.5 py-1 text-[11px] font-medium text-cyan-100">
             Currently resolving
+          </span>
+        ) : null}
+        {!args.canAskNow ? (
+          <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
+            Deferred
           </span>
         ) : null}
         <span className="rounded-full border border-white/8 bg-white/5 px-2.5 py-1 text-[11px] font-medium text-slate-300">
@@ -140,13 +152,27 @@ function formatRevisionMateriality(value: string) {
   return value.replace(/_/g, " ");
 }
 
-function labelForQuestionSource(value: "project_brief" | "architecture" | "roadmap") {
+function labelForQuestionSource(
+  value: "project_brief" | "architecture" | "roadmap" | "governance" | "revision" | "runtime"
+) {
   if (value === "project_brief") {
     return "Brief";
   }
 
   if (value === "architecture") {
     return "Architecture";
+  }
+
+  if (value === "governance") {
+    return "Governance";
+  }
+
+  if (value === "revision") {
+    return "Revision";
+  }
+
+  if (value === "runtime") {
+    return "Runtime";
   }
 
   return "Roadmap";
@@ -169,7 +195,8 @@ function StrategyRoomSavebackPanel({
     projectMetadata,
     projectBrief,
     architectureBlueprint,
-    roadmapPlan
+    roadmapPlan,
+    governancePolicy
   });
   const unresolvedChecklist = governancePolicy.approvalChecklist.filter(
     (item) => item.status !== "satisfied"
@@ -232,14 +259,15 @@ function StrategyRoomSavebackPanel({
       >
         {questionRows.length > 0 ? (
           <div className="grid gap-3">
-            {questionRows.map((question, index) => (
+            {questionRows.map((question) => (
               <QuestionCard
-                key={question.inputId}
+                key={`${question.blockerId}:${question.inputId ?? "runtime"}`}
                 label={question.label}
                 question={question.question}
                 source={labelForQuestionSource(question.source)}
+                status={question.status}
+                canAskNow={question.canAskNow}
                 currentValue={question.value}
-                currentIndex={index}
               />
             ))}
           </div>

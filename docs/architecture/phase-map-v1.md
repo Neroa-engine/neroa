@@ -24,6 +24,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Universal domain generalization | 1 with 2 and 3 support | Current | 0, 1 | Enriches the shared ProjectBrief with system archetypes, capability profiles, and optional vertical overlays while preserving backward compatibility for downstream planning, governance, execution, QA, and billing layers. |
 | Strategy Room intent library | 1 with 3 support | Current | 0, 1 | Defines typed blocker schemas, normalization rules, provider adapters, and eval fixtures so Strategy Room answers route through blocker-specific write-safe extraction instead of broad freeform heuristics. |
 | Strategy Room intent coverage expansion | 1 with 3 support | Current | 0, 1, 3 | Broadens blocker families, normalization coverage, clarify behavior, safe multi-part hint capture, and eval depth while preserving blocker-scoped write safety and the existing shared revision spine. |
+| Strategy Room blocker runtime | 1 with 3 support | Current | 0, 1, 3 | Builds the deterministic blocker queue, active-blocker planner, clarification/completion runtime, and reopen policy layer on top of the shared blocker library while keeping Strategy Room chat-first and revision-spine-driven. |
 | Workspace/project surfaces | 3 | Current | 0, 1, 2 | Runtime execution surfaces for approved work only. |
 | Execution packet handoff and pending release | 3 | Current | 0, 1, 2, 3 | Turns approved shared intelligence into typed execution packets and releases eligible pending execution through the existing Build Room task/run pipeline without creating a second executor. |
 | QA artifact gate and completion validation | 3 | Current | 0, 1, 2, 3 | Derives artifact requirements, acceptance checks, and release readiness from approved shared intelligence plus existing Build Room task/run/artifact outputs without replacing the Build Room relay or statuses. |
@@ -42,6 +43,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Planning intelligence | 1 and 2 | Truth capture in Phase 1, roadmap/control in Phase 2. |
 | Blocker library and structured extraction | 1 with 3 support | Shared blocker definitions, normalization helpers, provider adapters, and eval fixtures live in Phase 1; Strategy Room runtime integration stays in Phase 3 and must keep app code as the authority for blocker selection, write targets, validation, and save/advance rules. |
 | Blocker coverage and eval expansion | 1 with 3 support | Broader blocker families, stronger normalizers, safe secondary-hint capture, and larger eval suites stay Phase 1-owned even when Strategy Room consumes them in Phase 3. |
+| Blocker runtime and question planner | 1 with 3 support | Deterministic blocker queue construction, active-blocker selection, question planning, clarification/completion transitions, and reopen rules stay Phase 1-owned as a shared library even when Strategy Room consumes them in Phase 3. |
 | Routing contracts | 3 and 4 | Product routing lives with execution surfaces; protected routing changes are Phase 4. |
 | Auth and identity | 4 | Trust boundary. Changes are never hidden inside workspace work. |
 | Billing and entitlement | 4 | Trust boundary. High-impact by default. |
@@ -76,6 +78,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 - "Generalize ProjectBrief domain intelligence with archetypes, capability profiles, and optional overlays while keeping downstream compatibility" -> Phase 1 with 2/3 support
 - "Build a shared blocker library, schema-driven normalizers, and provider adapter so Strategy Room answers route through typed write-safe extraction" -> Phase 1 with 3 support
 - "Expand the shared blocker library with broader blocker families, richer normalization, safe multi-part hint capture, and larger eval coverage while keeping Strategy Room on the same save-back spine" -> Phase 1 with 3 support
+- "Build a deterministic blocker runtime, blocker queue, and question planner on top of the shared intent library so Strategy Room advances through blockers without loose follow-up heuristics" -> Phase 1 with 3 support
 - "Add Delta review before approving change requests" -> Phase 2
 - "Adjust approved workspace execution flow after gate passes" -> Phase 3
 - "Generate typed execution packets and release eligible pending execution through the existing Build Room pipeline" -> Phase 3

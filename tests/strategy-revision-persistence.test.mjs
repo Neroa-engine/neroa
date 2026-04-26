@@ -663,7 +663,10 @@ test("ambiguous but non-empty Strategy Room answers stay visible and trigger cla
   const lastAssistantMessage = persistenceUpdate.updatedThreadState.messages.at(-1);
 
   assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
-  assert.ok(lastAssistantMessage?.content.includes("?"));
+  assert.match(
+    lastAssistantMessage?.content ?? "",
+    /which chain or chains are in scope first|ethereum and solana|base first/i
+  );
   assert.equal(Boolean(persistenceUpdate.intentResult), true);
   assert.equal(persistenceUpdate.intentResult?.status, "needs_clarification");
   assert.equal(persistenceUpdate.patch.answeredInputs?.length ?? 0, 0);

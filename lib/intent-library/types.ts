@@ -240,7 +240,10 @@ export type BlockerDefinition = z.infer<typeof blockerDefinitionSchema>;
 export const blockerQuestionSourceSchema = z.enum([
   "project_brief",
   "architecture",
-  "roadmap"
+  "roadmap",
+  "governance",
+  "revision",
+  "runtime"
 ]);
 
 export type BlockerQuestionSource = z.infer<typeof blockerQuestionSourceSchema>;

@@ -5,24 +5,25 @@ import {
   type StrategyRevisionPatch
 } from "../intelligence/revisions";
 import {
+  buildBlockerQuestionStateFromRuntime,
+  buildBlockerRuntimeState,
+  buildRuntimeThreadPrompt,
+  createBlockerTransitionResult,
   createOpenAIBlockerExtractionAdapter,
-  buildBlockerQuestionState,
-  buildStrategyThreadClarificationMessage,
+  evaluateBlockerCompletion,
   extractStructuredAnswerForBlocker,
-  type BlockerQuestionState,
+  getActiveBlockerEntry,
+  type BlockerRuntimeState,
   type ModelProviderAdapter,
   type StructuredAnswerExtractionResult
 } from "../intent-library";
 import {
+  buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
   mergeStoredProjectMetadata,
   type StoredProjectMetadata,
   parseWorkspaceProjectDescription
 } from "../workspace/project-metadata";
-import {
-  buildStrategyQuestionRows,
-  type StrategyQuestionRow
-} from "../workspace/strategy-room-support";
 import {
   createPersistedPlanningThreadState,
   type PlanningThreadState
@@ -30,180 +31,6 @@ import {
 import type { ServerSupabaseClient } from "../platform/foundation";
 
 type WorkspaceProjectIntelligence = ReturnType<typeof buildWorkspaceProjectIntelligence>;
-
-function cleanText(value?: string | null) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeList(values: readonly string[]) {
-  return values.map((value) => value.trim()).filter(Boolean);
-}
-
-function sameText(left: string | null | undefined, right: string | null | undefined) {
-  return cleanText(left) === cleanText(right);
-}
-
-function sameList(left: readonly string[], right: readonly string[]) {
-  const normalizedLeft = normalizeList(left);
-  const normalizedRight = normalizeList(right);
-
-  if (normalizedLeft.length !== normalizedRight.length) {
-    return false;
-  }
-
-  return normalizedLeft.every((item, index) => item === normalizedRight[index]);
-}
-
-function buildProjectBriefPatchFromChat(args: {
-  previous: WorkspaceProjectIntelligence["projectBrief"];
-  next: PlanningThreadState["projectBrief"];
-}) {
-  const nextBrief = args.next ?? null;
-
-  if (!nextBrief) {
-    return undefined;
-  }
-
-  const patch: NonNullable<StrategyRevisionPatch["projectBrief"]> = {};
-
-  const maybeSetText = <K extends keyof NonNullable<StrategyRevisionPatch["projectBrief"]>>(
-    key: K,
-    previousValue: string | null | undefined,
-    nextValue: string | null | undefined
-  ) => {
-    const cleanedNext = cleanText(nextValue);
-
-    if (!cleanedNext || sameText(previousValue, cleanedNext)) {
-      return;
-    }
-
-    patch[key] = cleanedNext as never;
-  };
-
-  const maybeSetList = <K extends keyof NonNullable<StrategyRevisionPatch["projectBrief"]>>(
-    key: K,
-    previousValue: readonly string[],
-    nextValue: readonly string[]
-  ) => {
-    const cleanedNext = normalizeList(nextValue);
-
-    if (cleanedNext.length === 0 || sameList(previousValue, cleanedNext)) {
-      return;
-    }
-
-    patch[key] = cleanedNext as never;
-  };
-
-  maybeSetText("founderName", args.previous.founderName, nextBrief.founderName);
-  maybeSetText("projectName", args.previous.projectName, nextBrief.projectName);
-  maybeSetText("productCategory", args.previous.productCategory, nextBrief.productCategory);
-  maybeSetText("problemStatement", args.previous.problemStatement, nextBrief.problemStatement);
-  maybeSetText("outcomePromise", args.previous.outcomePromise, nextBrief.outcomePromise);
-  maybeSetList("buyerPersonas", args.previous.buyerPersonas, nextBrief.buyerPersonas);
-  maybeSetList("operatorPersonas", args.previous.operatorPersonas, nextBrief.operatorPersonas);
-  maybeSetList(
-    "endCustomerPersonas",
-    args.previous.endCustomerPersonas,
-    nextBrief.endCustomerPersonas
-  );
-  maybeSetList("adminPersonas", args.previous.adminPersonas, nextBrief.adminPersonas);
-  maybeSetList("mustHaveFeatures", args.previous.mustHaveFeatures, nextBrief.mustHaveFeatures);
-  maybeSetList(
-    "niceToHaveFeatures",
-    args.previous.niceToHaveFeatures,
-    nextBrief.niceToHaveFeatures
-  );
-  maybeSetList("excludedFeatures", args.previous.excludedFeatures, nextBrief.excludedFeatures);
-  maybeSetList("surfaces", args.previous.surfaces, nextBrief.surfaces);
-  maybeSetList("integrations", args.previous.integrations, nextBrief.integrations);
-  maybeSetList("dataSources", args.previous.dataSources, nextBrief.dataSources);
-  maybeSetList("constraints", args.previous.constraints, nextBrief.constraints);
-  maybeSetList("complianceFlags", args.previous.complianceFlags, nextBrief.complianceFlags);
-  maybeSetList("trustRisks", args.previous.trustRisks, nextBrief.trustRisks);
-
-  return Object.keys(patch).length > 0 ? patch : undefined;
-}
-
-function resolvePrimaryQuestionRow(args: {
-  previousIntelligence: WorkspaceProjectIntelligence;
-  projectMetadata?: StoredProjectMetadata | null;
-}) {
-  return (
-    buildStrategyQuestionRows({
-      projectMetadata: args.projectMetadata ?? null,
-      projectBrief: args.previousIntelligence.projectBrief,
-      architectureBlueprint: args.previousIntelligence.architectureBlueprint,
-      roadmapPlan: args.previousIntelligence.roadmapPlan
-    })[0] ?? null
-  );
-}
-
-function createBlockerStateFromRow(questionRow: StrategyQuestionRow | null) {
-  if (!questionRow) {
-    return null;
-  }
-
-  return buildBlockerQuestionState({
-    blockerId: questionRow.blockerId,
-    inputId: questionRow.inputId,
-    slotId: questionRow.inputId,
-    label: questionRow.label,
-    question: questionRow.question,
-    source: questionRow.source,
-    currentValue: questionRow.value || null
-  });
-}
-
-function applyClarificationMessage(args: {
-  threadState: PlanningThreadState;
-  intentResult?: StructuredAnswerExtractionResult | null;
-}) {
-  const clarificationMessage = args.intentResult
-    ? buildStrategyThreadClarificationMessage(args.intentResult)
-    : null;
-
-  if (!clarificationMessage) {
-    return args.threadState;
-  }
-
-  const nextMessages = [...args.threadState.messages];
-  const lastAssistantIndex = [...nextMessages]
-    .map((message, index) => ({ message, index }))
-    .reverse()
-    .find(({ message }) => message.role === "assistant")?.index;
-
-  if (lastAssistantIndex == null) {
-    return args.threadState;
-  }
-
-  nextMessages[lastAssistantIndex] = {
-    ...nextMessages[lastAssistantIndex],
-    content: clarificationMessage
-  };
-
-  return {
-    ...args.threadState,
-    messages: nextMessages
-  };
-}
-
-function createSafeProjectThreadState(args: {
-  threadState: PlanningThreadState;
-  previousIntelligence: WorkspaceProjectIntelligence;
-  projectMetadata?: StoredProjectMetadata | null;
-  preserveConversationState?: boolean;
-}) {
-  return {
-    ...args.threadState,
-    conversationState: args.preserveConversationState
-      ? args.projectMetadata?.conversationState ?? args.threadState.conversationState
-      : args.threadState.conversationState,
-    projectBrief: args.previousIntelligence.projectBrief,
-    architectureBlueprint: args.previousIntelligence.architectureBlueprint,
-    roadmapPlan: args.previousIntelligence.roadmapPlan,
-    governancePolicy: args.previousIntelligence.governancePolicy
-  } satisfies PlanningThreadState;
-}
 
 function chooseProviderAdapter() {
   if (!process.env.OPENAI_API_KEY) {
@@ -213,6 +40,141 @@ function chooseProviderAdapter() {
   return createOpenAIBlockerExtractionAdapter({
     modelId: "gpt-5.4-thinking"
   }) satisfies ModelProviderAdapter;
+}
+
+function createSafeProjectThreadState(args: {
+  threadState: PlanningThreadState;
+  previousIntelligence: WorkspaceProjectIntelligence;
+  projectMetadata?: StoredProjectMetadata | null;
+  preserveConversationState?: boolean;
+  runtimeState?: BlockerRuntimeState | null;
+}) {
+  return {
+    ...args.threadState,
+    conversationState: args.preserveConversationState
+      ? args.projectMetadata?.conversationState ?? args.threadState.conversationState
+      : args.threadState.conversationState,
+    projectBrief: args.previousIntelligence.projectBrief,
+    architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+    roadmapPlan: args.previousIntelligence.roadmapPlan,
+    governancePolicy: args.previousIntelligence.governancePolicy,
+    runtimeState: args.runtimeState ?? args.threadState.runtimeState ?? null
+  } satisfies PlanningThreadState;
+}
+
+function replaceLastAssistantMessage(args: {
+  threadState: PlanningThreadState;
+  content: string;
+}) {
+  const nextMessages = [...args.threadState.messages];
+  const lastAssistantIndex = [...nextMessages]
+    .map((message, index) => ({ message, index }))
+    .reverse()
+    .find(({ message }) => message.role === "assistant")?.index;
+
+  if (lastAssistantIndex == null) {
+    return {
+      ...args.threadState,
+      messages: [
+        ...nextMessages,
+        {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content: args.content,
+          createdAt: new Date().toISOString()
+        }
+      ]
+    } satisfies PlanningThreadState;
+  }
+
+  nextMessages[lastAssistantIndex] = {
+    ...nextMessages[lastAssistantIndex],
+    content: args.content
+  };
+
+  return {
+    ...args.threadState,
+    messages: nextMessages
+  } satisfies PlanningThreadState;
+}
+
+function buildRuntimeAssistantMessage(args: {
+  runtimeState: BlockerRuntimeState;
+  transitionResult?: ReturnType<typeof createBlockerTransitionResult> | null;
+}) {
+  const runtimePrompt = buildRuntimeThreadPrompt(args.runtimeState.currentQuestionPlan);
+
+  if (runtimePrompt) {
+    return runtimePrompt;
+  }
+
+  if (
+    args.transitionResult?.completionDecision.outcome === "blocker_resolved" &&
+    args.runtimeState.unresolvedCount === 0
+  ) {
+    return "The critical planning blockers are currently covered. Review the approval state and approve the roadmap scope when you're ready.";
+  }
+
+  return null;
+}
+
+function buildRuntimeProjectMetadata(args: {
+  projectName: string;
+  projectMetadata?: StoredProjectMetadata | null;
+  threadState: PlanningThreadState;
+  strategyState?: StoredProjectMetadata["strategyState"] | null;
+  governanceState?: StoredProjectMetadata["governanceState"] | null;
+}) {
+  if (!args.projectMetadata) {
+    return buildStoredProjectMetadata({
+      title: args.projectName,
+      description: null,
+      conversationState: args.threadState.conversationState ?? null,
+      strategyState: args.strategyState ?? null,
+      governanceState: args.governanceState ?? null
+    });
+  }
+
+  return {
+    ...args.projectMetadata,
+    conversationState:
+      args.threadState.conversationState ?? args.projectMetadata.conversationState ?? null,
+    strategyState: args.strategyState ?? args.projectMetadata.strategyState ?? null,
+    governanceState: args.governanceState ?? args.projectMetadata.governanceState ?? null
+  } satisfies StoredProjectMetadata;
+}
+
+function finalizeRuntimeState(args: {
+  projectMetadata?: StoredProjectMetadata | null;
+  projectName: string;
+  projectIntelligence: WorkspaceProjectIntelligence;
+  threadState: PlanningThreadState;
+  previousRuntimeState?: BlockerRuntimeState | null;
+  forceActiveBlockerId?: Parameters<typeof buildBlockerRuntimeState>[0]["forceActiveBlockerId"];
+  clarificationPlan?: Parameters<typeof buildBlockerRuntimeState>[0]["clarificationPlan"];
+  lastAnsweredBlockerId?: Parameters<typeof buildBlockerRuntimeState>[0]["lastAnsweredBlockerId"];
+  lastTransition?: Parameters<typeof buildBlockerRuntimeState>[0]["lastTransition"];
+}) {
+  const metadataForRuntime = buildRuntimeProjectMetadata({
+    projectName: args.projectName,
+    projectMetadata: args.projectMetadata,
+    threadState: args.threadState,
+    strategyState: args.projectMetadata?.strategyState ?? null,
+    governanceState: args.projectMetadata?.governanceState ?? null
+  });
+
+  return buildBlockerRuntimeState({
+    projectMetadata: metadataForRuntime,
+    projectBrief: args.projectIntelligence.projectBrief,
+    architectureBlueprint: args.projectIntelligence.architectureBlueprint,
+    roadmapPlan: args.projectIntelligence.roadmapPlan,
+    governancePolicy: args.projectIntelligence.governancePolicy,
+    previousRuntimeState: args.previousRuntimeState ?? null,
+    forceActiveBlockerId: args.forceActiveBlockerId ?? null,
+    clarificationPlan: args.clarificationPlan ?? null,
+    lastAnsweredBlockerId: args.lastAnsweredBlockerId ?? null,
+    lastTransition: args.lastTransition ?? null
+  });
 }
 
 export async function createPlanningChatPersistenceUpdate(args: {
@@ -227,22 +189,32 @@ export async function createPlanningChatPersistenceUpdate(args: {
   createdBy?: string | null;
   providerAdapter?: ModelProviderAdapter | null;
 }) {
-  const questionRow = resolvePrimaryQuestionRow({
-    previousIntelligence: args.previousIntelligence,
-    projectMetadata: args.projectMetadata
-  });
-  const blockerState = createBlockerStateFromRow(questionRow);
   const providerAdapter = args.providerAdapter ?? chooseProviderAdapter();
+  const previousRuntimeState = buildBlockerRuntimeState({
+    projectMetadata: args.projectMetadata ?? null,
+    projectBrief: args.previousIntelligence.projectBrief,
+    architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+    roadmapPlan: args.previousIntelligence.roadmapPlan,
+    governancePolicy: args.previousIntelligence.governancePolicy,
+    previousRuntimeState:
+      args.threadState.runtimeState ??
+      args.projectMetadata?.strategyState?.planningThreadState?.runtimeState ??
+      null
+  });
+  const activeEntry = getActiveBlockerEntry(previousRuntimeState);
+  const blockerState = buildBlockerQuestionStateFromRuntime(previousRuntimeState);
   const safeBaseThreadState = createSafeProjectThreadState({
     threadState: args.threadState,
     previousIntelligence: args.previousIntelligence,
     projectMetadata: args.projectMetadata,
-    preserveConversationState: blockerState != null
+    preserveConversationState: blockerState != null,
+    runtimeState: previousRuntimeState
   });
-  let intentResult: StructuredAnswerExtractionResult | null = null;
-  let patch: StrategyRevisionPatch = {};
 
-  if (blockerState) {
+  let patch: StrategyRevisionPatch = {};
+  let intentResult: StructuredAnswerExtractionResult | null = null;
+
+  if (blockerState && activeEntry) {
     intentResult = await extractStructuredAnswerForBlocker({
       blockerState,
       rawAnswer: args.latestUserMessage,
@@ -250,36 +222,83 @@ export async function createPlanningChatPersistenceUpdate(args: {
       providerAdapter
     });
     patch = intentResult.structuredPatch ?? {};
-  } else {
-    const projectBriefPatch = buildProjectBriefPatchFromChat({
-      previous: args.previousIntelligence.projectBrief,
-      next: args.threadState.projectBrief
-    });
-
-    if (projectBriefPatch) {
-      patch.projectBrief = projectBriefPatch;
-    }
   }
 
-  const clarifiedThreadState = applyClarificationMessage({
-    threadState: safeBaseThreadState,
-    intentResult
-  });
+  const completionEvaluation =
+    activeEntry && intentResult
+      ? evaluateBlockerCompletion({
+          entry: activeEntry,
+          extractionResult: intentResult
+        })
+      : null;
+  const needsClarification = completionEvaluation?.decision.needsClarification ?? false;
+  const shouldHoldActiveBlocker =
+    completionEvaluation?.decision.shouldReask ?? false;
 
   if (!hasStrategyRevisionPatchContent(patch)) {
+    const afterRuntimeState = finalizeRuntimeState({
+      projectMetadata: args.projectMetadata ?? null,
+      projectName: args.projectName,
+      projectIntelligence: args.previousIntelligence,
+      threadState: safeBaseThreadState,
+      previousRuntimeState,
+      forceActiveBlockerId: shouldHoldActiveBlocker ? activeEntry?.blockerId ?? null : null,
+      clarificationPlan: needsClarification ? completionEvaluation?.clarificationPlan ?? null : null,
+      lastAnsweredBlockerId: activeEntry?.blockerId ?? null
+    });
+    const transitionResult =
+      activeEntry && intentResult
+        ? createBlockerTransitionResult({
+            beforeRuntimeState: previousRuntimeState,
+            activeEntry,
+            extractionResult: intentResult,
+            afterRuntimeState
+          })
+        : null;
+    const finalRuntimeState = buildBlockerRuntimeState({
+      projectMetadata: args.projectMetadata ?? null,
+      projectBrief: args.previousIntelligence.projectBrief,
+      architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+      roadmapPlan: args.previousIntelligence.roadmapPlan,
+      governancePolicy: args.previousIntelligence.governancePolicy,
+      previousRuntimeState: afterRuntimeState,
+      forceActiveBlockerId: shouldHoldActiveBlocker ? activeEntry?.blockerId ?? null : null,
+      clarificationPlan: needsClarification ? completionEvaluation?.clarificationPlan ?? null : null,
+      lastAnsweredBlockerId: activeEntry?.blockerId ?? null,
+      lastTransition: transitionResult
+    });
+    const runtimeAssistantMessage = buildRuntimeAssistantMessage({
+      runtimeState: finalRuntimeState,
+      transitionResult
+    });
+    const updatedThreadState = runtimeAssistantMessage
+      ? replaceLastAssistantMessage({
+          threadState: {
+            ...safeBaseThreadState,
+            runtimeState: finalRuntimeState
+          },
+          content: runtimeAssistantMessage
+        })
+      : {
+          ...safeBaseThreadState,
+          runtimeState: finalRuntimeState
+        };
+
     return {
       patch,
       blockerState,
       intentResult,
-      updatedThreadState: clarifiedThreadState,
+      runtimeState: finalRuntimeState,
+      transitionResult,
+      updatedThreadState,
       strategyState:
         args.projectMetadata?.strategyState
           ? {
               ...args.projectMetadata.strategyState,
-              planningThreadState: createPersistedPlanningThreadState(clarifiedThreadState)
+              planningThreadState: createPersistedPlanningThreadState(updatedThreadState)
             }
           : {
-              planningThreadState: createPersistedPlanningThreadState(clarifiedThreadState)
+              planningThreadState: createPersistedPlanningThreadState(updatedThreadState)
             },
       governanceState: args.projectMetadata?.governanceState ?? null,
       strategyUpdate: null
@@ -299,18 +318,75 @@ export async function createPlanningChatPersistenceUpdate(args: {
     createdAt: args.createdAt,
     createdBy: args.createdBy ?? null
   });
-  const updatedThreadState: PlanningThreadState = {
-    ...clarifiedThreadState,
+  const revisedThreadState: PlanningThreadState = {
+    ...safeBaseThreadState,
     projectBrief: strategyUpdate.revisedLayers.projectBrief,
     architectureBlueprint: strategyUpdate.revisedLayers.architectureBlueprint,
     roadmapPlan: strategyUpdate.revisedLayers.roadmapPlan,
     governancePolicy: strategyUpdate.revisedLayers.governancePolicy
   };
+  const revisedProjectMetadata = buildRuntimeProjectMetadata({
+    projectName: args.projectName,
+    projectMetadata: args.projectMetadata ?? null,
+    threadState: revisedThreadState,
+    strategyState: strategyUpdate.strategyState,
+    governanceState: strategyUpdate.governanceState
+  });
+  const afterRuntimeState = buildBlockerRuntimeState({
+    projectMetadata: revisedProjectMetadata,
+    projectBrief: strategyUpdate.revisedLayers.projectBrief,
+    architectureBlueprint: strategyUpdate.revisedLayers.architectureBlueprint,
+    roadmapPlan: strategyUpdate.revisedLayers.roadmapPlan,
+    governancePolicy: strategyUpdate.revisedLayers.governancePolicy,
+    previousRuntimeState,
+    forceActiveBlockerId: shouldHoldActiveBlocker ? activeEntry?.blockerId ?? null : null,
+    clarificationPlan: needsClarification ? completionEvaluation?.clarificationPlan ?? null : null,
+    lastAnsweredBlockerId: activeEntry?.blockerId ?? null
+  });
+  const transitionResult =
+    activeEntry && intentResult
+      ? createBlockerTransitionResult({
+          beforeRuntimeState: previousRuntimeState,
+          activeEntry,
+          extractionResult: intentResult,
+          afterRuntimeState
+        })
+      : null;
+  const finalRuntimeState = buildBlockerRuntimeState({
+    projectMetadata: revisedProjectMetadata,
+    projectBrief: strategyUpdate.revisedLayers.projectBrief,
+    architectureBlueprint: strategyUpdate.revisedLayers.architectureBlueprint,
+    roadmapPlan: strategyUpdate.revisedLayers.roadmapPlan,
+    governancePolicy: strategyUpdate.revisedLayers.governancePolicy,
+    previousRuntimeState: afterRuntimeState,
+    forceActiveBlockerId: shouldHoldActiveBlocker ? activeEntry?.blockerId ?? null : null,
+    clarificationPlan: needsClarification ? completionEvaluation?.clarificationPlan ?? null : null,
+    lastAnsweredBlockerId: activeEntry?.blockerId ?? null,
+    lastTransition: transitionResult
+  });
+  const runtimeAssistantMessage = buildRuntimeAssistantMessage({
+    runtimeState: finalRuntimeState,
+    transitionResult
+  });
+  const updatedThreadState = runtimeAssistantMessage
+    ? replaceLastAssistantMessage({
+        threadState: {
+          ...revisedThreadState,
+          runtimeState: finalRuntimeState
+        },
+        content: runtimeAssistantMessage
+      })
+    : {
+        ...revisedThreadState,
+        runtimeState: finalRuntimeState
+      };
 
   return {
     patch,
     blockerState,
     intentResult,
+    runtimeState: finalRuntimeState,
+    transitionResult,
     updatedThreadState,
     strategyState: {
       ...strategyUpdate.strategyState,
