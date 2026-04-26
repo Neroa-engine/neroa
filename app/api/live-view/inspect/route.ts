@@ -105,18 +105,21 @@ function asObjectRecord(value: unknown) {
   return value as Record<string, unknown>;
 }
 
+function hasOwnKey(record: Record<string, unknown> | null, key: string) {
+  return record != null && Object.prototype.hasOwnProperty.call(record, key);
+}
+
 function buildSafePayloadSummary(payload: unknown) {
   const record = asObjectRecord(payload);
   const snapshot = asObjectRecord(record?.snapshot);
 
   return {
     topLevelKeys: record ? Object.keys(record).slice(0, 12) : [],
-    hasSnapshot: snapshot != null,
-    hasPage: asObjectRecord(snapshot?.page) != null,
-    hasMetrics: asObjectRecord(snapshot?.metrics) != null,
-    hasActionLogs: Array.isArray(record?.actionLogs),
-    hasScreenshotDataUrl:
-      typeof record?.screenshotDataUrl === "string" && record.screenshotDataUrl.length > 0
+    hasSnapshot: hasOwnKey(record, "snapshot"),
+    hasPage: hasOwnKey(snapshot, "page"),
+    hasMetrics: hasOwnKey(snapshot, "metrics"),
+    hasActionLogs: hasOwnKey(record, "actionLogs"),
+    hasScreenshotDataUrl: hasOwnKey(record, "screenshotDataUrl")
   };
 }
 
