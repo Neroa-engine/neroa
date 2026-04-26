@@ -25,6 +25,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Workspace/project surfaces | 3 | Current | 0, 1, 2 | Runtime execution surfaces for approved work only. |
 | Execution packet handoff and pending release | 3 | Current | 0, 1, 2, 3 | Turns approved shared intelligence into typed execution packets and releases eligible pending execution through the existing Build Room task/run pipeline without creating a second executor. |
 | QA artifact gate and completion validation | 3 | Current | 0, 1, 2, 3 | Derives artifact requirements, acceptance checks, and release readiness from approved shared intelligence plus existing Build Room task/run/artifact outputs without replacing the Build Room relay or statuses. |
+| Strategy Room chat-submit reliability | 3 | Current | 0, 1, 2, 3 | Hardens the single-input planning room so valid short blocker answers persist through the shared revision spine, remain visible in-thread, and either advance, clarify, or fail with an explicit save error. |
 | Browser Runtime Core V2 | 3 | Current-promoted | 0, 1, 2, 3, 4 | Unified current-promoted browser runtime core that may replace Browser Runtime Bridge v1 now. Includes deterministic open/attach/bind/tab targeting, unified command lifecycle, real Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and project/library linkage. |
 | Live Session Design Library Bridge | 3 | Current-promoted | 0, 1, 2, 3, 4 | Lets Design Library run against the same connected Browser Runtime Core V2 session for staged preview/package state only. |
 | Billing/account | 4 | Current-supporting | 0, 2, 3 | High-impact trust surface; maintenance only unless roadmap promoted. |
@@ -74,6 +75,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 - "Generate typed QA validation and release-readiness results from execution packets and existing Build Room artifacts" -> Phase 3
 - "Fix Strategy Room so existing projects reopen into their persisted planning thread instead of a starter onboarding thread" -> Phase 3
 - "Resolve Strategy Room blockers through the main chat and keep the right rail read-only/supportive" -> Phase 3
+- "Fix Strategy Room so valid answers like 'no constraint' or 'not in MVP' persist, stay visible, and never disappear without an explicit error" -> Phase 3
 - "Rebuild Browser Runtime Core V2 with one shared command/session model and bounded Inspect/Record/AI walkthrough/SOP foundations" -> Phase 3 (promoted exception)
 - "Reuse existing Live View from Command Center and attach Design Library to the same session" -> Phase 3 (promoted exception)
 - "Modify billing entitlement or auth gating" -> Phase 4

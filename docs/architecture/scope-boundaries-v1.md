@@ -63,6 +63,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - approved planning-to-execution handoff
   - persisted Strategy Room thread continuity when existing projects must reopen into their saved planning conversation instead of starter onboarding content
   - Strategy Room chat-primary blocker resolution when the main thread captures answers, shared revisions/intelligence update automatically, and the right rail remains supportive instead of acting like a second answer form
+  - Strategy Room chat-submit reliability fixes when valid short semantic answers must remain visible in-thread, map into the shared save-back spine when possible, and surface explicit failure states instead of silently disappearing
   - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
   - typed QA and acceptance validation when they derive from approved shared intelligence plus the existing Build Room task, run, and artifact records
 - Must not do:

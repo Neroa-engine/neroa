@@ -129,6 +129,50 @@ test("duplicate question prevention skips a previously asked audience question u
   );
 });
 
+test("null-style constraint answers count as real answers and advance the next planning question", () => {
+  const base = buildConversationSessionState({
+    messages: [
+      buildUserMessage("u1", "Hi, my name is Tom."),
+      buildUserMessage(
+        "u2",
+        "I want to build a crypto analytics website with a risk engine for pre-sales."
+      ),
+      buildUserMessage("u3", "Crypto investors are my main customer.")
+    ]
+  });
+  const askedState = recordConversationQuestionAsked({
+    state: base.state,
+    questionKey: "constraints_and_compliance",
+    askedTurnId: "assistant-constraints"
+  });
+  const answered = buildConversationSessionState({
+    previousState: askedState,
+    messages: [buildUserMessage("u4", "no constraint")]
+  });
+  const guidance = buildConversationTurnGuidance({
+    state: answered.state,
+    updatedSlotPaths: answered.updatedSlotPaths
+  });
+
+  assert.ok(
+    answered.state.constraintsAndCompliance.includes(
+      "No material constraints identified right now"
+    )
+  );
+  assert.ok(
+    answered.updatedSlotPaths.includes("constraints.constraintsAndCompliance")
+  );
+  assert.equal(
+    answered.state.questionHistory.some(
+      (entry) =>
+        entry.questionKey === "constraints_and_compliance" && entry.status === "answered"
+    ),
+    true
+  );
+  assert.notEqual(guidance.questionKey, "constraints_and_compliance");
+  assert.match(guidance.leadIn ?? "", /current launch constraints/i);
+});
+
 test("the planner returns exactly one next question at a time", () => {
   const buildResult = buildConversationSessionState({
     messages: [buildUserMessage("u1", "Hi, my name is Tom.")]

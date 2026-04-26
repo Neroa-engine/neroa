@@ -14,6 +14,7 @@ import {
   type StoredProjectMetadata,
   parseWorkspaceProjectDescription
 } from "../workspace/project-metadata";
+import { buildStrategyQuestionRows } from "../workspace/strategy-room-support";
 import {
   createPersistedPlanningThreadState,
   type PlanningThreadState
@@ -135,7 +136,27 @@ function extractPosConnectorValue(message: string) {
   return matches.length > 0 ? humanizeList(matches) : null;
 }
 
-function inferAnsweredInputValue(inputId: ArchitectureInputId, message: string) {
+function resolvePrimaryOpenInputId(args: {
+  previousIntelligence: WorkspaceProjectIntelligence;
+  projectMetadata?: StoredProjectMetadata | null;
+}) {
+  return (
+    buildStrategyQuestionRows({
+      projectMetadata: args.projectMetadata ?? null,
+      projectBrief: args.previousIntelligence.projectBrief,
+      architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+      roadmapPlan: args.previousIntelligence.roadmapPlan
+    })[0]?.inputId ?? null
+  );
+}
+
+function inferAnsweredInputValue(
+  inputId: ArchitectureInputId,
+  message: string,
+  options?: {
+    isCurrentBlocker?: boolean;
+  }
+) {
   const cleanMessage = cleanText(message);
 
   if (!cleanMessage) {
@@ -148,7 +169,13 @@ function inferAnsweredInputValue(inputId: ArchitectureInputId, message: string) 
     case "chainsInScope":
       return extractLaunchChainsValue(cleanMessage);
     case "walletConnectionMvp":
-      return /\bwallet\b/.test(normalized) ? cleanMessage : null;
+      return /\bwallet\b/.test(normalized) ||
+        (options?.isCurrentBlocker === true &&
+          /\bnot in mvp\b|\bkeep (?:it|wallet|wallet connection) out of mvp\b|\bwithout wallet\b|\bno\b|\bnope\b|\bnot right now\b|\bexclude it\b/.test(
+            normalized
+          ))
+        ? cleanMessage
+        : null;
     case "adviceAdjacency":
       return /\badvice\b|\badvisory\b|\banalytics only\b|\bnot financial advice\b/i.test(
         cleanMessage
@@ -272,6 +299,10 @@ function buildAnsweredInputsFromChat(args: {
     architectureBlueprint: args.nextThreadState.architectureBlueprint,
     roadmapPlan: args.nextThreadState.roadmapPlan
   });
+  const primaryOpenInputId = resolvePrimaryOpenInputId({
+    previousIntelligence: args.previousIntelligence,
+    projectMetadata: args.projectMetadata
+  });
   const currentAnswers = new Map(
     (args.projectMetadata?.strategyState?.overrideState?.answeredInputs ?? []).map((item) => [
       item.inputId,
@@ -285,7 +316,9 @@ function buildAnsweredInputsFromChat(args: {
       continue;
     }
 
-    const inferredValue = inferAnsweredInputValue(inputId, latestUserMessage);
+    const inferredValue = inferAnsweredInputValue(inputId, latestUserMessage, {
+      isCurrentBlocker: inputId === primaryOpenInputId
+    });
 
     if (!nextOpen.has(inputId)) {
       const value = inferredValue ?? latestUserMessage;
@@ -402,7 +435,8 @@ export async function persistProjectPlanningThreadState(args: {
   if (args.projectId !== args.workspaceId) {
     return {
       persisted: false,
-      threadState: args.threadState
+      threadState: args.threadState,
+      error: "Your answer was not saved. Try again."
     };
   }
 
@@ -416,7 +450,8 @@ export async function persistProjectPlanningThreadState(args: {
   if (!workspace) {
     return {
       persisted: false,
-      threadState: args.threadState
+      threadState: args.threadState,
+      error: "Your answer was not saved. Reload the project room and try again."
     };
   }
 
@@ -462,7 +497,8 @@ export async function persistProjectPlanningThreadState(args: {
   if (error || !data) {
     return {
       persisted: false,
-      threadState: args.threadState
+      threadState: args.threadState,
+      error: "Your answer was not saved. Try again."
     };
   }
 

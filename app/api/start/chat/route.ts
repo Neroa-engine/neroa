@@ -59,12 +59,21 @@ export async function POST(request: NextRequest) {
         threadState: result.threadState,
         latestUserMessage: body.message,
         createdBy: auth.user.email ?? auth.user.id
-      }).catch(() => {
-        // Thread continuity persistence should never break visible planning chat delivery.
-        return null;
       });
 
-      if (persistenceResult?.threadState) {
+      if (!persistenceResult.persisted) {
+        return NextResponse.json(
+          {
+            ok: false,
+            error: persistenceResult.error || "Your answer was not saved. Try again."
+          },
+          {
+            status: 500
+          }
+        );
+      }
+
+      if (persistenceResult.threadState) {
         deliveredThreadState = persistenceResult.threadState;
       }
     }

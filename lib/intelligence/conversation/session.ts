@@ -344,6 +344,14 @@ function extractLikelyFounderName(message: string) {
   }
 
   if (
+    /^(?:no|none|nope|nothing|nothing yet|none yet|not right now|no constraint|no constraints|analytics only|not in mvp|maybe later)$/i.test(
+      cleanMessage
+    )
+  ) {
+    return null;
+  }
+
+  if (
     /\b(?:build|product|app|saas|platform|website|dashboard|portal|customer|investor|manager|restaurant|crypto)\b/i.test(
       cleanMessage
     )
@@ -356,6 +364,43 @@ function extractLikelyFounderName(message: string) {
   }
 
   return toTitleCase(cleanMessage);
+}
+
+function shouldExtractFounderName(
+  state: ConversationSessionState,
+  message: string,
+  pendingQuestionKey: ConversationQuestionKey | null
+) {
+  if (slotHasMeaningfulValue(state.slots["identity.founderName"])) {
+    return false;
+  }
+
+  const cleanMessage = cleanText(message);
+
+  if (!cleanMessage) {
+    return false;
+  }
+
+  const explicitIntroduction =
+    /^(?:hi|hello|hey|good morning|good afternoon|good evening)[,\s-]*/i.test(cleanMessage) ||
+    /^(?:my name is|call me|i(?:'m| am))\s+/i.test(cleanMessage);
+
+  if (explicitIntroduction) {
+    return true;
+  }
+
+  if (pendingQuestionKey) {
+    return false;
+  }
+
+  const hasPlanningContext =
+    slotHasMeaningfulValue(state.slots["product.productCategory"]) ||
+    slotHasMeaningfulValue(state.slots["problem.problemStatement"]) ||
+    slotHasMeaningfulValue(state.slots["outcome.outcomePromise"]) ||
+    slotHasMeaningfulValue(state.slots["audience.buyerPersonas"]) ||
+    slotHasMeaningfulValue(state.slots["audience.operatorPersonas"]);
+
+  return !hasPlanningContext;
 }
 
 function extractProductCategory(message: string) {
@@ -400,6 +445,54 @@ function splitCommaOrAndList(value: string) {
   );
 }
 
+function normalizeAnswerCandidate(value: string) {
+  return normalizeSpace(value).replace(/[.!?]+$/g, "").trim().toLowerCase();
+}
+
+function getPendingQuestionKey(state: ConversationSessionState): ConversationQuestionKey | null {
+  return (
+    [...state.questionHistory]
+      .reverse()
+      .find((entry) => entry.status === "asked")?.questionKey ?? null
+  );
+}
+
+function interpretNullStyleAnswerForQuestion(
+  questionKey: ConversationQuestionKey | null,
+  message: string
+) {
+  const normalized = normalizeAnswerCandidate(message);
+
+  if (!normalized) {
+    return null;
+  }
+
+  switch (questionKey) {
+    case "constraints_and_compliance":
+      return /^(?:no|none|nope|nothing|nothing yet|none yet|not right now|nothing right now|none right now|no constraint|no constraints|no real constraint|no real constraints|no compliance|no compliance needs|no launch constraint|no launch constraints)$/.test(
+        normalized
+      )
+        ? {
+            slotPath: "constraints.constraintsAndCompliance" as const,
+            values: ["No material constraints identified right now"],
+            leadIn: "That helps - I have the current launch constraints."
+          }
+        : null;
+    case "integrations_and_data_sources":
+      return /^(?:no|none|nope|nothing|nothing yet|none yet|not right now|nothing right now|none right now|no integrations|no integration|no data sources|no external data|no connectors)$/.test(
+        normalized
+      )
+        ? {
+            slotPath: "systems.integrationsAndDataSources" as const,
+            values: ["No required integrations or external data sources identified right now"],
+            leadIn: "That helps - I have the current integration boundary."
+          }
+        : null;
+    default:
+      return null;
+  }
+}
+
 function looksSelfServeB2C(text: string) {
   const normalized = text.toLowerCase();
 
@@ -414,6 +507,35 @@ function looksSelfServeB2C(text: string) {
   return /\b(?:website|app|self-serve|self serve|dashboard|analytics|investor|consumer|member|creator|founder tool|portfolio)\b/.test(
     normalized
   );
+}
+
+function applyPendingQuestionAnswerRules(args: {
+  state: ConversationSessionState;
+  message: string;
+  evidence: string;
+  updatedSlotPaths: ConversationSlotPath[];
+}) {
+  const interpreted = interpretNullStyleAnswerForQuestion(
+    getPendingQuestionKey(args.state),
+    args.message
+  );
+
+  if (!interpreted) {
+    return;
+  }
+
+  if (
+    updateListSlot({
+      state: args.state,
+      slotPath: interpreted.slotPath,
+      values: interpreted.values,
+      status: "filled",
+      confidence: 0.78,
+      evidence: args.evidence
+    })
+  ) {
+    args.updatedSlotPaths.push(interpreted.slotPath);
+  }
 }
 
 function resolvePendingQuestionHistory(
@@ -688,7 +810,10 @@ function applyUserMessage(
   const nextState = cloneState(state);
   const updatedSlotPaths: ConversationSlotPath[] = [];
   const evidence = normalizeSpace(message);
-  const founderName = extractLikelyFounderName(message);
+  const pendingQuestionKey = getPendingQuestionKey(nextState);
+  const founderName = shouldExtractFounderName(nextState, message, pendingQuestionKey)
+    ? extractLikelyFounderName(message)
+    : null;
   const productCategory = extractProductCategory(message);
   const problemStatement = extractSimpleText(
     message,
@@ -732,6 +857,12 @@ function applyUserMessage(
   }
 
   applyAudienceRules(nextState, message, updatedSlotPaths);
+  applyPendingQuestionAnswerRules({
+    state: nextState,
+    message,
+    evidence,
+    updatedSlotPaths
+  });
 
   if (
     problemStatement &&
@@ -881,6 +1012,14 @@ export function buildConversationLeadIn(args: {
 
   if (args.updatedSlotPaths.includes("outcome.outcomePromise")) {
     return "That helps - I have the outcome you want to create.";
+  }
+
+  if (args.updatedSlotPaths.includes("constraints.constraintsAndCompliance")) {
+    return "That helps - I have the current launch constraints.";
+  }
+
+  if (args.updatedSlotPaths.includes("systems.integrationsAndDataSources")) {
+    return "That helps - I have the current integration boundary.";
   }
 
   return null;

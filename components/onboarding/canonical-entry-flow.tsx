@@ -778,12 +778,17 @@ export function CanonicalEntryFlow({
         });
       }
     } catch (error) {
-      setMessages(previousMessages);
-      setDraft(cleanDraft);
+      setMessages((currentMessages) => {
+        if (currentMessages.some((message) => message.id === optimisticUserMessage.id)) {
+          return currentMessages;
+        }
+
+        return [...currentMessages, optimisticUserMessage].slice(-20);
+      });
       setChatError(
         error instanceof Error
           ? error.message
-          : "Unable to continue the planning thread right now."
+          : "Your answer was not saved. Try again."
       );
     } finally {
       setIsSending(false);

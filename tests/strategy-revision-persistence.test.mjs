@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildConversationSessionState } from "../lib/intelligence/conversation/index.ts";
+import {
+  buildConversationSessionState,
+  recordConversationQuestionAsked
+} from "../lib/intelligence/conversation/index.ts";
 import { buildWorkspaceProjectIntelligence } from "../lib/intelligence/project-brief-generator.ts";
 import {
   analyzeGovernanceDelta,
@@ -474,6 +477,216 @@ test("Strategy Room chat answers persist blocker resolution through the shared r
     ),
     false
   );
+});
+
+test("Strategy Room accepts valid null-style constraint answers without silently dropping the turn", async () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const projectName = "Tom Crypto Risk";
+  const projectDescription = messages.join(" ");
+  const workspaceId = `workspace-${slugify(projectName)}`;
+  const projectId = `project-${slugify(projectName)}`;
+  const base = buildSharedIntelligence({
+    messages,
+    projectName,
+    projectDescription
+  });
+  const askedConstraintsState = recordConversationQuestionAsked({
+    state: base.projectMetadata.conversationState,
+    questionKey: "constraints_and_compliance",
+    askedTurnId: "assistant-constraints"
+  });
+  const userAnswer = "no constraint";
+  const chatResult = await runPlanningChat({
+    threadId: "strategy-room-chat-constraints",
+    lane: "managed",
+    title: projectName,
+    summary: projectDescription,
+    messages: messages.map((message, index) => buildUserMessage(`u${index + 1}`, message)),
+    message: userAnswer,
+    conversationState: askedConstraintsState,
+    existingProjectContext: true
+  });
+  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+    workspaceId,
+    projectId,
+    projectName,
+    projectMetadata: {
+      ...base.projectMetadata,
+      conversationState: askedConstraintsState
+    },
+    previousIntelligence: base.projectIntelligence,
+    threadState: chatResult.threadState,
+    latestUserMessage: userAnswer,
+    createdAt: "2026-04-26T13:45:00.000Z",
+    createdBy: "owner@example.com"
+  });
+  const hydratedMetadata = buildStoredProjectMetadata({
+    title: projectName,
+    description: projectDescription,
+    conversationState: persistenceUpdate.updatedThreadState.conversationState,
+    governanceState: persistenceUpdate.governanceState,
+    strategyState: persistenceUpdate.strategyState
+  });
+  const hydratedIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId,
+    projectId,
+    projectTitle: projectName,
+    projectDescription,
+    projectMetadata: hydratedMetadata
+  });
+  const lastAssistantMessage = chatResult.threadState.messages.at(-1);
+
+  assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
+  assert.ok(
+    chatResult.threadState.conversationState?.constraintsAndCompliance.includes(
+      "No material constraints identified right now"
+    )
+  );
+  assert.ok(lastAssistantMessage?.content.includes("?"));
+  assert.ok(
+    hydratedIntelligence.projectBrief.constraints.includes(
+      "No material constraints identified right now"
+    )
+  );
+});
+
+test("Strategy Room treats short MVP-boundary answers like 'not in MVP' as valid blocker resolutions", async () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const projectName = "Tom Crypto Risk";
+  const projectDescription = messages.join(" ");
+  const workspaceId = `workspace-${slugify(projectName)}`;
+  const projectId = `project-${slugify(projectName)}`;
+  const base = persistStrategyRevision({
+    messages,
+    projectName,
+    projectDescription,
+    patch: {
+      answeredInputs: [
+        {
+          inputId: "chainsInScope",
+          value: "Ethereum and Solana"
+        }
+      ]
+    }
+  });
+  const userAnswer = "not in MVP";
+  const chatResult = await runPlanningChat({
+    threadId: "strategy-room-chat-wallet-boundary",
+    lane: "managed",
+    title: projectName,
+    summary: projectDescription,
+    messages: messages.map((message, index) => buildUserMessage(`u${index + 1}`, message)),
+    message: userAnswer,
+    conversationState: base.persistedMetadata.conversationState,
+    existingProjectContext: true
+  });
+  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+    workspaceId,
+    projectId,
+    projectName,
+    projectMetadata: base.persistedMetadata,
+    previousIntelligence: base.hydratedIntelligence,
+    threadState: chatResult.threadState,
+    latestUserMessage: userAnswer,
+    createdAt: "2026-04-26T13:50:00.000Z",
+    createdBy: "owner@example.com"
+  });
+  const hydratedMetadata = buildStoredProjectMetadata({
+    title: projectName,
+    description: projectDescription,
+    conversationState: persistenceUpdate.updatedThreadState.conversationState,
+    governanceState: persistenceUpdate.governanceState,
+    strategyState: persistenceUpdate.strategyState
+  });
+  const hydratedIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId,
+    projectId,
+    projectTitle: projectName,
+    projectDescription,
+    projectMetadata: hydratedMetadata
+  });
+
+  assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
+  assert.ok(
+    persistenceUpdate.patch.answeredInputs?.some(
+      (item) => item.inputId === "walletConnectionMvp" && /not in mvp/i.test(item.value)
+    )
+  );
+  assert.ok(
+    hydratedIntelligence.projectBrief.constraints.some((item) =>
+      /Wallet connection boundary: not in MVP/i.test(item)
+    )
+  );
+  assert.ok(
+    hydratedIntelligence.projectBrief.excludedFeatures.includes("wallet connection")
+  );
+});
+
+test("ambiguous but non-empty Strategy Room answers stay visible and trigger clarification instead of disappearing", async () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const base = buildSharedIntelligence({
+    messages,
+    projectName: "Tom Crypto Risk",
+    projectDescription: messages.join(" ")
+  });
+  const userAnswer = "maybe later";
+  const chatResult = await runPlanningChat({
+    threadId: "strategy-room-chat-clarification",
+    lane: "managed",
+    title: "Tom Crypto Risk",
+    summary: messages.join(" "),
+    messages: messages.map((message, index) => buildUserMessage(`u${index + 1}`, message)),
+    message: userAnswer,
+    conversationState: base.projectMetadata.conversationState,
+    existingProjectContext: true
+  });
+  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+    workspaceId: "workspace-tom-crypto-risk",
+    projectId: "project-tom-crypto-risk",
+    projectName: "Tom Crypto Risk",
+    projectMetadata: base.projectMetadata,
+    previousIntelligence: base.projectIntelligence,
+    threadState: chatResult.threadState,
+    latestUserMessage: userAnswer,
+    createdAt: "2026-04-26T14:00:00.000Z",
+    createdBy: "owner@example.com"
+  });
+  const lastAssistantMessage = chatResult.threadState.messages.at(-1);
+
+  assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
+  assert.ok(lastAssistantMessage?.content.includes("?"));
+  assert.equal(persistenceUpdate.patch.answeredInputs?.length ?? 0, 0);
+});
+
+test("Strategy Room submit failures surface explicit save errors instead of silently swallowing the answer", () => {
+  const startChatRouteSource = readFileSync(
+    new URL("../app/api/start/chat/route.ts", import.meta.url),
+    "utf8"
+  );
+  const entryFlowSource = readFileSync(
+    new URL("../components/onboarding/canonical-entry-flow.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(startChatRouteSource, /Your answer was not saved\. Try again\./);
+  assert.doesNotMatch(
+    startChatRouteSource,
+    /Thread continuity persistence should never break visible planning chat delivery/
+  );
+  assert.doesNotMatch(entryFlowSource, /setMessages\(previousMessages\);/);
+  assert.match(entryFlowSource, /setMessages\(\(currentMessages\) =>/);
 });
 
 test("Strategy Room right rail keeps blocker status visible without exposing primary answer inputs", () => {
