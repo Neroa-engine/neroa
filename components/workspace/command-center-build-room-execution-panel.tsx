@@ -26,8 +26,6 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
   roadmapApprovalRequired: boolean;
-  roadmapApprovalLabel: string;
-  roadmapApprovalDetail: string;
   roadmapAreaLabel: string;
 };
 
@@ -334,8 +332,6 @@ export function CommandCenterBuildRoomExecutionPanel({
   workerTriggerMode,
   storageMessage = null,
   roadmapApprovalRequired,
-  roadmapApprovalLabel,
-  roadmapApprovalDetail,
   roadmapAreaLabel
 }: CommandCenterBuildRoomExecutionPanelProps) {
   const router = useRouter();
@@ -364,6 +360,8 @@ export function CommandCenterBuildRoomExecutionPanel({
   const selectedCodexResult = selectedTask?.codexResponsePayload ?? null;
   const selectedWorkerRun = selectedDetail ? latestWorkerRun(selectedDetail.runs) : null;
   const selectedWorkerArtifacts = selectedDetail ? artifactPreview(selectedDetail.artifacts) : [];
+  const showExecutionBlockedMessage =
+    roadmapApprovalRequired && selectedTask?.status === "draft";
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const canApproveWorker =
     accessMode === "owner" &&
@@ -460,9 +458,7 @@ export function CommandCenterBuildRoomExecutionPanel({
           request: payload.userRequest,
           roadmapArea: roadmapAreaLabel
         });
-        setNoticeMessage(
-          "Roadmap approval is still required. Command Center saved the Build Room task as a draft and captured the request as pending execution so the roadmap can be tightened before the relay runs."
-        );
+        setNoticeMessage(null);
         router.refresh();
         return;
       }
@@ -622,28 +618,33 @@ export function CommandCenterBuildRoomExecutionPanel({
         </div>
       ) : null}
 
-      {roadmapApprovalRequired ? (
+      {showExecutionBlockedMessage ? (
         <div className="mt-4 rounded-[26px] border border-amber-200 bg-amber-50/90 px-5 py-5 shadow-[0_18px_38px_rgba(180,83,9,0.08)]">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-                Roadmap Approval Required
+                Status
               </p>
-              <p className="mt-3 text-base font-semibold text-slate-950">{roadmapApprovalLabel}</p>
-              <p className="mt-3 text-sm leading-7 text-slate-700">{roadmapApprovalDetail}</p>
+              <p className="mt-3 text-base font-semibold text-slate-950">Execution blocked</p>
               <p className="mt-3 text-sm leading-7 text-slate-700">
-                You can still submit the request here. Command Center will capture it as a
-                roadmap-tightening / pending-execution request, keep the Build Room task in draft,
-                and wait for roadmap approval before the existing relay is allowed to run.
+                Your recent task was saved, but it cannot be executed yet because the current
+                roadmap and scope have not been approved.
+              </p>
+              <p className="mt-3 text-sm leading-7 text-slate-700">
+                You can continue submitting requests, but execution will remain paused until the
+                roadmap is tightened and approved.
+              </p>
+              <p className="mt-4 inline-flex rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
+                Saved as pending execution
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
               <Link href={projectWorkspaceHref} className="button-primary text-sm">
-                Open Project Workspace
+                Review and approve roadmap
               </Link>
               <Link href={strategyRoomHref} className="button-secondary text-sm">
-                Tighten in Strategy Room
+                Open Strategy Room
               </Link>
             </div>
           </div>

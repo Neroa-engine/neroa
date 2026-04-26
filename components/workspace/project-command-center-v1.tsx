@@ -78,8 +78,6 @@ export function ProjectCommandCenterV1({
             workerTriggerMode={buildRoomWorkerTriggerMode}
             storageMessage={buildRoomStorageMessage}
             roadmapApprovalRequired={roadmapApprovalRequired}
-            roadmapApprovalLabel={commandCenter.executionReadiness.label}
-            roadmapApprovalDetail={commandCenter.executionReadiness.detail}
             roadmapAreaLabel={
               commandCenter.taskQueue.currentRoadmapArea ?? commandCenter.activePhase.label
             }
