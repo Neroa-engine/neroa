@@ -49,6 +49,14 @@ import {
   type StrategyRevisionRecord
 } from "@/lib/intelligence/revisions/types";
 import {
+  loadExecutionPacketSummary,
+  loadExecutionState,
+  loadPendingExecutionItem,
+  type ExecutionPacketSummary,
+  type ExecutionState,
+  type PendingExecutionItem
+} from "@/lib/intelligence/execution/types";
+import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -68,6 +76,7 @@ export type StoredProjectMetadata = {
   conversationState?: ConversationSessionState | null;
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
+  executionState?: StoredExecutionState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -91,6 +100,11 @@ export type StoredGovernanceState = {
 export type StoredStrategyState = {
   overrideState?: StrategyOverrideState | null;
   revisionRecords?: StrategyRevisionRecord[];
+};
+
+export type StoredExecutionState = {
+  pendingExecutions?: PendingExecutionItem[];
+  executionPackets?: ExecutionPacketSummary[];
 };
 
 export type StoredProjectAsset = {
@@ -252,6 +266,39 @@ function normalizeStrategyState(value: unknown): StoredStrategyState | null {
     overrideState,
     revisionRecords
   };
+}
+
+function normalizeExecutionStateValue(value: unknown): StoredExecutionState | null {
+  const normalized = loadExecutionState(value);
+
+  if (normalized) {
+    return normalized;
+  }
+
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const pendingExecutions = Array.isArray(record.pendingExecutions)
+    ? record.pendingExecutions
+        .map((item) => loadPendingExecutionItem(item))
+        .filter((item): item is PendingExecutionItem => Boolean(item))
+    : [];
+  const executionPackets = Array.isArray(record.executionPackets)
+    ? record.executionPackets
+        .map((item) => loadExecutionPacketSummary(item))
+        .filter((item): item is ExecutionPacketSummary => Boolean(item))
+    : [];
+
+  if (pendingExecutions.length === 0 && executionPackets.length === 0) {
+    return null;
+  }
+
+  return {
+    pendingExecutions,
+    executionPackets
+  } satisfies StoredExecutionState;
 }
 
 export function defaultStoredCommandCenterBrandSystem(): StoredCommandCenterBrandSystem {
@@ -683,6 +730,7 @@ export function buildStoredProjectMetadata(args: {
   conversationState?: ConversationSessionState | null;
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
+  executionState?: StoredExecutionState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -716,6 +764,7 @@ export function buildStoredProjectMetadata(args: {
     conversationState: normalizeConversationState(args.conversationState),
     governanceState: normalizeGovernanceState(args.governanceState),
     strategyState: normalizeStrategyState(args.strategyState),
+    executionState: normalizeExecutionStateValue(args.executionState),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -762,6 +811,7 @@ function decodeMetadata(value: string) {
       conversationState: normalizeConversationState(parsed.conversationState),
       governanceState: normalizeGovernanceState(parsed.governanceState),
       strategyState: normalizeStrategyState(parsed.strategyState),
+      executionState: normalizeExecutionStateValue(parsed.executionState),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets

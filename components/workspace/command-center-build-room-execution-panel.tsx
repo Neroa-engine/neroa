@@ -3,15 +3,23 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { captureCommandCenterPendingExecutionRequest } from "@/app/workspace/[workspaceId]/command-center/actions";
+import {
+  releaseEligiblePendingExecutionRequests,
+  submitCommandCenterExecutionRequest
+} from "@/app/workspace/[workspaceId]/command-center/actions";
 import type {
   BuildRoomOutputMode,
   BuildRoomRelayMode,
   BuildRoomRiskLevel,
-  BuildRoomTaskInput,
   BuildRoomTaskType
 } from "@/lib/build-room/contracts";
 import type { BuildRoomArtifact, BuildRoomRun, BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
+import {
+  buildExecutionStateSummary,
+  getExecutionPacketRelationship,
+  getPendingExecutionRelationship,
+  type ExecutionState
+} from "@/lib/intelligence/execution";
 import {
   resolvePlatformExecutionGateState,
   type PlatformContext,
@@ -29,6 +37,7 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   roadmapGateSignals: PlatformExecutionGateSignalInput;
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
+  initialExecutionState: ExecutionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
@@ -336,6 +345,7 @@ export function CommandCenterBuildRoomExecutionPanel({
   roadmapGateSignals,
   initialTasks,
   initialTaskDetail,
+  initialExecutionState,
   codexRelayMode,
   workerTriggerMode,
   storageMessage = null,
@@ -354,12 +364,15 @@ export function CommandCenterBuildRoomExecutionPanel({
     initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null
   );
   const [selectedDetail, setSelectedDetail] = useState<BuildRoomTaskDetail | null>(initialTaskDetail);
+  const [executionState, setExecutionState] = useState<ExecutionState | null>(
+    initialExecutionState
+  );
   const [composer, setComposer] = useState<CommandCenterExecutionComposerState>(() =>
     createEmptyComposer(project)
   );
-  const [pendingAction, setPendingAction] = useState<"send" | "approve" | "refresh" | "revise" | null>(
-    null
-  );
+  const [pendingAction, setPendingAction] = useState<
+    "send" | "approve" | "refresh" | "revise" | "release_pending" | null
+  >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [noticeMessage, setNoticeMessage] = useState<string | null>(
     storageMessage
@@ -371,6 +384,15 @@ export function CommandCenterBuildRoomExecutionPanel({
   const selectedCodexResult = selectedTask?.codexResponsePayload ?? null;
   const selectedWorkerRun = selectedDetail ? latestWorkerRun(selectedDetail.runs) : null;
   const selectedWorkerArtifacts = selectedDetail ? artifactPreview(selectedDetail.artifacts) : [];
+  const executionSummary = buildExecutionStateSummary(executionState);
+  const packetRelationship = getExecutionPacketRelationship({
+    executionState,
+    buildRoomTaskId: selectedTask?.id ?? null
+  });
+  const pendingRelationship = getPendingExecutionRelationship({
+    executionState,
+    buildRoomTaskId: selectedTask?.id ?? null
+  });
   const showExecutionBlockedMessage =
     executionGate.blockedPanel.show && selectedTask?.status === "draft";
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
@@ -422,76 +444,62 @@ export function CommandCenterBuildRoomExecutionPanel({
     try {
       const normalizedTitle =
         composer.title.trim() || buildFallbackTitle(composer.userRequest, composer.taskType);
-      const payload: BuildRoomTaskInput = {
+      const result = await submitCommandCenterExecutionRequest({
         workspaceId,
-        projectId: project.id,
-        laneSlug: composer.laneSlug,
+        taskId: composer.taskId,
         title: normalizedTitle,
+        laneSlug: composer.laneSlug,
         taskType: composer.taskType,
         requestedOutputMode: composer.requestedOutputMode,
         userRequest: composer.userRequest.trim(),
-        acceptanceCriteria: composer.acceptanceCriteria.trim() || null,
-        riskLevel: composer.riskLevel
-      };
-      const savedDetail = composer.taskId
-        ? (
-            await requestBuildRoomJson<BuildRoomDetailResponse>(
-              `/api/build-room/tasks/${composer.taskId}`,
-              {
-                method: "PATCH",
-                body: JSON.stringify({
-                  laneSlug: payload.laneSlug,
-                  title: payload.title,
-                  taskType: payload.taskType,
-                  requestedOutputMode: payload.requestedOutputMode,
-                  userRequest: payload.userRequest,
-                  acceptanceCriteria: payload.acceptanceCriteria,
-                  riskLevel: payload.riskLevel
-                })
-              }
-            )
-          ).detail
-        : (
-            await requestBuildRoomJson<BuildRoomDetailResponse>("/api/build-room/tasks", {
-              method: "POST",
-              body: JSON.stringify(payload)
-            })
-          ).detail;
-      setSelectedTaskId(savedDetail.task.id);
-      setSelectedDetail(savedDetail);
-      setTasks((current) => replaceTaskSummary(current, savedDetail.task));
-      setComposer(createComposerFromTask(savedDetail.task));
+        acceptanceCriteria: composer.acceptanceCriteria.trim(),
+        riskLevel: composer.riskLevel,
+        roadmapArea: roadmapAreaLabel
+      });
 
-      if (!executionGate.shouldExecute) {
-        await captureCommandCenterPendingExecutionRequest({
-          workspaceId,
-          title: normalizedTitle,
-          request: payload.userRequest,
-          roadmapArea: roadmapAreaLabel
-        });
-        setNoticeMessage(null);
-        router.refresh();
-        return;
-      }
-
-      const finalDetail = (
-        await requestBuildRoomJson<BuildRoomDetailResponse>(
-          `/api/build-room/tasks/${savedDetail.task.id}/submit-codex`,
-          {
-            method: "POST"
-          }
-        )
-      ).detail;
-
-      setSelectedTaskId(finalDetail.task.id);
-      setSelectedDetail(finalDetail);
-      setTasks((current) => replaceTaskSummary(current, finalDetail.task));
-      setComposer(createComposerFromTask(finalDetail.task));
-      setNoticeMessage(
-        "Command Center classified the request, created the Build Room task, and submitted it through the existing relay."
-      );
+      setExecutionState(result.executionState);
+      setSelectedTaskId(result.detail.task.id);
+      setSelectedDetail(result.detail);
+      setTasks((current) => replaceTaskSummary(current, result.detail.task));
+      setComposer(createComposerFromTask(result.detail.task));
+      setNoticeMessage(result.message);
+      router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to send the execution request.");
+    } finally {
+      setPendingAction(null);
+    }
+  }
+
+  async function handleReleasePendingExecutions() {
+    if (storageMessage) {
+      return;
+    }
+
+    setPendingAction("release_pending");
+    setErrorMessage(null);
+    setNoticeMessage(null);
+
+    try {
+      const result = await releaseEligiblePendingExecutionRequests({
+        workspaceId
+      });
+      const releasedTaskId =
+        result.results.find((item) => item.pendingExecutionReleased)?.buildRoomTaskId ?? null;
+
+      setExecutionState(result.executionState);
+      setNoticeMessage(result.message);
+
+      if (releasedTaskId) {
+        setSelectedTaskId(releasedTaskId);
+        await refreshTask(releasedTaskId, true);
+      }
+
+      router.refresh();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to release pending execution requests."
+      );
     } finally {
       setPendingAction(null);
     }
@@ -567,6 +575,19 @@ export function CommandCenterBuildRoomExecutionPanel({
       setPendingAction(null);
     }
   }
+
+  useEffect(() => {
+    setExecutionState(initialExecutionState);
+  }, [initialExecutionState]);
+
+  useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  useEffect(() => {
+    setSelectedDetail(initialTaskDetail);
+    setSelectedTaskId(initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null);
+  }, [initialTaskDetail, initialTasks]);
 
   useEffect(() => {
     if (!selectedDetail) {
@@ -679,6 +700,59 @@ export function CommandCenterBuildRoomExecutionPanel({
               </span>
             </div>
             <p className="mt-3 text-sm leading-7 text-slate-600">{classification.route}</p>
+          </div>
+
+          <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Pending release queue
+                </p>
+                <p className="mt-2 text-base font-semibold text-slate-950">
+                  {executionSummary.pendingCount > 0
+                    ? `${executionSummary.pendingCount} request${
+                        executionSummary.pendingCount === 1 ? "" : "s"
+                      } waiting on approval or scope clearance`
+                    : "No pending execution requests are waiting right now"}
+                </p>
+                <p className="mt-3 text-sm leading-7 text-slate-600">
+                  Neroa keeps blocked or revision-needed requests in shared pending execution until
+                  governance and approval allow the existing Build Room relay to release them.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="button-secondary text-sm"
+                onClick={() => void handleReleasePendingExecutions()}
+                disabled={
+                  pendingAction !== null ||
+                  Boolean(storageMessage) ||
+                  executionSummary.pendingCount === 0
+                }
+              >
+                {pendingAction === "release_pending" ? "Re-checking..." : "Re-check Pending"}
+              </button>
+            </div>
+            {executionSummary.pendingExecutions.length > 0 ? (
+              <div className="mt-4 grid gap-3">
+                {executionSummary.pendingExecutions.slice(0, 2).map((item) => (
+                  <div
+                    key={item.pendingExecutionId}
+                    className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        {formatStatusLabel(item.status)}
+                      </span>
+                    </div>
+                    <p className="mt-2 text-xs leading-6 text-slate-500">
+                      {item.latestReason ?? "Awaiting the next approval and scope check."}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
@@ -1023,6 +1097,33 @@ export function CommandCenterBuildRoomExecutionPanel({
                         selectedCodexResult?.summary ??
                         "This task has been created, but Build Room has not recorded a relay result yet."}
                   </p>
+                </div>
+
+                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Execution packet
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    {pendingRelationship.isActivePending
+                      ? pendingRelationship.pendingItem?.latestReason ??
+                        "This request is still saved as pending execution."
+                      : packetRelationship.packetSummary
+                        ? `Packet ${packetRelationship.packetSummary.packetId.split(":").pop()} is mapped to ${packetRelationship.packetSummary.laneIds.join(", ") || "shared lanes"} across ${packetRelationship.packetSummary.phaseIds.join(", ") || "current roadmap phases"}.`
+                        : "No released execution packet is linked to this Build Room task yet."}
+                  </p>
+                  {packetRelationship.packetSummary ? (
+                    <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        {formatStatusLabel(packetRelationship.packetSummary.status)}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        {formatStatusLabel(packetRelationship.packetSummary.scopeOutcome)}
+                      </span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                        {formatStatusLabel(packetRelationship.packetSummary.readinessStatus)}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">

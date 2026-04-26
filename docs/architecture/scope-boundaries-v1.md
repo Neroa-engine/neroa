@@ -59,9 +59,11 @@ This file defines what belongs in each major Neroa system and what must not be p
   - approved execution surfaces
   - workspace and project delivery flows
   - approved planning-to-execution handoff
+  - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
 - Must not do:
   - redefine governance
   - bypass trust rules
+  - create a second execution backend or silently replace the approved Build Room contracts
   - insert future-phase editor/orchestration capabilities
 
 ### Browser / Live-View / Future Editor System

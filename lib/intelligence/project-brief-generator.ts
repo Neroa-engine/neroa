@@ -16,6 +16,10 @@ import { generateGovernancePolicy } from "./governance/generator.ts";
 import type { GovernancePolicy } from "./governance/types.ts";
 import { generateRoadmapPlan } from "./roadmap/generator.ts";
 import type { RoadmapPlan } from "./roadmap/types.ts";
+import {
+  normalizeExecutionState,
+  type ExecutionState
+} from "./execution/index.ts";
 import { applyStrategyOverrideStateToLayers } from "./revisions/apply.ts";
 import {
   type ProjectBriefReadinessStage,
@@ -918,6 +922,7 @@ export type WorkspaceProjectIntelligence = {
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
   strategyState: StoredProjectMetadata["strategyState"] | null;
+  executionState: ExecutionState | null;
 };
 
 export function buildWorkspaceProjectIntelligence(args: {
@@ -979,6 +984,7 @@ export function buildWorkspaceProjectIntelligence(args: {
     architectureBlueprint: revisedLayers?.architectureBlueprint ?? architectureBlueprint,
     roadmapPlan: revisedLayers?.roadmapPlan ?? roadmapPlan,
     governancePolicy: revisedLayers?.governancePolicy ?? governancePolicy,
-    strategyState: args.projectMetadata?.strategyState ?? null
+    strategyState: args.projectMetadata?.strategyState ?? null,
+    executionState: normalizeExecutionState(args.projectMetadata?.executionState)
   } satisfies WorkspaceProjectIntelligence;
 }

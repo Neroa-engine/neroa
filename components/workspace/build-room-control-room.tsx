@@ -10,6 +10,12 @@ import type {
   BuildRoomTaskType
 } from "@/lib/build-room/contracts";
 import type { BuildRoomArtifact, BuildRoomRun, BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
+import {
+  buildExecutionStateSummary,
+  getExecutionPacketRelationship,
+  getPendingExecutionRelationship,
+  type ExecutionState
+} from "@/lib/intelligence/execution";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
 type BuildRoomControlRoomProps = {
@@ -18,6 +24,7 @@ type BuildRoomControlRoomProps = {
   accessMode: "owner" | "member";
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
+  executionState: ExecutionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
@@ -248,6 +255,7 @@ export function BuildRoomControlRoom({
   accessMode,
   initialTasks,
   initialTaskDetail,
+  executionState,
   codexRelayMode,
   workerTriggerMode,
   storageMessage = null
@@ -274,6 +282,15 @@ export function BuildRoomControlRoom({
   const activeCodexRelayMode = selectedCodexResult?.relayMode ?? codexRelayMode;
   const selectedWorkerRun = selectedDetail ? latestWorkerRun(selectedDetail.runs) : null;
   const executionArtifacts = selectedDetail ? artifactPreview(selectedDetail.artifacts) : [];
+  const executionSummary = buildExecutionStateSummary(executionState);
+  const packetRelationship = getExecutionPacketRelationship({
+    executionState,
+    buildRoomTaskId: selectedDetail?.task.id ?? null
+  });
+  const pendingRelationship = getPendingExecutionRelationship({
+    executionState,
+    buildRoomTaskId: selectedDetail?.task.id ?? null
+  });
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
   const intakeIsReadOnly = true;
@@ -459,6 +476,15 @@ export function BuildRoomControlRoom({
   }, [project, selectedDetail]);
 
   useEffect(() => {
+    setTasks(initialTasks);
+  }, [initialTasks]);
+
+  useEffect(() => {
+    setSelectedDetail(initialTaskDetail);
+    setSelectedTaskId(initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null);
+  }, [initialTaskDetail, initialTasks]);
+
+  useEffect(() => {
     if (!selectedTaskId || storageMessage) {
       return;
     }
@@ -579,6 +605,23 @@ export function BuildRoomControlRoom({
                       Open Command Center Intake
                     </Link>
                   </div>
+                </div>
+
+                <div className="rounded-[24px] border border-slate-200/70 bg-white/78 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                    Shared execution state
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    {executionSummary.pendingCount > 0
+                      ? `${executionSummary.pendingCount} pending execution request${
+                          executionSummary.pendingCount === 1 ? "" : "s"
+                        } are still waiting on approval or revision clearance.`
+                      : "No pending execution requests are waiting right now."}
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-slate-500">
+                    Build Room reads the same execution packet and pending-release state that
+                    Command Center uses for governed intake decisions.
+                  </p>
                 </div>
 
                 <div>
@@ -959,6 +1002,20 @@ export function BuildRoomControlRoom({
                           {
                             label: "Worker run",
                             value: formatStatusLabel(selectedDetail.task.workerRunStatus)
+                          },
+                          {
+                            label: "Execution packet",
+                            value: pendingRelationship.isActivePending
+                              ? "Pending execution"
+                              : packetRelationship.packetSummary
+                                ? formatStatusLabel(packetRelationship.packetSummary.status)
+                                : "No packet linked yet",
+                            note: pendingRelationship.isActivePending
+                              ? pendingRelationship.pendingItem?.latestReason ??
+                                "This request is still saved as pending execution."
+                              : packetRelationship.packetSummary
+                                ? `Scope ${formatStatusLabel(packetRelationship.packetSummary.scopeOutcome)} across ${packetRelationship.packetSummary.laneIds.join(", ") || "shared lanes"}.`
+                                : "The task exists in Build Room, but no released execution packet is linked yet."
                           }
                         ].map((item) => (
                           <div

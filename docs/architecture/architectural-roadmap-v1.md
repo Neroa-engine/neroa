@@ -102,13 +102,15 @@ This promoted scope does **not** include:
   - project surfaces
   - stable backend execution paths already mapped by roadmap
   - planning-to-execution handoff interfaces
+  - typed execution-packet generation and approved-scope packet release when they reuse the existing Build Room task, relay, and run contracts
   - shared Strategy Room save-back, revision persistence, and intelligence rehydration when they stay inside the existing ProjectBrief, ArchitectureBlueprint, RoadmapPlan, and GovernancePolicy spine
   - Browser Runtime Core V2 and Live Session Design Library Bridge when they stay inside the promoted exception above
 - Not allowed to touch:
   - unapproved new branches
   - out-of-phase capability insertion
+  - a second execution system or replacement Build Room contract path beside the approved Build Room pipeline
   - billing/auth/platform trust changes unless Phase 4 is explicitly engaged
-- Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
+- Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 also owns deterministic execution-packet generation and pending-execution release when they derive from the approved ProjectBrief, ArchitectureBlueprint, RoadmapPlan, GovernancePolicy, and Strategy revision spine, then map into the existing Build Room pipeline without redefining execution gates or trust-layer rules. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
 
 ### Phase 4 - Platform Trust and Commerce Control
 

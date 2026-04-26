@@ -16,6 +16,7 @@ import {
   buildRoadmapPlanSummary,
   type RoadmapPlan
 } from "@/lib/intelligence/roadmap";
+import type { ExecutionState } from "@/lib/intelligence/execution";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -32,6 +33,7 @@ type ProjectCommandCenterV1Props = {
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
+  executionState: ExecutionState | null;
   platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
@@ -274,6 +276,7 @@ export function ProjectCommandCenterV1({
   architectureBlueprint,
   roadmapPlan,
   governancePolicy,
+  executionState,
   platformContext,
   liveViewSession,
   canManageDecisions,
@@ -328,6 +331,7 @@ export function ProjectCommandCenterV1({
             roadmapGateSignals={roadmapGateSignals}
             initialTasks={initialBuildRoomTasks}
             initialTaskDetail={initialBuildRoomTaskDetail}
+            initialExecutionState={executionState}
             codexRelayMode={buildRoomCodexRelayMode}
             workerTriggerMode={buildRoomWorkerTriggerMode}
             storageMessage={buildRoomStorageMessage}

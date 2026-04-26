@@ -25,7 +25,7 @@ type BuildRoomPageProps = {
 
 export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
   noStore();
-  const { supabase, user, workspace, project } = await getWorkspaceProjectContext(
+  const { supabase, user, workspace, project, projectIntelligence } = await getWorkspaceProjectContext(
     params.workspaceId,
     params.workspaceId
   );
@@ -80,6 +80,7 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
         accessMode={activeProject.accessMode}
         initialTasks={initialTasks}
         initialTaskDetail={initialTaskDetail}
+        executionState={projectIntelligence.executionState}
         codexRelayMode={codexRelayMode}
         workerTriggerMode={workerTriggerMode}
         storageMessage={storageMessage}

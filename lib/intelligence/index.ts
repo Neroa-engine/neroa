@@ -16,3 +16,4 @@ export * from "./architecture";
 export * from "./roadmap";
 export * from "./governance";
 export * from "./revisions";
+export * from "./execution";

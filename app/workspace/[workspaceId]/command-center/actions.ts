@@ -6,9 +6,39 @@ import { getOrCreateProjectLiveViewSession } from "@/lib/live-view/store";
 import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
 import { isLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import {
+  createBuildRoomTask,
+  submitBuildRoomTaskToCodex,
+  updateBuildRoomTask
+} from "@/lib/build-room/service";
+import { getBuildRoomTask } from "@/lib/build-room/data";
+import { loadBuildRoomProjectContext } from "@/lib/build-room/project-context";
+import type {
+  BuildRoomOutputMode,
+  BuildRoomRiskLevel,
+  BuildRoomTaskType
+} from "@/lib/build-room/contracts";
+import type { BuildRoomTaskDetail } from "@/lib/build-room/types";
+import {
   buildPendingExecutionCaptureRecord,
-  loadPlatformContext
+  loadPlatformContext,
+  resolvePlatformExecutionGateState
 } from "@/lib/intelligence/platform-context";
+import { buildWorkspaceProjectIntelligence } from "@/lib/intelligence/project-brief-generator";
+import {
+  applyPendingExecutionHold,
+  applyPendingExecutionRelease,
+  buildExecutionPacketSummary,
+  buildPendingExecutionItem,
+  findPendingExecutionByBuildRoomTaskId,
+  findPendingExecutionById,
+  generateExecutionPacket,
+  listActivePendingExecutions,
+  normalizeExecutionState,
+  upsertExecutionPacketSummary,
+  type ExecutionState,
+  type PendingExecutionItem,
+  type PendingExecutionReleaseResult
+} from "@/lib/intelligence/execution";
 import {
   normalizeCommandCenterDecisionStatus,
   type StoredCommandCenterDecision
@@ -41,6 +71,7 @@ import {
   type StoredCommandCenterBrandSystem,
   type StoredProjectAsset
 } from "@/lib/workspace/project-metadata";
+import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import {
   buildDescriptionWithMetadata,
   getOwnedWorkspace,
@@ -261,6 +292,270 @@ function normalizeSerializedString(value: string | null | undefined) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function normalizeExecutionStringList(values: readonly string[]) {
+  return Array.from(
+    new Set(
+      values
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
+}
+
+function normalizeAcceptanceCriteriaInput(
+  value?: string | readonly string[] | null
+) {
+  if (Array.isArray(value)) {
+    return normalizeExecutionStringList(value);
+  }
+
+  if (typeof value !== "string" || !value.trim()) {
+    return [] as string[];
+  }
+
+  return normalizeExecutionStringList(
+    value
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+  );
+}
+
+function mergeCommandCenterTasks(
+  existingTasks: StoredCommandCenterTask[],
+  nextTask: StoredCommandCenterTask
+) {
+  return [
+    nextTask,
+    ...existingTasks.filter((item) => item.id !== nextTask.id)
+  ];
+}
+
+function upsertPendingCommandCenterTask(args: {
+  existingTasks: StoredCommandCenterTask[];
+  platformContext: ReturnType<typeof loadPlatformContext>;
+  existingTaskId?: string | null;
+  title: string;
+  request: string;
+  roadmapArea: string;
+  now: string;
+}) {
+  const existingTask =
+    args.existingTaskId
+      ? args.existingTasks.find((item) => item.id === args.existingTaskId) ?? null
+      : null;
+  const capture = buildPendingExecutionCaptureRecord({
+    platformContext: args.platformContext,
+    id: existingTask?.id ?? crypto.randomUUID(),
+    title: args.title,
+    request: args.request,
+    roadmapArea: args.roadmapArea,
+    createdAt: existingTask?.createdAt ?? args.now,
+    updatedAt: args.now
+  });
+  const nextTask: StoredCommandCenterTask = {
+    ...capture.commandCenterTask,
+    createdAt: existingTask?.createdAt ?? capture.commandCenterTask.createdAt,
+    updatedAt: args.now
+  };
+
+  return {
+    task: nextTask,
+    tasks: mergeCommandCenterTasks(args.existingTasks, nextTask)
+  };
+}
+
+function markCommandCenterTaskReleased(args: {
+  existingTasks: StoredCommandCenterTask[];
+  taskId?: string | null;
+  now: string;
+}) {
+  if (!args.taskId) {
+    return args.existingTasks;
+  }
+
+  const existingTask = args.existingTasks.find((item) => item.id === args.taskId) ?? null;
+
+  if (!existingTask) {
+    return args.existingTasks;
+  }
+
+  const releasedTask: StoredCommandCenterTask = {
+    ...existingTask,
+    status: "active",
+    updatedAt: args.now
+  };
+
+  return mergeCommandCenterTasks(args.existingTasks, releasedTask);
+}
+
+async function buildCommandCenterExecutionContext(workspaceId: string) {
+  const { supabase, user, workspace } = await getOwnedWorkspace(workspaceId);
+  const parsed = parseWorkspaceProjectDescription(workspace.description);
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId,
+    projectId: workspaceId,
+    projectTitle: workspace.name,
+    projectDescription: parsed.visibleDescription,
+    projectMetadata: parsed.metadata
+  });
+  const projectContext = await loadBuildRoomProjectContext({
+    supabase,
+    userId: user.id,
+    workspaceId,
+    projectId: workspaceId
+  });
+  const commandCenter = buildCommandCenterSummary({
+    project: projectContext.project,
+    projectMetadata: parsed.metadata,
+    projectBrief: projectIntelligence.projectBrief,
+    roadmapPlan: projectIntelligence.roadmapPlan,
+    governancePolicy: projectIntelligence.governancePolicy
+  });
+  const executionGate = resolvePlatformExecutionGateState({
+    platformContext: projectIntelligence.platformContext,
+    workspaceId,
+    signals: {
+      roomStateDataState: commandCenter.roomState.dataState,
+      blockingOpenCount: commandCenter.decisionInbox.blockingOpenCount,
+      activePhaseLabel: commandCenter.activePhase.label
+    }
+  });
+
+  return {
+    supabase,
+    user,
+    workspace,
+    parsed,
+    projectContext,
+    projectIntelligence,
+    commandCenter,
+    executionGate
+  };
+}
+
+type CommandCenterExecutionRequestInput = {
+  workspaceId: string;
+  taskId?: string | null;
+  title?: string | null;
+  laneSlug?: string | null;
+  taskType: BuildRoomTaskType;
+  requestedOutputMode: BuildRoomOutputMode;
+  userRequest: string;
+  acceptanceCriteria?: string | readonly string[] | null;
+  riskLevel: BuildRoomRiskLevel;
+  roadmapArea?: string | null;
+};
+
+type CommandCenterExecutionRequestResult = {
+  outcome: "released" | "pending";
+  detail: BuildRoomTaskDetail;
+  executionState: ExecutionState;
+  pendingExecution: PendingExecutionItem | null;
+  releaseResult: PendingExecutionReleaseResult | null;
+  message: string;
+};
+
+type ReleaseEligiblePendingExecutionResult = {
+  releasedCount: number;
+  keptPendingCount: number;
+  results: PendingExecutionReleaseResult[];
+  executionState: ExecutionState;
+  message: string;
+};
+
+async function upsertBuildRoomDraftTask(args: {
+  supabase: Awaited<ReturnType<typeof getOwnedWorkspace>>["supabase"];
+  userId: string;
+  workspaceId: string;
+  projectId: string;
+  taskId?: string | null;
+  title: string;
+  laneSlug?: string | null;
+  taskType: BuildRoomTaskType;
+  requestedOutputMode: BuildRoomOutputMode;
+  userRequest: string;
+  acceptanceCriteria: readonly string[];
+  riskLevel: BuildRoomRiskLevel;
+}) {
+  const normalizedAcceptance = args.acceptanceCriteria.join("\n") || null;
+  const existingTask =
+    args.taskId
+      ? await getBuildRoomTask({
+          supabase: args.supabase,
+          taskId: args.taskId
+        })
+      : null;
+
+  if (!existingTask) {
+    return {
+      detail: await createBuildRoomTask({
+        supabase: args.supabase,
+        userId: args.userId,
+        taskInput: {
+          workspaceId: args.workspaceId,
+          projectId: args.projectId,
+          laneSlug: args.laneSlug ?? null,
+          title: args.title,
+          taskType: args.taskType,
+          requestedOutputMode: args.requestedOutputMode,
+          userRequest: args.userRequest,
+          acceptanceCriteria: normalizedAcceptance,
+          riskLevel: args.riskLevel
+        }
+      }),
+      created: true
+    };
+  }
+
+  return {
+    detail: await updateBuildRoomTask({
+      supabase: args.supabase,
+      userId: args.userId,
+      taskId: existingTask.id,
+      patch: {
+        laneSlug: args.laneSlug ?? null,
+        title: args.title,
+        taskType: args.taskType,
+        requestedOutputMode: args.requestedOutputMode,
+        userRequest: args.userRequest,
+        acceptanceCriteria: normalizedAcceptance,
+        riskLevel: args.riskLevel,
+        status: "draft",
+        approvedForExecution: false,
+        workerRunStatus: "idle"
+      }
+    }),
+    created: false
+  };
+}
+
+async function syncBuildRoomTaskFromExecutionPacket(args: {
+  supabase: Awaited<ReturnType<typeof getOwnedWorkspace>>["supabase"];
+  userId: string;
+  taskId: string;
+  packet: ReturnType<typeof generateExecutionPacket>;
+}) {
+  return updateBuildRoomTask({
+    supabase: args.supabase,
+    userId: args.userId,
+    taskId: args.taskId,
+    patch: {
+      laneSlug: args.packet.buildRoomTaskPayload.laneSlug ?? null,
+      title: args.packet.buildRoomTaskPayload.title,
+      taskType: args.packet.buildRoomTaskPayload.taskType,
+      requestedOutputMode: args.packet.buildRoomTaskPayload.requestedOutputMode,
+      userRequest: args.packet.buildRoomTaskPayload.userRequest,
+      acceptanceCriteria:
+        args.packet.buildRoomTaskPayload.acceptanceCriteria.join("\n") || null,
+      riskLevel: args.packet.buildRoomTaskPayload.riskLevel,
+      status: "draft",
+      approvedForExecution: false,
+      workerRunStatus: "idle"
+    }
+  });
+}
+
 type PendingExecutionCaptureInput = {
   workspaceId: string;
   title?: string | null;
@@ -321,6 +616,366 @@ export async function captureCommandCenterPendingExecutionRequest(
   revalidateCommandCenterPaths(workspaceId);
 
   return nextTask;
+}
+
+export async function submitCommandCenterExecutionRequest(
+  input: CommandCenterExecutionRequestInput
+): Promise<CommandCenterExecutionRequestResult> {
+  const workspaceId = normalizeSerializedString(input.workspaceId);
+  const request = normalizeSerializedString(input.userRequest);
+  const titleInput = normalizeSerializedString(input.title) ?? "";
+  const roadmapArea = normalizeSerializedString(input.roadmapArea) ?? "Build handoff";
+  const acceptanceCriteria = normalizeAcceptanceCriteriaInput(input.acceptanceCriteria);
+
+  if (!workspaceId || !request) {
+    throw new Error("Execution request could not be prepared.");
+  }
+
+  const context = await buildCommandCenterExecutionContext(workspaceId);
+  const draftTitle = buildTaskTitle(titleInput, request);
+  const draftedTask = await upsertBuildRoomDraftTask({
+    supabase: context.supabase,
+    userId: context.user.id,
+    workspaceId,
+    projectId: workspaceId,
+    taskId: normalizeSerializedString(input.taskId),
+    title: draftTitle,
+    laneSlug: normalizeSerializedString(input.laneSlug) ?? null,
+    taskType: input.taskType,
+    requestedOutputMode: input.requestedOutputMode,
+    userRequest: request,
+    acceptanceCriteria,
+    riskLevel: input.riskLevel
+  });
+  const existingExecutionState = normalizeExecutionState(
+    context.parsed.metadata?.executionState
+  );
+  const existingPendingExecution =
+    findPendingExecutionByBuildRoomTaskId(
+      existingExecutionState,
+      draftedTask.detail.task.id
+    ) ?? null;
+  const packet = generateExecutionPacket({
+    workspaceId,
+    projectId: workspaceId,
+    projectName: context.workspace.name,
+    sourceRequestId:
+      existingPendingExecution?.pendingExecutionId ?? draftedTask.detail.task.id,
+    title: draftTitle,
+    userRequest: request,
+    acceptanceCriteriaText: acceptanceCriteria.join("\n"),
+    taskType: input.taskType,
+    requestedOutputMode: input.requestedOutputMode,
+    riskLevel: input.riskLevel,
+    selectedBuildLaneSlug: normalizeSerializedString(input.laneSlug) ?? null,
+    existingBuildRoomTaskId: draftedTask.detail.task.id,
+    originatingSurface: "command_center",
+    projectBrief: context.projectIntelligence.projectBrief,
+    architectureBlueprint: context.projectIntelligence.architectureBlueprint,
+    roadmapPlan: context.projectIntelligence.roadmapPlan,
+    governancePolicy: context.projectIntelligence.governancePolicy,
+    platformGate: context.executionGate
+  });
+  const syncedTask = await syncBuildRoomTaskFromExecutionPacket({
+    supabase: context.supabase,
+    userId: context.user.id,
+    taskId: draftedTask.detail.task.id,
+    packet
+  });
+  const now = new Date().toISOString();
+
+  if (!packet.readiness.relayAllowed) {
+    const pendingTaskUpdate = upsertPendingCommandCenterTask({
+      existingTasks: context.parsed.metadata?.commandCenterTasks ?? [],
+      platformContext: context.projectIntelligence.platformContext,
+      existingTaskId: existingPendingExecution?.commandCenterTaskId ?? null,
+      title: draftTitle,
+      request,
+      roadmapArea,
+      now
+    });
+    const pendingItem = buildPendingExecutionItem({
+      pendingExecutionId:
+        existingPendingExecution?.pendingExecutionId ??
+        `${workspaceId}:pending-execution:${syncedTask.task.id}`,
+      commandCenterTaskId: pendingTaskUpdate.task.id,
+      buildRoomTaskId: syncedTask.task.id,
+      title: draftTitle,
+      request,
+      roadmapArea,
+      laneSlug: normalizeSerializedString(input.laneSlug) ?? null,
+      taskType: input.taskType,
+      requestedOutputMode: input.requestedOutputMode,
+      acceptanceCriteria,
+      riskLevel: input.riskLevel,
+      createdAt: existingPendingExecution?.createdAt ?? now,
+      updatedAt: now
+    });
+    const held = applyPendingExecutionHold({
+      executionState: existingExecutionState,
+      pendingItem,
+      packet,
+      now
+    });
+
+    const { data, error } = await context.supabase
+      .from("workspaces")
+      .update({
+        description: buildDescriptionWithMetadata({
+          workspace: context.workspace,
+          commandCenterTasks: pendingTaskUpdate.tasks,
+          executionState: held.executionState
+        })
+      })
+      .eq("id", workspaceId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error(
+        "Pending execution request could not be confirmed. Workspace write verification is still pending."
+      );
+    }
+
+    revalidateCommandCenterPaths(workspaceId);
+
+    return {
+      outcome: "pending",
+      detail: syncedTask,
+      executionState: held.executionState,
+      pendingExecution: held.pendingItem,
+      releaseResult: held.result,
+      message: held.result.summary
+    };
+  }
+
+  const releasedTask = await submitBuildRoomTaskToCodex({
+    supabase: context.supabase,
+    userId: context.user.id,
+    taskId: syncedTask.task.id
+  });
+  let nextExecutionState: ExecutionState = existingExecutionState;
+  let nextPendingExecution: PendingExecutionItem | null = null;
+  let releaseResult: PendingExecutionReleaseResult | null = null;
+  let nextCommandCenterTasks = context.parsed.metadata?.commandCenterTasks ?? [];
+
+  if (existingPendingExecution) {
+    const released = applyPendingExecutionRelease({
+      executionState: existingExecutionState,
+      pendingItem: existingPendingExecution,
+      packet,
+      buildRoomTaskId: releasedTask.task.id,
+      now,
+      buildRoomTaskCreated: draftedTask.created
+    });
+
+    nextExecutionState = released.executionState;
+    nextPendingExecution = released.pendingItem;
+    releaseResult = released.result;
+    nextCommandCenterTasks = markCommandCenterTaskReleased({
+      existingTasks: nextCommandCenterTasks,
+      taskId: existingPendingExecution.commandCenterTaskId,
+      now
+    });
+  } else {
+    nextExecutionState = upsertExecutionPacketSummary({
+      executionState: existingExecutionState,
+      summary: buildExecutionPacketSummary({
+        packet,
+        buildRoomTaskId: releasedTask.task.id,
+        updatedAt: now,
+        status: "released_to_build_room"
+      })
+    });
+  }
+
+  const { data, error } = await context.supabase
+    .from("workspaces")
+    .update({
+      description: buildDescriptionWithMetadata({
+        workspace: context.workspace,
+        commandCenterTasks: nextCommandCenterTasks,
+        executionState: nextExecutionState
+      })
+    })
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error(
+      "Execution request could not be confirmed. Workspace write verification is still pending."
+    );
+  }
+
+  revalidateCommandCenterPaths(workspaceId);
+
+  return {
+    outcome: "released",
+    detail: releasedTask,
+    executionState: nextExecutionState,
+    pendingExecution: nextPendingExecution,
+    releaseResult,
+    message:
+      releaseResult?.summary ??
+      "Command Center classified the request, created the ExecutionPacket, and released the task into the existing Build Room relay."
+  };
+}
+
+export async function releaseEligiblePendingExecutionRequests(input: {
+  workspaceId: string;
+  pendingExecutionId?: string | null;
+}): Promise<ReleaseEligiblePendingExecutionResult> {
+  const workspaceId = normalizeSerializedString(input.workspaceId);
+  const targetPendingExecutionId = normalizeSerializedString(input.pendingExecutionId);
+
+  if (!workspaceId) {
+    throw new Error("Pending execution release requires a workspace id.");
+  }
+
+  const context = await buildCommandCenterExecutionContext(workspaceId);
+  const existingExecutionState = normalizeExecutionState(
+    context.parsed.metadata?.executionState
+  );
+  const pendingExecutions = targetPendingExecutionId
+    ? [
+        findPendingExecutionById(existingExecutionState, targetPendingExecutionId)
+      ].filter((item): item is PendingExecutionItem => Boolean(item))
+    : listActivePendingExecutions(existingExecutionState);
+
+  if (pendingExecutions.length === 0) {
+    return {
+      releasedCount: 0,
+      keptPendingCount: 0,
+      results: [],
+      executionState: existingExecutionState,
+      message: "No pending execution requests are eligible for release right now."
+    };
+  }
+
+  let executionState = existingExecutionState;
+  let commandCenterTasks = context.parsed.metadata?.commandCenterTasks ?? [];
+  const results: PendingExecutionReleaseResult[] = [];
+  const now = new Date().toISOString();
+
+  for (const pendingItem of pendingExecutions) {
+    const packet = generateExecutionPacket({
+      workspaceId,
+      projectId: workspaceId,
+      projectName: context.workspace.name,
+      sourceRequestId: pendingItem.pendingExecutionId,
+      title: pendingItem.title,
+      userRequest: pendingItem.request,
+      acceptanceCriteriaText: pendingItem.acceptanceCriteria.join("\n"),
+      taskType: pendingItem.taskType,
+      requestedOutputMode: pendingItem.requestedOutputMode,
+      riskLevel: pendingItem.riskLevel,
+      selectedBuildLaneSlug: pendingItem.laneSlug ?? null,
+      existingBuildRoomTaskId: pendingItem.buildRoomTaskId ?? null,
+      originatingSurface: "command_center",
+      projectBrief: context.projectIntelligence.projectBrief,
+      architectureBlueprint: context.projectIntelligence.architectureBlueprint,
+      roadmapPlan: context.projectIntelligence.roadmapPlan,
+      governancePolicy: context.projectIntelligence.governancePolicy,
+      platformGate: context.executionGate
+    });
+
+    if (!packet.readiness.relayAllowed) {
+      const held = applyPendingExecutionHold({
+        executionState,
+        pendingItem,
+        packet,
+        now
+      });
+
+      executionState = held.executionState;
+      results.push(held.result);
+      continue;
+    }
+
+    const draft = await upsertBuildRoomDraftTask({
+      supabase: context.supabase,
+      userId: context.user.id,
+      workspaceId,
+      projectId: workspaceId,
+      taskId: pendingItem.buildRoomTaskId ?? null,
+      title: packet.buildRoomTaskPayload.title,
+      laneSlug: packet.buildRoomTaskPayload.laneSlug ?? null,
+      taskType: packet.buildRoomTaskPayload.taskType,
+      requestedOutputMode: packet.buildRoomTaskPayload.requestedOutputMode,
+      userRequest: packet.buildRoomTaskPayload.userRequest,
+      acceptanceCriteria: packet.buildRoomTaskPayload.acceptanceCriteria,
+      riskLevel: packet.buildRoomTaskPayload.riskLevel
+    });
+    const releasedTask = await submitBuildRoomTaskToCodex({
+      supabase: context.supabase,
+      userId: context.user.id,
+      taskId: draft.detail.task.id
+    });
+    const released = applyPendingExecutionRelease({
+      executionState,
+      pendingItem,
+      packet,
+      buildRoomTaskId: releasedTask.task.id,
+      now,
+      buildRoomTaskCreated: draft.created
+    });
+
+    executionState = released.executionState;
+    commandCenterTasks = markCommandCenterTaskReleased({
+      existingTasks: commandCenterTasks,
+      taskId: pendingItem.commandCenterTaskId,
+      now
+    });
+    results.push(released.result);
+  }
+
+  const { data, error } = await context.supabase
+    .from("workspaces")
+    .update({
+      description: buildDescriptionWithMetadata({
+        workspace: context.workspace,
+        commandCenterTasks,
+        executionState
+      })
+    })
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error(
+      "Pending execution release could not be confirmed. Workspace write verification is still pending."
+    );
+  }
+
+  revalidateCommandCenterPaths(workspaceId);
+
+  const releasedCount = results.filter((item) => item.pendingExecutionReleased).length;
+  const keptPendingCount = results.length - releasedCount;
+
+  return {
+    releasedCount,
+    keptPendingCount,
+    results,
+    executionState,
+    message:
+      releasedCount > 0
+        ? `Released ${releasedCount} pending execution request${releasedCount === 1 ? "" : "s"} into the existing Build Room relay.${keptPendingCount > 0 ? ` ${keptPendingCount} request${keptPendingCount === 1 ? "" : "s"} stayed pending.` : ""}`
+        : "Pending execution requests were re-evaluated, but none are ready to release yet."
+  };
 }
 
 export async function updateCommandCenterTask(formData: FormData) {

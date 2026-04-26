@@ -9,6 +9,7 @@ import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
   parseWorkspaceProjectDescription,
+  type StoredExecutionState,
   type StoredGovernanceState,
   type StoredStrategyState,
   type StoredCommandCenterBrandSystem,
@@ -126,6 +127,7 @@ export function buildDescriptionWithMetadata(args: {
   conversationState?: ConversationSessionState | null;
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
+  executionState?: StoredExecutionState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -148,6 +150,7 @@ export function buildDescriptionWithMetadata(args: {
       conversationState: args.conversationState ?? parsed.metadata?.conversationState ?? null,
       governanceState: args.governanceState ?? parsed.metadata?.governanceState ?? null,
       strategyState: args.strategyState ?? parsed.metadata?.strategyState ?? null,
+      executionState: args.executionState ?? parsed.metadata?.executionState ?? null,
       archived: args.archived ?? parsed.metadata?.archived ?? false,
       assets: args.assets ?? parsed.metadata?.assets ?? [],
       commandCenterBrandSystem:
