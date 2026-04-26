@@ -2,8 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
-  buildConversationSessionState,
-  recordConversationQuestionAsked
+  buildConversationSessionState
 } from "../lib/intelligence/conversation/index.ts";
 import { buildWorkspaceProjectIntelligence } from "../lib/intelligence/project-brief-generator.ts";
 import {
@@ -419,7 +418,7 @@ test("Strategy Room chat answers persist blocker resolution through the shared r
     conversationState: base.projectMetadata.conversationState,
     existingProjectContext: true
   });
-  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+  const persistenceUpdate = await createPlanningChatPersistenceUpdate({
     workspaceId,
     projectId,
     projectName,
@@ -449,23 +448,20 @@ test("Strategy Room chat answers persist blocker resolution through the shared r
   assert.ok(
     persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "chainsInScope")
   );
-  assert.ok(
-    persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "walletConnectionMvp")
+  assert.equal(
+    persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "walletConnectionMvp"),
+    false
   );
   assert.ok(
     hydratedIntelligence.projectBrief.constraints.some((item) =>
       /Launch chains: Ethereum and Solana/i.test(item)
     )
   );
-  assert.ok(
+  assert.equal(
     hydratedIntelligence.projectBrief.constraints.some((item) =>
-      /Wallet connection boundary: Ethereum and Solana\. Keep wallet connection out of MVP\./i.test(
-        item
-      )
-    )
-  );
-  assert.ok(
-    hydratedIntelligence.projectBrief.excludedFeatures.includes("wallet connection")
+      /Wallet connection boundary:/i.test(item)
+    ),
+    false
   );
   assert.ok(
     hydratedIntelligence.governancePolicy.approvalReadiness.blockers.length <
@@ -477,9 +473,15 @@ test("Strategy Room chat answers persist blocker resolution through the shared r
     ),
     false
   );
+  assert.equal(
+    hydratedIntelligence.architectureBlueprint.openQuestions.some(
+      (question) => question.inputId === "walletConnectionMvp"
+    ),
+    true
+  );
 });
 
-test("Strategy Room accepts valid null-style constraint answers without silently dropping the turn", async () => {
+test("Strategy Room active blocker writes only the current blocker family even when the answer contains extra scope detail", async () => {
   const messages = [
     "Hi, my name is Tom.",
     "I want to build a crypto analytics website with a risk engine for pre-sales.",
@@ -494,30 +496,22 @@ test("Strategy Room accepts valid null-style constraint answers without silently
     projectName,
     projectDescription
   });
-  const askedConstraintsState = recordConversationQuestionAsked({
-    state: base.projectMetadata.conversationState,
-    questionKey: "constraints_and_compliance",
-    askedTurnId: "assistant-constraints"
-  });
-  const userAnswer = "no constraint";
+  const userAnswer = "Ethereum and Solana. Keep wallet connection out of MVP.";
   const chatResult = await runPlanningChat({
-    threadId: "strategy-room-chat-constraints",
+    threadId: "strategy-room-chat-single-blocker",
     lane: "managed",
     title: projectName,
     summary: projectDescription,
     messages: messages.map((message, index) => buildUserMessage(`u${index + 1}`, message)),
     message: userAnswer,
-    conversationState: askedConstraintsState,
+    conversationState: base.projectMetadata.conversationState,
     existingProjectContext: true
   });
-  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+  const persistenceUpdate = await createPlanningChatPersistenceUpdate({
     workspaceId,
     projectId,
     projectName,
-    projectMetadata: {
-      ...base.projectMetadata,
-      conversationState: askedConstraintsState
-    },
+    projectMetadata: base.projectMetadata,
     previousIntelligence: base.projectIntelligence,
     threadState: chatResult.threadState,
     latestUserMessage: userAnswer,
@@ -538,19 +532,22 @@ test("Strategy Room accepts valid null-style constraint answers without silently
     projectDescription,
     projectMetadata: hydratedMetadata
   });
-  const lastAssistantMessage = chatResult.threadState.messages.at(-1);
 
   assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
   assert.ok(
-    chatResult.threadState.conversationState?.constraintsAndCompliance.includes(
-      "No material constraints identified right now"
+    hydratedIntelligence.projectBrief.constraints.includes(
+      "Launch chains: Ethereum and Solana"
     )
   );
-  assert.ok(lastAssistantMessage?.content.includes("?"));
-  assert.ok(
-    hydratedIntelligence.projectBrief.constraints.includes(
-      "No material constraints identified right now"
-    )
+  assert.equal(
+    hydratedIntelligence.projectBrief.constraints.some((item) =>
+      /Wallet connection boundary:/i.test(item)
+    ),
+    false
+  );
+  assert.equal(
+    persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "walletConnectionMvp"),
+    false
   );
 });
 
@@ -588,7 +585,7 @@ test("Strategy Room treats short MVP-boundary answers like 'not in MVP' as valid
     conversationState: base.persistedMetadata.conversationState,
     existingProjectContext: true
   });
-  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+  const persistenceUpdate = await createPlanningChatPersistenceUpdate({
     workspaceId,
     projectId,
     projectName,
@@ -652,7 +649,7 @@ test("ambiguous but non-empty Strategy Room answers stay visible and trigger cla
     conversationState: base.projectMetadata.conversationState,
     existingProjectContext: true
   });
-  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+  const persistenceUpdate = await createPlanningChatPersistenceUpdate({
     workspaceId: "workspace-tom-crypto-risk",
     projectId: "project-tom-crypto-risk",
     projectName: "Tom Crypto Risk",
@@ -663,10 +660,12 @@ test("ambiguous but non-empty Strategy Room answers stay visible and trigger cla
     createdAt: "2026-04-26T14:00:00.000Z",
     createdBy: "owner@example.com"
   });
-  const lastAssistantMessage = chatResult.threadState.messages.at(-1);
+  const lastAssistantMessage = persistenceUpdate.updatedThreadState.messages.at(-1);
 
   assert.equal(chatResult.threadState.messages.at(-2)?.content, userAnswer);
   assert.ok(lastAssistantMessage?.content.includes("?"));
+  assert.equal(Boolean(persistenceUpdate.intentResult), true);
+  assert.equal(persistenceUpdate.intentResult?.status, "needs_clarification");
   assert.equal(persistenceUpdate.patch.answeredInputs?.length ?? 0, 0);
 });
 

@@ -69,11 +69,13 @@ This promoted scope does **not** include:
   - question selection engine logic
   - product truth capture formats
   - universal domain generalization inside the shared ProjectBrief spine when it enriches product truth with system archetypes, capability profiles, optional vertical overlays, and backward-compatible compatibility mapping for later planning layers
+  - shared blocker-definition libraries, blocker-specific schemas, normalization rules, provider adapters, and eval fixtures when they constrain Strategy Room answer extraction to typed write-safe contracts before the shared revision spine persists updates
 - Not allowed to touch:
   - billing/account behavior
   - protected routing behavior
   - execution surfaces beyond approved intake contracts
 - Boundary: Phase 1 can collect truth and raise contradictions, but it cannot approve execution on its own. Universal archetype and capability inference may extend shared product truth now when it preserves the existing ProjectBrief contract for downstream planning, governance, execution, QA, and billing layers rather than replacing them with a second intelligence path.
+  Phase 1 also owns the blocker-library and schema-driven extraction foundation for Strategy Room when app code remains the authority for active blocker selection, allowed schemas/tools, slot write targets, validation, and clarify-vs-advance decisions instead of allowing freeform model-directed state mutation.
 
 ### Phase 2 - Roadmap and Change Control
 
@@ -110,6 +112,7 @@ This promoted scope does **not** include:
   - chat-primary Strategy Room blocker resolution when unresolved planning questions are answered in the main planning thread, auto-persist through the existing shared revision spine, and leave the right rail as supportive read-only intelligence instead of a second answer-entry system
   - Strategy Room chat-submit reliability corrections when valid short semantic answers must stay visible in-thread, persist through the shared revision spine, update blocker/readiness state when possible, and surface explicit save failures instead of silently disappearing
   - Strategy Room short-answer persistence hardening when valid negative or null-style answers such as "no constraint," "none," or "not in MVP" must count as real blocker responses, remain visible in-thread, and either advance, clarify, or show an explicit save error instead of silently no-oping
+  - Strategy Room blocker-orchestrator integration when the room resolves the active blocker from the shared blocker library, runs only the blocker-specific extraction contract, persists safe patches through the existing revision spine, and keeps message rendering separate from structured save logic
   - Browser Runtime Core V2 and Live Session Design Library Bridge when they stay inside the promoted exception above
 - Not allowed to touch:
   - unapproved new branches
@@ -118,6 +121,7 @@ This promoted scope does **not** include:
   - a second QA executor, separate completion engine, or replacement acceptance gate outside the shared intelligence spine and existing Build Room records
   - billing/auth/platform trust changes unless Phase 4 is explicitly engaged
 - Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 also owns deterministic execution-packet generation, pending-execution release, typed QA/completion validation, persisted Strategy Room thread continuity, chat-primary Strategy Room blocker resolution, and Strategy Room chat-submit reliability corrections when they derive from the approved ProjectBrief, ArchitectureBlueprint, RoadmapPlan, GovernancePolicy, Strategy revision spine, and existing Build Room task/run/artifact records, then map back into the current Build Room pipeline without redefining execution gates, trust-layer rules, or backend contracts. That includes treating valid short semantic answers as real project-room blocker responses, persisting them through the shared save-back spine, and surfacing explicit save failures instead of silently dropping them. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
+  Strategy Room may now integrate the shared blocker library and typed extraction orchestrator from Phase 1 when that integration preserves the current chat-first UI, uses the shared revision/save-back spine as the only write authority, and does not create a second mutation path beside the approved project intelligence loader.
 
 ### Phase 4 - Platform Trust and Commerce Control
 

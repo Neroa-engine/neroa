@@ -27,10 +27,12 @@ This file defines what belongs in each major Neroa system and what must not be p
   - branch classification
   - assumption capture
   - shared ProjectBrief enrichment through system archetypes, capability profiles, optional vertical overlays, and backward-compatible domain compatibility mapping
+  - shared blocker libraries, blocker-specific output schemas, normalization helpers, provider adapters, and eval fixtures for typed Strategy Room answer extraction
 - Must not do:
   - change workspace behavior directly
   - patch billing/auth/routing to compensate for missing extraction truth
   - create a second planning or domain-intelligence path beside the approved ProjectBrief spine
+  - allow freeform model-selected slot mutation outside app-controlled blocker definitions and write-target rules
 
 ### Change Control System
 
@@ -64,6 +66,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - persisted Strategy Room thread continuity when existing projects must reopen into their saved planning conversation instead of starter onboarding content
   - Strategy Room chat-primary blocker resolution when the main thread captures answers, shared revisions/intelligence update automatically, and the right rail remains supportive instead of acting like a second answer form
   - Strategy Room chat-submit reliability fixes when valid short semantic answers must remain visible in-thread, map into the shared save-back spine when possible, and surface explicit failure states instead of silently disappearing
+  - Strategy Room blocker-orchestrator integration when the active blocker is resolved from the shared intent library, extraction is restricted to that blocker's schema/write targets, and safe structured patches flow through the existing revision persistence path
   - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
   - typed QA and acceptance validation when they derive from approved shared intelligence plus the existing Build Room task, run, and artifact records
 - Must not do:
@@ -72,6 +75,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - create a second execution backend or silently replace the approved Build Room contracts
   - create a second QA executor or completion engine beside the shared execution spine and current Build Room records
   - insert future-phase editor/orchestration capabilities
+  - let the model freestyle slot writes outside the shared blocker-definition and revision-saveback contracts
 
 ### Browser / Live-View / Future Editor System
 

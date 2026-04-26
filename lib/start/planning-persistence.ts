@@ -1,20 +1,28 @@
 import { buildWorkspaceProjectIntelligence } from "../intelligence/project-brief-generator";
 import {
-  architectureInputIdSchema,
-  type ArchitectureInputId
-} from "../intelligence/architecture/types";
-import {
   createStrategyRevisionPersistenceUpdate,
   hasStrategyRevisionPatchContent,
   type StrategyRevisionPatch
 } from "../intelligence/revisions";
+import {
+  createOpenAIBlockerExtractionAdapter,
+  buildBlockerQuestionState,
+  buildStrategyThreadClarificationMessage,
+  extractStructuredAnswerForBlocker,
+  type BlockerQuestionState,
+  type ModelProviderAdapter,
+  type StructuredAnswerExtractionResult
+} from "../intent-library";
 import {
   encodeWorkspaceProjectDescription,
   mergeStoredProjectMetadata,
   type StoredProjectMetadata,
   parseWorkspaceProjectDescription
 } from "../workspace/project-metadata";
-import { buildStrategyQuestionRows } from "../workspace/strategy-room-support";
+import {
+  buildStrategyQuestionRows,
+  type StrategyQuestionRow
+} from "../workspace/strategy-room-support";
 import {
   createPersistedPlanningThreadState,
   type PlanningThreadState
@@ -23,23 +31,8 @@ import type { ServerSupabaseClient } from "../platform/foundation";
 
 type WorkspaceProjectIntelligence = ReturnType<typeof buildWorkspaceProjectIntelligence>;
 
-const DOMAIN_SPECIFIC_CHAT_INPUT_IDS = new Set<ArchitectureInputId>([
-  "chainsInScope",
-  "walletConnectionMvp",
-  "adviceAdjacency",
-  "riskSignalSources",
-  "launchLocationModel",
-  "firstPosConnector",
-  "analyticsVsStaffWorkflows",
-  "launchReports"
-]);
-
 function cleanText(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeSearchText(value: string) {
-  return cleanText(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function normalizeList(values: readonly string[]) {
@@ -59,156 +52,6 @@ function sameList(left: readonly string[], right: readonly string[]) {
   }
 
   return normalizedLeft.every((item, index) => item === normalizedRight[index]);
-}
-
-function buildOpenInputIdSet(args: {
-  projectBrief: WorkspaceProjectIntelligence["projectBrief"];
-  architectureBlueprint: WorkspaceProjectIntelligence["architectureBlueprint"];
-  roadmapPlan: WorkspaceProjectIntelligence["roadmapPlan"];
-}) {
-  const openInputIds = new Set<ArchitectureInputId>();
-
-  for (const question of args.architectureBlueprint.openQuestions) {
-    openInputIds.add(question.inputId);
-  }
-
-  for (const question of args.roadmapPlan.openQuestions) {
-    openInputIds.add(question.inputId);
-  }
-
-  for (const question of args.projectBrief.openQuestions) {
-    const parsedInputId = architectureInputIdSchema.safeParse(question.slotId);
-
-    if (parsedInputId.success) {
-      openInputIds.add(parsedInputId.data);
-    }
-  }
-
-  return openInputIds;
-}
-
-function humanizeList(values: readonly string[]) {
-  if (values.length <= 1) {
-    return values[0] ?? "";
-  }
-
-  if (values.length === 2) {
-    return `${values[0]} and ${values[1]}`;
-  }
-
-  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
-}
-
-function extractLaunchChainsValue(message: string) {
-  const chainPatterns = [
-    { label: "Ethereum", pattern: /\beth(?:ereum)?\b/i },
-    { label: "Solana", pattern: /\bsol(?:ana)?\b/i },
-    { label: "Base", pattern: /\bbase\b/i },
-    { label: "Arbitrum", pattern: /\barbitrum\b/i },
-    { label: "Optimism", pattern: /\boptimism\b/i },
-    { label: "Polygon", pattern: /\bpolygon\b|\bmatic\b/i },
-    { label: "Avalanche", pattern: /\bavalanche\b|\bavax\b/i },
-    { label: "BNB Chain", pattern: /\bbnb\b|\bbsc\b|\bbinance smart chain\b/i },
-    { label: "Bitcoin", pattern: /\bbtc\b|\bbitcoin\b/i },
-    { label: "Tron", pattern: /\btron\b/i },
-    { label: "Aptos", pattern: /\baptos\b/i },
-    { label: "Sui", pattern: /\bsui\b/i }
-  ];
-  const matches = chainPatterns
-    .filter((item) => item.pattern.test(message))
-    .map((item) => item.label);
-
-  return matches.length > 0 ? humanizeList(matches) : null;
-}
-
-function extractPosConnectorValue(message: string) {
-  const connectorPatterns = [
-    { label: "Toast", pattern: /\btoast\b/i },
-    { label: "Square", pattern: /\bsquare\b/i },
-    { label: "Clover", pattern: /\bclover\b/i },
-    { label: "Lightspeed", pattern: /\blightspeed\b/i },
-    { label: "SpotOn", pattern: /\bspoton\b/i }
-  ];
-  const matches = connectorPatterns
-    .filter((item) => item.pattern.test(message))
-    .map((item) => item.label);
-
-  return matches.length > 0 ? humanizeList(matches) : null;
-}
-
-function resolvePrimaryOpenInputId(args: {
-  previousIntelligence: WorkspaceProjectIntelligence;
-  projectMetadata?: StoredProjectMetadata | null;
-}) {
-  return (
-    buildStrategyQuestionRows({
-      projectMetadata: args.projectMetadata ?? null,
-      projectBrief: args.previousIntelligence.projectBrief,
-      architectureBlueprint: args.previousIntelligence.architectureBlueprint,
-      roadmapPlan: args.previousIntelligence.roadmapPlan
-    })[0]?.inputId ?? null
-  );
-}
-
-function inferAnsweredInputValue(
-  inputId: ArchitectureInputId,
-  message: string,
-  options?: {
-    isCurrentBlocker?: boolean;
-  }
-) {
-  const cleanMessage = cleanText(message);
-
-  if (!cleanMessage) {
-    return null;
-  }
-
-  const normalized = normalizeSearchText(cleanMessage);
-
-  switch (inputId) {
-    case "chainsInScope":
-      return extractLaunchChainsValue(cleanMessage);
-    case "walletConnectionMvp":
-      return /\bwallet\b/.test(normalized) ||
-        (options?.isCurrentBlocker === true &&
-          /\bnot in mvp\b|\bkeep (?:it|wallet|wallet connection) out of mvp\b|\bwithout wallet\b|\bno\b|\bnope\b|\bnot right now\b|\bexclude it\b/.test(
-            normalized
-          ))
-        ? cleanMessage
-        : null;
-    case "adviceAdjacency":
-      return /\badvice\b|\badvisory\b|\banalytics only\b|\bnot financial advice\b/i.test(
-        cleanMessage
-      )
-        ? cleanMessage
-        : null;
-    case "riskSignalSources":
-      return /\bsignal\b|\bsource\b|\bsources\b|\bvendor\b|\bdata\b|\bfeeds?\b|\bonchain\b|\bliquidity\b|\baudit\b/i.test(
-        cleanMessage
-      )
-        ? cleanMessage
-        : null;
-    case "launchLocationModel":
-      return /\bsingle[- ]location\b|\bmulti[- ]location\b/i.test(cleanMessage)
-        ? cleanMessage
-        : null;
-    case "firstPosConnector":
-      return extractPosConnectorValue(cleanMessage);
-    case "analyticsVsStaffWorkflows":
-      return /\banalytics only\b|\bstaff workflow\b|\bstaff workflows\b|\bworkflow\b|\bworkflows\b/i.test(
-        cleanMessage
-      )
-        ? cleanMessage
-        : null;
-    case "launchReports":
-      return /\breport\b|\breports\b|\bdashboard\b|\bmenu item\b|\blocation reporting\b/i.test(
-        cleanMessage
-      )
-        ? cleanMessage
-        : null;
-    default:
-      return null;
-  }
 }
 
 function buildProjectBriefPatchFromChat(args: {
@@ -265,7 +108,11 @@ function buildProjectBriefPatchFromChat(args: {
   );
   maybeSetList("adminPersonas", args.previous.adminPersonas, nextBrief.adminPersonas);
   maybeSetList("mustHaveFeatures", args.previous.mustHaveFeatures, nextBrief.mustHaveFeatures);
-  maybeSetList("niceToHaveFeatures", args.previous.niceToHaveFeatures, nextBrief.niceToHaveFeatures);
+  maybeSetList(
+    "niceToHaveFeatures",
+    args.previous.niceToHaveFeatures,
+    nextBrief.niceToHaveFeatures
+  );
   maybeSetList("excludedFeatures", args.previous.excludedFeatures, nextBrief.excludedFeatures);
   maybeSetList("surfaces", args.previous.surfaces, nextBrief.surfaces);
   maybeSetList("integrations", args.previous.integrations, nextBrief.integrations);
@@ -277,71 +124,98 @@ function buildProjectBriefPatchFromChat(args: {
   return Object.keys(patch).length > 0 ? patch : undefined;
 }
 
-function buildAnsweredInputsFromChat(args: {
+function resolvePrimaryQuestionRow(args: {
   previousIntelligence: WorkspaceProjectIntelligence;
-  nextThreadState: PlanningThreadState;
-  latestUserMessage: string;
   projectMetadata?: StoredProjectMetadata | null;
 }) {
-  const latestUserMessage = cleanText(args.latestUserMessage);
-
-  if (!latestUserMessage || !args.nextThreadState.projectBrief || !args.nextThreadState.roadmapPlan || !args.nextThreadState.architectureBlueprint) {
-    return [] as NonNullable<StrategyRevisionPatch["answeredInputs"]>;
-  }
-
-  const previousOpen = buildOpenInputIdSet({
-    projectBrief: args.previousIntelligence.projectBrief,
-    architectureBlueprint: args.previousIntelligence.architectureBlueprint,
-    roadmapPlan: args.previousIntelligence.roadmapPlan
-  });
-  const nextOpen = buildOpenInputIdSet({
-    projectBrief: args.nextThreadState.projectBrief,
-    architectureBlueprint: args.nextThreadState.architectureBlueprint,
-    roadmapPlan: args.nextThreadState.roadmapPlan
-  });
-  const primaryOpenInputId = resolvePrimaryOpenInputId({
-    previousIntelligence: args.previousIntelligence,
-    projectMetadata: args.projectMetadata
-  });
-  const currentAnswers = new Map(
-    (args.projectMetadata?.strategyState?.overrideState?.answeredInputs ?? []).map((item) => [
-      item.inputId,
-      item.value
-    ])
+  return (
+    buildStrategyQuestionRows({
+      projectMetadata: args.projectMetadata ?? null,
+      projectBrief: args.previousIntelligence.projectBrief,
+      architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+      roadmapPlan: args.previousIntelligence.roadmapPlan
+    })[0] ?? null
   );
-  const answers = new Map<ArchitectureInputId, string>();
-
-  for (const inputId of Array.from(previousOpen)) {
-    if (!DOMAIN_SPECIFIC_CHAT_INPUT_IDS.has(inputId)) {
-      continue;
-    }
-
-    const inferredValue = inferAnsweredInputValue(inputId, latestUserMessage, {
-      isCurrentBlocker: inputId === primaryOpenInputId
-    });
-
-    if (!nextOpen.has(inputId)) {
-      const value = inferredValue ?? latestUserMessage;
-
-      if (!sameText(currentAnswers.get(inputId), value)) {
-        answers.set(inputId, value);
-      }
-
-      continue;
-    }
-
-    if (inferredValue && !sameText(currentAnswers.get(inputId), inferredValue)) {
-      answers.set(inputId, inferredValue);
-    }
-  }
-
-  return Array.from(answers.entries()).map(([inputId, value]) => ({
-    inputId,
-    value
-  }));
 }
 
-export function createPlanningChatPersistenceUpdate(args: {
+function createBlockerStateFromRow(questionRow: StrategyQuestionRow | null) {
+  if (!questionRow) {
+    return null;
+  }
+
+  return buildBlockerQuestionState({
+    blockerId: questionRow.blockerId,
+    inputId: questionRow.inputId,
+    slotId: questionRow.inputId,
+    label: questionRow.label,
+    question: questionRow.question,
+    source: questionRow.source,
+    currentValue: questionRow.value || null
+  });
+}
+
+function applyClarificationMessage(args: {
+  threadState: PlanningThreadState;
+  intentResult?: StructuredAnswerExtractionResult | null;
+}) {
+  const clarificationMessage = args.intentResult
+    ? buildStrategyThreadClarificationMessage(args.intentResult)
+    : null;
+
+  if (!clarificationMessage) {
+    return args.threadState;
+  }
+
+  const nextMessages = [...args.threadState.messages];
+  const lastAssistantIndex = [...nextMessages]
+    .map((message, index) => ({ message, index }))
+    .reverse()
+    .find(({ message }) => message.role === "assistant")?.index;
+
+  if (lastAssistantIndex == null) {
+    return args.threadState;
+  }
+
+  nextMessages[lastAssistantIndex] = {
+    ...nextMessages[lastAssistantIndex],
+    content: clarificationMessage
+  };
+
+  return {
+    ...args.threadState,
+    messages: nextMessages
+  };
+}
+
+function createSafeProjectThreadState(args: {
+  threadState: PlanningThreadState;
+  previousIntelligence: WorkspaceProjectIntelligence;
+  projectMetadata?: StoredProjectMetadata | null;
+  preserveConversationState?: boolean;
+}) {
+  return {
+    ...args.threadState,
+    conversationState: args.preserveConversationState
+      ? args.projectMetadata?.conversationState ?? args.threadState.conversationState
+      : args.threadState.conversationState,
+    projectBrief: args.previousIntelligence.projectBrief,
+    architectureBlueprint: args.previousIntelligence.architectureBlueprint,
+    roadmapPlan: args.previousIntelligence.roadmapPlan,
+    governancePolicy: args.previousIntelligence.governancePolicy
+  } satisfies PlanningThreadState;
+}
+
+function chooseProviderAdapter() {
+  if (!process.env.OPENAI_API_KEY) {
+    return null;
+  }
+
+  return createOpenAIBlockerExtractionAdapter({
+    modelId: "gpt-5.4"
+  }) satisfies ModelProviderAdapter;
+}
+
+export async function createPlanningChatPersistenceUpdate(args: {
   workspaceId: string;
   projectId: string;
   projectName: string;
@@ -351,39 +225,61 @@ export function createPlanningChatPersistenceUpdate(args: {
   latestUserMessage: string;
   createdAt: string;
   createdBy?: string | null;
+  providerAdapter?: ModelProviderAdapter | null;
 }) {
-  const patch: StrategyRevisionPatch = {};
-  const projectBriefPatch = buildProjectBriefPatchFromChat({
-    previous: args.previousIntelligence.projectBrief,
-    next: args.threadState.projectBrief
-  });
-  const answeredInputs = buildAnsweredInputsFromChat({
+  const questionRow = resolvePrimaryQuestionRow({
     previousIntelligence: args.previousIntelligence,
-    nextThreadState: args.threadState,
-    latestUserMessage: args.latestUserMessage,
     projectMetadata: args.projectMetadata
   });
+  const blockerState = createBlockerStateFromRow(questionRow);
+  const providerAdapter = args.providerAdapter ?? chooseProviderAdapter();
+  const safeBaseThreadState = createSafeProjectThreadState({
+    threadState: args.threadState,
+    previousIntelligence: args.previousIntelligence,
+    projectMetadata: args.projectMetadata,
+    preserveConversationState: blockerState != null
+  });
+  let intentResult: StructuredAnswerExtractionResult | null = null;
+  let patch: StrategyRevisionPatch = {};
 
-  if (projectBriefPatch) {
-    patch.projectBrief = projectBriefPatch;
+  if (blockerState) {
+    intentResult = await extractStructuredAnswerForBlocker({
+      blockerState,
+      rawAnswer: args.latestUserMessage,
+      projectBrief: args.previousIntelligence.projectBrief,
+      providerAdapter
+    });
+    patch = intentResult.structuredPatch ?? {};
+  } else {
+    const projectBriefPatch = buildProjectBriefPatchFromChat({
+      previous: args.previousIntelligence.projectBrief,
+      next: args.threadState.projectBrief
+    });
+
+    if (projectBriefPatch) {
+      patch.projectBrief = projectBriefPatch;
+    }
   }
 
-  if (answeredInputs.length > 0) {
-    patch.answeredInputs = answeredInputs;
-  }
+  const clarifiedThreadState = applyClarificationMessage({
+    threadState: safeBaseThreadState,
+    intentResult
+  });
 
   if (!hasStrategyRevisionPatchContent(patch)) {
     return {
       patch,
-      updatedThreadState: args.threadState,
+      blockerState,
+      intentResult,
+      updatedThreadState: clarifiedThreadState,
       strategyState:
         args.projectMetadata?.strategyState
           ? {
               ...args.projectMetadata.strategyState,
-              planningThreadState: createPersistedPlanningThreadState(args.threadState)
+              planningThreadState: createPersistedPlanningThreadState(clarifiedThreadState)
             }
           : {
-              planningThreadState: createPersistedPlanningThreadState(args.threadState)
+              planningThreadState: createPersistedPlanningThreadState(clarifiedThreadState)
             },
       governanceState: args.projectMetadata?.governanceState ?? null,
       strategyUpdate: null
@@ -404,7 +300,7 @@ export function createPlanningChatPersistenceUpdate(args: {
     createdBy: args.createdBy ?? null
   });
   const updatedThreadState: PlanningThreadState = {
-    ...args.threadState,
+    ...clarifiedThreadState,
     projectBrief: strategyUpdate.revisedLayers.projectBrief,
     architectureBlueprint: strategyUpdate.revisedLayers.architectureBlueprint,
     roadmapPlan: strategyUpdate.revisedLayers.roadmapPlan,
@@ -413,6 +309,8 @@ export function createPlanningChatPersistenceUpdate(args: {
 
   return {
     patch,
+    blockerState,
+    intentResult,
     updatedThreadState,
     strategyState: {
       ...strategyUpdate.strategyState,
@@ -463,17 +361,29 @@ export async function persistProjectPlanningThreadState(args: {
     projectDescription: parsed.visibleDescription,
     projectMetadata: parsed.metadata
   });
-  const persistenceUpdate = createPlanningChatPersistenceUpdate({
-    workspaceId: args.workspaceId,
-    projectId: args.projectId,
-    projectName: workspace.name,
-    projectMetadata: parsed.metadata,
-    previousIntelligence,
-    threadState: args.threadState,
-    latestUserMessage: args.latestUserMessage,
-    createdAt: args.threadState.updatedAt,
-    createdBy: args.createdBy ?? args.userId
-  });
+
+  let persistenceUpdate;
+
+  try {
+    persistenceUpdate = await createPlanningChatPersistenceUpdate({
+      workspaceId: args.workspaceId,
+      projectId: args.projectId,
+      projectName: workspace.name,
+      projectMetadata: parsed.metadata,
+      previousIntelligence,
+      threadState: args.threadState,
+      latestUserMessage: args.latestUserMessage,
+      createdAt: args.threadState.updatedAt,
+      createdBy: args.createdBy ?? args.userId
+    });
+  } catch {
+    return {
+      persisted: false,
+      threadState: args.threadState,
+      error: "Neroa could not apply that answer yet. Please try again or clarify it."
+    };
+  }
+
   const description = encodeWorkspaceProjectDescription(
     parsed.visibleDescription,
     mergeStoredProjectMetadata({
@@ -505,6 +415,7 @@ export async function persistProjectPlanningThreadState(args: {
   return {
     persisted: true,
     threadState: persistenceUpdate.updatedThreadState,
-    strategyUpdate: persistenceUpdate.strategyUpdate
+    strategyUpdate: persistenceUpdate.strategyUpdate,
+    intentResult: persistenceUpdate.intentResult
   };
 }

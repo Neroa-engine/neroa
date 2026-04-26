@@ -18,6 +18,7 @@ import {
 } from "./materiality.ts";
 import {
   revisionApplicationResultSchema,
+  type StrategyProjectBriefPatch,
   strategyOverrideStateSchema,
   strategyRevisionRecordSchema,
   type RevisionApplicationResult,
@@ -66,6 +67,75 @@ function mergeOverrideSection<T extends Record<string, unknown>>(
   } as T;
 }
 
+function uniqueStrings(values: readonly string[]) {
+  const seen = new Set<string>();
+  const items: string[] = [];
+
+  for (const value of values) {
+    const normalized = normalizeSpace(value).toLowerCase();
+
+    if (!normalized || seen.has(normalized)) {
+      continue;
+    }
+
+    seen.add(normalized);
+    items.push(normalizeSpace(value));
+  }
+
+  return items;
+}
+
+function mergeProjectBriefPatch(
+  current: StrategyProjectBriefPatch | null | undefined,
+  patch: StrategyProjectBriefPatch | undefined
+) {
+  if (!patch || Object.keys(patch).length === 0) {
+    return current ?? null;
+  }
+
+  const next: StrategyProjectBriefPatch = {
+    ...(current ?? {})
+  };
+  const listKeys = [
+    "buyerPersonas",
+    "operatorPersonas",
+    "endCustomerPersonas",
+    "adminPersonas",
+    "mustHaveFeatures",
+    "niceToHaveFeatures",
+    "excludedFeatures",
+    "surfaces",
+    "integrations",
+    "dataSources",
+    "constraints",
+    "complianceFlags",
+    "trustRisks"
+  ] as const;
+
+  for (const key of listKeys) {
+    const currentValues = current?.[key] ?? [];
+    const patchValues = patch[key] ?? [];
+
+    if (patchValues.length > 0) {
+      next[key] = uniqueStrings([...currentValues, ...patchValues]) as never;
+    }
+  }
+
+  for (const key of [
+    "founderName",
+    "projectName",
+    "productCategory",
+    "problemStatement",
+    "outcomePromise"
+  ] as const) {
+    if (patch[key]) {
+      next[key] = patch[key];
+    }
+  }
+
+  return next;
+}
+
 function mergeStrategyOverrideState(args: {
   currentOverrideState?: StrategyOverrideState | null;
   patch: StrategyRevisionPatch;
@@ -84,7 +154,10 @@ function mergeStrategyOverrideState(args: {
   const currentGovernance = args.currentOverrideState?.governance ?? null;
 
   return strategyOverrideStateSchema.parse({
-    projectBrief: mergeOverrideSection(args.currentOverrideState?.projectBrief, args.patch.projectBrief),
+    projectBrief: mergeProjectBriefPatch(
+      args.currentOverrideState?.projectBrief,
+      args.patch.projectBrief
+    ),
     architecture: mergeOverrideSection(args.currentOverrideState?.architecture, args.patch.architecture),
     roadmap:
       args.patch.roadmap && Object.keys(args.patch.roadmap).length > 0

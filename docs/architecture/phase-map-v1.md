@@ -22,10 +22,12 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Rebuild Impact Report | 2 | Current | 0, 1, 2 | Formal report emitted after Delta-Analyzer. |
 | Backend governance | 2 | Current | 0, 1 | Governs change classification, phase mapping, confidence, and blocking decisions. |
 | Universal domain generalization | 1 with 2 and 3 support | Current | 0, 1 | Enriches the shared ProjectBrief with system archetypes, capability profiles, and optional vertical overlays while preserving backward compatibility for downstream planning, governance, execution, QA, and billing layers. |
+| Strategy Room intent library | 1 with 3 support | Current | 0, 1 | Defines typed blocker schemas, normalization rules, provider adapters, and eval fixtures so Strategy Room answers route through blocker-specific write-safe extraction instead of broad freeform heuristics. |
 | Workspace/project surfaces | 3 | Current | 0, 1, 2 | Runtime execution surfaces for approved work only. |
 | Execution packet handoff and pending release | 3 | Current | 0, 1, 2, 3 | Turns approved shared intelligence into typed execution packets and releases eligible pending execution through the existing Build Room task/run pipeline without creating a second executor. |
 | QA artifact gate and completion validation | 3 | Current | 0, 1, 2, 3 | Derives artifact requirements, acceptance checks, and release readiness from approved shared intelligence plus existing Build Room task/run/artifact outputs without replacing the Build Room relay or statuses. |
 | Strategy Room chat-submit reliability | 3 | Current | 0, 1, 2, 3 | Hardens the single-input planning room so valid short blocker answers persist through the shared revision spine, remain visible in-thread, and either advance, clarify, or fail with an explicit save error. |
+| Strategy Room blocker orchestrator integration | 3 with 1 and 2 support | Current | 0, 1, 2, 3 | Resolves the active blocker from the shared intent library, runs only the blocker-specific extraction contract, and persists safe patches through the existing Strategy revision spine without changing the chat-first UI or backend contracts. |
 | Browser Runtime Core V2 | 3 | Current-promoted | 0, 1, 2, 3, 4 | Unified current-promoted browser runtime core that may replace Browser Runtime Bridge v1 now. Includes deterministic open/attach/bind/tab targeting, unified command lifecycle, real Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and project/library linkage. |
 | Live Session Design Library Bridge | 3 | Current-promoted | 0, 1, 2, 3, 4 | Lets Design Library run against the same connected Browser Runtime Core V2 session for staged preview/package state only. |
 | Billing/account | 4 | Current-supporting | 0, 2, 3 | High-impact trust surface; maintenance only unless roadmap promoted. |
@@ -37,6 +39,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | System | Owning Phase | Notes |
 | --- | --- | --- |
 | Planning intelligence | 1 and 2 | Truth capture in Phase 1, roadmap/control in Phase 2. |
+| Blocker library and structured extraction | 1 with 3 support | Shared blocker definitions, normalization helpers, provider adapters, and eval fixtures live in Phase 1; Strategy Room runtime integration stays in Phase 3 and must keep app code as the authority for blocker selection, write targets, validation, and save/advance rules. |
 | Routing contracts | 3 and 4 | Product routing lives with execution surfaces; protected routing changes are Phase 4. |
 | Auth and identity | 4 | Trust boundary. Changes are never hidden inside workspace work. |
 | Billing and entitlement | 4 | Trust boundary. High-impact by default. |
@@ -69,6 +72,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 
 - "Improve question ordering in Strategy Room" -> Phase 1
 - "Generalize ProjectBrief domain intelligence with archetypes, capability profiles, and optional overlays while keeping downstream compatibility" -> Phase 1 with 2/3 support
+- "Build a shared blocker library, schema-driven normalizers, and provider adapter so Strategy Room answers route through typed write-safe extraction" -> Phase 1 with 3 support
 - "Add Delta review before approving change requests" -> Phase 2
 - "Adjust approved workspace execution flow after gate passes" -> Phase 3
 - "Generate typed execution packets and release eligible pending execution through the existing Build Room pipeline" -> Phase 3
@@ -76,6 +80,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 - "Fix Strategy Room so existing projects reopen into their persisted planning thread instead of a starter onboarding thread" -> Phase 3
 - "Resolve Strategy Room blockers through the main chat and keep the right rail read-only/supportive" -> Phase 3
 - "Fix Strategy Room so valid answers like 'no constraint' or 'not in MVP' persist, stay visible, and never disappear without an explicit error" -> Phase 3
+- "Wire Strategy Room to the active blocker definition, run only the allowed extraction schema, and persist safe structured answers through the shared revision spine" -> Phase 3 with 1/2 support
 - "Rebuild Browser Runtime Core V2 with one shared command/session model and bounded Inspect/Record/AI walkthrough/SOP foundations" -> Phase 3 (promoted exception)
 - "Reuse existing Live View from Command Center and attach Design Library to the same session" -> Phase 3 (promoted exception)
 - "Modify billing entitlement or auth gating" -> Phase 4

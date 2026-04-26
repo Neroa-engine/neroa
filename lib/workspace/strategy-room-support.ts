@@ -1,11 +1,12 @@
 import {
-  architectureInputIdSchema,
   type ArchitectureBlueprint,
   type ArchitectureInputId
 } from "@/lib/intelligence/architecture";
+import type { ProjectBriefSlotId } from "@/lib/intelligence/domain-contracts";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
+import { resolveBlockerIdFromQuestion, type BlockerId } from "@/lib/intent-library";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 
 export type StrategyRoomSupportIntent = {
@@ -25,7 +26,8 @@ export type StrategyRoomSupportIntent = {
 };
 
 export type StrategyQuestionRow = {
-  inputId: ArchitectureInputId;
+  blockerId: BlockerId;
+  inputId: ProjectBriefSlotId | ArchitectureInputId;
   label: string;
   question: string;
   value: string;
@@ -74,6 +76,75 @@ function cleanSupportMessage(value: string) {
 
 function cleanText(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function humanizeList(values: readonly string[]) {
+  if (values.length <= 1) {
+    return values[0] ?? "";
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} and ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(", ")}, and ${values.at(-1)}`;
+}
+
+function readStrategyQuestionValue(args: {
+  inputId: ProjectBriefSlotId | ArchitectureInputId;
+  projectBrief: ProjectBrief;
+  projectMetadata?: StoredProjectMetadata | null;
+}) {
+  const answeredInputs = new Map(
+    (args.projectMetadata?.strategyState?.overrideState?.answeredInputs ?? []).map((item) => [
+      item.inputId,
+      item.value
+    ])
+  );
+  const answeredValue = answeredInputs.get(args.inputId as ArchitectureInputId);
+
+  if (answeredValue) {
+    return answeredValue;
+  }
+
+  switch (args.inputId) {
+    case "founderName":
+      return cleanText(args.projectBrief.founderName);
+    case "projectName":
+      return cleanText(args.projectBrief.projectName);
+    case "buyerPersonas":
+      return humanizeList(args.projectBrief.buyerPersonas);
+    case "operatorPersonas":
+      return humanizeList(args.projectBrief.operatorPersonas);
+    case "endCustomerPersonas":
+      return humanizeList(args.projectBrief.endCustomerPersonas);
+    case "adminPersonas":
+      return humanizeList(args.projectBrief.adminPersonas);
+    case "productCategory":
+      return cleanText(args.projectBrief.productCategory);
+    case "problemStatement":
+      return cleanText(args.projectBrief.problemStatement);
+    case "outcomePromise":
+      return cleanText(args.projectBrief.outcomePromise);
+    case "mustHaveFeatures":
+      return humanizeList(args.projectBrief.mustHaveFeatures);
+    case "niceToHaveFeatures":
+      return humanizeList(args.projectBrief.niceToHaveFeatures);
+    case "excludedFeatures":
+      return humanizeList(args.projectBrief.excludedFeatures);
+    case "surfaces":
+      return humanizeList(args.projectBrief.surfaces);
+    case "integrations":
+      return humanizeList(args.projectBrief.integrations);
+    case "dataSources":
+      return humanizeList(args.projectBrief.dataSources);
+    case "constraints":
+      return humanizeList(args.projectBrief.constraints);
+    case "complianceFlags":
+      return humanizeList(args.projectBrief.complianceFlags);
+    default:
+      return "";
+  }
 }
 
 export function analyzeStrategyRoomSupportIntent(message: string): StrategyRoomSupportIntent {
@@ -150,30 +221,43 @@ export function buildStrategyQuestionRows(args: {
   roadmapPlan: RoadmapPlan;
 }) {
   const seen = new Set<string>();
-  const currentAnswers = new Map(
-    (args.projectMetadata?.strategyState?.overrideState?.answeredInputs ?? []).map((item) => [
-      item.inputId,
-      item.value
-    ])
-  );
   const rows: StrategyQuestionRow[] = [];
 
   const addQuestion = (
     source: StrategyQuestionRow["source"],
-    inputId: ArchitectureInputId,
+    inputId: ProjectBriefSlotId | ArchitectureInputId,
     label: string,
     question: string
   ) => {
-    if (!inputId || seen.has(inputId)) {
+    if (!inputId) {
       return;
     }
 
-    seen.add(inputId);
+    const blockerId = resolveBlockerIdFromQuestion({
+      inputId,
+      label,
+      question
+    });
+
+    if (!blockerId) {
+      return;
+    }
+
+    if (seen.has(blockerId)) {
+      return;
+    }
+
+    seen.add(blockerId);
     rows.push({
+      blockerId,
       inputId,
       label,
       question,
-      value: currentAnswers.get(inputId) ?? "",
+      value: readStrategyQuestionValue({
+        inputId,
+        projectBrief: args.projectBrief,
+        projectMetadata: args.projectMetadata
+      }),
       source
     });
   };
@@ -187,13 +271,7 @@ export function buildStrategyQuestionRows(args: {
   }
 
   for (const question of args.projectBrief.openQuestions) {
-    const parsedInputId = architectureInputIdSchema.safeParse(question.slotId);
-
-    if (!parsedInputId.success) {
-      continue;
-    }
-
-    addQuestion("project_brief", parsedInputId.data, question.label, question.question);
+    addQuestion("project_brief", question.slotId, question.label, question.question);
   }
 
   return rows;
