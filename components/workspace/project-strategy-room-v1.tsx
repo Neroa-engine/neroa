@@ -5,6 +5,10 @@ import {
   type ArchitectureBlueprint
 } from "@/lib/intelligence/architecture";
 import {
+  buildGovernancePolicySummary,
+  type GovernancePolicy
+} from "@/lib/intelligence/governance";
+import {
   buildRoadmapPlanSummary,
   type RoadmapPlan
 } from "@/lib/intelligence/roadmap";
@@ -25,6 +29,7 @@ type ProjectStrategyRoomV1Props = {
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
   platformContext: PlatformContext;
   initialError?: string | null;
   initialNotice?: string | null;
@@ -131,6 +136,79 @@ function RoadmapDraftPanel({
   );
 }
 
+function GovernanceDraftPanel({
+  governancePolicy
+}: {
+  governancePolicy: GovernancePolicy;
+}) {
+  const governanceSummary = buildGovernancePolicySummary(governancePolicy);
+
+  return (
+    <section className="floating-plane rounded-[24px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Governance draft
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {governanceSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {governanceSummary.readinessLabel}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {governancePolicy.currentApprovalState.status.replace(/_/g, " ")}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Approval blockers
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {governanceSummary.blockerLabels.length > 0 ? (
+              governanceSummary.blockerLabels.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>No blocking governance items are open right now.</li>
+            )}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Checklist
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {governancePolicy.approvalChecklist.slice(0, 4).map((item) => (
+              <li key={item.id}>
+                {item.label} - {item.status.replace(/_/g, " ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Hard guards
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {governanceSummary.guardrailLabels.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Revision state
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">
+            {governanceSummary.revisionLabel}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function ArchitectureDraftPanel({
   architectureBlueprint
 }: {
@@ -209,6 +287,7 @@ export function ProjectStrategyRoomV1({
   projectBrief,
   architectureBlueprint,
   roadmapPlan,
+  governancePolicy,
   platformContext,
   initialError,
   initialNotice
@@ -218,7 +297,8 @@ export function ProjectStrategyRoomV1({
     project,
     projectMetadata,
     projectBrief,
-    roadmapPlan
+    roadmapPlan,
+    governancePolicy
   });
   const strategyRoomSurface = platformContext.surfaces.strategyRoom;
   const strategyRoomIsApprovalAuthority = isPlatformApprovalAuthority(
@@ -244,6 +324,7 @@ export function ProjectStrategyRoomV1({
           <p className="mt-2 text-sm leading-7">{strategyRoomSurface.purpose}</p>
         </section>
       ) : null}
+      <GovernanceDraftPanel governancePolicy={governancePolicy} />
       <RoadmapDraftPanel roadmapPlan={roadmapPlan} />
       <ArchitectureDraftPanel architectureBlueprint={architectureBlueprint} />
       <CanonicalEntryFlow

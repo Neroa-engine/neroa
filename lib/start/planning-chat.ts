@@ -8,6 +8,7 @@ import {
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
 import { generateArchitectureBlueprint } from "@/lib/intelligence/architecture";
+import { generateGovernancePolicy } from "@/lib/intelligence/governance";
 import { generateProjectBrief } from "@/lib/intelligence/project-brief-generator";
 import { generateRoadmapPlan } from "@/lib/intelligence/roadmap";
 import {
@@ -926,6 +927,7 @@ export async function runPlanningChat(args: {
     projectBrief: null,
     architectureBlueprint: null,
     roadmapPlan: null,
+    governancePolicy: null,
     updatedAt: now
   };
   const visibleStrategistDecision = buildStartVisibleStrategistDecision({
@@ -1151,6 +1153,12 @@ export async function runPlanningChat(args: {
     projectBrief,
     architectureBlueprint
   });
+  const governancePolicy = generateGovernancePolicy({
+    projectName: metadata.projectTitle ?? args.title ?? null,
+    projectBrief,
+    architectureBlueprint,
+    roadmapPlan
+  });
   const threadState: PlanningThreadState = {
     threadId: args.threadId,
     lane: args.lane,
@@ -1160,6 +1168,7 @@ export async function runPlanningChat(args: {
     projectBrief,
     architectureBlueprint,
     roadmapPlan,
+    governancePolicy,
     updatedAt: new Date().toISOString()
   };
 

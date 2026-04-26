@@ -37,6 +37,12 @@ import {
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
 import {
+  loadRoadmapRevisionRecord,
+  loadScopeApprovalRecord,
+  type RoadmapRevisionRecord,
+  type ScopeApprovalRecord
+} from "@/lib/intelligence/governance/types";
+import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -54,6 +60,7 @@ export type StoredProjectMetadata = {
   customLanes: CustomProjectLaneInput[];
   platformContext?: PlatformContext | null;
   conversationState?: ConversationSessionState | null;
+  governanceState?: StoredGovernanceState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -67,6 +74,11 @@ export type StoredProjectMetadata = {
   buildSession?: GuidedBuildSession | null;
   saasIntake?: SaasWorkspaceBlueprint | null;
   mobileAppIntake?: MobileAppWorkspaceBlueprint | null;
+};
+
+export type StoredGovernanceState = {
+  scopeApprovalRecord?: ScopeApprovalRecord | null;
+  roadmapRevisionRecords?: RoadmapRevisionRecord[];
 };
 
 export type StoredProjectAsset = {
@@ -182,6 +194,29 @@ function normalizeConversationState(value: unknown) {
   }
 
   return hasMeaningfulConversationState(result.data) ? result.data : null;
+}
+
+function normalizeGovernanceState(value: unknown): StoredGovernanceState | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const scopeApprovalRecord = loadScopeApprovalRecord(record.scopeApprovalRecord);
+  const roadmapRevisionRecords = Array.isArray(record.roadmapRevisionRecords)
+    ? record.roadmapRevisionRecords
+        .map((item) => loadRoadmapRevisionRecord(item))
+        .filter((item): item is RoadmapRevisionRecord => Boolean(item))
+    : [];
+
+  if (!scopeApprovalRecord && roadmapRevisionRecords.length === 0) {
+    return null;
+  }
+
+  return {
+    scopeApprovalRecord,
+    roadmapRevisionRecords
+  };
 }
 
 export function defaultStoredCommandCenterBrandSystem(): StoredCommandCenterBrandSystem {
@@ -611,6 +646,7 @@ export function buildStoredProjectMetadata(args: {
   customLanes?: CustomProjectLaneInput[];
   platformContext?: PlatformContext | null;
   conversationState?: ConversationSessionState | null;
+  governanceState?: StoredGovernanceState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -642,6 +678,7 @@ export function buildStoredProjectMetadata(args: {
     customLanes: args.customLanes ?? [],
     platformContext: loadPlatformContext(args.platformContext),
     conversationState: normalizeConversationState(args.conversationState),
+    governanceState: normalizeGovernanceState(args.governanceState),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -686,6 +723,7 @@ function decodeMetadata(value: string) {
         : [],
       platformContext: loadPlatformContext(parsed.platformContext),
       conversationState: normalizeConversationState(parsed.conversationState),
+      governanceState: normalizeGovernanceState(parsed.governanceState),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets

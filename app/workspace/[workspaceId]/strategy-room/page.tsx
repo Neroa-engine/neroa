@@ -59,6 +59,7 @@ export default async function StrategyRoomPage({
         projectBrief={projectIntelligence.projectBrief}
         architectureBlueprint={projectIntelligence.architectureBlueprint}
         roadmapPlan={projectIntelligence.roadmapPlan}
+        governancePolicy={projectIntelligence.governancePolicy}
         platformContext={projectIntelligence.platformContext}
         initialError={sanitizeStrategyMessage(firstValue(searchParams?.error) ?? null)}
         initialNotice={sanitizeStrategyMessage(firstValue(searchParams?.notice) ?? null)}

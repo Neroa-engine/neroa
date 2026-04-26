@@ -59,6 +59,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
     projectMetadata,
     projectBrief: projectIntelligence.projectBrief,
     roadmapPlan: projectIntelligence.roadmapPlan,
+    governancePolicy: projectIntelligence.governancePolicy,
     liveViewSession: runtimeTargetSession,
     browserRuntimeSupported
   });
@@ -113,6 +114,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
         commandCenter={commandCenter}
         architectureBlueprint={projectIntelligence.architectureBlueprint}
         roadmapPlan={projectIntelligence.roadmapPlan}
+        governancePolicy={projectIntelligence.governancePolicy}
         platformContext={projectIntelligence.platformContext}
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}

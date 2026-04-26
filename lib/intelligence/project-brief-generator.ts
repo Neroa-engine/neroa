@@ -12,6 +12,8 @@ import {
   generateArchitectureBlueprint
 } from "./architecture/generator.ts";
 import type { ArchitectureBlueprint } from "./architecture/types.ts";
+import { generateGovernancePolicy } from "./governance/generator.ts";
+import type { GovernancePolicy } from "./governance/types.ts";
 import { generateRoadmapPlan } from "./roadmap/generator.ts";
 import type { RoadmapPlan } from "./roadmap/types.ts";
 import {
@@ -913,6 +915,7 @@ export type WorkspaceProjectIntelligence = {
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
 };
 
 export function buildWorkspaceProjectIntelligence(args: {
@@ -947,12 +950,22 @@ export function buildWorkspaceProjectIntelligence(args: {
     projectBrief,
     architectureBlueprint
   });
+  const governancePolicy = generateGovernancePolicy({
+    workspaceId: args.workspaceId,
+    projectId: args.projectId,
+    projectName: args.projectTitle,
+    projectBrief,
+    architectureBlueprint,
+    roadmapPlan,
+    projectMetadata: args.projectMetadata ?? null
+  });
 
   return {
     platformContext,
     domainResolution: resolution,
     projectBrief,
     architectureBlueprint,
-    roadmapPlan
+    roadmapPlan,
+    governancePolicy
   } satisfies WorkspaceProjectIntelligence;
 }

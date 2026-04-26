@@ -13,6 +13,10 @@ import {
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
 import {
+  loadGovernancePolicy,
+  type GovernancePolicy
+} from "@/lib/intelligence/governance";
+import {
   loadProjectBrief,
   type ProjectBrief
 } from "@/lib/intelligence/project-brief";
@@ -388,6 +392,8 @@ export function CanonicalEntryFlow({
   const [architectureBlueprint, setArchitectureBlueprint] =
     useState<ArchitectureBlueprint | null>(null);
   const [roadmapPlan, setRoadmapPlan] = useState<RoadmapPlan | null>(null);
+  const [governancePolicy, setGovernancePolicy] =
+    useState<GovernancePolicy | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatNotice, setChatNotice] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -506,11 +512,13 @@ export function CanonicalEntryFlow({
           parsed.architectureBlueprint
         );
         const hydratedRoadmapPlan = loadRoadmapPlan(parsed.roadmapPlan);
+        const hydratedGovernancePolicy = loadGovernancePolicy(parsed.governancePolicy);
 
         setConversationState(hydratedConversationState);
         setProjectBrief(hydratedProjectBrief);
         setArchitectureBlueprint(hydratedArchitectureBlueprint);
         setRoadmapPlan(hydratedRoadmapPlan);
+        setGovernancePolicy(hydratedGovernancePolicy);
 
         if (parsed.metadata && typeof parsed.metadata === "object") {
           const metadata = parsed.metadata as Record<string, unknown>;
@@ -558,6 +566,7 @@ export function CanonicalEntryFlow({
       projectBrief,
       architectureBlueprint,
       roadmapPlan,
+      governancePolicy,
       updatedAt: new Date().toISOString()
     };
 
@@ -570,6 +579,7 @@ export function CanonicalEntryFlow({
     planningMetadata,
     projectBrief,
     roadmapPlan,
+    governancePolicy,
     storageKey,
     threadId
   ]);
@@ -619,6 +629,7 @@ export function CanonicalEntryFlow({
     setProjectBrief(null);
     setArchitectureBlueprint(null);
     setRoadmapPlan(null);
+    setGovernancePolicy(null);
     setChatError(null);
     setChatNotice(
       notice ??
@@ -637,6 +648,7 @@ export function CanonicalEntryFlow({
         projectBrief: null,
         architectureBlueprint: null,
         roadmapPlan: null,
+        governancePolicy: null,
         updatedAt: new Date().toISOString()
       };
 
@@ -704,6 +716,7 @@ export function CanonicalEntryFlow({
       setProjectBrief(payload.threadState.projectBrief ?? null);
       setArchitectureBlueprint(payload.threadState.architectureBlueprint ?? null);
       setRoadmapPlan(payload.threadState.roadmapPlan ?? null);
+      setGovernancePolicy(payload.threadState.governancePolicy ?? null);
 
       if (!title.trim() && payload.threadState.metadata.projectTitle) {
         setTitle(payload.threadState.metadata.projectTitle);

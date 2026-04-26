@@ -1,6 +1,7 @@
 import {
   buildWorkspaceProjectIntelligence
 } from "@/lib/intelligence/project-brief-generator";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -15,6 +16,8 @@ export type ProjectContextSnapshot = {
   briefReadinessScore: number;
   briefReadinessStage: ProjectBrief["readiness"]["stage"];
   missingCriticalSlots: ProjectBrief["missingCriticalSlots"];
+  governanceReadinessStatus: GovernancePolicy["approvalReadiness"]["status"] | null;
+  governanceBlockers: string[];
   buildingSummary: string | null;
   audienceSummary: string | null;
   primaryGoal: string | null;
@@ -248,8 +251,13 @@ function resolveCurrentFocus(args: {
   primaryGoal: string | null;
   projectBrief: ProjectBrief;
   roadmapPlan?: RoadmapPlan | null;
+  governancePolicy?: GovernancePolicy | null;
 }) {
   const phaseCopy = resolvePhaseCopy(args.activePhase);
+
+  if (args.governancePolicy?.approvalReadiness.blockers.length) {
+    return args.governancePolicy.approvalReadiness.blockers.slice(0, 3);
+  }
 
   if (args.activePhase !== "strategy" && args.roadmapPlan?.openQuestions.length) {
     return args.roadmapPlan.openQuestions.slice(0, 3).map((question) => question.label);
@@ -281,7 +289,21 @@ function resolveNextStep(args: {
   primaryGoal: string | null;
   projectBrief: ProjectBrief;
   roadmapPlan?: RoadmapPlan | null;
+  governancePolicy?: GovernancePolicy | null;
 }) {
+  if (args.governancePolicy) {
+    const unresolvedChecklistItem = args.governancePolicy.approvalChecklist.find(
+      (item) => item.status !== "satisfied"
+    );
+
+    if (unresolvedChecklistItem) {
+      return {
+        title: unresolvedChecklistItem.label,
+        body: unresolvedChecklistItem.reason
+      };
+    }
+  }
+
   if (args.roadmapPlan?.openQuestions.length) {
     const nextRoadmapQuestion = args.roadmapPlan.openQuestions[0];
 
@@ -359,9 +381,10 @@ export function buildProjectContextSnapshot(args: {
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief?: ProjectBrief | null;
   roadmapPlan?: RoadmapPlan | null;
+  governancePolicy?: GovernancePolicy | null;
 }): ProjectContextSnapshot {
   const derivedProjectIntelligence =
-    args.projectBrief && args.roadmapPlan
+    args.projectBrief && args.roadmapPlan && args.governancePolicy
       ? null
       : buildWorkspaceProjectIntelligence({
           projectTitle: args.project.title,
@@ -370,6 +393,8 @@ export function buildProjectContextSnapshot(args: {
         });
   const projectBrief = args.projectBrief ?? derivedProjectIntelligence?.projectBrief;
   const roadmapPlan = args.roadmapPlan ?? derivedProjectIntelligence?.roadmapPlan ?? null;
+  const governancePolicy =
+    args.governancePolicy ?? derivedProjectIntelligence?.governancePolicy ?? null;
 
   if (!projectBrief) {
     throw new Error("ProjectBrief is required to build the project context snapshot.");
@@ -388,7 +413,8 @@ export function buildProjectContextSnapshot(args: {
     audienceSummary,
     primaryGoal,
     projectBrief,
-    roadmapPlan
+    roadmapPlan,
+    governancePolicy
   });
   const nextStep = resolveNextStep({
     activePhase,
@@ -396,7 +422,8 @@ export function buildProjectContextSnapshot(args: {
     audienceSummary,
     primaryGoal,
     projectBrief,
-    roadmapPlan
+    roadmapPlan,
+    governancePolicy
   });
 
   return {
@@ -406,6 +433,8 @@ export function buildProjectContextSnapshot(args: {
     briefReadinessScore: projectBrief.readinessScore,
     briefReadinessStage: projectBrief.readiness.stage,
     missingCriticalSlots: projectBrief.missingCriticalSlots,
+    governanceReadinessStatus: governancePolicy?.approvalReadiness.status ?? null,
+    governanceBlockers: governancePolicy?.approvalReadiness.blockers ?? [],
     buildingSummary,
     audienceSummary,
     primaryGoal,

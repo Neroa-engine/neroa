@@ -14,3 +14,4 @@ export * from "./project-brief";
 export * from "./project-brief-generator";
 export * from "./architecture";
 export * from "./roadmap";
+export * from "./governance";

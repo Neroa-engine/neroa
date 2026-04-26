@@ -4,6 +4,9 @@ import {
   type WorkspacePhaseId
 } from "@/lib/workspace/project-context-summary";
 import {
+  buildWorkspaceProjectIntelligence
+} from "@/lib/intelligence/project-brief-generator";
+import {
   isOpenDecisionStatus,
   type CommandCenterDecisionRelatedArea,
   type CommandCenterDecisionSeverity,
@@ -65,6 +68,7 @@ import {
   type BrowserRuntimeBridgeState
 } from "@/lib/workspace/browser-runtime-bridge";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import {
   isOpenCommandCenterTaskStatus,
@@ -1099,6 +1103,100 @@ function buildDecisionSeed(args: {
   };
 }
 
+function mapGovernanceAreaToDecisionArea(
+  area: GovernancePolicy["approvalChecklist"][number]["relatedScopeArea"]
+): CommandCenterDecisionRelatedArea {
+  if (area === "roadmap") {
+    return "roadmap";
+  }
+
+  if (area === "integrations") {
+    return "integrations";
+  }
+
+  if (area === "compliance") {
+    return "compliance";
+  }
+
+  if (area === "execution_logic") {
+    return "execution_logic";
+  }
+
+  if (area === "build_handoff") {
+    return "build_handoff";
+  }
+
+  return "product_scope";
+}
+
+function buildGovernanceDecisionSeeds(args: {
+  governancePolicy?: GovernancePolicy | null;
+  roomState: CommandCenterRoomState;
+}) {
+  if (!args.governancePolicy) {
+    return [] as CommandCenterDecisionItem[];
+  }
+
+  const activeRevision =
+    [...args.governancePolicy.roadmapRevisionRecords]
+      .reverse()
+      .find((record) => record.status !== "resolved" && record.status !== "superseded") ??
+    null;
+  const seeds: CommandCenterDecisionItem[] = [];
+
+  if (activeRevision) {
+    seeds.push(
+      buildDecisionSeed({
+        id: `governance-revision-${activeRevision.revisionId}`,
+        title: "Roadmap revision required",
+        prompt: activeRevision.reason,
+        rationale:
+          "A scope or architecture change is active, so approval stays reset until Strategy Room reviews the revision.",
+        category: "Roadmap revision",
+        severity: "critical",
+        blocking: true,
+        sourceType: "execution_precondition",
+        relatedArea: "roadmap",
+        roomState: args.roomState
+      })
+    );
+  }
+
+  for (const item of args.governancePolicy.approvalChecklist) {
+    if (item.status === "satisfied") {
+      continue;
+    }
+
+    seeds.push(
+      buildDecisionSeed({
+        id: `governance-${item.id}`,
+        title: item.label,
+        prompt: item.reason,
+        rationale:
+          args.governancePolicy.currentApprovalState.roadmapScopeApproved
+            ? "This governance item is unresolved again because the approved scope is no longer stable."
+            : "This governance item still needs Strategy Room resolution before execution should widen.",
+        category: "Governance approval",
+        severity:
+          item.blockerLevel === "blocking"
+            ? "critical"
+            : item.blockerLevel === "important"
+              ? "important"
+              : "normal",
+        blocking: item.blockerLevel === "blocking",
+        sourceType:
+          item.relatedScopeArea === "execution_logic"
+            ? "execution_precondition"
+            : "derived_planning_gap",
+        relatedArea: mapGovernanceAreaToDecisionArea(item.relatedScopeArea),
+        roomState: args.roomState
+      })
+    );
+  }
+
+  return seeds.slice(0, 6);
+}
+
 function relatedAreaLabel(area: CommandCenterDecisionRelatedArea) {
   if (area === "first_user") return "First user";
   if (area === "product_scope") return "Product scope";
@@ -1183,6 +1281,7 @@ function buildInitialDecisionSeeds(args: {
   audienceSummary: string | null;
   primaryGoal: string | null;
   roomState: CommandCenterRoomState;
+  governancePolicy?: GovernancePolicy | null;
 }) {
   const buildSession = args.projectMetadata?.buildSession ?? null;
   const seeds: CommandCenterDecisionItem[] = [];
@@ -1291,6 +1390,13 @@ function buildInitialDecisionSeeds(args: {
     );
   }
 
+  seeds.push(
+    ...buildGovernanceDecisionSeeds({
+      governancePolicy: args.governancePolicy,
+      roomState: args.roomState
+    })
+  );
+
   return seeds;
 }
 
@@ -1373,6 +1479,7 @@ function buildDecisionInbox(args: {
   audienceSummary: string | null;
   primaryGoal: string | null;
   roomState: CommandCenterRoomState;
+  governancePolicy?: GovernancePolicy | null;
 }) {
   const seeds = buildInitialDecisionSeeds(args);
   const items = mergeDecisionItems({
@@ -2795,15 +2902,29 @@ export function buildCommandCenterSummary(args: {
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief?: ProjectBrief | null;
   roadmapPlan?: RoadmapPlan | null;
+  governancePolicy?: GovernancePolicy | null;
   liveViewSession?: LiveViewSession | null;
   browserRuntimeSupported?: boolean;
 }): CommandCenterSummary {
   const laneCount = getOrderedProjectLanes(args.project).length;
+  const derivedProjectIntelligence =
+    args.projectBrief && args.roadmapPlan && args.governancePolicy
+      ? null
+      : buildWorkspaceProjectIntelligence({
+          projectTitle: args.project.title,
+          projectDescription: args.project.description,
+          projectMetadata: args.projectMetadata
+        });
+  const projectBrief = args.projectBrief ?? derivedProjectIntelligence?.projectBrief ?? null;
+  const roadmapPlan = args.roadmapPlan ?? derivedProjectIntelligence?.roadmapPlan ?? null;
+  const governancePolicy =
+    args.governancePolicy ?? derivedProjectIntelligence?.governancePolicy ?? null;
   const projectContext = buildProjectContextSnapshot({
     project: args.project,
     projectMetadata: args.projectMetadata,
-    projectBrief: args.projectBrief,
-    roadmapPlan: args.roadmapPlan
+    projectBrief,
+    roadmapPlan,
+    governancePolicy
   });
   const roomState = buildRoomState({
     projectMetadata: args.projectMetadata,
@@ -2818,7 +2939,8 @@ export function buildCommandCenterSummary(args: {
     buildingSummary: projectContext.buildingSummary,
     audienceSummary: projectContext.audienceSummary,
     primaryGoal: projectContext.primaryGoal,
-    roomState
+    roomState,
+    governancePolicy
   });
   const blockers = buildBlockers({
     decisionInbox,

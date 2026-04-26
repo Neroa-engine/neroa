@@ -9,6 +9,10 @@ import {
   type ArchitectureBlueprint
 } from "@/lib/intelligence/architecture";
 import {
+  buildGovernancePolicySummary,
+  type GovernancePolicy
+} from "@/lib/intelligence/governance";
+import {
   buildRoadmapPlanSummary,
   type RoadmapPlan
 } from "@/lib/intelligence/roadmap";
@@ -27,6 +31,7 @@ type ProjectCommandCenterV1Props = {
   commandCenter: CommandCenterSummary;
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
   platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
@@ -37,6 +42,90 @@ type ProjectCommandCenterV1Props = {
   buildRoomWorkerTriggerMode: BuildRoomRelayMode;
   buildRoomStorageMessage?: string | null;
 };
+
+function GovernanceReferencePanel({
+  governancePolicy
+}: {
+  governancePolicy: GovernancePolicy;
+}) {
+  const governanceSummary = buildGovernancePolicySummary(governancePolicy);
+  const deltaRoutes = [
+    `Within scope: ${governancePolicy.deltaAnalyzerPolicy.sameScopeOutcome.replace(/_/g, " ")}`,
+    `Pre-approval: ${governancePolicy.deltaAnalyzerPolicy.preApprovalOutcome.replace(/_/g, " ")}`,
+    `Scope expansion: ${governancePolicy.deltaAnalyzerPolicy.scopeExpansionOutcome.replace(/_/g, " ")}`,
+    `Architecture expansion: ${governancePolicy.deltaAnalyzerPolicy.architectureExpansionOutcome.replace(
+      /_/g,
+      " "
+    )}`
+  ];
+
+  return (
+    <section className="floating-plane rounded-[28px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Governance reference
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {governanceSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {governanceSummary.readinessLabel}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {governancePolicy.approvalChecklist.length} checklist items /{" "}
+          {governancePolicy.approvalReadiness.blockers.length} blockers
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Approval state
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">
+            {governanceSummary.approvalStateLabel}
+          </p>
+          <p className="mt-2 text-xs leading-6 text-slate-500">
+            {governanceSummary.revisionLabel}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Blocking now
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {governanceSummary.blockerLabels.length > 0 ? (
+              governanceSummary.blockerLabels.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>No governance blockers are open right now.</li>
+            )}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Hard guards
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {governanceSummary.guardrailLabels.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Delta routing
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {deltaRoutes.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function RoadmapReferencePanel({
   roadmapPlan
@@ -184,6 +273,7 @@ export function ProjectCommandCenterV1({
   commandCenter,
   architectureBlueprint,
   roadmapPlan,
+  governancePolicy,
   platformContext,
   liveViewSession,
   canManageDecisions,
@@ -208,6 +298,7 @@ export function ProjectCommandCenterV1({
 
       <div className="relative space-y-4">
         <section className="space-y-3">
+          <GovernanceReferencePanel governancePolicy={governancePolicy} />
           <RoadmapReferencePanel roadmapPlan={roadmapPlan} />
           <ArchitectureReferencePanel architectureBlueprint={architectureBlueprint} />
           <CommandCenterAnalyzerPanelView

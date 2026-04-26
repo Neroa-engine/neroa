@@ -1,5 +1,6 @@
 import type { ConversationSessionState } from "@/lib/intelligence/conversation";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 
@@ -31,6 +32,7 @@ export type PlanningThreadState = {
   projectBrief?: ProjectBrief | null;
   architectureBlueprint?: ArchitectureBlueprint | null;
   roadmapPlan?: RoadmapPlan | null;
+  governancePolicy?: GovernancePolicy | null;
   updatedAt: string;
 };
 
