@@ -26,8 +26,7 @@ export const projectPortalRoomRegistry: Record<
   },
   "build-room": {
     label: "Build Room",
-    summary: "Protected live build environment.",
-    restricted: true
+    summary: "Governed Codex and worker control surface."
   }
 };
 

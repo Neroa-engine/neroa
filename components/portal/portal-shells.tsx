@@ -427,7 +427,7 @@ export function ActiveProjectPortalShell({
                     href={buildProjectRoomRoute(activeProject.workspaceId, "build-room")}
                     className="button-secondary text-sm"
                   >
-                    Review Build Room Gate
+                    Open Build Room
                   </Link>
                 </div>
               ) : null}
