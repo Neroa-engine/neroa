@@ -21,6 +21,10 @@ const strategyActionsSource = readFileSync(
 
 test("Save revision button stays wired to the shared Strategy Room save action", () => {
   assert.match(strategyRoomSource, /<StrategyRoomHeaderActions/);
+  assert.match(
+    strategyHeaderActionsSource,
+    /className="relative z-10 flex flex-wrap items-center gap-3"/
+  );
   assert.match(strategyHeaderActionsSource, /<form action=\{saveStrategyRevision\}/);
   assert.match(strategyHeaderActionsSource, /name="workspaceId" value=\{workspaceId\}/);
   assert.match(strategyHeaderActionsSource, /name="returnTo" value=\{returnTo\}/);

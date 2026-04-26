@@ -345,8 +345,11 @@ export function ProjectStrategyRoomV1({
 
       <section className="floating-plane overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/88 shadow-[0_34px_120px_rgba(2,6,23,0.38)]">
         <div className="relative overflow-hidden px-5 py-5 sm:px-6">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_32%)]" />
-          <div className="relative">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.14),transparent_32%)]"
+          />
+          <div className="relative z-10">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="max-w-4xl">
                 <div className="flex flex-wrap items-center gap-2">

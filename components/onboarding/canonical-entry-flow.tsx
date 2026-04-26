@@ -845,16 +845,19 @@ export function CanonicalEntryFlow({
             : "rounded-[42px]"
         }`}
       >
-        <div className={`floating-wash ${isEmbedded ? "rounded-[32px] opacity-80" : "rounded-[42px]"}`} />
         <div
-          className={`relative flex flex-col ${
+          aria-hidden="true"
+          className={`floating-wash ${isEmbedded ? "rounded-[32px] opacity-80" : "rounded-[42px]"}`}
+        />
+        <div
+          className={`relative z-10 flex flex-col ${
             isEmbedded
               ? "h-full min-h-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] px-4 pb-4 pt-4 text-slate-100 sm:px-5 sm:pb-5 sm:pt-5"
               : "min-h-[calc(100vh-17rem)] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(248,250,252,0.82))] px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:px-8"
           }`}
         >
           <div
-            className={`mx-auto flex w-full items-center justify-between gap-4 border-b pb-4 ${
+            className={`relative z-10 mx-auto flex w-full items-center justify-between gap-4 border-b pb-4 ${
               isEmbedded
                 ? "max-w-none border-white/10"
                 : "max-w-[1320px] border-white/70"
@@ -894,7 +897,7 @@ export function CanonicalEntryFlow({
 
           <div
             ref={threadViewportRef}
-            className={`flex-1 min-h-0 overflow-y-auto ${
+            className={`relative z-10 flex-1 min-h-0 overflow-y-auto ${
               isEmbedded ? "px-0 pb-6 pt-5 sm:pt-6" : "px-1 pb-8 pt-6 sm:px-2 lg:pt-8"
             }`}
           >
@@ -987,7 +990,7 @@ export function CanonicalEntryFlow({
           </div>
 
           <div
-            className={`border-t backdrop-blur-xl ${
+            className={`relative z-10 border-t backdrop-blur-xl ${
               isEmbedded
                 ? "sticky bottom-0 border-white/10 bg-slate-950/92 pb-3 pt-4"
                 : "border-white/70 bg-white/68 pb-2 pt-4 sm:pb-3 sm:pt-5"

@@ -38,7 +38,7 @@ export function StrategyRoomHeaderActions({
   const returnTo = `/workspace/${workspaceId}/strategy-room`;
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="relative z-10 flex flex-wrap items-center gap-3">
       <form action={saveStrategyRevision} className="shrink-0">
         <input type="hidden" name="workspaceId" value={workspaceId} />
         <input type="hidden" name="returnTo" value={returnTo} />
