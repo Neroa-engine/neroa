@@ -479,6 +479,20 @@ export function CommandCenterBuildRoomExecutionPanel({
     composer.riskLevel,
     roadmapApprovalRequired
   );
+  const selectedTaskStatusLabel = selectedTask
+    ? resolveExecutionStatusLabel(selectedTask, workerTriggerMode, roadmapApprovalRequired)
+    : null;
+  const pendingSummaryLabel =
+    executionSummary.pendingCount > 0
+      ? `${executionSummary.pendingCount} request${
+          executionSummary.pendingCount === 1 ? "" : "s"
+        } waiting on approval or scope clearance`
+      : "Pending queue is clear";
+  const pendingSummaryDetail =
+    executionSummary.pendingCount > 0
+      ? "Blocked or revision-needed requests stay in shared pending execution until governance and approval allow the current Build Room relay to release them."
+      : "No pending execution follow-up is waiting right now.";
+  const visiblePendingExecutions = executionSummary.pendingExecutions.slice(0, 2);
 
   async function refreshTask(taskId: string, quiet = false) {
     if (!quiet) {
@@ -692,13 +706,11 @@ export function CommandCenterBuildRoomExecutionPanel({
             Execution Intake
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-            Start Build Room work from Command Center
+            Send governed work to Build Room
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            New execution requests now start here. When roadmap approval is in place, Command Center
-            classifies the request, creates the existing Build Room task behind the scenes, and sends
-            it through the current relay. When roadmap approval is still pending, Command Center
-            captures the request here and keeps the Build Room relay on hold.
+            Keep one Command Center intake here for new requests, revisions, and governed handoff
+            into the existing Build Room task pipeline.
           </p>
         </div>
 
@@ -756,102 +768,111 @@ export function CommandCenterBuildRoomExecutionPanel({
       ) : null}
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
-        <div className="space-y-4">
+        <div>
           <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Command Center to Build Room
-                </p>
-                <p className="mt-2 text-base font-semibold text-slate-950">
-                  Classified as {classification.family}
-                </p>
-              </div>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                {classification.risk}
-              </span>
-            </div>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{classification.route}</p>
-          </div>
-
-          <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Pending release queue
-                </p>
-                <p className="mt-2 text-base font-semibold text-slate-950">
-                  {executionSummary.pendingCount > 0
-                    ? `${executionSummary.pendingCount} request${
-                        executionSummary.pendingCount === 1 ? "" : "s"
-                      } waiting on approval or scope clearance`
-                    : "No pending execution requests are waiting right now"}
+                  Request details
                 </p>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Neroa keeps blocked or revision-needed requests in shared pending execution until
-                  governance and approval allow the existing Build Room relay to release them.
+                  Use one primary intake here. Command Center still creates or updates the existing
+                  Build Room task and preserves the current approval path.
                 </p>
               </div>
-              <button
-                type="button"
-                className="button-secondary text-sm"
-                onClick={() => void handleReleasePendingExecutions()}
-                disabled={
-                  pendingAction !== null ||
-                  Boolean(storageMessage) ||
-                  executionSummary.pendingCount === 0
-                }
-              >
-                {pendingAction === "release_pending" ? "Re-checking..." : "Re-check Pending"}
-              </button>
-            </div>
-            {executionSummary.pendingExecutions.length > 0 ? (
-              <div className="mt-4 grid gap-3">
-                {executionSummary.pendingExecutions.slice(0, 2).map((item) => (
-                  <div
-                    key={item.pendingExecutionId}
-                    className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                      <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                        {formatStatusLabel(item.status)}
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs leading-6 text-slate-500">
-                      {item.latestReason ?? "Awaiting the next approval and scope check."}
-                    </p>
-                  </div>
-                ))}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  className="button-quiet rounded-full border border-slate-200 bg-white/82 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                  onClick={() => {
+                    setComposer(createEmptyComposer(project));
+                    setNoticeMessage("Execution intake reset for a new request.");
+                    setErrorMessage(null);
+                  }}
+                  disabled={pendingAction !== null}
+                >
+                  New Request
+                </button>
+                <button
+                  type="button"
+                  className="button-secondary text-sm"
+                  onClick={() => void handleReleasePendingExecutions()}
+                  disabled={
+                    pendingAction !== null ||
+                    Boolean(storageMessage) ||
+                    executionSummary.pendingCount === 0
+                  }
+                >
+                  {pendingAction === "release_pending" ? "Re-checking..." : "Re-check Pending"}
+                </button>
               </div>
-            ) : null}
-          </div>
+            </div>
 
-          <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Execution request
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Routing
+                  </p>
+                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                    {classification.risk}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{classification.family}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{classification.route}</p>
+              </div>
+              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Pending queue
+                  </p>
+                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                    {executionSummary.pendingCount}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm font-semibold text-slate-950">{pendingSummaryLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{pendingSummaryDetail}</p>
+              </div>
+              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Working task
                 </p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Use the current Build Room backend pipeline without rebuilding it. The form below
-                  keeps the intake on Command Center while the task/run details continue to live in
-                  Build Room.
+                <p className="mt-2 text-sm font-semibold text-slate-950">
+                  {selectedTask ? selectedTask.title : "No task loaded"}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  {selectedTaskStatusLabel
+                    ? `${selectedTaskStatusLabel}. Load it into the intake to revise or resend it.`
+                    : "Use the form below to start the next request, or pick a recent task to load it into the intake."}
                 </p>
               </div>
-              <button
-                type="button"
-                className="button-quiet rounded-full border border-slate-200 bg-white/82 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                onClick={() => {
-                  setComposer(createEmptyComposer(project));
-                  setNoticeMessage("Command Center intake reset for a new execution request.");
-                  setErrorMessage(null);
-                }}
-                disabled={pendingAction !== null}
-              >
-                New Request
-              </button>
             </div>
+
+            {visiblePendingExecutions.length > 0 ? (
+              <details className="mt-4 rounded-[20px] border border-slate-200/70 bg-slate-50/80 px-4 py-4">
+                <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  Pending execution support
+                </summary>
+                <div className="mt-3 grid gap-3">
+                  {visiblePendingExecutions.map((item) => (
+                    <div
+                      key={item.pendingExecutionId}
+                      className="rounded-[18px] border border-slate-200/70 bg-white px-4 py-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-slate-950">{item.title}</p>
+                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+                          {formatStatusLabel(item.status)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-slate-500">
+                        {item.latestReason ?? "Awaiting the next approval and scope check."}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="block space-y-2">
@@ -976,8 +997,8 @@ export function CommandCenterBuildRoomExecutionPanel({
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-4">
               <p className="text-xs leading-6 text-slate-600">
                 {roadmapApprovalRequired
-                  ? "Submitting now captures the request as pending execution. Command Center keeps the Build Room task in draft and preserves the current execution gate until roadmap approval lands."
-                  : "Sending to execution creates or updates the existing Build Room task, sends it through the current relay, and keeps worker approval as a separate governed step."}
+                  ? "Submitting now captures this as pending execution until roadmap approval lands."
+                  : "Sending now creates or updates the existing Build Room task and keeps worker approval separate."}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {selectedTask ? (
@@ -1019,86 +1040,6 @@ export function CommandCenterBuildRoomExecutionPanel({
               </div>
             </div>
           </div>
-
-          <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Recent Build Room tasks
-                </p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Command Center shows the current execution backlog, but Build Room remains the
-                  detailed run surface for packets, logs, and stored artifacts.
-                </p>
-              </div>
-              <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                {tasks.length}
-              </span>
-            </div>
-
-            <div className="mt-4 grid gap-3">
-              {tasks.length === 0 ? (
-                <div className="rounded-[20px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm leading-7 text-slate-500">
-                  No Build Room tasks are stored yet. Use the intake above to create the first one
-                  from Command Center.
-                </div>
-              ) : (
-                tasks.map((task) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => void refreshTask(task.id)}
-                    className={`rounded-[22px] border px-4 py-4 text-left transition ${
-                      selectedTaskId === task.id
-                        ? "border-slate-950 bg-slate-950 text-white shadow-[0_18px_38px_rgba(15,23,42,0.16)]"
-                        : "border-slate-200/70 bg-white/80 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/65"
-                    }`}
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold">{task.title}</p>
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                          selectedTaskId === task.id
-                            ? "border-white/20 bg-white/10 text-white"
-                            : statusBadgeClasses(
-                                resolveExecutionStatusLabel(
-                                  task,
-                                  workerTriggerMode,
-                                  roadmapApprovalRequired
-                                )
-                              )
-                        }`}
-                      >
-                        {resolveExecutionStatusLabel(
-                          task,
-                          workerTriggerMode,
-                          roadmapApprovalRequired
-                        )}
-                      </span>
-                    </div>
-                    <p
-                      className={`mt-3 text-sm leading-7 ${
-                        selectedTaskId === task.id ? "text-slate-200" : "text-slate-500"
-                      }`}
-                    >
-                      {task.userRequest.length > 150
-                        ? `${task.userRequest.slice(0, 150).trim()}...`
-                        : task.userRequest}
-                    </p>
-                    <div
-                      className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${
-                        selectedTaskId === task.id ? "text-slate-300" : "text-slate-500"
-                      }`}
-                    >
-                      <span>{formatTaskTypeLabel(task.taskType)}</span>
-                      <span>&middot;</span>
-                      <span>{formatTimestamp(task.updatedAt)}</span>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
         </div>
 
         <div className="space-y-4">
@@ -1106,33 +1047,24 @@ export function CommandCenterBuildRoomExecutionPanel({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Run status
+                  Execution status
                 </p>
                 <p className="mt-2 text-base font-semibold text-slate-950">
+                  {selectedTaskStatusLabel ?? "Pick a task to review execution status"}
+                </p>
+                <p className="mt-2 text-sm leading-7 text-slate-600">
                   {selectedTask
-                    ? resolveExecutionStatusLabel(
-                        selectedTask,
-                        workerTriggerMode,
-                        roadmapApprovalRequired
-                      )
-                    : "No execution request selected"}
+                    ? "The selected Build Room task stays the shared source of truth for relay, packet, QA, billing, and approval progress."
+                    : "Select a recent Build Room task or send a new request to review relay, packet, QA, billing, and worker detail here."}
                 </p>
               </div>
               {selectedTask ? (
                 <span
                   className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusBadgeClasses(
-                    resolveExecutionStatusLabel(
-                      selectedTask,
-                      workerTriggerMode,
-                      roadmapApprovalRequired
-                    )
+                    selectedTaskStatusLabel ?? ""
                   )}`}
                 >
-                  {resolveExecutionStatusLabel(
-                    selectedTask,
-                    workerTriggerMode,
-                    roadmapApprovalRequired
-                  )}
+                  {selectedTaskStatusLabel}
                 </span>
               ) : null}
             </div>
@@ -1154,6 +1086,22 @@ export function CommandCenterBuildRoomExecutionPanel({
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-950">
                       {workerModeLabel(workerTriggerMode)}
+                    </p>
+                  </div>
+                  <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Last updated
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-950">
+                      {formatTimestamp(selectedTask.updatedAt)}
+                    </p>
+                  </div>
+                  <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Worker job id
+                    </p>
+                    <p className="mt-2 break-all text-sm font-semibold text-slate-950">
+                      {selectedWorkerRun?.externalJobId ?? "Not recorded yet"}
                     </p>
                   </div>
                 </div>
@@ -1198,207 +1146,208 @@ export function CommandCenterBuildRoomExecutionPanel({
                   ) : null}
                 </div>
 
-                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        QA / release status
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-950">
-                        {qaSummary?.headline ?? "QA validation will appear here after packet generation."}
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        {selectedQaContext
-                          ? selectedQaContext.qaValidation.completionReadiness.reason
-                          : "Run-complete and release-ready are intentionally separate. The shared QA gate decides when a task can be presented as complete."}
-                      </p>
+                <details className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                  <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    QA / release
+                  </summary>
+                  <div className="mt-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950">
+                          {qaSummary?.headline ?? "QA validation will appear here after packet generation."}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">
+                          {selectedQaContext
+                            ? selectedQaContext.qaValidation.completionReadiness.reason
+                            : "Run-complete and release-ready are intentionally separate. The shared QA gate decides when a task can be presented as complete."}
+                        </p>
+                      </div>
+                      {qaSummary ? (
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                            qaSummary.canPresentAsComplete
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : qaSummary.status === "awaiting_review"
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : qaSummary.status === "awaiting_artifacts"
+                                  ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                  : "border-slate-200 bg-white text-slate-600"
+                          }`}
+                        >
+                          {qaSummary.completionLabel}
+                        </span>
+                      ) : null}
                     </div>
-                    {qaSummary ? (
-                      <span
-                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
-                          qaSummary.canPresentAsComplete
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : qaSummary.status === "awaiting_review"
-                              ? "border-amber-200 bg-amber-50 text-amber-700"
-                              : qaSummary.status === "awaiting_artifacts"
-                                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
-                                : "border-slate-200 bg-white text-slate-600"
-                        }`}
-                      >
-                        {qaSummary.completionLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                  {qaSummary && selectedQaValidation ? (
-                    <>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {qaSummary.artifactProgressLabel}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {qaSummary.criterionProgressLabel}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {qaSummary.releaseLabel}
-                        </span>
-                        {qaSummary.needsHumanReview ? (
-                          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
-                            Human review required
+                    {qaSummary && selectedQaValidation ? (
+                      <>
+                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {qaSummary.artifactProgressLabel}
                           </span>
-                        ) : null}
-                      </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Blocking now
-                          </p>
-                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                            {selectedQaValidation.blockers.length > 0 ? (
-                              selectedQaValidation.blockers.map((item) => (
-                                <li key={item}>{item}</li>
-                              ))
-                            ) : (
-                              <li>No QA blockers are open right now.</li>
-                            )}
-                          </ul>
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {qaSummary.criterionProgressLabel}
+                          </span>
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {qaSummary.releaseLabel}
+                          </span>
+                          {qaSummary.needsHumanReview ? (
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
+                              Human review required
+                            </span>
+                          ) : null}
                         </div>
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Required artifacts
-                          </p>
-                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                            {selectedQaValidation.artifactRequirements.map((requirement) => {
-                              const satisfied = selectedQaValidation.artifacts.some(
-                                (artifact) => artifact.kind === requirement.kind
-                              );
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Blocking now
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                              {selectedQaValidation.blockers.length > 0 ? (
+                                selectedQaValidation.blockers.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))
+                              ) : (
+                                <li>No QA blockers are open right now.</li>
+                              )}
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Required artifacts
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                              {selectedQaValidation.artifactRequirements.map((requirement) => {
+                                const satisfied = selectedQaValidation.artifacts.some(
+                                  (artifact) => artifact.kind === requirement.kind
+                                );
 
-                              return (
-                                <li key={requirement.id}>
-                                  {requirement.label}: {satisfied ? "Attached" : "Missing"}
-                                </li>
-                              );
-                            })}
-                          </ul>
+                                return (
+                                  <li key={requirement.id}>
+                                    {requirement.label}: {satisfied ? "Attached" : "Missing"}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-
-                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Billing / protection
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-950">
-                        {billingSummary?.headline ??
-                          "Billing protection will appear here after the governed execution state is classified."}
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        {selectedBillingState
-                          ? selectedBillingState.latestChargeabilityDecision.reason
-                          : "Only approved, in-scope, release-ready work becomes billable. Finished runs can still stay protected."}
-                      </p>
-                    </div>
-                    {billingSummary ? (
-                      <span
-                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${billingStatusBadgeClasses(
-                          billingSummary.statusLabel
-                        )}`}
-                      >
-                        {billingSummary.statusLabel}
-                      </span>
+                      </>
                     ) : null}
                   </div>
-                  {selectedBillingState && billingSummary ? (
-                    <>
-                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {billingSummary.chargeabilityLabel}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {billingSummary.retryLabel}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {billingSummary.guardrailLabel}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
-                          {billingSummary.totalsLabel}
-                        </span>
+                </details>
+
+                <details className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                  <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Billing / protection
+                  </summary>
+                  <div className="mt-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-950">
+                          {billingSummary?.headline ??
+                            "Billing protection will appear here after the governed execution state is classified."}
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">
+                          {selectedBillingState
+                            ? selectedBillingState.latestChargeabilityDecision.reason
+                            : "Only approved, in-scope, release-ready work becomes billable. Finished runs can still stay protected."}
+                        </p>
                       </div>
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Blocking now
-                          </p>
-                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                            {billingSummary.blockerLabels.length > 0 ? (
-                              billingSummary.blockerLabels.map((item) => (
-                                <li key={item}>{item}</li>
-                              ))
-                            ) : (
-                              <li>No billing-protection blockers are open right now.</li>
-                            )}
-                          </ul>
+                      {billingSummary ? (
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${billingStatusBadgeClasses(
+                            billingSummary.statusLabel
+                          )}`}
+                        >
+                          {billingSummary.statusLabel}
+                        </span>
+                      ) : null}
+                    </div>
+                    {selectedBillingState && billingSummary ? (
+                      <>
+                        <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {billingSummary.chargeabilityLabel}
+                          </span>
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {billingSummary.retryLabel}
+                          </span>
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {billingSummary.guardrailLabel}
+                          </span>
+                          <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                            {billingSummary.totalsLabel}
+                          </span>
                         </div>
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                            Current ledger state
-                          </p>
-                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                            <li>
-                              Latest classification:{" "}
-                              {formatStatusLabel(
-                                selectedBillingState.latestChargeabilityDecision.classification
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Blocking now
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                              {billingSummary.blockerLabels.length > 0 ? (
+                                billingSummary.blockerLabels.map((item) => (
+                                  <li key={item}>{item}</li>
+                                ))
+                              ) : (
+                                <li>No billing-protection blockers are open right now.</li>
                               )}
-                            </li>
-                            <li>
-                              Latest failure class:{" "}
-                              {selectedBillingState.latestFailureClassification
-                                ? formatStatusLabel(
-                                    selectedBillingState.latestFailureClassification.class
-                                  )
-                                : "None"}
-                            </li>
-                            <li>
-                              Recorded charge events: {selectedBillingState.chargeEvents.length}
-                            </li>
-                          </ul>
+                            </ul>
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              Current ledger state
+                            </p>
+                            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                              <li>
+                                Latest classification:{" "}
+                                {formatStatusLabel(
+                                  selectedBillingState.latestChargeabilityDecision.classification
+                                )}
+                              </li>
+                              <li>
+                                Latest failure class:{" "}
+                                {selectedBillingState.latestFailureClassification
+                                  ? formatStatusLabel(
+                                      selectedBillingState.latestFailureClassification.class
+                                    )
+                                  : "None"}
+                              </li>
+                              <li>
+                                Recorded charge events: {selectedBillingState.chargeEvents.length}
+                              </li>
+                            </ul>
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
+                      </>
+                    ) : null}
+                  </div>
+                </details>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Last updated
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950">
-                      {formatTimestamp(selectedTask.updatedAt)}
-                    </p>
-                  </div>
-                  <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Worker job id
-                    </p>
-                    <p className="mt-2 break-all text-sm font-semibold text-slate-950">
-                      {selectedWorkerRun?.externalJobId ?? "Not recorded yet"}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedCodexResult ? (
-                  <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                      Codex summary
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      {selectedCodexResult.summary}
-                    </p>
-                  </div>
+                {selectedWorkerArtifacts.length > 0 ? (
+                  <details className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                    <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                      Recent worker artifacts
+                    </summary>
+                    <div className="mt-4 grid gap-3">
+                      {selectedWorkerArtifacts.map((artifact) => (
+                        <div
+                          key={artifact.id}
+                          className="rounded-[18px] border border-slate-200/70 bg-white px-4 py-4"
+                        >
+                          <p className="text-sm font-semibold text-slate-950">{artifact.title}</p>
+                          <p className="mt-2 text-xs text-slate-500">
+                            {formatStatusLabel(artifact.artifactType)} &middot;{" "}
+                            {formatTimestamp(artifact.createdAt)}
+                          </p>
+                          {artifact.textContent ? (
+                            <pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-slate-600">
+                              {artifact.textContent}
+                            </pre>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 ) : null}
 
                 <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
@@ -1454,61 +1403,102 @@ export function CommandCenterBuildRoomExecutionPanel({
                     >
                       {pendingAction === "refresh" ? "Refreshing..." : "Refresh Status"}
                     </button>
-                  </div>
-                </div>
-
-                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Build Room detail surface
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-slate-600">
-                        Use Build Room for the stored packet, full run history, worker artifacts, and
-                        lower-level execution detail.
-                      </p>
-                    </div>
                     <Link href={buildRoomHref} className="button-secondary text-sm">
-                      Open Detail Surface
+                      Open Build Room Detail
                     </Link>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="mt-4 rounded-[18px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm leading-7 text-slate-500">
-                Select an execution task or send a new request from Command Center to see relay and
-                worker status here.
+                Select a recent Build Room task or send a new request to review relay and worker
+                status here.
               </div>
             )}
           </div>
-
-          {selectedWorkerArtifacts.length > 0 ? (
-            <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Recent worker artifacts
-              </p>
-              <div className="mt-4 grid gap-3">
-                {selectedWorkerArtifacts.map((artifact) => (
-                  <div
-                    key={artifact.id}
-                    className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4"
-                  >
-                    <p className="text-sm font-semibold text-slate-950">{artifact.title}</p>
-                    <p className="mt-2 text-xs text-slate-500">
-                      {formatStatusLabel(artifact.artifactType)} &middot;{" "}
-                      {formatTimestamp(artifact.createdAt)}
-                    </p>
-                    {artifact.textContent ? (
-                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-slate-600">
-                        {artifact.textContent}
-                      </pre>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
         </div>
+      </div>
+
+      <div className="mt-4 rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Recent Build Room tasks
+            </p>
+            <p className="mt-2 text-sm leading-7 text-slate-600">
+              Keep task history available here, while Build Room remains the detailed surface for
+              packets, logs, and stored artifacts.
+            </p>
+          </div>
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+            {tasks.length}
+          </span>
+        </div>
+
+        {tasks.length === 0 ? (
+          <div className="mt-4 rounded-[20px] border border-dashed border-slate-200 bg-slate-50/70 px-4 py-5 text-sm leading-7 text-slate-500">
+            No Build Room tasks are stored yet. Use the intake above to create the first one from
+            Command Center.
+          </div>
+        ) : (
+          <div className="mt-4 max-h-[30rem] overflow-y-auto pr-1">
+            <div className="grid gap-3 lg:grid-cols-2">
+              {tasks.map((task) => (
+                <button
+                  key={task.id}
+                  type="button"
+                  onClick={() => void refreshTask(task.id)}
+                  className={`rounded-[22px] border px-4 py-4 text-left transition ${
+                    selectedTaskId === task.id
+                      ? "border-slate-950 bg-slate-950 text-white shadow-[0_18px_38px_rgba(15,23,42,0.16)]"
+                      : "border-slate-200/70 bg-white/80 text-slate-700 hover:border-cyan-200 hover:bg-cyan-50/65"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold">{task.title}</p>
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                        selectedTaskId === task.id
+                          ? "border-white/20 bg-white/10 text-white"
+                          : statusBadgeClasses(
+                              resolveExecutionStatusLabel(
+                                task,
+                                workerTriggerMode,
+                                roadmapApprovalRequired
+                              )
+                            )
+                      }`}
+                    >
+                      {resolveExecutionStatusLabel(
+                        task,
+                        workerTriggerMode,
+                        roadmapApprovalRequired
+                      )}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-3 text-sm leading-7 ${
+                      selectedTaskId === task.id ? "text-slate-200" : "text-slate-500"
+                    }`}
+                  >
+                    {task.userRequest.length > 150
+                      ? `${task.userRequest.slice(0, 150).trim()}...`
+                      : task.userRequest}
+                  </p>
+                  <div
+                    className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${
+                      selectedTaskId === task.id ? "text-slate-300" : "text-slate-500"
+                    }`}
+                  >
+                    <span>{formatTaskTypeLabel(task.taskType)}</span>
+                    <span>&middot;</span>
+                    <span>{formatTimestamp(task.updatedAt)}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </CommandCenterPanel>
   );
