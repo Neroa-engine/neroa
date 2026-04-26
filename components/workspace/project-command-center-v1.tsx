@@ -4,6 +4,10 @@ import type {
   PlatformContext,
   PlatformExecutionGateSignalInput
 } from "@/lib/intelligence/platform-context";
+import {
+  buildArchitectureBlueprintSummary,
+  type ArchitectureBlueprint
+} from "@/lib/intelligence/architecture";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -17,6 +21,7 @@ import {
 type ProjectCommandCenterV1Props = {
   project: ProjectRecord;
   commandCenter: CommandCenterSummary;
+  architectureBlueprint: ArchitectureBlueprint;
   platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
@@ -28,9 +33,82 @@ type ProjectCommandCenterV1Props = {
   buildRoomStorageMessage?: string | null;
 };
 
+function ArchitectureReferencePanel({
+  architectureBlueprint
+}: {
+  architectureBlueprint: ArchitectureBlueprint;
+}) {
+  const architectureSummary = buildArchitectureBlueprintSummary(architectureBlueprint);
+
+  return (
+    <section className="floating-plane rounded-[28px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Architecture blueprint
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {architectureSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {architectureBlueprint.domainPack.replace(/_/g, " ")} / readiness{" "}
+            {architectureBlueprint.readinessScore}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {architectureBlueprint.lanes.length} lanes / {architectureBlueprint.worktrees.length} worktrees
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Modules
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.moduleNames.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Lanes
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">
+            {architectureSummary.laneSummary}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Planned worktrees
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.worktreeBranches.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Open architecture questions
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.openQuestionLabels.length > 0 ? (
+              architectureSummary.openQuestionLabels.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>Architecture questions are currently covered.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function ProjectCommandCenterV1({
   project,
   commandCenter,
+  architectureBlueprint,
   platformContext,
   liveViewSession,
   canManageDecisions,
@@ -55,6 +133,7 @@ export function ProjectCommandCenterV1({
 
       <div className="relative space-y-4">
         <section className="space-y-3">
+          <ArchitectureReferencePanel architectureBlueprint={architectureBlueprint} />
           <CommandCenterAnalyzerPanelView
             workspaceId={project.workspaceId}
             analyzer={commandCenter.analyzer}

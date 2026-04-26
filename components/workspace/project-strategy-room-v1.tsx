@@ -1,9 +1,14 @@
 import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
 import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import {
+  buildArchitectureBlueprintSummary,
+  type ArchitectureBlueprint
+} from "@/lib/intelligence/architecture";
+import {
   isPlatformApprovalAuthority,
   type PlatformContext
 } from "@/lib/intelligence/platform-context";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { PlanningLaneId } from "@/lib/start/planning-thread";
 import { buildProjectContextSnapshot } from "@/lib/workspace/project-context-summary";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -13,6 +18,8 @@ type ProjectStrategyRoomV1Props = {
   userEmail?: string;
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
+  projectBrief: ProjectBrief;
+  architectureBlueprint: ArchitectureBlueprint;
   platformContext: PlatformContext;
   initialError?: string | null;
   initialNotice?: string | null;
@@ -52,15 +59,93 @@ function resolvePlanningPathId(projectMetadata?: StoredProjectMetadata | null): 
   return pathId === "managed" ? "managed" : "diy";
 }
 
+function ArchitectureDraftPanel({
+  architectureBlueprint
+}: {
+  architectureBlueprint: ArchitectureBlueprint;
+}) {
+  const architectureSummary = buildArchitectureBlueprintSummary(architectureBlueprint);
+
+  return (
+    <section className="floating-plane rounded-[24px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Architecture draft
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {architectureSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {architectureBlueprint.modules.length} modules / {architectureBlueprint.lanes.length} lanes / readiness{" "}
+            {architectureBlueprint.readinessScore}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {architectureBlueprint.domainPack.replace(/_/g, " ")}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Modules
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.moduleNames.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Lane plan
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">
+            {architectureSummary.laneSummary}
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Remaining questions
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.openQuestionLabels.length > 0 ? (
+              architectureSummary.openQuestionLabels.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>Architecture inputs are currently covered.</li>
+            )}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Risks to keep visible
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {architectureSummary.riskTitles.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function ProjectStrategyRoomV1({
   project,
   projectMetadata,
+  projectBrief,
+  architectureBlueprint,
   platformContext,
   initialError,
   initialNotice
 }: ProjectStrategyRoomV1Props) {
   const workspaceHref = buildProjectWorkspaceRoute(project.workspaceId);
-  const projectContext = buildProjectContextSnapshot({ project, projectMetadata });
+  const projectContext = buildProjectContextSnapshot({
+    project,
+    projectMetadata,
+    projectBrief
+  });
   const strategyRoomSurface = platformContext.surfaces.strategyRoom;
   const strategyRoomIsApprovalAuthority = isPlatformApprovalAuthority(
     platformContext,
@@ -85,6 +170,7 @@ export function ProjectStrategyRoomV1({
           <p className="mt-2 text-sm leading-7">{strategyRoomSurface.purpose}</p>
         </section>
       ) : null}
+      <ArchitectureDraftPanel architectureBlueprint={architectureBlueprint} />
       <CanonicalEntryFlow
         initialEntryPathId={planningPathId}
         initialTitle={project.title}

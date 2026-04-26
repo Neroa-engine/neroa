@@ -7,6 +7,7 @@ import {
 } from "@/lib/account/plan-access";
 import { deriveWorkspaceLanes } from "@/lib/workspace/lanes";
 import { parseWorkspaceProjectDescription } from "@/lib/workspace/project-metadata";
+import { buildWorkspaceProjectIntelligence } from "@/lib/intelligence/project-brief-generator";
 import {
   getFirstProjectLane,
   buildProjectModel,
@@ -107,6 +108,13 @@ export async function getWorkspaceProjectContext(
     persistedCustomLanes: parsedWorkspace.metadata?.customLanes ?? [],
     options
   });
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId: cleanWorkspace.id,
+    projectId,
+    projectTitle: cleanWorkspace.name,
+    projectDescription: cleanWorkspace.description,
+    projectMetadata: parsedWorkspace.metadata
+  });
 
   return {
     supabase,
@@ -114,7 +122,8 @@ export async function getWorkspaceProjectContext(
     access,
     workspace: cleanWorkspace,
     project,
-    projectMetadata: parsedWorkspace.metadata
+    projectMetadata: parsedWorkspace.metadata,
+    projectIntelligence
   };
 }
 

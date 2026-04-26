@@ -19,7 +19,6 @@ import {
   buildPortalProjectSummary,
   loadPortalProjectSummariesForUser
 } from "@/lib/portal/server";
-import { loadPlatformContext } from "@/lib/intelligence/platform-context";
 import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
@@ -34,7 +33,8 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
   const requestOrigin = resolveBrowserRuntimeRequestOrigin(headers());
   const browserRuntimeSupported = isLocalRuntimeStorageEnabled();
 
-  const { supabase, user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
+  const { supabase, user, workspace, project, projectMetadata, projectIntelligence } =
+    await getWorkspaceProjectContext(
     params.workspaceId,
     params.workspaceId
   );
@@ -57,6 +57,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
   const commandCenter = buildCommandCenterSummary({
     project,
     projectMetadata,
+    projectBrief: projectIntelligence.projectBrief,
     liveViewSession: runtimeTargetSession,
     browserRuntimeSupported
   });
@@ -109,7 +110,8 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
       <ProjectCommandCenterV1
         project={project}
         commandCenter={commandCenter}
-        platformContext={loadPlatformContext(projectMetadata?.platformContext)}
+        architectureBlueprint={projectIntelligence.architectureBlueprint}
+        platformContext={projectIntelligence.platformContext}
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}
         accessMode={activeProjectSummary.accessMode}

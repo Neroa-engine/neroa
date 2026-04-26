@@ -64,6 +64,7 @@ import {
   isBrowserRuntimeReadyForPreview,
   type BrowserRuntimeBridgeState
 } from "@/lib/workspace/browser-runtime-bridge";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import {
   isOpenCommandCenterTaskStatus,
   type CommandCenterTaskSourceType,
@@ -2791,11 +2792,16 @@ function buildBrandSystemPanel(args: {
 export function buildCommandCenterSummary(args: {
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
+  projectBrief?: ProjectBrief | null;
   liveViewSession?: LiveViewSession | null;
   browserRuntimeSupported?: boolean;
 }): CommandCenterSummary {
   const laneCount = getOrderedProjectLanes(args.project).length;
-  const projectContext = buildProjectContextSnapshot(args);
+  const projectContext = buildProjectContextSnapshot({
+    project: args.project,
+    projectMetadata: args.projectMetadata,
+    projectBrief: args.projectBrief
+  });
   const roomState = buildRoomState({
     projectMetadata: args.projectMetadata,
     buildingSummary: projectContext.buildingSummary,

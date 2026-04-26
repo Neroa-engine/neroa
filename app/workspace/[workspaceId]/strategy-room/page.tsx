@@ -4,7 +4,6 @@ import {
   buildPortalProjectSummary,
   loadPortalProjectSummariesForUser
 } from "@/lib/portal/server";
-import { loadPlatformContext } from "@/lib/intelligence/platform-context";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type StrategyRoomPageProps = {
@@ -36,10 +35,8 @@ export default async function StrategyRoomPage({
   params,
   searchParams
 }: StrategyRoomPageProps) {
-  const { supabase, user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
-    params.workspaceId,
-    params.workspaceId
-  );
+  const { supabase, user, workspace, project, projectMetadata, projectIntelligence } =
+    await getWorkspaceProjectContext(params.workspaceId, params.workspaceId);
   const portalProjects = await loadPortalProjectSummariesForUser({
     supabase,
     userId: user.id
@@ -59,7 +56,9 @@ export default async function StrategyRoomPage({
         userEmail={user.email ?? undefined}
         project={project}
         projectMetadata={projectMetadata}
-        platformContext={loadPlatformContext(projectMetadata?.platformContext)}
+        projectBrief={projectIntelligence.projectBrief}
+        architectureBlueprint={projectIntelligence.architectureBlueprint}
+        platformContext={projectIntelligence.platformContext}
         initialError={sanitizeStrategyMessage(firstValue(searchParams?.error) ?? null)}
         initialNotice={sanitizeStrategyMessage(firstValue(searchParams?.notice) ?? null)}
       />

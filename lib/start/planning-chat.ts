@@ -7,6 +7,7 @@ import {
   type ConversationQuestionKey,
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
+import { generateProjectBrief } from "@/lib/intelligence/project-brief-generator";
 import {
   buildStartVisibleStrategistDecision,
   type StartVisibleStrategistLog
@@ -920,6 +921,7 @@ export async function runPlanningChat(args: {
     messages: threadMessages,
     metadata,
     conversationState: args.conversationState ?? null,
+    projectBrief: null,
     updatedAt: now
   };
   const visibleStrategistDecision = buildStartVisibleStrategistDecision({
@@ -1129,12 +1131,20 @@ export async function runPlanningChat(args: {
     questionKey: useConversationPlanner ? conversationGuidance.questionKey : null,
     askedTurnId: assistantMessage.id
   });
+  const projectBrief = generateProjectBrief({
+    projectName: metadata.projectTitle ?? args.title ?? null,
+    projectDescription:
+      metadata.perceivedProject ?? args.summary ?? cleanMessage,
+    conversationState: finalConversationState,
+    hiddenBundle: visibleStrategistDecision.bundle
+  });
   const threadState: PlanningThreadState = {
     threadId: args.threadId,
     lane: args.lane,
     messages: [...threadMessages, assistantMessage].slice(-20),
     metadata,
     conversationState: finalConversationState,
+    projectBrief,
     updatedAt: new Date().toISOString()
   };
 

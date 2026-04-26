@@ -1,3 +1,7 @@
+import {
+  buildWorkspaceProjectIntelligence
+} from "@/lib/intelligence/project-brief-generator";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 
@@ -5,6 +9,11 @@ export type WorkspacePhaseId = "strategy" | "scope" | "mvp" | "build";
 
 export type ProjectContextSnapshot = {
   projectName: string;
+  projectBrief: ProjectBrief;
+  domainPack: ProjectBrief["domainPack"];
+  briefReadinessScore: number;
+  briefReadinessStage: ProjectBrief["readiness"]["stage"];
+  missingCriticalSlots: ProjectBrief["missingCriticalSlots"];
   buildingSummary: string | null;
   audienceSummary: string | null;
   primaryGoal: string | null;
@@ -51,13 +60,45 @@ function clipSentence(value: string | null | undefined, maxLength = 180) {
   return clipped ? `${clipped}...` : normalized;
 }
 
-function buildPrimaryGoal(projectMetadata?: StoredProjectMetadata | null) {
+function joinPersonaSummary(values: readonly string[]) {
+  if (values.length === 0) {
+    return null;
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} and ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+}
+
+function buildProjectBriefSummary(projectBrief: ProjectBrief) {
+  const category = projectBrief.productCategory ?? projectBrief.projectName;
+  const problem = projectBrief.problemStatement ?? projectBrief.outcomePromise;
+
+  if (category && problem) {
+    return `${category} focused on ${problem.replace(/[.!?]+$/g, "")}.`;
+  }
+
+  return category ?? problem ?? null;
+}
+
+function buildPrimaryGoal(
+  projectMetadata?: StoredProjectMetadata | null,
+  projectBrief?: ProjectBrief | null
+) {
   const buildSession = projectMetadata?.buildSession ?? null;
   const saasIntake = projectMetadata?.saasIntake ?? null;
   const mobileAppIntake = projectMetadata?.mobileAppIntake ?? null;
 
   return clipSentence(
     pickFirstProjectContextText(
+      projectBrief?.outcomePromise,
+      projectBrief?.problemStatement,
       buildSession?.scope.businessGoal,
       buildSession?.scope.problem,
       buildSession?.scope.projectDefinitionSummary,
@@ -68,13 +109,21 @@ function buildPrimaryGoal(projectMetadata?: StoredProjectMetadata | null) {
   );
 }
 
-function buildAudienceSummary(projectMetadata?: StoredProjectMetadata | null) {
+function buildAudienceSummary(
+  projectMetadata?: StoredProjectMetadata | null,
+  projectBrief?: ProjectBrief | null
+) {
   const buildSession = projectMetadata?.buildSession ?? null;
   const saasIntake = projectMetadata?.saasIntake ?? null;
   const mobileAppIntake = projectMetadata?.mobileAppIntake ?? null;
+  const projectBriefAudience = joinPersonaSummary([
+    ...(projectBrief?.buyerPersonas ?? []),
+    ...(projectBrief?.operatorPersonas ?? [])
+  ]);
 
   return clipSentence(
     pickFirstProjectContextText(
+      projectBriefAudience,
       buildSession?.scope.targetUsers,
       buildSession?.scope.audience,
       mobileAppIntake?.answers.audience,
@@ -84,13 +133,18 @@ function buildAudienceSummary(projectMetadata?: StoredProjectMetadata | null) {
   );
 }
 
-function buildBuildingSummary(project: ProjectRecord, projectMetadata?: StoredProjectMetadata | null) {
+function buildBuildingSummary(
+  project: ProjectRecord,
+  projectMetadata?: StoredProjectMetadata | null,
+  projectBrief?: ProjectBrief | null
+) {
   const buildSession = projectMetadata?.buildSession ?? null;
   const saasIntake = projectMetadata?.saasIntake ?? null;
   const mobileAppIntake = projectMetadata?.mobileAppIntake ?? null;
 
   return clipSentence(
     pickFirstProjectContextText(
+      projectBrief ? buildProjectBriefSummary(projectBrief) : null,
       buildSession?.scope.projectDefinitionSummary,
       buildSession?.scope.summary,
       buildSession?.scope.businessDirectionSummary,
@@ -102,7 +156,11 @@ function buildBuildingSummary(project: ProjectRecord, projectMetadata?: StoredPr
   );
 }
 
-function resolveActivePhase(projectMetadata?: StoredProjectMetadata | null): WorkspacePhaseId {
+function resolveActivePhase(args: {
+  projectMetadata?: StoredProjectMetadata | null;
+  projectBrief: ProjectBrief;
+}): WorkspacePhaseId {
+  const projectMetadata = args.projectMetadata;
   const buildSession = projectMetadata?.buildSession ?? null;
 
   if (
@@ -121,6 +179,10 @@ function resolveActivePhase(projectMetadata?: StoredProjectMetadata | null): Wor
     buildSession?.scope.integrationNeeds?.length ||
     buildSession?.scope.frameworkLabel
   ) {
+    return "scope";
+  }
+
+  if (args.projectBrief.readiness.readyForArchitectureGeneration) {
     return "scope";
   }
 
@@ -183,11 +245,16 @@ function resolveCurrentFocus(args: {
   buildingSummary: string | null;
   audienceSummary: string | null;
   primaryGoal: string | null;
+  projectBrief: ProjectBrief;
 }) {
   const phaseCopy = resolvePhaseCopy(args.activePhase);
 
   if (args.activePhase !== "strategy") {
     return phaseCopy.focus;
+  }
+
+  if (args.projectBrief.openQuestions.length > 0) {
+    return args.projectBrief.openQuestions.slice(0, 3).map((question) => question.label);
   }
 
   return [
@@ -202,7 +269,17 @@ function resolveNextStep(args: {
   buildingSummary: string | null;
   audienceSummary: string | null;
   primaryGoal: string | null;
+  projectBrief: ProjectBrief;
 }) {
+  if (args.activePhase === "strategy" && args.projectBrief.openQuestions.length > 0) {
+    const nextQuestion = args.projectBrief.openQuestions[0];
+
+    return {
+      title: nextQuestion.label,
+      body: nextQuestion.question
+    };
+  }
+
   if (!args.buildingSummary) {
     return {
       title: "Define What You're Building",
@@ -252,27 +329,45 @@ function resolveNextStep(args: {
 export function buildProjectContextSnapshot(args: {
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
+  projectBrief?: ProjectBrief | null;
 }): ProjectContextSnapshot {
-  const buildingSummary = buildBuildingSummary(args.project, args.projectMetadata);
-  const audienceSummary = buildAudienceSummary(args.projectMetadata);
-  const primaryGoal = buildPrimaryGoal(args.projectMetadata);
-  const activePhase = resolveActivePhase(args.projectMetadata);
+  const projectBrief =
+    args.projectBrief ??
+    buildWorkspaceProjectIntelligence({
+      projectTitle: args.project.title,
+      projectDescription: args.project.description,
+      projectMetadata: args.projectMetadata
+    }).projectBrief;
+  const buildingSummary = buildBuildingSummary(args.project, args.projectMetadata, projectBrief);
+  const audienceSummary = buildAudienceSummary(args.projectMetadata, projectBrief);
+  const primaryGoal = buildPrimaryGoal(args.projectMetadata, projectBrief);
+  const activePhase = resolveActivePhase({
+    projectMetadata: args.projectMetadata,
+    projectBrief
+  });
   const phaseCopy = resolvePhaseCopy(activePhase);
   const currentFocus = resolveCurrentFocus({
     activePhase,
     buildingSummary,
     audienceSummary,
-    primaryGoal
+    primaryGoal,
+    projectBrief
   });
   const nextStep = resolveNextStep({
     activePhase,
     buildingSummary,
     audienceSummary,
-    primaryGoal
+    primaryGoal,
+    projectBrief
   });
 
   return {
     projectName: args.project.title,
+    projectBrief,
+    domainPack: projectBrief.domainPack,
+    briefReadinessScore: projectBrief.readinessScore,
+    briefReadinessStage: projectBrief.readiness.stage,
+    missingCriticalSlots: projectBrief.missingCriticalSlots,
     buildingSummary,
     audienceSummary,
     primaryGoal,

@@ -1,6 +1,12 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  conversationSessionStateSchema,
+  type ConversationSessionState
+} from "@/lib/intelligence/conversation";
+import { generateProjectBrief } from "@/lib/intelligence/project-brief-generator";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import { buildWorkspaceName } from "@/lib/narua/planning";
 import { createBuildSession } from "@/lib/onboarding/build-session";
 import { buildMobileAppWorkspaceBlueprint } from "@/lib/onboarding/mobile-app-intake";
@@ -17,6 +23,64 @@ import {
   safeString,
   syncEngineCreationUsageOrRedirect
 } from "./start-engine-helpers";
+
+function parseConversationStateSnapshot(value: string | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    const result = conversationSessionStateSchema.safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function joinSummaryList(values: readonly string[]) {
+  if (values.length === 0) {
+    return null;
+  }
+
+  if (values.length === 1) {
+    return values[0];
+  }
+
+  if (values.length === 2) {
+    return `${values[0]} and ${values[1]}`;
+  }
+
+  return `${values.slice(0, -1).join(", ")}, and ${values[values.length - 1]}`;
+}
+
+function buildProjectBriefAudienceSummary(projectBrief: ProjectBrief) {
+  const personas = Array.from(
+    new Set([...projectBrief.buyerPersonas, ...projectBrief.operatorPersonas])
+  );
+
+  return joinSummaryList(personas);
+}
+
+function buildProjectBriefDefinition(projectBrief: ProjectBrief) {
+  const productCategory = projectBrief.productCategory ?? "software platform";
+  const audience = buildProjectBriefAudienceSummary(projectBrief);
+  const problem = projectBrief.problemStatement ?? projectBrief.outcomePromise;
+
+  if (audience && problem) {
+    return `${productCategory} for ${audience}, focused on ${problem.replace(/[.!?]+$/g, "")}.`;
+  }
+
+  if (audience) {
+    return `${productCategory} for ${audience}.`;
+  }
+
+  if (problem) {
+    return `${productCategory} focused on ${problem.replace(/[.!?]+$/g, "")}.`;
+  }
+
+  return productCategory;
+}
 
 export async function startWorkspace(formData: FormData) {
   const title = safeString(formData.get("title"));
@@ -73,6 +137,9 @@ export async function startEntryWorkspace(formData: FormData) {
   const selectedPathId = normalizeEntryPathId(safeString(formData.get("selectedPathId")));
   const title = safeString(formData.get("title"));
   const description = safeString(formData.get("description"));
+  const conversationState = parseConversationStateSnapshot(
+    safeString(formData.get("conversationState"))
+  );
 
   if (!title || !description) {
     redirect(
@@ -85,6 +152,13 @@ export async function startEntryWorkspace(formData: FormData) {
 
   const startPath = `/start?entry=${selectedPathId}`;
   const selectedPathLabel = selectedPathId === "managed" ? "Managed Build" : "DIY Build";
+  const projectBrief = generateProjectBrief({
+    projectName: title,
+    projectDescription: description,
+    conversationState
+  });
+  const audienceSummary = buildProjectBriefAudienceSummary(projectBrief);
+  const projectDefinitionSummary = buildProjectBriefDefinition(projectBrief);
   const buildSession = createBuildSession({
     source: "start",
     userIntent: description,
@@ -92,7 +166,17 @@ export async function startEntryWorkspace(formData: FormData) {
     scope: {
       title,
       summary: description,
-      buildStageLabel: selectedPathLabel
+      productTypeLabel: projectBrief.productCategory ?? undefined,
+      buildStageLabel: selectedPathLabel,
+      problem: projectBrief.problemStatement ?? undefined,
+      audience: audienceSummary ?? undefined,
+      targetUsers: audienceSummary ?? undefined,
+      keyFeatures: projectBrief.mustHaveFeatures,
+      integrationNeeds: Array.from(
+        new Set([...projectBrief.integrations, ...projectBrief.dataSources])
+      ),
+      businessGoal: projectBrief.outcomePromise ?? undefined,
+      projectDefinitionSummary
     },
     path: {
       selectedPathId,
@@ -132,7 +216,8 @@ export async function startEntryWorkspace(formData: FormData) {
       preferences: [selectedPathLabel],
       updatedAt: new Date().toISOString()
     },
-    buildSession
+    buildSession,
+    conversationState
   });
 
   const { supabase, user, access, workspaceId } = await createProvisionedWorkspace({

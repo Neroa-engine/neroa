@@ -33,6 +33,10 @@ import {
   type StoredCommandCenterPreviewState
 } from "@/lib/workspace/command-center-design-preview";
 import {
+  conversationSessionStateSchema,
+  type ConversationSessionState
+} from "@/lib/intelligence/conversation";
+import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -49,6 +53,7 @@ export type StoredProjectMetadata = {
   templateId: ProjectTemplateId;
   customLanes: CustomProjectLaneInput[];
   platformContext?: PlatformContext | null;
+  conversationState?: ConversationSessionState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -153,6 +158,30 @@ function normalizeBrandColorValue(value: unknown) {
   }
 
   return normalized.slice(0, 64);
+}
+
+function hasMeaningfulConversationState(value: ConversationSessionState) {
+  return Boolean(
+    value.founderName ||
+      value.productCategory ||
+      value.problemStatement ||
+      value.outcomePromise ||
+      value.monetization ||
+      value.audience.buyerPersonas.length > 0 ||
+      value.audience.operatorPersonas.length > 0 ||
+      value.questionHistory.length > 0 ||
+      value.processedUserTurnIds.length > 0
+  );
+}
+
+function normalizeConversationState(value: unknown) {
+  const result = conversationSessionStateSchema.safeParse(value);
+
+  if (!result.success) {
+    return null;
+  }
+
+  return hasMeaningfulConversationState(result.data) ? result.data : null;
 }
 
 export function defaultStoredCommandCenterBrandSystem(): StoredCommandCenterBrandSystem {
@@ -581,6 +610,7 @@ export function buildStoredProjectMetadata(args: {
   primaryLaneId?: LaneId | string | null;
   customLanes?: CustomProjectLaneInput[];
   platformContext?: PlatformContext | null;
+  conversationState?: ConversationSessionState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -611,6 +641,7 @@ export function buildStoredProjectMetadata(args: {
     templateId: resolvedTemplateId,
     customLanes: args.customLanes ?? [],
     platformContext: loadPlatformContext(args.platformContext),
+    conversationState: normalizeConversationState(args.conversationState),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -654,6 +685,7 @@ function decodeMetadata(value: string) {
             .filter((item): item is CustomProjectLaneInput => Boolean(item))
         : [],
       platformContext: loadPlatformContext(parsed.platformContext),
+      conversationState: normalizeConversationState(parsed.conversationState),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets
