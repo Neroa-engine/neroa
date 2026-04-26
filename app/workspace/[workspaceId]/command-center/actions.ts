@@ -253,6 +253,71 @@ function buildTaskTitle(title: string, request: string) {
   return cleaned.length > 96 ? `${cleaned.slice(0, 93).trimEnd()}...` : cleaned;
 }
 
+function normalizeSerializedString(value: string | null | undefined) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+type PendingExecutionCaptureInput = {
+  workspaceId: string;
+  title?: string | null;
+  request: string;
+  roadmapArea?: string | null;
+};
+
+export async function captureCommandCenterPendingExecutionRequest(
+  input: PendingExecutionCaptureInput
+) {
+  const workspaceId = normalizeSerializedString(input.workspaceId);
+  const request = normalizeSerializedString(input.request);
+  const titleInput = normalizeSerializedString(input.title) ?? "";
+  const roadmapArea = normalizeSerializedString(input.roadmapArea) ?? "Build handoff";
+
+  if (!workspaceId || !request) {
+    throw new Error("Pending execution request could not be captured.");
+  }
+
+  const { supabase, workspace } = await getOwnedWorkspace(workspaceId);
+  const parsed = parseWorkspaceProjectDescription(workspace.description);
+  const existingTasks = parsed.metadata?.commandCenterTasks ?? [];
+  const now = new Date().toISOString();
+  const nextTask: StoredCommandCenterTask = {
+    id: crypto.randomUUID(),
+    title: buildTaskTitle(titleInput, request),
+    request,
+    status: "waiting_on_decision",
+    roadmapArea,
+    sourceType: "roadmap_follow_up",
+    createdAt: now,
+    updatedAt: now
+  };
+
+  const { data, error } = await supabase
+    .from("workspaces")
+    .update({
+      description: buildDescriptionWithMetadata({
+        workspace,
+        commandCenterTasks: [nextTask, ...existingTasks]
+      })
+    })
+    .eq("id", workspaceId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!data) {
+    throw new Error(
+      "Pending execution request could not be confirmed. Workspace write verification is still pending."
+    );
+  }
+
+  revalidateCommandCenterPaths(workspaceId);
+
+  return nextTask;
+}
+
 export async function updateCommandCenterTask(formData: FormData) {
   const workspaceId = safeString(formData.get("workspaceId"));
   const returnTo = getReturnTo(formData, `/workspace/${workspaceId}/command-center`);

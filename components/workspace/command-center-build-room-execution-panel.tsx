@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { captureCommandCenterPendingExecutionRequest } from "@/app/workspace/[workspaceId]/command-center/actions";
 import type {
   BuildRoomOutputMode,
   BuildRoomRelayMode,
@@ -10,7 +12,7 @@ import type {
   BuildRoomTaskType
 } from "@/lib/build-room/contracts";
 import type { BuildRoomArtifact, BuildRoomRun, BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
-import { buildProjectRoomRoute } from "@/lib/portal/routes";
+import { buildProjectRoomRoute, buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import { CommandCenterPanel, CommandCenterSourceBadge } from "@/components/workspace/command-center-ui";
 
@@ -23,6 +25,10 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
+  roadmapApprovalRequired: boolean;
+  roadmapApprovalLabel: string;
+  roadmapApprovalDetail: string;
+  roadmapAreaLabel: string;
 };
 
 type BuildRoomDetailResponse = {
@@ -181,7 +187,11 @@ function buildFallbackTitle(request: string, taskType: BuildRoomTaskType) {
   return `${formatTaskTypeLabel(taskType)} request`;
 }
 
-function buildClassification(taskType: BuildRoomTaskType, riskLevel: BuildRoomRiskLevel) {
+function buildClassification(
+  taskType: BuildRoomTaskType,
+  riskLevel: BuildRoomRiskLevel,
+  roadmapApprovalRequired: boolean
+) {
   const family =
     taskType === "research"
       ? "Guidance-oriented request"
@@ -189,7 +199,9 @@ function buildClassification(taskType: BuildRoomTaskType, riskLevel: BuildRoomRi
         ? "Validation-oriented request"
         : "Execution-oriented request";
   const route =
-    taskType === "research"
+    roadmapApprovalRequired
+      ? "Roadmap approval is still required. Command Center will save the Build Room task as a draft, capture the submission as roadmap-tightening / pending execution work, and hold the existing relay until the roadmap is tightened and approved."
+      : taskType === "research"
       ? "Codex relay will return governed implementation guidance before any lower-level run work is considered."
       : "Command Center will create a Build Room task behind the scenes, send it through the existing relay, and preserve explicit worker approval gating.";
   const risk =
@@ -207,6 +219,10 @@ function buildClassification(taskType: BuildRoomTaskType, riskLevel: BuildRoomRi
 }
 
 function statusBadgeClasses(status: string) {
+  if (status.toLowerCase().includes("pending roadmap")) {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
   if (status.includes("failed")) {
     return "border-rose-200 bg-rose-50 text-rose-700";
   }
@@ -244,7 +260,15 @@ function artifactPreview(artifacts: BuildRoomArtifact[]) {
   );
 }
 
-function resolveExecutionStatusLabel(task: BuildRoomTask, workerMode: BuildRoomRelayMode) {
+function resolveExecutionStatusLabel(
+  task: BuildRoomTask,
+  workerMode: BuildRoomRelayMode,
+  roadmapApprovalRequired: boolean
+) {
+  if (task.status === "draft" && roadmapApprovalRequired) {
+    return "Pending Roadmap Approval";
+  }
+
   if (task.status === "queued_for_codex") {
     return "Queued";
   }
@@ -308,9 +332,16 @@ export function CommandCenterBuildRoomExecutionPanel({
   initialTaskDetail,
   codexRelayMode,
   workerTriggerMode,
-  storageMessage = null
+  storageMessage = null,
+  roadmapApprovalRequired,
+  roadmapApprovalLabel,
+  roadmapApprovalDetail,
+  roadmapAreaLabel
 }: CommandCenterBuildRoomExecutionPanelProps) {
+  const router = useRouter();
   const buildRoomHref = buildProjectRoomRoute(workspaceId, "build-room");
+  const projectWorkspaceHref = buildProjectWorkspaceRoute(workspaceId);
+  const strategyRoomHref = buildProjectRoomRoute(workspaceId, "strategy-room");
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null
@@ -338,8 +369,13 @@ export function CommandCenterBuildRoomExecutionPanel({
     accessMode === "owner" &&
     selectedTask?.status === "codex_complete" &&
     !workerBlockedByBlockers &&
-    !storageMessage;
-  const classification = buildClassification(composer.taskType, composer.riskLevel);
+    !storageMessage &&
+    !roadmapApprovalRequired;
+  const classification = buildClassification(
+    composer.taskType,
+    composer.riskLevel,
+    roadmapApprovalRequired
+  );
 
   async function refreshTask(taskId: string, quiet = false) {
     if (!quiet) {
@@ -412,6 +448,25 @@ export function CommandCenterBuildRoomExecutionPanel({
               body: JSON.stringify(payload)
             })
           ).detail;
+      setSelectedTaskId(savedDetail.task.id);
+      setSelectedDetail(savedDetail);
+      setTasks((current) => replaceTaskSummary(current, savedDetail.task));
+      setComposer(createComposerFromTask(savedDetail.task));
+
+      if (roadmapApprovalRequired) {
+        await captureCommandCenterPendingExecutionRequest({
+          workspaceId,
+          title: normalizedTitle,
+          request: payload.userRequest,
+          roadmapArea: roadmapAreaLabel
+        });
+        setNoticeMessage(
+          "Roadmap approval is still required. Command Center saved the Build Room task as a draft and captured the request as pending execution so the roadmap can be tightened before the relay runs."
+        );
+        router.refresh();
+        return;
+      }
+
       const finalDetail = (
         await requestBuildRoomJson<BuildRoomDetailResponse>(
           `/api/build-room/tasks/${savedDetail.task.id}/submit-codex`,
@@ -540,9 +595,10 @@ export function CommandCenterBuildRoomExecutionPanel({
             Start Build Room work from Command Center
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            New execution requests now start here. Command Center classifies the request, creates the
-            existing Build Room task behind the scenes, sends it through the current relay, and keeps
-            Build Room focused on lower-level run details and execution history.
+            New execution requests now start here. When roadmap approval is in place, Command Center
+            classifies the request, creates the existing Build Room task behind the scenes, and sends
+            it through the current relay. When roadmap approval is still pending, Command Center
+            captures the request here and keeps the Build Room relay on hold.
           </p>
         </div>
 
@@ -563,6 +619,34 @@ export function CommandCenterBuildRoomExecutionPanel({
       {noticeMessage ? (
         <div className="mt-4 rounded-[22px] border border-cyan-200 bg-cyan-50 px-4 py-4 text-sm text-cyan-700">
           {noticeMessage}
+        </div>
+      ) : null}
+
+      {roadmapApprovalRequired ? (
+        <div className="mt-4 rounded-[26px] border border-amber-200 bg-amber-50/90 px-5 py-5 shadow-[0_18px_38px_rgba(180,83,9,0.08)]">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="max-w-3xl">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                Roadmap Approval Required
+              </p>
+              <p className="mt-3 text-base font-semibold text-slate-950">{roadmapApprovalLabel}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-700">{roadmapApprovalDetail}</p>
+              <p className="mt-3 text-sm leading-7 text-slate-700">
+                You can still submit the request here. Command Center will capture it as a
+                roadmap-tightening / pending-execution request, keep the Build Room task in draft,
+                and wait for roadmap approval before the existing relay is allowed to run.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Link href={projectWorkspaceHref} className="button-primary text-sm">
+                Open Project Workspace
+              </Link>
+              <Link href={strategyRoomHref} className="button-secondary text-sm">
+                Tighten in Strategy Room
+              </Link>
+            </div>
+          </div>
         </div>
       ) : null}
 
@@ -733,8 +817,9 @@ export function CommandCenterBuildRoomExecutionPanel({
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-4">
               <p className="text-xs leading-6 text-slate-600">
-                Sending to execution creates or updates the existing Build Room task, sends it
-                through the current relay, and keeps worker approval as a separate governed step.
+                {roadmapApprovalRequired
+                  ? "Submitting now captures the request as pending execution. Command Center keeps the Build Room task in draft and preserves the current execution gate until roadmap approval lands."
+                  : "Sending to execution creates or updates the existing Build Room task, sends it through the current relay, and keeps worker approval as a separate governed step."}
               </p>
               <div className="flex flex-wrap items-center gap-2">
                 {selectedTask ? (
@@ -762,10 +847,16 @@ export function CommandCenterBuildRoomExecutionPanel({
                   }
                 >
                   {pendingAction === "send"
-                    ? "Sending..."
-                    : composer.taskId
-                      ? "Resend to Execution"
-                      : "Send to Execution"}
+                    ? roadmapApprovalRequired
+                      ? "Capturing..."
+                      : "Sending..."
+                    : roadmapApprovalRequired
+                      ? composer.taskId
+                        ? "Update Pending Execution"
+                        : "Capture Pending Execution"
+                      : composer.taskId
+                        ? "Resend to Execution"
+                        : "Send to Execution"}
                 </button>
               </div>
             </div>
@@ -811,10 +902,20 @@ export function CommandCenterBuildRoomExecutionPanel({
                         className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
                           selectedTaskId === task.id
                             ? "border-white/20 bg-white/10 text-white"
-                            : statusBadgeClasses(task.status)
+                            : statusBadgeClasses(
+                                resolveExecutionStatusLabel(
+                                  task,
+                                  workerTriggerMode,
+                                  roadmapApprovalRequired
+                                )
+                              )
                         }`}
                       >
-                        {resolveExecutionStatusLabel(task, workerTriggerMode)}
+                        {resolveExecutionStatusLabel(
+                          task,
+                          workerTriggerMode,
+                          roadmapApprovalRequired
+                        )}
                       </span>
                     </div>
                     <p
@@ -851,17 +952,29 @@ export function CommandCenterBuildRoomExecutionPanel({
                 </p>
                 <p className="mt-2 text-base font-semibold text-slate-950">
                   {selectedTask
-                    ? resolveExecutionStatusLabel(selectedTask, workerTriggerMode)
+                    ? resolveExecutionStatusLabel(
+                        selectedTask,
+                        workerTriggerMode,
+                        roadmapApprovalRequired
+                      )
                     : "No execution request selected"}
                 </p>
               </div>
               {selectedTask ? (
                 <span
                   className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${statusBadgeClasses(
-                    selectedTask.status
+                    resolveExecutionStatusLabel(
+                      selectedTask,
+                      workerTriggerMode,
+                      roadmapApprovalRequired
+                    )
                   )}`}
                 >
-                  {resolveExecutionStatusLabel(selectedTask, workerTriggerMode)}
+                  {resolveExecutionStatusLabel(
+                    selectedTask,
+                    workerTriggerMode,
+                    roadmapApprovalRequired
+                  )}
                 </span>
               ) : null}
             </div>
@@ -892,9 +1005,11 @@ export function CommandCenterBuildRoomExecutionPanel({
                     Current result
                   </p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    {selectedWorkerRun?.logExcerpt ??
-                      selectedCodexResult?.summary ??
-                      "This task has been created, but Build Room has not recorded a relay result yet."}
+                    {roadmapApprovalRequired && selectedTask.status === "draft"
+                      ? "This request has been captured as pending execution. Build Room is holding it in draft until the roadmap is tightened and approved."
+                      : selectedWorkerRun?.logExcerpt ??
+                        selectedCodexResult?.summary ??
+                        "This task has been created, but Build Room has not recorded a relay result yet."}
                   </p>
                 </div>
 
@@ -939,6 +1054,12 @@ export function CommandCenterBuildRoomExecutionPanel({
                   {accessMode !== "owner" ? (
                     <p className="mt-3 text-xs leading-6 text-amber-700">
                       Only the workspace owner can approve a worker run.
+                    </p>
+                  ) : null}
+                  {roadmapApprovalRequired ? (
+                    <p className="mt-3 text-xs leading-6 text-amber-700">
+                      Roadmap approval is still required before this request can move into worker
+                      execution.
                     </p>
                   ) : null}
                   {workerBlockedByBlockers ? (

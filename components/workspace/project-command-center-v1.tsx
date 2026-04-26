@@ -35,6 +35,12 @@ export function ProjectCommandCenterV1({
   buildRoomWorkerTriggerMode,
   buildRoomStorageMessage = null
 }: ProjectCommandCenterV1Props) {
+  const roadmapApprovalRequired =
+    commandCenter.roomState.dataState === "degraded" ||
+    commandCenter.decisionInbox.blockingOpenCount > 0 ||
+    commandCenter.activePhase.label === "Strategy" ||
+    commandCenter.activePhase.label === "Scope Definition";
+
   return (
     <section className="surface-main relative overflow-visible rounded-[42px] p-5 xl:p-6 2xl:p-8">
       <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[42px]">
@@ -71,6 +77,12 @@ export function ProjectCommandCenterV1({
             codexRelayMode={buildRoomCodexRelayMode}
             workerTriggerMode={buildRoomWorkerTriggerMode}
             storageMessage={buildRoomStorageMessage}
+            roadmapApprovalRequired={roadmapApprovalRequired}
+            roadmapApprovalLabel={commandCenter.executionReadiness.label}
+            roadmapApprovalDetail={commandCenter.executionReadiness.detail}
+            roadmapAreaLabel={
+              commandCenter.taskQueue.currentRoadmapArea ?? commandCenter.activePhase.label
+            }
           />
           <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
             <CommandCenterTaskQueuePanelView
