@@ -1,4 +1,5 @@
 import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
+import { StrategyRoomSavebackPanel } from "@/components/workspace/strategy-room-saveback-panel";
 import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import {
   buildArchitectureBlueprintSummary,
@@ -327,6 +328,14 @@ export function ProjectStrategyRoomV1({
       <GovernanceDraftPanel governancePolicy={governancePolicy} />
       <RoadmapDraftPanel roadmapPlan={roadmapPlan} />
       <ArchitectureDraftPanel architectureBlueprint={architectureBlueprint} />
+      <StrategyRoomSavebackPanel
+        project={project}
+        projectMetadata={projectMetadata}
+        projectBrief={projectBrief}
+        architectureBlueprint={architectureBlueprint}
+        roadmapPlan={roadmapPlan}
+        governancePolicy={governancePolicy}
+      />
       <CanonicalEntryFlow
         initialEntryPathId={planningPathId}
         initialTitle={project.title}

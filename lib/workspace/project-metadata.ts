@@ -43,6 +43,12 @@ import {
   type ScopeApprovalRecord
 } from "@/lib/intelligence/governance/types";
 import {
+  loadStrategyOverrideState,
+  loadStrategyRevisionRecord,
+  type StrategyOverrideState,
+  type StrategyRevisionRecord
+} from "@/lib/intelligence/revisions/types";
+import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -61,6 +67,7 @@ export type StoredProjectMetadata = {
   platformContext?: PlatformContext | null;
   conversationState?: ConversationSessionState | null;
   governanceState?: StoredGovernanceState | null;
+  strategyState?: StoredStrategyState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -79,6 +86,11 @@ export type StoredProjectMetadata = {
 export type StoredGovernanceState = {
   scopeApprovalRecord?: ScopeApprovalRecord | null;
   roadmapRevisionRecords?: RoadmapRevisionRecord[];
+};
+
+export type StoredStrategyState = {
+  overrideState?: StrategyOverrideState | null;
+  revisionRecords?: StrategyRevisionRecord[];
 };
 
 export type StoredProjectAsset = {
@@ -216,6 +228,29 @@ function normalizeGovernanceState(value: unknown): StoredGovernanceState | null 
   return {
     scopeApprovalRecord,
     roadmapRevisionRecords
+  };
+}
+
+function normalizeStrategyState(value: unknown): StoredStrategyState | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const overrideState = loadStrategyOverrideState(record.overrideState);
+  const revisionRecords = Array.isArray(record.revisionRecords)
+    ? record.revisionRecords
+        .map((item) => loadStrategyRevisionRecord(item))
+        .filter((item): item is StrategyRevisionRecord => Boolean(item))
+    : [];
+
+  if (!overrideState && revisionRecords.length === 0) {
+    return null;
+  }
+
+  return {
+    overrideState,
+    revisionRecords
   };
 }
 
@@ -647,6 +682,7 @@ export function buildStoredProjectMetadata(args: {
   platformContext?: PlatformContext | null;
   conversationState?: ConversationSessionState | null;
   governanceState?: StoredGovernanceState | null;
+  strategyState?: StoredStrategyState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -679,6 +715,7 @@ export function buildStoredProjectMetadata(args: {
     platformContext: loadPlatformContext(args.platformContext),
     conversationState: normalizeConversationState(args.conversationState),
     governanceState: normalizeGovernanceState(args.governanceState),
+    strategyState: normalizeStrategyState(args.strategyState),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -724,6 +761,7 @@ function decodeMetadata(value: string) {
       platformContext: loadPlatformContext(parsed.platformContext),
       conversationState: normalizeConversationState(parsed.conversationState),
       governanceState: normalizeGovernanceState(parsed.governanceState),
+      strategyState: normalizeStrategyState(parsed.strategyState),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets

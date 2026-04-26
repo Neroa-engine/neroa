@@ -38,6 +38,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Billing and entitlement | 4 | Trust boundary. High-impact by default. |
 | Browser runtime core V2 | 3 | Current-promoted exception for legacy bridge replacement, deterministic open/attach/bind/tab selection, unified command lifecycle, real Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. |
 | Browser/live-view mutation tooling | 5 | Full browser visual editor, unrestricted live manipulation, and full rebuild tooling remain future-phase. |
+| Strategy intelligence save-back | 3 with 1 and 2 support | Shared Strategy Room save-back, revision persistence, and derived-intelligence rehydration stay inside the existing ProjectBrief, ArchitectureBlueprint, RoadmapPlan, and GovernancePolicy spine. Material scope or architecture revisions still flow back through Phase 2 governance before execution can widen. |
 
 ## Phase Assignment Rules
 

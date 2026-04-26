@@ -9,9 +9,12 @@ import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
   parseWorkspaceProjectDescription,
+  type StoredGovernanceState,
+  type StoredStrategyState,
   type StoredCommandCenterBrandSystem,
   type StoredProjectAsset
 } from "@/lib/workspace/project-metadata";
+import type { ConversationSessionState } from "@/lib/intelligence/conversation";
 import type { PlatformContext } from "@/lib/intelligence/platform-context";
 import type { StoredCommandCenterDecision } from "@/lib/workspace/command-center-decisions";
 import type { StoredCommandCenterChangeReview } from "@/lib/workspace/command-center-change-impact";
@@ -120,6 +123,9 @@ export function buildDescriptionWithMetadata(args: {
   };
   title?: string;
   platformContext?: PlatformContext | null;
+  conversationState?: ConversationSessionState | null;
+  governanceState?: StoredGovernanceState | null;
+  strategyState?: StoredStrategyState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -139,6 +145,9 @@ export function buildDescriptionWithMetadata(args: {
       templateId: parsed.metadata?.templateId ?? null,
       customLanes: parsed.metadata?.customLanes ?? [],
       platformContext: args.platformContext ?? parsed.metadata?.platformContext ?? null,
+      conversationState: args.conversationState ?? parsed.metadata?.conversationState ?? null,
+      governanceState: args.governanceState ?? parsed.metadata?.governanceState ?? null,
+      strategyState: args.strategyState ?? parsed.metadata?.strategyState ?? null,
       archived: args.archived ?? parsed.metadata?.archived ?? false,
       assets: args.assets ?? parsed.metadata?.assets ?? [],
       commandCenterBrandSystem:

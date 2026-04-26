@@ -102,6 +102,7 @@ This promoted scope does **not** include:
   - project surfaces
   - stable backend execution paths already mapped by roadmap
   - planning-to-execution handoff interfaces
+  - shared Strategy Room save-back, revision persistence, and intelligence rehydration when they stay inside the existing ProjectBrief, ArchitectureBlueprint, RoadmapPlan, and GovernancePolicy spine
   - Browser Runtime Core V2 and Live Session Design Library Bridge when they stay inside the promoted exception above
 - Not allowed to touch:
   - unapproved new branches

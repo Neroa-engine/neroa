@@ -16,6 +16,7 @@ import { generateGovernancePolicy } from "./governance/generator.ts";
 import type { GovernancePolicy } from "./governance/types.ts";
 import { generateRoadmapPlan } from "./roadmap/generator.ts";
 import type { RoadmapPlan } from "./roadmap/types.ts";
+import { applyStrategyOverrideStateToLayers } from "./revisions/apply.ts";
 import {
   type ProjectBriefReadinessStage,
   type ProjectBriefSlotId
@@ -916,6 +917,7 @@ export type WorkspaceProjectIntelligence = {
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
+  strategyState: StoredProjectMetadata["strategyState"] | null;
 };
 
 export function buildWorkspaceProjectIntelligence(args: {
@@ -959,13 +961,24 @@ export function buildWorkspaceProjectIntelligence(args: {
     roadmapPlan,
     projectMetadata: args.projectMetadata ?? null
   });
+  const revisedLayers = args.projectMetadata?.strategyState?.overrideState
+    ? applyStrategyOverrideStateToLayers({
+        workspaceId: args.workspaceId,
+        projectId: args.projectId,
+        projectName: args.projectTitle,
+        projectMetadata: args.projectMetadata ?? null,
+        projectBrief,
+        overrideState: args.projectMetadata.strategyState.overrideState
+      })
+    : null;
 
   return {
     platformContext,
     domainResolution: resolution,
-    projectBrief,
-    architectureBlueprint,
-    roadmapPlan,
-    governancePolicy
+    projectBrief: revisedLayers?.projectBrief ?? projectBrief,
+    architectureBlueprint: revisedLayers?.architectureBlueprint ?? architectureBlueprint,
+    roadmapPlan: revisedLayers?.roadmapPlan ?? roadmapPlan,
+    governancePolicy: revisedLayers?.governancePolicy ?? governancePolicy,
+    strategyState: args.projectMetadata?.strategyState ?? null
   } satisfies WorkspaceProjectIntelligence;
 }
