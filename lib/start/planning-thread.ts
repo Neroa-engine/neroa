@@ -1,4 +1,7 @@
-import type { ConversationSessionState } from "@/lib/intelligence/conversation";
+import {
+  conversationSessionStateSchema,
+  type ConversationSessionState
+} from "@/lib/intelligence/conversation";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
@@ -64,6 +67,108 @@ const WORKFLOW_SIGNAL_PATTERN =
 const CONSTRAINT_SIGNAL_PATTERN =
   /\b(?:budget|timeline|deadline|constraint|integration|migration|compliance|permission|auth|technical|ops|staffing|handoff|launch risk)\b/i;
 
+function cleanPlanningText(value?: string | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizePlanningText(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function parseConversationState(value: unknown) {
+  const result = conversationSessionStateSchema.safeParse(value);
+  return result.success ? result.data : null;
+}
+
+function sanitizePlanningMessages(messages: unknown) {
+  if (!Array.isArray(messages)) {
+    return [] as PlanningMessage[];
+  }
+
+  const sanitizedMessages: PlanningMessage[] = [];
+
+  for (const message of messages) {
+    if (!message || typeof message !== "object") {
+      continue;
+    }
+
+    const record = message as Record<string, unknown>;
+    const role = record.role;
+    const content = cleanPlanningText(
+      typeof record.content === "string" ? record.content : null
+    );
+
+    if ((role !== "assistant" && role !== "user") || !content) {
+      continue;
+    }
+
+    const sanitizedMessage: PlanningMessage = {
+      id:
+        cleanPlanningText(typeof record.id === "string" ? record.id : null) ||
+        `${role}-${Math.random().toString(36).slice(2, 10)}`,
+      role,
+      content
+    };
+
+    const createdAt = cleanPlanningText(
+      typeof record.createdAt === "string" ? record.createdAt : null
+    );
+
+    if (createdAt) {
+      sanitizedMessage.createdAt = createdAt;
+    }
+
+    sanitizedMessages.push(sanitizedMessage);
+  }
+
+  return sanitizedMessages.slice(-20);
+}
+
+function parsePlanningMetadata(
+  value: unknown,
+  lane: PlanningLaneId
+): PlanningThreadMetadata | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const scopeNotes = Array.isArray(record.scopeNotes)
+    ? record.scopeNotes
+        .filter((note): note is string => typeof note === "string" && note.trim().length > 0)
+        .map((note) => normalizePlanningText(note))
+        .slice(0, 6)
+    : [];
+  const recommendedNextStep = cleanPlanningText(
+    typeof record.recommendedNextStep === "string" ? record.recommendedNextStep : null
+  );
+
+  if (!recommendedNextStep) {
+    return null;
+  }
+
+  return {
+    lane,
+    projectTitle: cleanPlanningText(
+      typeof record.projectTitle === "string" ? record.projectTitle : null
+    ) || null,
+    perceivedProject: cleanPlanningText(
+      typeof record.perceivedProject === "string" ? record.perceivedProject : null
+    ) || null,
+    scopeNotes,
+    recommendedNextStep
+  };
+}
+
+function parsePlanningTimestamp(value: string | undefined) {
+  if (!value) {
+    return 0;
+  }
+
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
 function cleanPlanningValue(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -97,6 +202,233 @@ export function buildPlanningThreadStorageKey(args: {
   const identity = normalizeKeySegment(args.userEmail ?? "anonymous") || "anonymous";
   const seedSignature = buildSeedSignature(args.title, args.summary);
   return `neroa:start-thread:${identity}:${args.lane}:${seedSignature}`;
+}
+
+export function loadPlanningThreadState(value: unknown): PlanningThreadState | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const lane = record.lane === "managed" ? "managed" : record.lane === "diy" ? "diy" : null;
+  const threadId = cleanPlanningText(
+    typeof record.threadId === "string" ? record.threadId : null
+  );
+  const updatedAt = cleanPlanningText(
+    typeof record.updatedAt === "string" ? record.updatedAt : null
+  );
+
+  if (!lane || !threadId || !updatedAt) {
+    return null;
+  }
+
+  const messages = sanitizePlanningMessages(record.messages);
+  const metadata = parsePlanningMetadata(record.metadata, lane);
+
+  if (messages.length === 0 || !metadata) {
+    return null;
+  }
+
+  return {
+    threadId,
+    lane,
+    messages,
+    metadata,
+    conversationState: parseConversationState(record.conversationState),
+    updatedAt
+  };
+}
+
+export function createPersistedPlanningThreadState(
+  threadState: PlanningThreadState
+): PlanningThreadState {
+  const normalizedMessages = sanitizePlanningMessages(threadState.messages);
+  const metadata = parsePlanningMetadata(threadState.metadata, threadState.lane);
+
+  if (normalizedMessages.length === 0 || !metadata) {
+    throw new Error("Cannot persist an empty planning thread.");
+  }
+
+  return {
+    threadId: cleanPlanningText(threadState.threadId),
+    lane: threadState.lane,
+    messages: normalizedMessages,
+    metadata,
+    conversationState: threadState.conversationState ?? null,
+    updatedAt: cleanPlanningText(threadState.updatedAt) || new Date().toISOString()
+  };
+}
+
+export function hasPlanningThreadHistory(value: PlanningThreadState | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  return value.messages.some(
+    (message) => message.id !== "assistant-intro" && cleanPlanningText(message.content).length > 0
+  );
+}
+
+export function hasMeaningfulPlanningConversationState(
+  value: ConversationSessionState | null | undefined
+) {
+  if (!value) {
+    return false;
+  }
+
+  return Boolean(
+    value.founderName ||
+      value.productCategory ||
+      value.problemStatement ||
+      value.outcomePromise ||
+      value.monetization ||
+      value.audience.buyerPersonas.length > 0 ||
+      value.audience.operatorPersonas.length > 0 ||
+      value.questionHistory.length > 0 ||
+      value.processedUserTurnIds.length > 0
+  );
+}
+
+export function choosePreferredPlanningThreadState(args: {
+  persistedThreadState?: PlanningThreadState | null;
+  localThreadState?: PlanningThreadState | null;
+}) {
+  const persisted = args.persistedThreadState ?? null;
+  const local = args.localThreadState ?? null;
+
+  if (!local) {
+    return persisted;
+  }
+
+  if (!persisted) {
+    return local;
+  }
+
+  return parsePlanningTimestamp(local.updatedAt) >= parsePlanningTimestamp(persisted.updatedAt)
+    ? local
+    : persisted;
+}
+
+export function buildProjectResumePlanningThread(args: {
+  threadId: string;
+  lane: PlanningLaneId;
+  projectTitle: string;
+  projectSummary?: string | null;
+  currentFocus?: string | null;
+  blockers?: readonly string[];
+  nextStep?: string | null;
+  conversationState?: ConversationSessionState | null;
+}) {
+  const now = new Date().toISOString();
+  const summary =
+    cleanPlanningText(args.projectSummary) || `Continue planning ${args.projectTitle}.`;
+  const blockerText =
+    args.blockers && args.blockers.length > 0
+      ? args.blockers.slice(0, 2).join(" ")
+      : "No blocking approval items are open right now.";
+  const assistantMessage = [
+    `We're resuming ${args.projectTitle}.`,
+    args.currentFocus ? `Current focus: ${args.currentFocus}.` : null,
+    `Open blockers: ${blockerText}`,
+    args.nextStep ? `Next move: ${args.nextStep}` : null
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return {
+    threadId: cleanPlanningText(args.threadId) || `project-thread-${Date.now()}`,
+    lane: args.lane,
+    messages: [
+      buildPlanningIntroMessage(args.lane),
+      {
+        id: "project-resume-summary",
+        role: "user",
+        content: summary,
+        createdAt: now
+      },
+      {
+        id: "project-resume-assistant",
+        role: "assistant",
+        content: assistantMessage,
+        createdAt: now
+      }
+    ],
+    metadata: {
+      lane: args.lane,
+      projectTitle: cleanPlanningText(args.projectTitle) || null,
+      perceivedProject: summary,
+      scopeNotes: [summary].filter(Boolean),
+      recommendedNextStep:
+        cleanPlanningText(args.nextStep) ||
+        "Keep tightening the scope and approval blockers in this room."
+    },
+    conversationState: args.conversationState ?? null,
+    updatedAt: now
+  } satisfies PlanningThreadState;
+}
+
+export function hasSavedProjectPlanningState(args: {
+  planningThreadState?: PlanningThreadState | null;
+  conversationState?: ConversationSessionState | null;
+  hasStrategyOverrides?: boolean;
+  hasRevisionHistory?: boolean;
+  hasSavedPlanningArtifacts?: boolean;
+  projectSummary?: string | null;
+}) {
+  return Boolean(
+    hasPlanningThreadHistory(args.planningThreadState ?? null) ||
+      hasMeaningfulPlanningConversationState(args.conversationState ?? null) ||
+      args.hasStrategyOverrides ||
+      args.hasRevisionHistory ||
+      args.hasSavedPlanningArtifacts ||
+      cleanPlanningText(args.projectSummary).length > 0
+  );
+}
+
+export function buildStrategyRoomInitialThreadState(args: {
+  lane: PlanningLaneId;
+  planningThreadState?: PlanningThreadState | null;
+  conversationState?: ConversationSessionState | null;
+  hasStrategyOverrides?: boolean;
+  hasRevisionHistory?: boolean;
+  hasSavedPlanningArtifacts?: boolean;
+  projectTitle: string;
+  projectSummary?: string | null;
+  currentFocus?: string | null;
+  blockers?: readonly string[];
+  nextStep?: string | null;
+  fallbackThreadId?: string | null;
+}) {
+  if (hasPlanningThreadHistory(args.planningThreadState ?? null)) {
+    return args.planningThreadState ?? null;
+  }
+
+  if (
+    !hasSavedProjectPlanningState({
+      planningThreadState: args.planningThreadState,
+      conversationState: args.conversationState,
+      hasStrategyOverrides: args.hasStrategyOverrides,
+      hasRevisionHistory: args.hasRevisionHistory,
+      hasSavedPlanningArtifacts: args.hasSavedPlanningArtifacts,
+      projectSummary: args.projectSummary
+    })
+  ) {
+    return null;
+  }
+
+  return buildProjectResumePlanningThread({
+    threadId:
+      cleanPlanningText(args.fallbackThreadId) ||
+      args.planningThreadState?.threadId ||
+      `project-thread-${Date.now()}`,
+    lane: args.lane,
+    projectTitle: args.projectTitle,
+    projectSummary: args.projectSummary,
+    currentFocus: args.currentFocus,
+    blockers: args.blockers,
+    nextStep: args.nextStep,
+    conversationState: args.conversationState ?? args.planningThreadState?.conversationState ?? null
+  });
 }
 
 export function isPlanningResetCommand(value?: string | null) {

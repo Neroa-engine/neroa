@@ -20,7 +20,10 @@ import {
   type PlatformContext
 } from "@/lib/intelligence/platform-context";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
-import type { PlanningLaneId } from "@/lib/start/planning-thread";
+import {
+  buildStrategyRoomInitialThreadState,
+  type PlanningLaneId
+} from "@/lib/start/planning-thread";
 import { buildProjectContextSnapshot } from "@/lib/workspace/project-context-summary";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
@@ -81,6 +84,18 @@ function formatLabel(value: string | null | undefined) {
   return value
     .replace(/_/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function hasSavedPlanningArtifacts(
+  project: ProjectRecord,
+  projectMetadata?: StoredProjectMetadata | null
+) {
+  return Boolean(
+    project.description?.trim() ||
+      projectMetadata?.buildSession ||
+      projectMetadata?.saasIntake ||
+      projectMetadata?.mobileAppIntake
+  );
 }
 
 function toneClasses(tone: BadgeTone) {
@@ -284,6 +299,20 @@ export function ProjectStrategyRoomV1({
   const capabilityPreview = projectBrief.capabilityProfile.primaryCapabilities
     .slice(0, 4)
     .map((capability) => formatLabel(capability) ?? capability);
+  const initialThreadState = buildStrategyRoomInitialThreadState({
+    lane: planningPathId,
+    planningThreadState: projectMetadata?.strategyState?.planningThreadState ?? null,
+    conversationState: projectMetadata?.conversationState ?? null,
+    hasStrategyOverrides: Boolean(projectMetadata?.strategyState?.overrideState),
+    hasRevisionHistory: (projectMetadata?.strategyState?.revisionRecords?.length ?? 0) > 0,
+    hasSavedPlanningArtifacts: hasSavedPlanningArtifacts(project, projectMetadata),
+    projectTitle: project.title,
+    projectSummary: threadSummary,
+    currentFocus: currentPlanningFocus,
+    blockers: governancePolicy.approvalReadiness.blockers,
+    nextStep: projectContext.nextStepBody,
+    fallbackThreadId: `project-strategy-${project.id}`
+  });
 
   return (
     <div className="space-y-4 text-slate-100">
@@ -399,6 +428,11 @@ export function ProjectStrategyRoomV1({
             initialSummary={threadSummary}
             initialError={null}
             initialNotice={null}
+            initialThreadState={initialThreadState}
+            persistedProjectContext={{
+              workspaceId: project.workspaceId,
+              projectId: project.id
+            }}
             surfaceMode="project"
             seedSummaryIntoThread={false}
             storageKeyOverride={`neroa:project-strategy-thread:${project.workspaceId}:${project.id}`}

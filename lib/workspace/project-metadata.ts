@@ -49,6 +49,10 @@ import {
   type StrategyRevisionRecord
 } from "@/lib/intelligence/revisions/types";
 import {
+  loadPlanningThreadState,
+  type PlanningThreadState
+} from "@/lib/start/planning-thread";
+import {
   loadExecutionPacketSummary,
   loadExecutionState,
   loadPendingExecutionItem,
@@ -105,6 +109,7 @@ export type StoredGovernanceState = {
 export type StoredStrategyState = {
   overrideState?: StrategyOverrideState | null;
   revisionRecords?: StrategyRevisionRecord[];
+  planningThreadState?: PlanningThreadState | null;
 };
 
 export type StoredExecutionState = {
@@ -264,15 +269,32 @@ function normalizeStrategyState(value: unknown): StoredStrategyState | null {
         .map((item) => loadStrategyRevisionRecord(item))
         .filter((item): item is StrategyRevisionRecord => Boolean(item))
     : [];
+  const planningThreadState = loadPlanningThreadState(record.planningThreadState);
 
-  if (!overrideState && revisionRecords.length === 0) {
+  if (!overrideState && revisionRecords.length === 0 && !planningThreadState) {
     return null;
   }
 
   return {
     overrideState,
-    revisionRecords
+    revisionRecords,
+    planningThreadState
   };
+}
+
+function mergeStoredStrategyState(
+  current: StoredStrategyState | null | undefined,
+  next: StoredStrategyState | null | undefined
+) {
+  if (!next) {
+    return current ?? null;
+  }
+
+  return normalizeStrategyState({
+    overrideState: next.overrideState ?? current?.overrideState ?? null,
+    revisionRecords: next.revisionRecords ?? current?.revisionRecords ?? [],
+    planningThreadState: next.planningThreadState ?? current?.planningThreadState ?? null
+  });
 }
 
 function normalizeExecutionStateValue(value: unknown): StoredExecutionState | null {
@@ -823,7 +845,7 @@ export function mergeStoredProjectMetadata(args: {
     platformContext: args.platformContext ?? existing?.platformContext ?? null,
     conversationState: args.conversationState ?? existing?.conversationState ?? null,
     governanceState: args.governanceState ?? existing?.governanceState ?? null,
-    strategyState: args.strategyState ?? existing?.strategyState ?? null,
+    strategyState: mergeStoredStrategyState(existing?.strategyState, args.strategyState),
     executionState: args.executionState ?? existing?.executionState ?? null,
     billingState: args.billingState ?? existing?.billingState ?? null,
     archived: args.archived ?? existing?.archived ?? false,

@@ -8,10 +8,7 @@ import {
   loadArchitectureBlueprint,
   type ArchitectureBlueprint
 } from "@/lib/intelligence/architecture";
-import {
-  loadConversationSessionState,
-  type ConversationSessionState
-} from "@/lib/intelligence/conversation";
+import type { ConversationSessionState } from "@/lib/intelligence/conversation";
 import {
   loadGovernancePolicy,
   type GovernancePolicy
@@ -29,8 +26,11 @@ import {
   analyzePlanningInputs,
   buildInitialPlanningMessages,
   buildPlanningThreadStorageKey,
+  choosePreferredPlanningThreadState,
+  hasMeaningfulPlanningConversationState,
   isPlanningResetCommand,
   isWeakPlanningInput,
+  loadPlanningThreadState,
   type PlanningLaneId,
   type PlanningMessage,
   type PlanningThreadMetadata,
@@ -72,6 +72,11 @@ type StrategyResumeSnapshot = {
   workspaceLabel?: string;
 };
 
+type PersistedProjectContext = {
+  workspaceId: string;
+  projectId: string;
+};
+
 type CanonicalEntryFlowProps = {
   initialUserEmail?: string;
   initialEntryPathId: PlanningLaneId;
@@ -89,6 +94,8 @@ type CanonicalEntryFlowProps = {
   seedSummaryIntoThread?: boolean;
   layoutVariant?: "default" | "embedded";
   showProjectFooter?: boolean;
+  initialThreadState?: PlanningThreadState | null;
+  persistedProjectContext?: PersistedProjectContext | null;
 };
 
 const DEFAULT_STRATEGY_ROOM_COPY: StrategyRoomCopy = {
@@ -169,60 +176,6 @@ function buildReturnPath(args: {
   }
 
   return `${APP_ROUTES.start}?${params.toString()}`;
-}
-
-function sanitizeStoredMessages(messages: unknown) {
-  if (!Array.isArray(messages)) {
-    return null;
-  }
-
-  const sanitized = messages
-    .map((message) => {
-      if (!message || typeof message !== "object") {
-        return null;
-      }
-
-      const record = message as Record<string, unknown>;
-      const role = record.role;
-      const content = record.content;
-
-      if ((role !== "assistant" && role !== "user") || typeof content !== "string") {
-        return null;
-      }
-
-      const sanitizedMessage: PlanningMessage = {
-        id: typeof record.id === "string" && record.id.trim() ? record.id : createClientId(String(role)),
-        role,
-        content: content.trim()
-      };
-
-      if (typeof record.createdAt === "string") {
-        sanitizedMessage.createdAt = record.createdAt;
-      }
-
-      return sanitizedMessage;
-    })
-    .filter((message): message is PlanningMessage => Boolean(message && message.content));
-
-  return sanitized.length > 0 ? sanitized : null;
-}
-
-function hasMeaningfulConversationState(value: ConversationSessionState | null) {
-  if (!value) {
-    return false;
-  }
-
-  return Boolean(
-    value.founderName ||
-      value.productCategory ||
-      value.problemStatement ||
-      value.outcomePromise ||
-      value.monetization ||
-      value.audience.buyerPersonas.length > 0 ||
-      value.audience.operatorPersonas.length > 0 ||
-      value.questionHistory.length > 0 ||
-      value.processedUserTurnIds.length > 0
-  );
 }
 
 function deriveScopePreview(summary: string) {
@@ -359,7 +312,9 @@ export function CanonicalEntryFlow({
   storageKeyOverride,
   seedSummaryIntoThread = true,
   layoutVariant = "default",
-  showProjectFooter = true
+  showProjectFooter = true,
+  initialThreadState = null,
+  persistedProjectContext = null
 }: CanonicalEntryFlowProps) {
   const strategyRoomCopy = useMemo(
     () => ({
@@ -379,19 +334,31 @@ export function CanonicalEntryFlow({
       }),
     [initialEntryPathId, initialSummary, initialTitle, initialUserEmail, storageKeyOverride]
   );
-  const [title, setTitle] = useState(initialTitle);
+  const seededThreadState =
+    initialThreadState?.lane === initialEntryPathId ? initialThreadState : null;
+  const [title, setTitle] = useState(
+    seededThreadState?.metadata.projectTitle?.trim() || initialTitle
+  );
   const [seedSummary, setSeedSummary] = useState(initialSummary);
   const [draft, setDraft] = useState("");
-  const [threadId, setThreadId] = useState(() => createClientId("start-thread"));
+  const [threadId, setThreadId] = useState(
+    () => seededThreadState?.threadId ?? createClientId("start-thread")
+  );
   const [messages, setMessages] = useState<PlanningMessage[]>(() =>
+    seededThreadState?.messages ??
     buildInitialPlanningMessages({
       lane: initialEntryPathId,
       initialSummary: seedSummaryIntoThread ? initialSummary : undefined
     })
   );
-  const [threadMetadata, setThreadMetadata] = useState<PlanningThreadMetadata | null>(null);
-  const [conversationState, setConversationState] =
-    useState<ConversationSessionState | null>(null);
+  const [threadMetadata, setThreadMetadata] = useState<PlanningThreadMetadata | null>(
+    seededThreadState?.metadata ?? null
+  );
+  const [conversationState, setConversationState] = useState<ConversationSessionState | null>(
+    hasMeaningfulPlanningConversationState(seededThreadState?.conversationState ?? null)
+      ? seededThreadState?.conversationState ?? null
+      : null
+  );
   const [projectBrief, setProjectBrief] = useState<ProjectBrief | null>(null);
   const [architectureBlueprint, setArchitectureBlueprint] =
     useState<ArchitectureBlueprint | null>(null);
@@ -489,75 +456,39 @@ export function CanonicalEntryFlow({
 
     try {
       const raw = window.localStorage.getItem(storageKey);
+      const parsed = raw ? (JSON.parse(raw) as Partial<PlanningThreadState> | null) : null;
+      const localThreadState =
+        parsed && parsed.lane === initialEntryPathId ? loadPlanningThreadState(parsed) : null;
+      const preferredThreadState = choosePreferredPlanningThreadState({
+        persistedThreadState: seededThreadState,
+        localThreadState
+      });
 
-      if (!raw) {
-        didHydrateRef.current = true;
-        return;
+      if (preferredThreadState) {
+        setThreadId(preferredThreadState.threadId);
+        setMessages(preferredThreadState.messages);
+        setThreadMetadata(preferredThreadState.metadata);
+        setConversationState(
+          hasMeaningfulPlanningConversationState(preferredThreadState.conversationState ?? null)
+            ? preferredThreadState.conversationState ?? null
+            : null
+        );
+        setSeedSummary(initialSummary);
+        setTitle(preferredThreadState.metadata.projectTitle?.trim() || initialTitle);
       }
 
-      const parsed = JSON.parse(raw) as Partial<PlanningThreadState> | null;
-      const storedMessages = sanitizeStoredMessages(parsed?.messages);
-
-      if (
-        parsed &&
-        typeof parsed.threadId === "string" &&
-        parsed.threadId.trim() &&
-        parsed.lane === initialEntryPathId &&
-        storedMessages
-      ) {
-        setThreadId(parsed.threadId);
-        setMessages(storedMessages);
-        setSeedSummary(initialSummary);
-        setTitle(initialTitle);
-        const hydratedConversationState = hasMeaningfulConversationState(
-          loadConversationSessionState(parsed.conversationState)
-        )
-          ? loadConversationSessionState(parsed.conversationState)
-          : null;
-        const hydratedProjectBrief = loadProjectBrief(parsed.projectBrief);
-        const hydratedArchitectureBlueprint = loadArchitectureBlueprint(
-          parsed.architectureBlueprint
-        );
-        const hydratedRoadmapPlan = loadRoadmapPlan(parsed.roadmapPlan);
-        const hydratedGovernancePolicy = loadGovernancePolicy(parsed.governancePolicy);
-
-        setConversationState(hydratedConversationState);
-        setProjectBrief(hydratedProjectBrief);
-        setArchitectureBlueprint(hydratedArchitectureBlueprint);
-        setRoadmapPlan(hydratedRoadmapPlan);
-        setGovernancePolicy(hydratedGovernancePolicy);
-
-        if (parsed.metadata && typeof parsed.metadata === "object") {
-          const metadata = parsed.metadata as Record<string, unknown>;
-
-          setThreadMetadata({
-            lane: initialEntryPathId,
-            projectTitle:
-              typeof metadata.projectTitle === "string" ? metadata.projectTitle : null,
-            perceivedProject:
-              typeof metadata.perceivedProject === "string" ? metadata.perceivedProject : null,
-            scopeNotes: Array.isArray(metadata.scopeNotes)
-              ? metadata.scopeNotes.filter(
-                  (note): note is string => typeof note === "string" && note.trim().length > 0
-                )
-              : [],
-            recommendedNextStep:
-              typeof metadata.recommendedNextStep === "string"
-                ? metadata.recommendedNextStep
-                : strategyRoomCopy.nextStep
-          });
-
-          if (typeof metadata.projectTitle === "string" && metadata.projectTitle.trim()) {
-            setTitle(metadata.projectTitle);
-          }
-        }
+      if (parsed && preferredThreadState === localThreadState) {
+        setProjectBrief(loadProjectBrief(parsed.projectBrief));
+        setArchitectureBlueprint(loadArchitectureBlueprint(parsed.architectureBlueprint));
+        setRoadmapPlan(loadRoadmapPlan(parsed.roadmapPlan));
+        setGovernancePolicy(loadGovernancePolicy(parsed.governancePolicy));
       }
     } catch {
-      // If local thread state is corrupted, fall back to the seeded thread.
+      // If local thread state is corrupted, fall back to the seeded server snapshot.
     } finally {
       didHydrateRef.current = true;
     }
-  }, [initialEntryPathId, initialSummary, initialTitle, storageKey, strategyRoomCopy.nextStep]);
+  }, [initialEntryPathId, initialSummary, initialTitle, seededThreadState, storageKey]);
 
   useEffect(() => {
     if (!didHydrateRef.current || typeof window === "undefined") {
@@ -700,6 +631,8 @@ export function CanonicalEntryFlow({
           lane: initialEntryPathId,
           title: title.trim(),
           summary: effectiveSummary || seedSummary,
+          workspaceId: persistedProjectContext?.workspaceId,
+          projectId: persistedProjectContext?.projectId,
           message: cleanDraft,
           conversationState,
           messages: previousMessages.map((message) => ({

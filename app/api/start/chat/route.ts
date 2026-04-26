@@ -5,6 +5,7 @@ import { conversationSessionStateSchema } from "@/lib/intelligence/conversation"
 import { mirrorStartPlanningThreadShadowIfEnabled } from "@/lib/intelligence/runtime-bridge";
 import { recordPlatformEvent } from "@/lib/platform/foundation";
 import { runPlanningChat } from "@/lib/start/planning-chat";
+import { persistProjectPlanningThreadState } from "@/lib/start/planning-persistence";
 
 const messageSchema = z.object({
   id: z.string().optional(),
@@ -18,6 +19,8 @@ const bodySchema = z.object({
   lane: z.enum(["diy", "managed"]),
   title: z.string().max(120).optional(),
   summary: z.string().max(4000).optional(),
+  workspaceId: z.string().min(1).max(120).optional(),
+  projectId: z.string().min(1).max(120).optional(),
   message: z.string().min(1).max(4000),
   conversationState: conversationSessionStateSchema.nullable().optional(),
   messages: z.array(messageSchema).max(20).default([])
@@ -44,6 +47,18 @@ export async function POST(request: NextRequest) {
       messages: body.messages,
       conversationState: body.conversationState ?? null
     });
+
+    if (body.workspaceId?.trim()) {
+      await persistProjectPlanningThreadState({
+        supabase: auth.supabase,
+        userId: auth.user.id,
+        workspaceId: body.workspaceId.trim(),
+        projectId: body.projectId?.trim() || body.workspaceId.trim(),
+        threadState: result.threadState
+      }).catch(() => {
+        // Thread continuity persistence should never break visible planning chat delivery.
+      });
+    }
 
     if (result.visibleStrategist.enabled) {
       console.info("[start-visible-intelligence]", {
