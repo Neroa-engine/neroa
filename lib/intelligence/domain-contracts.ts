@@ -58,3 +58,19 @@ export const projectBriefReadinessStageSchema = z.enum([
 export type ProjectBriefReadinessStage = z.infer<
   typeof projectBriefReadinessStageSchema
 >;
+
+const trimmedStringSchema = z.string().trim().min(1);
+
+export const domainOpenQuestionTemplateSchema = z
+  .object({
+    slotId: projectBriefSlotIdSchema,
+    label: trimmedStringSchema,
+    question: trimmedStringSchema,
+    stage: projectBriefQuestionStageSchema,
+    whyItMatters: trimmedStringSchema
+  })
+  .strict();
+
+export type DomainOpenQuestionTemplate = z.infer<
+  typeof domainOpenQuestionTemplateSchema
+>;

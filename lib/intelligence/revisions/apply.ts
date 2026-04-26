@@ -1,6 +1,6 @@
 import type { StoredGovernanceState, StoredProjectMetadata } from "@/lib/workspace/project-metadata";
-import { getDomainPack } from "../domain-packs.ts";
 import type { ProjectBriefSlotId } from "../domain-contracts.ts";
+import { buildDomainGuidanceModel } from "../domain-generalization.ts";
 import {
   projectBriefReadinessSchema,
   projectBriefSchema,
@@ -351,23 +351,28 @@ function buildProjectBriefReadiness(args: {
   brief: ProjectBrief;
   answeredInputs: readonly StrategyAnsweredInput[];
 }) {
-  const domainPack = getDomainPack(args.brief.domainPack);
+  const guidance = buildDomainGuidanceModel({
+    systemArchetype: args.brief.systemArchetype,
+    capabilityProfile: args.brief.capabilityProfile,
+    primaryDomainPack: args.brief.primaryDomainPack,
+    matchedOverlays: args.brief.matchedOverlays
+  });
   const satisfiedSlots = deriveSatisfiedSlots({
     brief: args.brief,
     answeredInputs: args.answeredInputs
   });
-  const missingArchitecture = domainPack.requiredSlotsBeforeArchitectureGeneration.filter(
+  const missingArchitecture = guidance.requiredSlotsBeforeArchitectureGeneration.filter(
     (slotId) => !satisfiedSlots.has(slotId)
   );
-  const missingRoadmap = domainPack.requiredSlotsBeforeRoadmapApproval.filter(
+  const missingRoadmap = guidance.requiredSlotsBeforeRoadmapApproval.filter(
     (slotId) => !satisfiedSlots.has(slotId)
   );
   const architectureCompletion =
-    (domainPack.requiredSlotsBeforeArchitectureGeneration.length - missingArchitecture.length) /
-    domainPack.requiredSlotsBeforeArchitectureGeneration.length;
+    (guidance.requiredSlotsBeforeArchitectureGeneration.length - missingArchitecture.length) /
+    guidance.requiredSlotsBeforeArchitectureGeneration.length;
   const roadmapCompletion =
-    (domainPack.requiredSlotsBeforeRoadmapApproval.length - missingRoadmap.length) /
-    domainPack.requiredSlotsBeforeRoadmapApproval.length;
+    (guidance.requiredSlotsBeforeRoadmapApproval.length - missingRoadmap.length) /
+    guidance.requiredSlotsBeforeRoadmapApproval.length;
   const readinessScore = Math.round(
     Math.max(0, Math.min(100, (architectureCompletion * 0.65 + roadmapCompletion * 0.35) * 100))
   );
@@ -381,7 +386,7 @@ function buildProjectBriefReadiness(args: {
       : canContinueFocusedQuestions
         ? "ready_for_focused_questions"
         : "needs_more_intake";
-  const openQuestions = domainPack.defaultOpenQuestions.filter(
+  const openQuestions = guidance.openQuestionTemplates.filter(
     (question) => !satisfiedSlots.has(question.slotId)
   );
 

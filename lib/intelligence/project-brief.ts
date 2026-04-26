@@ -5,6 +5,8 @@ import {
   projectBriefReadinessStageSchema,
   projectBriefSlotIdSchema
 } from "./domain-contracts.ts";
+import { capabilityProfileSchema } from "./capability-profile.ts";
+import { systemArchetypeSchema } from "./archetypes.ts";
 
 const trimmedStringSchema = z.string().trim().min(1);
 
@@ -38,6 +40,14 @@ export const projectBriefSchema = z
     founderName: trimmedStringSchema.nullable(),
     projectName: trimmedStringSchema.nullable(),
     domainPack: domainPackIdSchema,
+    primaryDomainPack: domainPackIdSchema,
+    systemArchetype: systemArchetypeSchema,
+    archetypeConfidence: z.number().min(0).max(1),
+    capabilityProfile: capabilityProfileSchema,
+    matchedOverlays: z.array(domainPackIdSchema),
+    overlayConfidence: z.number().min(0).max(1),
+    unresolvedDomainSpecifics: z.array(trimmedStringSchema),
+    classificationNotes: z.array(trimmedStringSchema),
     buyerPersonas: z.array(trimmedStringSchema),
     operatorPersonas: z.array(trimmedStringSchema),
     endCustomerPersonas: z.array(trimmedStringSchema),

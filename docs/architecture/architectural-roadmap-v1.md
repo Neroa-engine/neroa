@@ -68,11 +68,12 @@ This promoted scope does **not** include:
   - extraction engine logic
   - question selection engine logic
   - product truth capture formats
+  - universal domain generalization inside the shared ProjectBrief spine when it enriches product truth with system archetypes, capability profiles, optional vertical overlays, and backward-compatible compatibility mapping for later planning layers
 - Not allowed to touch:
   - billing/account behavior
   - protected routing behavior
   - execution surfaces beyond approved intake contracts
-- Boundary: Phase 1 can collect truth and raise contradictions, but it cannot approve execution on its own.
+- Boundary: Phase 1 can collect truth and raise contradictions, but it cannot approve execution on its own. Universal archetype and capability inference may extend shared product truth now when it preserves the existing ProjectBrief contract for downstream planning, governance, execution, QA, and billing layers rather than replacing them with a second intelligence path.
 
 ### Phase 2 - Roadmap and Change Control
 

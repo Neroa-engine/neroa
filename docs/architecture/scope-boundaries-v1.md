@@ -26,9 +26,11 @@ This file defines what belongs in each major Neroa system and what must not be p
   - question selection
   - branch classification
   - assumption capture
+  - shared ProjectBrief enrichment through system archetypes, capability profiles, optional vertical overlays, and backward-compatible domain compatibility mapping
 - Must not do:
   - change workspace behavior directly
   - patch billing/auth/routing to compensate for missing extraction truth
+  - create a second planning or domain-intelligence path beside the approved ProjectBrief spine
 
 ### Change Control System
 

@@ -1,27 +1,13 @@
 import { z } from "zod";
 import {
+  domainOpenQuestionTemplateSchema,
   domainPackIdSchema,
-  projectBriefQuestionStageSchema,
   projectBriefSlotIdSchema,
   type DomainPackId
 } from "./domain-contracts.ts";
 
 const trimmedStringSchema = z.string().trim().min(1);
 const stringListSchema = z.array(trimmedStringSchema).default([]);
-
-export const domainOpenQuestionTemplateSchema = z
-  .object({
-    slotId: projectBriefSlotIdSchema,
-    label: trimmedStringSchema,
-    question: trimmedStringSchema,
-    stage: projectBriefQuestionStageSchema,
-    whyItMatters: trimmedStringSchema
-  })
-  .strict();
-
-export type DomainOpenQuestionTemplate = z.infer<
-  typeof domainOpenQuestionTemplateSchema
->;
 
 const domainAudiencePatternSchema = z
   .object({
@@ -448,6 +434,8 @@ export const DOMAIN_PACKS: Record<DomainPackId, DomainPack> = {
 };
 
 export const DOMAIN_PACK_REGISTRY = Object.values(DOMAIN_PACKS);
+export const VERTICAL_OVERLAYS = DOMAIN_PACKS;
+export const VERTICAL_OVERLAY_REGISTRY = DOMAIN_PACK_REGISTRY;
 
 export function getDomainPack(domainPackId: DomainPackId) {
   return DOMAIN_PACKS[domainPackId];
@@ -455,4 +443,12 @@ export function getDomainPack(domainPackId: DomainPackId) {
 
 export function listDomainPacks() {
   return [...DOMAIN_PACK_REGISTRY];
+}
+
+export function getVerticalOverlay(domainPackId: DomainPackId) {
+  return getDomainPack(domainPackId);
+}
+
+export function listVerticalOverlays() {
+  return listDomainPacks();
 }

@@ -24,6 +24,11 @@ import {
   normalizeBillingProtectionState,
   type BillingProtectionState
 } from "./billing/index.ts";
+import { getSystemArchetypeDefinition } from "./archetypes.ts";
+import {
+  buildDomainGuidanceModel,
+  buildDomainSpecificLabels
+} from "./domain-generalization.ts";
 import { applyStrategyOverrideStateToLayers } from "./revisions/apply.ts";
 import {
   type ProjectBriefReadinessStage,
@@ -204,18 +209,27 @@ function hasExplicitSignals(values: readonly string[], text?: string | null) {
   return values.length > 0 || cleanText(text).length > 0;
 }
 
-function inferDefaultProductCategory(pack: DomainPack, explicitCategory?: string | null) {
-  const cleanedExplicit = cleanText(explicitCategory);
+function inferDefaultProductCategory(args: {
+  domainPack: DomainPack;
+  explicitCategory?: string | null;
+  archetypeProductCategoryLabel: string;
+}) {
+  const cleanedExplicit = cleanText(args.explicitCategory);
 
   if (!cleanedExplicit) {
-    return pack.productCategoryLabel;
+    return args.domainPack.id === "generic_saas"
+      ? args.archetypeProductCategoryLabel
+      : args.domainPack.productCategoryLabel;
   }
 
-  return pack.id === "generic_saas" ? cleanedExplicit : pack.productCategoryLabel;
+  return args.domainPack.id === "generic_saas"
+    ? cleanedExplicit
+    : args.domainPack.productCategoryLabel;
 }
 
 function inferProblemStatement(args: {
   domainPack: DomainPack;
+  systemArchetype: Parameters<typeof getSystemArchetypeDefinition>[0];
   explicitProblem?: string | null;
   resolution: DomainResolution;
 }) {
@@ -239,11 +253,40 @@ function inferProblemStatement(args: {
     return "Give restaurant owners and managers clearer sales visibility across locations and menu performance.";
   }
 
+  if (args.domainPack.id === "generic_saas") {
+    const archetype = getSystemArchetypeDefinition(args.systemArchetype);
+
+    if (archetype.id === "marketplace") {
+      return "Help users discover, evaluate, and manage listings inside a trusted marketplace workflow.";
+    }
+
+    if (archetype.id === "portal") {
+      return "Give users a secure self-serve portal for the first high-value account or service workflow.";
+    }
+
+    if (archetype.id === "workflow_ops" || archetype.id === "internal_tool") {
+      return "Give the team a clearer operational workflow with the right approvals, visibility, and role boundaries.";
+    }
+
+    if (archetype.id === "booking_scheduling") {
+      return "Make scheduling, dispatch, or appointment coordination easier to manage in one system.";
+    }
+
+    if (archetype.id === "ai_copilot") {
+      return "Help users complete a focused job faster with grounded AI guidance inside the product workflow.";
+    }
+
+    if (archetype.id === "analytics_platform") {
+      return "Give users clearer visibility into the first metrics, scores, or reports that matter most.";
+    }
+  }
+
   return null;
 }
 
 function inferOutcomePromise(args: {
   domainPack: DomainPack;
+  systemArchetype: Parameters<typeof getSystemArchetypeDefinition>[0];
   explicitOutcome?: string | null;
   problemStatement?: string | null;
 }) {
@@ -261,6 +304,30 @@ function inferOutcomePromise(args: {
     return "Help owners and managers make faster sales decisions with reliable reporting.";
   }
 
+  if (args.domainPack.id === "generic_saas") {
+    const archetype = getSystemArchetypeDefinition(args.systemArchetype);
+
+    if (archetype.id === "marketplace") {
+      return "Create a clearer, more trusted way to connect both sides of the marketplace.";
+    }
+
+    if (archetype.id === "portal") {
+      return "Create a reliable self-serve experience that reduces manual handoffs for users and admins.";
+    }
+
+    if (archetype.id === "workflow_ops" || archetype.id === "internal_tool") {
+      return "Reduce operational friction by making the first workflow more visible, accountable, and easier to complete.";
+    }
+
+    if (archetype.id === "booking_scheduling") {
+      return "Give teams a more reliable way to coordinate schedules, availability, and follow-through.";
+    }
+
+    if (archetype.id === "analytics_platform") {
+      return "Help the team make faster decisions from a clearer reporting and analytics surface.";
+    }
+  }
+
   if (cleanText(args.problemStatement)) {
     return `Create a clearer first outcome around ${cleanText(args.problemStatement).replace(/[.!?]+$/g, "")}.`;
   }
@@ -270,7 +337,7 @@ function inferOutcomePromise(args: {
 
 function inferSurfaces(args: {
   explicitSurfaces: readonly string[];
-  domainPack: DomainPack;
+  defaultSurfaces: readonly string[];
   corpus: string;
 }) {
   if (args.explicitSurfaces.length > 0) {
@@ -292,7 +359,7 @@ function inferSurfaces(args: {
     inferred.push("mobile app");
   }
 
-  return uniqueStrings([...inferred, ...args.domainPack.defaultSurfaces]);
+  return uniqueStrings([...inferred, ...args.defaultSurfaces]);
 }
 
 function partitionSystems(values: readonly string[]) {
@@ -357,7 +424,7 @@ function buildConstraintDefaults(args: {
 }
 
 function inferComplianceFlags(args: {
-  domainPack: DomainPack;
+  defaultFlags: readonly string[];
   explicitFlags: readonly string[];
   constraints: readonly string[];
   corpus: string;
@@ -365,7 +432,7 @@ function inferComplianceFlags(args: {
   const flags = [...args.explicitFlags];
 
   if (flags.length === 0) {
-    flags.push(...args.domainPack.complianceFlagDefaults);
+    flags.push(...args.defaultFlags);
   }
 
   if (/\b(?:compliance|regulated|audit|privacy|security)\b/.test(args.corpus.toLowerCase())) {
@@ -376,10 +443,10 @@ function inferComplianceFlags(args: {
 }
 
 function inferTrustRisks(args: {
-  domainPack: DomainPack;
+  defaultRisks: readonly string[];
   corpus: string;
 }) {
-  const risks = [...args.domainPack.trustRiskDefaults];
+  const risks = [...args.defaultRisks];
 
   if (/\b(?:multi-location|multilocation)\b/.test(args.corpus.toLowerCase())) {
     risks.push("Cross-location visibility needs clear permissions and trustworthy reporting.");
@@ -491,21 +558,22 @@ function inferDomainSpecificSlots(args: {
 
 function buildReadiness(args: {
   slotStates: BriefSlotStateMap;
-  domainPack: DomainPack;
+  requiredSlotsBeforeArchitectureGeneration: readonly ProjectBriefSlotId[];
+  requiredSlotsBeforeRoadmapApproval: readonly ProjectBriefSlotId[];
   hasFocusedQuestionSignal: boolean;
 }) {
-  const missingArchitecture = args.domainPack.requiredSlotsBeforeArchitectureGeneration.filter(
+  const missingArchitecture = args.requiredSlotsBeforeArchitectureGeneration.filter(
     (slotId) => !slotSatisfied(args.slotStates[slotId])
   );
-  const missingRoadmap = args.domainPack.requiredSlotsBeforeRoadmapApproval.filter(
+  const missingRoadmap = args.requiredSlotsBeforeRoadmapApproval.filter(
     (slotId) => !slotSatisfied(args.slotStates[slotId])
   );
   const architectureCompletion =
-    (args.domainPack.requiredSlotsBeforeArchitectureGeneration.length - missingArchitecture.length) /
-    args.domainPack.requiredSlotsBeforeArchitectureGeneration.length;
+    (args.requiredSlotsBeforeArchitectureGeneration.length - missingArchitecture.length) /
+    args.requiredSlotsBeforeArchitectureGeneration.length;
   const roadmapCompletion =
-    (args.domainPack.requiredSlotsBeforeRoadmapApproval.length - missingRoadmap.length) /
-    args.domainPack.requiredSlotsBeforeRoadmapApproval.length;
+    (args.requiredSlotsBeforeRoadmapApproval.length - missingRoadmap.length) /
+    args.requiredSlotsBeforeRoadmapApproval.length;
   const readinessScore = Math.round(
     Math.max(0, Math.min(100, (architectureCompletion * 0.65 + roadmapCompletion * 0.35) * 100))
   );
@@ -535,10 +603,10 @@ function buildReadiness(args: {
 }
 
 function buildOpenQuestions(args: {
-  domainPack: DomainPack;
+  openQuestionTemplates: readonly ProjectBriefOpenQuestion[];
   slotStates: BriefSlotStateMap;
 }) {
-  return args.domainPack.defaultOpenQuestions.filter(
+  return args.openQuestionTemplates.filter(
     (question) => !slotSatisfied(args.slotStates[question.slotId])
   ) as ProjectBriefOpenQuestion[];
 }
@@ -551,6 +619,13 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   const resolution = resolveDomainPack(args);
   const domainPack = resolution.domainPack;
   const corpus = resolution.corpus;
+  const generalization = resolution.generalization;
+  const guidance = buildDomainGuidanceModel({
+    systemArchetype: generalization.systemArchetype,
+    capabilityProfile: generalization.capabilityProfile,
+    primaryDomainPack: generalization.primaryDomainPack,
+    matchedOverlays: generalization.matchedOverlays
+  });
 
   const explicitBuyerPersonas = uniqueStrings([
     ...(args.conversationState?.audience.buyerPersonas ?? []),
@@ -613,7 +688,11 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
       args.mobileAppIntake?.answers.appSummary ||
       bundleFieldText(args.hiddenBundle, "product_type")
   );
-  const productCategory = inferDefaultProductCategory(domainPack, explicitProductCategory);
+  const productCategory = inferDefaultProductCategory({
+    domainPack,
+    explicitCategory: explicitProductCategory,
+    archetypeProductCategoryLabel: guidance.productCategoryLabel
+  });
 
   const explicitProblemStatement = cleanText(
     args.conversationState?.problemStatement ||
@@ -623,6 +702,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   );
   const problemStatement = inferProblemStatement({
     domainPack,
+    systemArchetype: generalization.systemArchetype,
     explicitProblem: explicitProblemStatement,
     resolution
   });
@@ -635,6 +715,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   );
   const outcomePromise = inferOutcomePromise({
     domainPack,
+    systemArchetype: generalization.systemArchetype,
     explicitOutcome: explicitOutcomePromise,
     problemStatement
   });
@@ -650,10 +731,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   ]);
   const mustHaveFeatures = mergeExplicitAndInferred({
     explicit: explicitMustHaveFeatures,
-    inferred:
-      explicitMustHaveFeatures.length > 0
-        ? domainPack.likelyFeatureDefaults.mustHave
-        : domainPack.likelyFeatureDefaults.mustHave
+    inferred: guidance.featureDefaults.mustHave
   });
 
   const explicitNiceToHaveFeatures = uniqueStrings([
@@ -661,12 +739,12 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   ]);
   const niceToHaveFeatures = mergeExplicitAndInferred({
     explicit: explicitNiceToHaveFeatures,
-    inferred: domainPack.likelyFeatureDefaults.niceToHave
+    inferred: guidance.featureDefaults.niceToHave
   });
 
   const excludedFeatures = mergeExplicitAndInferred({
     explicit: bundleFieldList(args.hiddenBundle, "mvp_out_of_scope"),
-    inferred: domainPack.likelyFeatureDefaults.excluded
+    inferred: guidance.featureDefaults.excluded
   });
 
   const explicitSurfaceSignals = uniqueStrings([
@@ -678,7 +756,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   ]);
   const surfaces = inferSurfaces({
     explicitSurfaces: explicitSurfaceSignals,
-    domainPack,
+    defaultSurfaces: guidance.defaultSurfaces,
     corpus
   });
 
@@ -691,11 +769,11 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   const systemPartition = partitionSystems(explicitSystemSignals);
   const integrations = mergeExplicitAndInferred({
     explicit: systemPartition.integrations,
-    inferred: domainPack.likelyIntegrationDefaults
+    inferred: guidance.likelyIntegrationDefaults
   });
   const dataSources = mergeExplicitAndInferred({
     explicit: systemPartition.dataSources,
-    inferred: domainPack.likelyDataSourceDefaults
+    inferred: guidance.likelyDataSourceDefaults
   });
 
   const explicitConstraints = uniqueStrings([
@@ -711,7 +789,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   });
 
   const complianceFlags = inferComplianceFlags({
-    domainPack,
+    defaultFlags: guidance.complianceFlagDefaults,
     explicitFlags:
       cleanText(bundleFieldText(args.hiddenBundle, "compliance_security_sensitivity")).length > 0
         ? [bundleFieldText(args.hiddenBundle, "compliance_security_sensitivity")]
@@ -720,7 +798,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
     corpus
   });
   const trustRisks = inferTrustRisks({
-    domainPack,
+    defaultRisks: guidance.trustRiskDefaults,
     corpus
   });
 
@@ -777,7 +855,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   } else if (productCategory) {
     markSlotState(slotStates, "productCategory", "inferred");
     assumptionsMade.push(
-      `Canonicalized the product category to ${productCategory} from the resolved ${domainPack.label} domain pack.`
+      `Canonicalized the product category to ${productCategory} from the resolved ${getSystemArchetypeDefinition(generalization.systemArchetype).label} archetype and compatibility pack.`
     );
   }
 
@@ -802,7 +880,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   } else if (mustHaveFeatures.length > 0) {
     markSlotState(slotStates, "mustHaveFeatures", "inferred");
     assumptionsMade.push(
-      `Seeded must-have features from the ${domainPack.label.toLowerCase()} domain defaults.`
+      `Seeded must-have features from the ${getSystemArchetypeDefinition(generalization.systemArchetype).label.toLowerCase()} archetype and capability defaults.`
     );
   }
 
@@ -821,7 +899,7 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
   } else if (surfaces.length > 0) {
     markSlotState(slotStates, "surfaces", "inferred");
     assumptionsMade.push(
-      `Assumed ${joinListForSummary(surfaces)} as the launch surfaces because the intake still points to a ${domainPack.productCategoryLabel}.`
+      `Assumed ${joinListForSummary(surfaces)} as the launch surfaces because the intake still points to a ${guidance.productCategoryLabel}.`
     );
   }
 
@@ -864,7 +942,9 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
 
   const readiness = buildReadiness({
     slotStates,
-    domainPack,
+    requiredSlotsBeforeArchitectureGeneration:
+      guidance.requiredSlotsBeforeArchitectureGeneration,
+    requiredSlotsBeforeRoadmapApproval: guidance.requiredSlotsBeforeRoadmapApproval,
     hasFocusedQuestionSignal:
       Boolean(productCategory) ||
       buyerPersonas.length > 0 ||
@@ -873,18 +953,33 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
       Boolean(outcomePromise)
   });
   const openQuestions = buildOpenQuestions({
-    domainPack,
+    openQuestionTemplates: guidance.openQuestionTemplates,
     slotStates
   });
   const missingCriticalSlots = uniqueStrings([
     ...readiness.missingArchitecture,
     ...readiness.missingRoadmap
   ]) as ProjectBriefSlotId[];
+  const unresolvedDomainSpecifics = buildDomainSpecificLabels({
+    openQuestionTemplates: guidance.openQuestionTemplates,
+    missingSlots: missingCriticalSlots
+  });
 
   const projectBrief = projectBriefSchema.parse({
     founderName: cleanText(args.conversationState?.founderName) || null,
     projectName: projectName || null,
     domainPack: domainPack.id,
+    primaryDomainPack: generalization.primaryDomainPack,
+    systemArchetype: generalization.systemArchetype,
+    archetypeConfidence: generalization.archetypeConfidence,
+    capabilityProfile: generalization.capabilityProfile,
+    matchedOverlays: generalization.matchedOverlays,
+    overlayConfidence: generalization.overlayConfidence,
+    unresolvedDomainSpecifics,
+    classificationNotes: uniqueStrings([
+      ...generalization.classificationNotes,
+      generalization.summary
+    ]),
     buyerPersonas,
     operatorPersonas,
     endCustomerPersonas,
@@ -905,7 +1000,10 @@ function buildProjectBriefInternal(args: ProjectBriefGeneratorInput) {
     readiness: readiness.readiness,
     openQuestions,
     missingCriticalSlots,
-    assumptionsMade: uniqueStrings(assumptionsMade)
+    assumptionsMade: uniqueStrings([
+      ...assumptionsMade,
+      ...generalization.assumptionsMade
+    ])
   });
 
   return {
