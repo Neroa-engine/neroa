@@ -22,6 +22,7 @@ import {
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import {
   buildStrategyRoomInitialThreadState,
+  hasMeaningfulProjectPlanningState,
   type PlanningLaneId
 } from "@/lib/start/planning-thread";
 import { buildProjectContextSnapshot } from "@/lib/workspace/project-context-summary";
@@ -303,6 +304,7 @@ export function ProjectStrategyRoomV1({
     lane: planningPathId,
     planningThreadState: projectMetadata?.strategyState?.planningThreadState ?? null,
     conversationState: projectMetadata?.conversationState ?? null,
+    projectBrief,
     hasStrategyOverrides: Boolean(projectMetadata?.strategyState?.overrideState),
     hasRevisionHistory: (projectMetadata?.strategyState?.revisionRecords?.length ?? 0) > 0,
     hasSavedPlanningArtifacts: hasSavedPlanningArtifacts(project, projectMetadata),
@@ -312,6 +314,19 @@ export function ProjectStrategyRoomV1({
     blockers: governancePolicy.approvalReadiness.blockers,
     nextStep: projectContext.nextStepBody,
     fallbackThreadId: `project-strategy-${project.id}`
+  });
+  const starterThreadAllowed = !hasMeaningfulProjectPlanningState({
+    planningThreadState: projectMetadata?.strategyState?.planningThreadState ?? null,
+    conversationState: projectMetadata?.conversationState ?? null,
+    projectBrief,
+    hasStrategyOverrides: Boolean(projectMetadata?.strategyState?.overrideState),
+    hasRevisionHistory: (projectMetadata?.strategyState?.revisionRecords?.length ?? 0) > 0,
+    hasSavedPlanningArtifacts: hasSavedPlanningArtifacts(project, projectMetadata),
+    projectTitle: project.title,
+    projectSummary: threadSummary,
+    currentFocus: currentPlanningFocus,
+    blockers: governancePolicy.approvalReadiness.blockers,
+    nextStep: projectContext.nextStepBody
   });
 
   return (
@@ -438,6 +453,7 @@ export function ProjectStrategyRoomV1({
             storageKeyOverride={`neroa:project-strategy-thread:${project.workspaceId}:${project.id}`}
             layoutVariant="embedded"
             showProjectFooter={false}
+            allowStarterThread={starterThreadAllowed}
             roomCopy={{
               badge: "Planning room",
               heading: `Resume strategy for ${project.title}.`,

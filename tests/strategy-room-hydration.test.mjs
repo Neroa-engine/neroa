@@ -187,6 +187,65 @@ test("existing project refresh prefers the persisted project thread over a stale
   );
 });
 
+test("existing project with meaningful intelligence but no real transcript builds a synthesized resume thread", () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const projectTitle = "Tom Crypto Risk";
+  const projectDescription = messages.join(" ");
+  const project = buildProjectRecord(projectTitle, projectDescription);
+  const conversationBuild = buildConversationState(messages);
+  const projectMetadata = buildStoredProjectMetadata({
+    title: projectTitle,
+    description: projectDescription,
+    conversationState: conversationBuild.state
+  });
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    projectTitle,
+    projectDescription,
+    projectMetadata
+  });
+  const projectContext = buildProjectContextSnapshot({
+    project,
+    projectMetadata,
+    projectBrief: projectIntelligence.projectBrief,
+    roadmapPlan: projectIntelligence.roadmapPlan,
+    governancePolicy: projectIntelligence.governancePolicy
+  });
+  const resumedThreadState = buildStrategyRoomInitialThreadState({
+    lane: "managed",
+    planningThreadState: null,
+    conversationState: null,
+    projectBrief: projectIntelligence.projectBrief,
+    hasSavedPlanningArtifacts: true,
+    projectTitle,
+    projectSummary: projectContext.buildingSummary,
+    currentFocus: projectContext.currentFocus[0],
+    blockers: projectIntelligence.governancePolicy.approvalReadiness.blockers,
+    nextStep: projectContext.nextStepBody,
+    fallbackThreadId: "project-strategy-meaningful"
+  });
+
+  assert.ok(resumedThreadState);
+  assert.equal(resumedThreadState?.messages.some((message) => message.id === "project-resume-summary"), true);
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      message.content.includes(projectContext.currentFocus[0] ?? "")
+    ),
+    true
+  );
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      /What should I call you\?|What are you thinking about building\?/i.test(message.content)
+    ),
+    false
+  );
+});
+
 test("existing project with saved conversation state but no persisted thread builds a real resume context", () => {
   const messages = [
     "I want a restaurant sales platform.",
@@ -244,15 +303,68 @@ test("existing project with saved conversation state but no persisted thread bui
   );
 });
 
+test("founder name already known forces resume mode instead of asking what to call the user again", () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want a donor portal for churches."
+  ];
+  const projectTitle = "Untitled project";
+  const projectDescription = messages.join(" ");
+  const project = buildProjectRecord(projectTitle, projectDescription);
+  const conversationBuild = buildConversationState(messages);
+  const projectMetadata = buildStoredProjectMetadata({
+    title: projectTitle,
+    description: projectDescription,
+    conversationState: conversationBuild.state
+  });
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    projectTitle,
+    projectDescription,
+    projectMetadata
+  });
+  const projectContext = buildProjectContextSnapshot({
+    project,
+    projectMetadata,
+    projectBrief: projectIntelligence.projectBrief,
+    roadmapPlan: projectIntelligence.roadmapPlan,
+    governancePolicy: projectIntelligence.governancePolicy
+  });
+  const resumedThreadState = buildStrategyRoomInitialThreadState({
+    lane: "managed",
+    planningThreadState: null,
+    conversationState: null,
+    projectBrief: projectIntelligence.projectBrief,
+    hasSavedPlanningArtifacts: false,
+    projectTitle,
+    projectSummary: projectContext.buildingSummary,
+    currentFocus: projectContext.currentFocus[0],
+    blockers: projectIntelligence.governancePolicy.approvalReadiness.blockers,
+    nextStep: projectContext.nextStepBody,
+    fallbackThreadId: "project-strategy-founder-known"
+  });
+
+  assert.ok(resumedThreadState);
+  assert.equal(resumedThreadState?.messages.some((message) => message.id === "project-resume-summary"), true);
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      /What should I call you\?|What are you thinking about building\?/i.test(message.content)
+    ),
+    false
+  );
+});
+
 test("fallback only appears when a project truly has no saved planning state", () => {
   const resumedThreadState = buildStrategyRoomInitialThreadState({
     lane: "diy",
     planningThreadState: null,
     conversationState: null,
+    projectBrief: null,
     hasStrategyOverrides: false,
     hasRevisionHistory: false,
     hasSavedPlanningArtifacts: false,
-    projectTitle: "Empty Planning Project",
+    projectTitle: "Untitled project",
     projectSummary: null,
     currentFocus: null,
     blockers: [],
@@ -292,7 +404,8 @@ test("Strategy Room and Command Center still share the same project intelligence
   assert.match(commandCenterPageSource, /projectBrief:\s*projectIntelligence\.projectBrief/);
   assert.match(strategyRoomSource, /buildStrategyRoomInitialThreadState/);
   assert.match(strategyRoomSource, /initialThreadState=\{initialThreadState\}/);
+  assert.match(strategyRoomSource, /allowStarterThread=\{starterThreadAllowed\}/);
   assert.match(strategyRoomSource, /persistedProjectContext=\{\{\s*workspaceId: project\.workspaceId,\s*projectId: project\.id\s*\}\}/);
-  assert.match(canonicalEntrySource, /choosePreferredPlanningThreadState/);
+  assert.match(canonicalEntrySource, /allowSyntheticFallback:\s*allowStarterThread/);
   assert.match(canonicalEntrySource, /workspaceId:\s*persistedProjectContext\?\.workspaceId/);
 });

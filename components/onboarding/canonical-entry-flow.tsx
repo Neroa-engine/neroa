@@ -96,6 +96,7 @@ type CanonicalEntryFlowProps = {
   showProjectFooter?: boolean;
   initialThreadState?: PlanningThreadState | null;
   persistedProjectContext?: PersistedProjectContext | null;
+  allowStarterThread?: boolean;
 };
 
 const DEFAULT_STRATEGY_ROOM_COPY: StrategyRoomCopy = {
@@ -277,11 +278,14 @@ function buildClearedPlanningThread(args: {
   seedSummaryIntoThread?: boolean;
   preservedTitle?: string;
   preservedSummary?: string;
+  allowStarterThread?: boolean;
 }) {
-  const clearedMessages = buildInitialPlanningMessages({
-    lane: args.entryPathId,
-    initialSummary: args.seedSummaryIntoThread ? args.initialSummary : undefined
-  });
+  const clearedMessages = args.allowStarterThread
+    ? buildInitialPlanningMessages({
+        lane: args.entryPathId,
+        initialSummary: args.seedSummaryIntoThread ? args.initialSummary : undefined
+      })
+    : [];
 
   return {
     threadId: createClientId("start-thread"),
@@ -314,7 +318,8 @@ export function CanonicalEntryFlow({
   layoutVariant = "default",
   showProjectFooter = true,
   initialThreadState = null,
-  persistedProjectContext = null
+  persistedProjectContext = null,
+  allowStarterThread = true
 }: CanonicalEntryFlowProps) {
   const strategyRoomCopy = useMemo(
     () => ({
@@ -346,10 +351,12 @@ export function CanonicalEntryFlow({
   );
   const [messages, setMessages] = useState<PlanningMessage[]>(() =>
     seededThreadState?.messages ??
-    buildInitialPlanningMessages({
-      lane: initialEntryPathId,
-      initialSummary: seedSummaryIntoThread ? initialSummary : undefined
-    })
+    (allowStarterThread
+      ? buildInitialPlanningMessages({
+          lane: initialEntryPathId,
+          initialSummary: seedSummaryIntoThread ? initialSummary : undefined
+        })
+      : [])
   );
   const [threadMetadata, setThreadMetadata] = useState<PlanningThreadMetadata | null>(
     seededThreadState?.metadata ?? null
@@ -461,7 +468,8 @@ export function CanonicalEntryFlow({
         parsed && parsed.lane === initialEntryPathId ? loadPlanningThreadState(parsed) : null;
       const preferredThreadState = choosePreferredPlanningThreadState({
         persistedThreadState: seededThreadState,
-        localThreadState
+        localThreadState,
+        allowSyntheticFallback: allowStarterThread
       });
 
       if (preferredThreadState) {
@@ -546,6 +554,48 @@ export function CanonicalEntryFlow({
   }, [composerMaxHeight, composerMinHeight, draft]);
 
   function resetPlanningThread(notice?: string) {
+    if (!allowStarterThread && seededThreadState) {
+      setTitle(seededThreadState.metadata.projectTitle?.trim() || initialTitle);
+      setSeedSummary(initialSummary);
+      setDraft("");
+      setThreadId(seededThreadState.threadId);
+      setMessages(seededThreadState.messages);
+      setThreadMetadata(seededThreadState.metadata);
+      setConversationState(
+        hasMeaningfulPlanningConversationState(seededThreadState.conversationState ?? null)
+          ? seededThreadState.conversationState ?? null
+          : null
+      );
+      setProjectBrief(null);
+      setArchitectureBlueprint(null);
+      setRoadmapPlan(null);
+      setGovernancePolicy(null);
+      setChatError(null);
+      setChatNotice(
+        notice ??
+          "Strategy reset. Neroa reopened the latest saved planning context for this project."
+      );
+
+      if (typeof window !== "undefined") {
+        const snapshot: PlanningThreadState = {
+          threadId: seededThreadState.threadId,
+          lane: initialEntryPathId,
+          messages: seededThreadState.messages,
+          metadata: seededThreadState.metadata,
+          conversationState: seededThreadState.conversationState ?? null,
+          projectBrief: null,
+          architectureBlueprint: null,
+          roadmapPlan: null,
+          governancePolicy: null,
+          updatedAt: new Date().toISOString()
+        };
+
+        window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
+      }
+
+      return;
+    }
+
     const resetTitle = surfaceMode === "project" ? initialTitle : "";
     const resetSeedSummary = surfaceMode === "project" ? initialSummary : "";
     const clearedThread = buildClearedPlanningThread({
@@ -554,7 +604,8 @@ export function CanonicalEntryFlow({
       initialSummary: resetSeedSummary,
       seedSummaryIntoThread,
       preservedTitle: resetTitle,
-      preservedSummary: resetSeedSummary
+      preservedSummary: resetSeedSummary,
+      allowStarterThread
     });
 
     setTitle(resetTitle);

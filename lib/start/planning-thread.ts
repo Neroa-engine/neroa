@@ -72,6 +72,14 @@ const SYNTHETIC_PLANNING_MESSAGE_IDS = new Set([
   "project-resume-summary",
   "project-resume-assistant"
 ]);
+const PLACEHOLDER_PROJECT_TITLE_PATTERNS = [
+  /^untitled(?:\s+project)?$/i,
+  /^new\s+project$/i,
+  /^project(?:\s+workspace)?$/i,
+  /^working\s+title\s+pending$/i,
+  /^naming\s+help\s+needed$/i,
+  /^intentionally\s+unnamed\s+project$/i
+] as const;
 
 function cleanPlanningText(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
@@ -79,6 +87,14 @@ function cleanPlanningText(value?: string | null) {
 
 function normalizePlanningText(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function hasMeaningfulPlanningText(value?: string | null) {
+  return cleanPlanningText(value).length > 0;
+}
+
+function hasMeaningfulPlanningList(values?: readonly string[] | null) {
+  return Boolean(values?.some((value) => hasMeaningfulPlanningText(value)));
 }
 
 function parseConversationState(value: unknown) {
@@ -288,9 +304,68 @@ export function hasMeaningfulPlanningConversationState(
   );
 }
 
+export function hasMeaningfulProjectTitle(value?: string | null) {
+  const normalized = normalizePlanningText(cleanPlanningText(value));
+
+  if (!normalized) {
+    return false;
+  }
+
+  return !PLACEHOLDER_PROJECT_TITLE_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+export function hasMeaningfulProjectBrief(value: ProjectBrief | null | undefined) {
+  if (!value) {
+    return false;
+  }
+
+  return Boolean(
+    hasMeaningfulProjectTitle(value.projectName) ||
+      hasMeaningfulPlanningText(value.founderName) ||
+      hasMeaningfulPlanningText(value.productCategory) ||
+      hasMeaningfulPlanningText(value.problemStatement) ||
+      hasMeaningfulPlanningText(value.outcomePromise) ||
+      hasMeaningfulPlanningList(value.buyerPersonas) ||
+      hasMeaningfulPlanningList(value.operatorPersonas) ||
+      hasMeaningfulPlanningList(value.endCustomerPersonas) ||
+      hasMeaningfulPlanningList(value.adminPersonas)
+  );
+}
+
+export function hasMeaningfulProjectPlanningState(args: {
+  planningThreadState?: PlanningThreadState | null;
+  conversationState?: ConversationSessionState | null;
+  projectBrief?: ProjectBrief | null;
+  hasStrategyOverrides?: boolean;
+  hasRevisionHistory?: boolean;
+  hasSavedPlanningArtifacts?: boolean;
+  projectTitle?: string | null;
+  projectSummary?: string | null;
+  currentFocus?: string | null;
+  blockers?: readonly string[];
+  nextStep?: string | null;
+}) {
+  return Boolean(
+    hasPlanningThreadHistory(args.planningThreadState ?? null) ||
+      hasMeaningfulPlanningConversationState(
+        args.conversationState ?? args.planningThreadState?.conversationState ?? null
+      ) ||
+      hasMeaningfulProjectTitle(args.projectTitle ?? args.projectBrief?.projectName) ||
+      hasMeaningfulProjectBrief(args.projectBrief ?? null) ||
+      hasMeaningfulPlanningText(args.projectSummary) ||
+      hasMeaningfulPlanningText(args.currentFocus) ||
+      hasMeaningfulPlanningList(args.blockers) ||
+      hasMeaningfulPlanningText(args.nextStep) ||
+      args.hasStrategyOverrides ||
+      args.hasRevisionHistory ||
+      args.hasSavedPlanningArtifacts
+  );
+}
+
 export function choosePreferredPlanningThreadState(args: {
   persistedThreadState?: PlanningThreadState | null;
   localThreadState?: PlanningThreadState | null;
+  allowSyntheticFallback?: boolean;
 }) {
   const persisted = args.persistedThreadState ?? null;
   const local = args.localThreadState ?? null;
@@ -301,6 +376,10 @@ export function choosePreferredPlanningThreadState(args: {
 
   if (hasPlanningThreadHistory(local)) {
     return local;
+  }
+
+  if (args.allowSyntheticFallback === false) {
+    return persisted;
   }
 
   return persisted ?? local;
@@ -367,23 +446,36 @@ export function buildProjectResumePlanningThread(args: {
 export function hasSavedProjectPlanningState(args: {
   planningThreadState?: PlanningThreadState | null;
   conversationState?: ConversationSessionState | null;
+  projectBrief?: ProjectBrief | null;
   hasStrategyOverrides?: boolean;
   hasRevisionHistory?: boolean;
   hasSavedPlanningArtifacts?: boolean;
+  projectTitle?: string | null;
   projectSummary?: string | null;
+  currentFocus?: string | null;
+  blockers?: readonly string[];
+  nextStep?: string | null;
 }) {
-  return Boolean(
-    hasPlanningThreadHistory(args.planningThreadState ?? null) ||
-      hasMeaningfulPlanningConversationState(
-        args.conversationState ?? args.planningThreadState?.conversationState ?? null
-      )
-  );
+  return hasMeaningfulProjectPlanningState({
+    planningThreadState: args.planningThreadState,
+    conversationState: args.conversationState,
+    projectBrief: args.projectBrief,
+    hasStrategyOverrides: args.hasStrategyOverrides,
+    hasRevisionHistory: args.hasRevisionHistory,
+    hasSavedPlanningArtifacts: args.hasSavedPlanningArtifacts,
+    projectTitle: args.projectTitle,
+    projectSummary: args.projectSummary,
+    currentFocus: args.currentFocus,
+    blockers: args.blockers,
+    nextStep: args.nextStep
+  });
 }
 
 export function buildStrategyRoomInitialThreadState(args: {
   lane: PlanningLaneId;
   planningThreadState?: PlanningThreadState | null;
   conversationState?: ConversationSessionState | null;
+  projectBrief?: ProjectBrief | null;
   hasStrategyOverrides?: boolean;
   hasRevisionHistory?: boolean;
   hasSavedPlanningArtifacts?: boolean;
@@ -402,10 +494,15 @@ export function buildStrategyRoomInitialThreadState(args: {
     !hasSavedProjectPlanningState({
       planningThreadState: args.planningThreadState,
       conversationState: args.conversationState,
+      projectBrief: args.projectBrief,
       hasStrategyOverrides: args.hasStrategyOverrides,
       hasRevisionHistory: args.hasRevisionHistory,
       hasSavedPlanningArtifacts: args.hasSavedPlanningArtifacts,
-      projectSummary: args.projectSummary
+      projectTitle: args.projectTitle,
+      projectSummary: args.projectSummary,
+      currentFocus: args.currentFocus,
+      blockers: args.blockers,
+      nextStep: args.nextStep
     })
   ) {
     return null;
