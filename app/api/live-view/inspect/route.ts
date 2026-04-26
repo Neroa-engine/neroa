@@ -97,6 +97,29 @@ function readBearerToken(request: NextRequest) {
   return match?.[1]?.trim() ?? "";
 }
 
+function asObjectRecord(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function buildSafePayloadSummary(payload: unknown) {
+  const record = asObjectRecord(payload);
+  const snapshot = asObjectRecord(record?.snapshot);
+
+  return {
+    topLevelKeys: record ? Object.keys(record).slice(0, 12) : [],
+    hasSnapshot: snapshot != null,
+    hasPage: asObjectRecord(snapshot?.page) != null,
+    hasMetrics: asObjectRecord(snapshot?.metrics) != null,
+    hasActionLogs: Array.isArray(record?.actionLogs),
+    hasScreenshotDataUrl:
+      typeof record?.screenshotDataUrl === "string" && record.screenshotDataUrl.length > 0
+  };
+}
+
 export async function POST(request: NextRequest) {
   const token = readBearerToken(request);
   if (!token) {
@@ -113,6 +136,17 @@ export async function POST(request: NextRequest) {
 
   const parsed = inspectSchema.safeParse(json);
   if (!parsed.success) {
+    if (process.env.NODE_ENV !== "production") {
+      return NextResponse.json(
+        {
+          error: "Invalid Live View inspection payload.",
+          issues: parsed.error.flatten(),
+          payloadSummary: buildSafePayloadSummary(json)
+        },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json({ error: "Invalid Live View inspection payload." }, { status: 400 });
   }
 
