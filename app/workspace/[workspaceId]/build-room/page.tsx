@@ -85,6 +85,7 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
         roadmapPlan={projectIntelligence.roadmapPlan}
         governancePolicy={projectIntelligence.governancePolicy}
         executionState={projectIntelligence.executionState}
+        billingState={projectIntelligence.billingState}
         codexRelayMode={codexRelayMode}
         workerTriggerMode={workerTriggerMode}
         storageMessage={storageMessage}

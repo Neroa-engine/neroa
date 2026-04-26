@@ -117,6 +117,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
         roadmapPlan={projectIntelligence.roadmapPlan}
         governancePolicy={projectIntelligence.governancePolicy}
         executionState={projectIntelligence.executionState}
+        billingState={projectIntelligence.billingState}
         platformContext={projectIntelligence.platformContext}
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}

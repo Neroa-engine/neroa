@@ -16,12 +16,14 @@ import {
   getPendingExecutionRelationship,
   type ExecutionState
 } from "@/lib/intelligence/execution";
+import {
+  buildBillingProtectionSummaryFromState,
+  buildTaskBillingProtectionContext,
+  type BillingProtectionState
+} from "@/lib/intelligence/billing";
 import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
-import {
-  buildQAValidationSummary,
-  buildTaskQAValidationContext
-} from "@/lib/intelligence/qa";
+import { buildQAValidationSummary, buildTaskQAValidationContext } from "@/lib/intelligence/qa";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -37,6 +39,7 @@ type BuildRoomControlRoomProps = {
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
   executionState: ExecutionState | null;
+  billingState: BillingProtectionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
@@ -211,6 +214,22 @@ function statusBadgeClasses(status: string) {
   return "border-slate-200 bg-white/82 text-slate-600";
 }
 
+function billingStatusBadgeClasses(status: string) {
+  if (/billable/i.test(status)) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (/review/i.test(status) || /block auto retry/i.test(status)) {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (/retry/i.test(status) || /deferred/i.test(status)) {
+    return "border-cyan-200 bg-cyan-50 text-cyan-700";
+  }
+
+  return "border-slate-200 bg-white text-slate-600";
+}
+
 function relayModeLabel(mode: BuildRoomRelayMode) {
   return mode === "real" ? "Real relay" : "Mock relay";
 }
@@ -272,6 +291,7 @@ export function BuildRoomControlRoom({
   roadmapPlan,
   governancePolicy,
   executionState,
+  billingState,
   codexRelayMode,
   workerTriggerMode,
   storageMessage = null
@@ -307,6 +327,20 @@ export function BuildRoomControlRoom({
     executionState,
     buildRoomTaskId: selectedDetail?.task.id ?? null
   });
+  const selectedBillingContext = selectedDetail
+    ? buildTaskBillingProtectionContext({
+        workspaceId,
+        projectId: project.id,
+        projectName: project.title,
+        executionState,
+        billingState,
+        taskDetail: selectedDetail,
+        projectBrief,
+        architectureBlueprint,
+        roadmapPlan,
+        governancePolicy
+      })
+    : null;
   const selectedQaContext = selectedDetail
     ? buildTaskQAValidationContext({
         workspaceId,
@@ -323,6 +357,11 @@ export function BuildRoomControlRoom({
   const selectedQaValidation = selectedQaContext?.qaValidation ?? null;
   const qaSummary = selectedQaContext
     ? buildQAValidationSummary(selectedQaContext.qaValidation)
+    : null;
+  const selectedBillingState =
+    selectedBillingContext?.billingState ?? billingState ?? null;
+  const billingSummary = selectedBillingState
+    ? buildBillingProtectionSummaryFromState(selectedBillingState)
     : null;
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
@@ -1058,6 +1097,15 @@ export function BuildRoomControlRoom({
                             note: qaSummary
                               ? `${qaSummary.artifactProgressLabel}. ${qaSummary.criterionProgressLabel}. ${qaSummary.releaseLabel}.`
                               : "Run-complete and accepted are separate states. Shared QA validation decides when this task can be presented as complete."
+                          },
+                          {
+                            label: "Billing / protection",
+                            value: billingSummary
+                              ? billingSummary.statusLabel
+                              : "Awaiting billing classification",
+                            note: billingSummary
+                              ? `${billingSummary.chargeabilityLabel}. ${billingSummary.retryLabel}. ${billingSummary.guardrailLabel}.`
+                              : "Approved, in-scope, release-ready work is the only work that can become billable."
                           }
                         ].map((item) => (
                           <div
@@ -1215,6 +1263,95 @@ export function BuildRoomControlRoom({
                                     </li>
                                   );
                                 })}
+                              </ul>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
+                    </div>
+
+                    <div className="floating-plane rounded-[34px] p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                            Billing / protection
+                          </p>
+                          <p className="mt-3 text-lg font-semibold text-slate-950">
+                            {billingSummary?.headline ??
+                              "Billing protection will appear after the governed execution state is classified."}
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            {selectedBillingState
+                              ? selectedBillingState.latestChargeabilityDecision.reason
+                              : "Run completion and chargeability are separate decisions. Neroa protects blocked, retried, and unaccepted work from becoming billable."}
+                          </p>
+                        </div>
+                        {billingSummary ? (
+                          <span
+                            className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${billingStatusBadgeClasses(
+                              billingSummary.statusLabel
+                            )}`}
+                          >
+                            {billingSummary.statusLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                      {selectedBillingState && billingSummary ? (
+                        <>
+                          <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {billingSummary.chargeabilityLabel}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {billingSummary.retryLabel}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {billingSummary.guardrailLabel}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {billingSummary.totalsLabel}
+                            </span>
+                          </div>
+
+                          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                            <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Blocking now
+                              </p>
+                              <ul className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+                                {billingSummary.blockerLabels.length > 0 ? (
+                                  billingSummary.blockerLabels.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))
+                                ) : (
+                                  <li>No billing-protection blockers are open right now.</li>
+                                )}
+                              </ul>
+                            </div>
+
+                            <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Current ledger state
+                              </p>
+                              <ul className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+                                <li>
+                                  Latest classification:{" "}
+                                  {formatStatusLabel(
+                                    selectedBillingState.latestChargeabilityDecision.classification
+                                  )}
+                                </li>
+                                <li>
+                                  Latest failure class:{" "}
+                                  {selectedBillingState.latestFailureClassification
+                                    ? formatStatusLabel(
+                                        selectedBillingState.latestFailureClassification.class
+                                      )
+                                    : "None"}
+                                </li>
+                                <li>
+                                  Recorded charge events:{" "}
+                                  {selectedBillingState.chargeEvents.length}
+                                </li>
                               </ul>
                             </div>
                           </div>

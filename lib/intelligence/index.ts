@@ -18,3 +18,4 @@ export * from "./governance";
 export * from "./revisions";
 export * from "./execution";
 export * from "./qa";
+export * from "./billing";

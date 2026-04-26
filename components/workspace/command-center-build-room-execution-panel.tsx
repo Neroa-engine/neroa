@@ -20,11 +20,13 @@ import {
   getPendingExecutionRelationship,
   type ExecutionState
 } from "@/lib/intelligence/execution";
-import type { GovernancePolicy } from "@/lib/intelligence/governance";
 import {
-  buildQAValidationSummary,
-  buildTaskQAValidationContext
-} from "@/lib/intelligence/qa";
+  buildBillingProtectionSummaryFromState,
+  buildTaskBillingProtectionContext,
+  type BillingProtectionState
+} from "@/lib/intelligence/billing";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
+import { buildQAValidationSummary, buildTaskQAValidationContext } from "@/lib/intelligence/qa";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
@@ -50,6 +52,7 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
   initialExecutionState: ExecutionState | null;
+  initialBillingState: BillingProtectionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
@@ -267,6 +270,22 @@ function statusBadgeClasses(status: string) {
   return "border-slate-200 bg-white/82 text-slate-600";
 }
 
+function billingStatusBadgeClasses(status: string) {
+  if (/billable/i.test(status)) {
+    return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  }
+
+  if (/review/i.test(status) || /block auto retry/i.test(status)) {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (/retry/i.test(status) || /deferred/i.test(status)) {
+    return "border-cyan-200 bg-cyan-50 text-cyan-700";
+  }
+
+  return "border-slate-200 bg-white text-slate-600";
+}
+
 function relayModeLabel(mode: BuildRoomRelayMode) {
   return mode === "real" ? "Real relay" : "Mock relay";
 }
@@ -362,6 +381,7 @@ export function CommandCenterBuildRoomExecutionPanel({
   initialTasks,
   initialTaskDetail,
   initialExecutionState,
+  initialBillingState,
   codexRelayMode,
   workerTriggerMode,
   storageMessage = null,
@@ -409,6 +429,20 @@ export function CommandCenterBuildRoomExecutionPanel({
     executionState,
     buildRoomTaskId: selectedTask?.id ?? null
   });
+  const selectedBillingContext = selectedDetail
+    ? buildTaskBillingProtectionContext({
+        workspaceId,
+        projectId: project.id,
+        projectName: project.title,
+        executionState,
+        billingState: initialBillingState,
+        taskDetail: selectedDetail,
+        projectBrief,
+        architectureBlueprint,
+        roadmapPlan,
+        governancePolicy
+      })
+    : null;
   const selectedQaContext = selectedDetail
     ? buildTaskQAValidationContext({
         workspaceId,
@@ -425,6 +459,11 @@ export function CommandCenterBuildRoomExecutionPanel({
   const selectedQaValidation = selectedQaContext?.qaValidation ?? null;
   const qaSummary = selectedQaContext
     ? buildQAValidationSummary(selectedQaContext.qaValidation)
+    : null;
+  const selectedBillingState =
+    selectedBillingContext?.billingState ?? initialBillingState ?? null;
+  const billingSummary = selectedBillingState
+    ? buildBillingProtectionSummaryFromState(selectedBillingState)
     : null;
   const showExecutionBlockedMessage =
     executionGate.blockedPanel.show && selectedTask?.status === "draft";
@@ -1239,6 +1278,92 @@ export function CommandCenterBuildRoomExecutionPanel({
                                 </li>
                               );
                             })}
+                          </ul>
+                        </div>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+
+                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        Billing / protection
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">
+                        {billingSummary?.headline ??
+                          "Billing protection will appear here after the governed execution state is classified."}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        {selectedBillingState
+                          ? selectedBillingState.latestChargeabilityDecision.reason
+                          : "Only approved, in-scope, release-ready work becomes billable. Finished runs can still stay protected."}
+                      </p>
+                    </div>
+                    {billingSummary ? (
+                      <span
+                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${billingStatusBadgeClasses(
+                          billingSummary.statusLabel
+                        )}`}
+                      >
+                        {billingSummary.statusLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  {selectedBillingState && billingSummary ? (
+                    <>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {billingSummary.chargeabilityLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {billingSummary.retryLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {billingSummary.guardrailLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {billingSummary.totalsLabel}
+                        </span>
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Blocking now
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                            {billingSummary.blockerLabels.length > 0 ? (
+                              billingSummary.blockerLabels.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))
+                            ) : (
+                              <li>No billing-protection blockers are open right now.</li>
+                            )}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Current ledger state
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                            <li>
+                              Latest classification:{" "}
+                              {formatStatusLabel(
+                                selectedBillingState.latestChargeabilityDecision.classification
+                              )}
+                            </li>
+                            <li>
+                              Latest failure class:{" "}
+                              {selectedBillingState.latestFailureClassification
+                                ? formatStatusLabel(
+                                    selectedBillingState.latestFailureClassification.class
+                                  )
+                                : "None"}
+                            </li>
+                            <li>
+                              Recorded charge events: {selectedBillingState.chargeEvents.length}
+                            </li>
                           </ul>
                         </div>
                       </div>

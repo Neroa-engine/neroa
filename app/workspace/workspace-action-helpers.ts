@@ -6,9 +6,10 @@ import {
 } from "@/lib/account/plan-usage-server";
 import { requireUser } from "@/lib/auth";
 import {
-  buildStoredProjectMetadata,
+  mergeStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
   parseWorkspaceProjectDescription,
+  type StoredBillingState,
   type StoredExecutionState,
   type StoredGovernanceState,
   type StoredStrategyState,
@@ -128,6 +129,7 @@ export function buildDescriptionWithMetadata(args: {
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
   executionState?: StoredExecutionState | null;
+  billingState?: StoredBillingState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -141,36 +143,24 @@ export function buildDescriptionWithMetadata(args: {
 
   return encodeWorkspaceProjectDescription(
     parsed.visibleDescription,
-    buildStoredProjectMetadata({
+    mergeStoredProjectMetadata({
+      existing: parsed.metadata,
       title: args.title ?? args.workspace.name,
       description: parsed.visibleDescription,
-      templateId: parsed.metadata?.templateId ?? null,
-      customLanes: parsed.metadata?.customLanes ?? [],
-      platformContext: args.platformContext ?? parsed.metadata?.platformContext ?? null,
-      conversationState: args.conversationState ?? parsed.metadata?.conversationState ?? null,
-      governanceState: args.governanceState ?? parsed.metadata?.governanceState ?? null,
-      strategyState: args.strategyState ?? parsed.metadata?.strategyState ?? null,
-      executionState: args.executionState ?? parsed.metadata?.executionState ?? null,
-      archived: args.archived ?? parsed.metadata?.archived ?? false,
-      assets: args.assets ?? parsed.metadata?.assets ?? [],
-      commandCenterBrandSystem:
-        args.commandCenterBrandSystem ?? parsed.metadata?.commandCenterBrandSystem ?? null,
-      commandCenterDecisions:
-        args.commandCenterDecisions ?? parsed.metadata?.commandCenterDecisions ?? [],
-      commandCenterChangeReviews:
-        args.commandCenterChangeReviews ?? parsed.metadata?.commandCenterChangeReviews ?? [],
-      commandCenterTasks: args.commandCenterTasks ?? parsed.metadata?.commandCenterTasks ?? [],
-      commandCenterPreviewState:
-        args.commandCenterPreviewState ?? parsed.metadata?.commandCenterPreviewState ?? null,
-      commandCenterApprovedDesignPackage:
-        args.commandCenterApprovedDesignPackage ??
-        parsed.metadata?.commandCenterApprovedDesignPackage ??
-        null,
-      guidedFlowPreset: parsed.metadata?.guidedFlowPreset,
-      guidedEntryContext: parsed.metadata?.guidedEntryContext ?? null,
-      buildSession: parsed.metadata?.buildSession ?? null,
-      saasIntake: parsed.metadata?.saasIntake ?? null,
-      mobileAppIntake: parsed.metadata?.mobileAppIntake ?? null
+      platformContext: args.platformContext,
+      conversationState: args.conversationState,
+      governanceState: args.governanceState,
+      strategyState: args.strategyState,
+      executionState: args.executionState,
+      billingState: args.billingState,
+      archived: args.archived,
+      assets: args.assets,
+      commandCenterBrandSystem: args.commandCenterBrandSystem,
+      commandCenterDecisions: args.commandCenterDecisions,
+      commandCenterChangeReviews: args.commandCenterChangeReviews,
+      commandCenterTasks: args.commandCenterTasks,
+      commandCenterPreviewState: args.commandCenterPreviewState,
+      commandCenterApprovedDesignPackage: args.commandCenterApprovedDesignPackage
     })
   );
 }

@@ -13,6 +13,7 @@ import {
   buildGovernancePolicySummary,
   type GovernancePolicy
 } from "@/lib/intelligence/governance";
+import type { BillingProtectionState } from "@/lib/intelligence/billing";
 import {
   buildRoadmapPlanSummary,
   type RoadmapPlan
@@ -36,6 +37,7 @@ type ProjectCommandCenterV1Props = {
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
   executionState: ExecutionState | null;
+  billingState: BillingProtectionState | null;
   platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
@@ -280,6 +282,7 @@ export function ProjectCommandCenterV1({
   roadmapPlan,
   governancePolicy,
   executionState,
+  billingState,
   platformContext,
   liveViewSession,
   canManageDecisions,
@@ -339,6 +342,7 @@ export function ProjectCommandCenterV1({
             initialTasks={initialBuildRoomTasks}
             initialTaskDetail={initialBuildRoomTaskDetail}
             initialExecutionState={executionState}
+            initialBillingState={billingState}
             codexRelayMode={buildRoomCodexRelayMode}
             workerTriggerMode={buildRoomWorkerTriggerMode}
             storageMessage={buildRoomStorageMessage}

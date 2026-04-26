@@ -57,6 +57,10 @@ import {
   type PendingExecutionItem
 } from "@/lib/intelligence/execution/types";
 import {
+  loadBillingProtectionState,
+  type BillingProtectionState
+} from "@/lib/intelligence/billing/types";
+import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -77,6 +81,7 @@ export type StoredProjectMetadata = {
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
   executionState?: StoredExecutionState | null;
+  billingState?: StoredBillingState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -106,6 +111,8 @@ export type StoredExecutionState = {
   pendingExecutions?: PendingExecutionItem[];
   executionPackets?: ExecutionPacketSummary[];
 };
+
+export type StoredBillingState = BillingProtectionState;
 
 export type StoredProjectAsset = {
   id: string;
@@ -299,6 +306,10 @@ function normalizeExecutionStateValue(value: unknown): StoredExecutionState | nu
     pendingExecutions,
     executionPackets
   } satisfies StoredExecutionState;
+}
+
+function normalizeBillingState(value: unknown): StoredBillingState | null {
+  return loadBillingProtectionState(value);
 }
 
 export function defaultStoredCommandCenterBrandSystem(): StoredCommandCenterBrandSystem {
@@ -731,6 +742,7 @@ export function buildStoredProjectMetadata(args: {
   governanceState?: StoredGovernanceState | null;
   strategyState?: StoredStrategyState | null;
   executionState?: StoredExecutionState | null;
+  billingState?: StoredBillingState | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -765,6 +777,7 @@ export function buildStoredProjectMetadata(args: {
     governanceState: normalizeGovernanceState(args.governanceState),
     strategyState: normalizeStrategyState(args.strategyState),
     executionState: normalizeExecutionStateValue(args.executionState),
+    billingState: normalizeBillingState(args.billingState),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -779,6 +792,61 @@ export function buildStoredProjectMetadata(args: {
     saasIntake: args.saasIntake ?? null,
     mobileAppIntake: args.mobileAppIntake ?? null
   };
+}
+
+export function mergeStoredProjectMetadata(args: {
+  existing?: StoredProjectMetadata | null;
+  title: string;
+  description?: string | null;
+  platformContext?: PlatformContext | null;
+  conversationState?: ConversationSessionState | null;
+  governanceState?: StoredGovernanceState | null;
+  strategyState?: StoredStrategyState | null;
+  executionState?: StoredExecutionState | null;
+  billingState?: StoredBillingState | null;
+  archived?: boolean;
+  assets?: StoredProjectAsset[];
+  commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
+  commandCenterDecisions?: StoredCommandCenterDecision[];
+  commandCenterChangeReviews?: StoredCommandCenterChangeReview[];
+  commandCenterTasks?: StoredCommandCenterTask[];
+  commandCenterPreviewState?: StoredCommandCenterPreviewState | null;
+  commandCenterApprovedDesignPackage?: StoredCommandCenterApprovedDesignPackage | null;
+}) {
+  const existing = args.existing ?? null;
+
+  return buildStoredProjectMetadata({
+    title: args.title,
+    description: args.description,
+    templateId: existing?.templateId ?? null,
+    customLanes: existing?.customLanes ?? [],
+    platformContext: args.platformContext ?? existing?.platformContext ?? null,
+    conversationState: args.conversationState ?? existing?.conversationState ?? null,
+    governanceState: args.governanceState ?? existing?.governanceState ?? null,
+    strategyState: args.strategyState ?? existing?.strategyState ?? null,
+    executionState: args.executionState ?? existing?.executionState ?? null,
+    billingState: args.billingState ?? existing?.billingState ?? null,
+    archived: args.archived ?? existing?.archived ?? false,
+    assets: args.assets ?? existing?.assets ?? [],
+    commandCenterBrandSystem:
+      args.commandCenterBrandSystem ?? existing?.commandCenterBrandSystem ?? null,
+    commandCenterDecisions:
+      args.commandCenterDecisions ?? existing?.commandCenterDecisions ?? [],
+    commandCenterChangeReviews:
+      args.commandCenterChangeReviews ?? existing?.commandCenterChangeReviews ?? [],
+    commandCenterTasks: args.commandCenterTasks ?? existing?.commandCenterTasks ?? [],
+    commandCenterPreviewState:
+      args.commandCenterPreviewState ?? existing?.commandCenterPreviewState ?? null,
+    commandCenterApprovedDesignPackage:
+      args.commandCenterApprovedDesignPackage ??
+      existing?.commandCenterApprovedDesignPackage ??
+      null,
+    guidedFlowPreset: existing?.guidedFlowPreset,
+    guidedEntryContext: existing?.guidedEntryContext ?? null,
+    buildSession: existing?.buildSession ?? null,
+    saasIntake: existing?.saasIntake ?? null,
+    mobileAppIntake: existing?.mobileAppIntake ?? null
+  });
 }
 
 function encodeMetadata(metadata: StoredProjectMetadata) {
@@ -812,6 +880,7 @@ function decodeMetadata(value: string) {
       governanceState: normalizeGovernanceState(parsed.governanceState),
       strategyState: normalizeStrategyState(parsed.strategyState),
       executionState: normalizeExecutionStateValue(parsed.executionState),
+      billingState: normalizeBillingState(parsed.billingState),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets

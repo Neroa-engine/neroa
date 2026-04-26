@@ -20,6 +20,10 @@ import {
   normalizeExecutionState,
   type ExecutionState
 } from "./execution/index.ts";
+import {
+  normalizeBillingProtectionState,
+  type BillingProtectionState
+} from "./billing/index.ts";
 import { applyStrategyOverrideStateToLayers } from "./revisions/apply.ts";
 import {
   type ProjectBriefReadinessStage,
@@ -923,6 +927,7 @@ export type WorkspaceProjectIntelligence = {
   governancePolicy: GovernancePolicy;
   strategyState: StoredProjectMetadata["strategyState"] | null;
   executionState: ExecutionState | null;
+  billingState: BillingProtectionState | null;
 };
 
 export function buildWorkspaceProjectIntelligence(args: {
@@ -985,6 +990,7 @@ export function buildWorkspaceProjectIntelligence(args: {
     roadmapPlan: revisedLayers?.roadmapPlan ?? roadmapPlan,
     governancePolicy: revisedLayers?.governancePolicy ?? governancePolicy,
     strategyState: args.projectMetadata?.strategyState ?? null,
-    executionState: normalizeExecutionState(args.projectMetadata?.executionState)
+    executionState: normalizeExecutionState(args.projectMetadata?.executionState),
+    billingState: normalizeBillingProtectionState(args.projectMetadata?.billingState)
   } satisfies WorkspaceProjectIntelligence;
 }

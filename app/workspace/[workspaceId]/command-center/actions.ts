@@ -39,6 +39,7 @@ import {
   type PendingExecutionItem,
   type PendingExecutionReleaseResult
 } from "@/lib/intelligence/execution";
+import { generateBillingProtectionState } from "@/lib/intelligence/billing";
 import {
   normalizeCommandCenterDecisionStatus,
   type StoredCommandCenterDecision
@@ -650,6 +651,7 @@ export async function submitCommandCenterExecutionRequest(
   const existingExecutionState = normalizeExecutionState(
     context.parsed.metadata?.executionState
   );
+  const existingBillingState = context.projectIntelligence.billingState;
   const existingPendingExecution =
     findPendingExecutionByBuildRoomTaskId(
       existingExecutionState,
@@ -717,6 +719,14 @@ export async function submitCommandCenterExecutionRequest(
       packet,
       now
     });
+    const billingState = generateBillingProtectionState({
+      projectId: workspaceId,
+      governancePolicy: context.projectIntelligence.governancePolicy,
+      executionPacket: packet,
+      taskDetail: syncedTask,
+      priorState: existingBillingState,
+      now
+    });
 
     const { data, error } = await context.supabase
       .from("workspaces")
@@ -724,7 +734,8 @@ export async function submitCommandCenterExecutionRequest(
         description: buildDescriptionWithMetadata({
           workspace: context.workspace,
           commandCenterTasks: pendingTaskUpdate.tasks,
-          executionState: held.executionState
+          executionState: held.executionState,
+          billingState
         })
       })
       .eq("id", workspaceId)
@@ -792,6 +803,14 @@ export async function submitCommandCenterExecutionRequest(
       })
     });
   }
+  const billingState = generateBillingProtectionState({
+    projectId: workspaceId,
+    governancePolicy: context.projectIntelligence.governancePolicy,
+    executionPacket: packet,
+    taskDetail: releasedTask,
+    priorState: existingBillingState,
+    now
+  });
 
   const { data, error } = await context.supabase
     .from("workspaces")
@@ -799,7 +818,8 @@ export async function submitCommandCenterExecutionRequest(
       description: buildDescriptionWithMetadata({
         workspace: context.workspace,
         commandCenterTasks: nextCommandCenterTasks,
-        executionState: nextExecutionState
+        executionState: nextExecutionState,
+        billingState
       })
     })
     .eq("id", workspaceId)
@@ -862,6 +882,7 @@ export async function releaseEligiblePendingExecutionRequests(input: {
   }
 
   let executionState = existingExecutionState;
+  let billingState = context.projectIntelligence.billingState;
   let commandCenterTasks = context.parsed.metadata?.commandCenterTasks ?? [];
   const results: PendingExecutionReleaseResult[] = [];
   const now = new Date().toISOString();
@@ -897,6 +918,13 @@ export async function releaseEligiblePendingExecutionRequests(input: {
       });
 
       executionState = held.executionState;
+      billingState = generateBillingProtectionState({
+        projectId: workspaceId,
+        governancePolicy: context.projectIntelligence.governancePolicy,
+        executionPacket: packet,
+        priorState: billingState,
+        now
+      });
       results.push(held.result);
       continue;
     }
@@ -930,6 +958,14 @@ export async function releaseEligiblePendingExecutionRequests(input: {
     });
 
     executionState = released.executionState;
+    billingState = generateBillingProtectionState({
+      projectId: workspaceId,
+      governancePolicy: context.projectIntelligence.governancePolicy,
+      executionPacket: packet,
+      taskDetail: releasedTask,
+      priorState: billingState,
+      now
+    });
     commandCenterTasks = markCommandCenterTaskReleased({
       existingTasks: commandCenterTasks,
       taskId: pendingItem.commandCenterTaskId,
@@ -944,7 +980,8 @@ export async function releaseEligiblePendingExecutionRequests(input: {
       description: buildDescriptionWithMetadata({
         workspace: context.workspace,
         commandCenterTasks,
-        executionState
+        executionState,
+        billingState
       })
     })
     .eq("id", workspaceId)

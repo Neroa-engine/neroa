@@ -30,9 +30,16 @@ import {
   loadPlatformContext,
   resolvePlatformExecutionGateState
 } from "@/lib/intelligence/platform-context";
+import { buildWorkspaceProjectIntelligence } from "@/lib/intelligence/project-brief-generator";
+import { buildTaskBillingProtectionContext } from "@/lib/intelligence/billing";
 import { type ServerSupabaseClient } from "@/lib/platform/foundation";
 import type { BuildRoomTaskDetail } from "@/lib/build-room/types";
 import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
+import {
+  encodeWorkspaceProjectDescription,
+  mergeStoredProjectMetadata,
+  parseWorkspaceProjectDescription
+} from "@/lib/workspace/project-metadata";
 
 type BuildRoomWriteClient = SupabaseClient | ServerSupabaseClient;
 
@@ -62,6 +69,89 @@ function buildCodexRunProvider(mode: BuildRoomRelayMode) {
 
 function buildWorkerRunProvider(mode: BuildRoomRelayMode) {
   return mode === "real" ? "droplet-worker" : "droplet-worker-mock";
+}
+
+async function syncBuildRoomTaskBillingProtectionState(args: {
+  supabase: BuildRoomWriteClient;
+  taskId: string;
+}) {
+  const detail = await requireBuildRoomTaskDetail({
+    supabase: args.supabase,
+    taskId: args.taskId
+  });
+  const { data: workspace, error } = await args.supabase
+    .from("workspaces")
+    .select("id, name, description")
+    .eq("id", detail.task.workspaceId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!workspace) {
+    throw new Error("Build Room workspace not found for billing protection sync.");
+  }
+
+  const parsed = parseWorkspaceProjectDescription(workspace.description);
+  const projectIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId: workspace.id,
+    projectId: detail.task.projectId,
+    projectTitle: workspace.name,
+    projectDescription: parsed.visibleDescription,
+    projectMetadata: parsed.metadata
+  });
+  const billingContext = buildTaskBillingProtectionContext({
+    workspaceId: workspace.id,
+    projectId: detail.task.projectId,
+    projectName: workspace.name,
+    executionState: projectIntelligence.executionState,
+    billingState: projectIntelligence.billingState,
+    taskDetail: detail,
+    projectBrief: projectIntelligence.projectBrief,
+    architectureBlueprint: projectIntelligence.architectureBlueprint,
+    roadmapPlan: projectIntelligence.roadmapPlan,
+    governancePolicy: projectIntelligence.governancePolicy
+  });
+  const nextMetadata = mergeStoredProjectMetadata({
+    existing: parsed.metadata,
+    title: workspace.name,
+    description: parsed.visibleDescription,
+    billingState: billingContext.billingState
+  });
+  const encodedDescription = encodeWorkspaceProjectDescription(
+    parsed.visibleDescription,
+    nextMetadata
+  );
+  const updateResult = await args.supabase
+    .from("workspaces")
+    .update({
+      description: encodedDescription
+    })
+    .eq("id", workspace.id)
+    .select("id")
+    .maybeSingle();
+
+  if (updateResult.error) {
+    throw new Error(updateResult.error.message);
+  }
+
+  if (!updateResult.data) {
+    throw new Error(
+      "Build Room billing protection sync could not be confirmed."
+    );
+  }
+
+  return detail;
+}
+
+async function syncBuildRoomTaskBillingProtectionStateSafely(args: {
+  supabase: BuildRoomWriteClient;
+  taskId: string;
+}) {
+  await syncBuildRoomTaskBillingProtectionState(args).catch(() => {
+    // Preserve the existing relay flow even if billing metadata cannot be refreshed yet.
+  });
 }
 
 export async function createBuildRoomTask(args: {
@@ -262,6 +352,10 @@ export async function submitBuildRoomTaskToCodex(args: {
     status: "running",
     startedAt: queuedAt
   });
+  await syncBuildRoomTaskBillingProtectionStateSafely({
+    supabase: args.supabase,
+    taskId: task.id
+  });
 
   try {
     const codexResult = await relayBuildRoomTaskToCodex({
@@ -314,11 +408,16 @@ export async function submitBuildRoomTaskToCodex(args: {
       textContent: codexResult.patchText,
       payload: codexResult
     });
-
-    return requireBuildRoomTaskDetail({
+    const detail = await requireBuildRoomTaskDetail({
       supabase: args.supabase,
       taskId: task.id
     });
+    await syncBuildRoomTaskBillingProtectionStateSafely({
+      supabase: args.supabase,
+      taskId: task.id
+    });
+
+    return detail;
   } catch (error) {
     const completedAt = new Date().toISOString();
     const message = error instanceof Error ? error.message : "Codex relay failed.";
@@ -353,6 +452,10 @@ export async function submitBuildRoomTaskToCodex(args: {
       payload: {
         status: "failed"
       }
+    });
+    await syncBuildRoomTaskBillingProtectionStateSafely({
+      supabase: args.supabase,
+      taskId: task.id
     });
 
     throw error;
@@ -458,11 +561,16 @@ async function applyBuildRoomWorkerResult(args: {
     textContent: args.result.textContent ?? (args.result.logs.length > 0 ? args.result.logs.join("\n") : null),
     payload: args.result.resultPayload ?? args.result.metadata
   });
-
-  return requireBuildRoomTaskDetail({
+  const detail = await requireBuildRoomTaskDetail({
     supabase: args.supabase,
     taskId: task.id
   });
+  await syncBuildRoomTaskBillingProtectionStateSafely({
+    supabase: args.supabase,
+    taskId: task.id
+  });
+
+  return detail;
 }
 
 export async function approveBuildRoomTaskForWorker(args: {
@@ -622,11 +730,16 @@ export async function approveBuildRoomTaskForWorker(args: {
       triggerMode: workerResult.triggerMode
     }
   });
-
-  return requireBuildRoomTaskDetail({
+  const detail = await requireBuildRoomTaskDetail({
     supabase: args.supabase,
     taskId: task.id
   });
+  await syncBuildRoomTaskBillingProtectionStateSafely({
+    supabase: args.supabase,
+    taskId: task.id
+  });
+
+  return detail;
 }
 
 export async function attachBuildRoomWorkerRunResult(args: {
