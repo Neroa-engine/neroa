@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireApiUser } from "@/lib/auth";
+import { conversationSessionStateSchema } from "@/lib/intelligence/conversation";
 import { mirrorStartPlanningThreadShadowIfEnabled } from "@/lib/intelligence/runtime-bridge";
 import { recordPlatformEvent } from "@/lib/platform/foundation";
 import { runPlanningChat } from "@/lib/start/planning-chat";
@@ -18,6 +19,7 @@ const bodySchema = z.object({
   title: z.string().max(120).optional(),
   summary: z.string().max(4000).optional(),
   message: z.string().min(1).max(4000),
+  conversationState: conversationSessionStateSchema.nullable().optional(),
   messages: z.array(messageSchema).max(20).default([])
 });
 
@@ -39,7 +41,8 @@ export async function POST(request: NextRequest) {
       title: body.title,
       summary: body.summary,
       message: body.message,
-      messages: body.messages
+      messages: body.messages,
+      conversationState: body.conversationState ?? null
     });
 
     if (result.visibleStrategist.enabled) {

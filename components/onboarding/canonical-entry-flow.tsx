@@ -4,6 +4,10 @@ import Link from "next/link";
 import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import {
+  loadConversationSessionState,
+  type ConversationSessionState
+} from "@/lib/intelligence/conversation";
 import { APP_ROUTES } from "@/lib/routes";
 import {
   analyzePlanningInputs,
@@ -185,6 +189,24 @@ function sanitizeStoredMessages(messages: unknown) {
   return sanitized.length > 0 ? sanitized : null;
 }
 
+function hasMeaningfulConversationState(value: ConversationSessionState | null) {
+  if (!value) {
+    return false;
+  }
+
+  return Boolean(
+    value.founderName ||
+      value.productCategory ||
+      value.problemStatement ||
+      value.outcomePromise ||
+      value.monetization ||
+      value.audience.buyerPersonas.length > 0 ||
+      value.audience.operatorPersonas.length > 0 ||
+      value.questionHistory.length > 0 ||
+      value.processedUserTurnIds.length > 0
+  );
+}
+
 function deriveScopePreview(summary: string) {
   return summary
     .split(/\n+|[.!?](?:\s+|$)/)
@@ -348,6 +370,8 @@ export function CanonicalEntryFlow({
     })
   );
   const [threadMetadata, setThreadMetadata] = useState<PlanningThreadMetadata | null>(null);
+  const [conversationState, setConversationState] =
+    useState<ConversationSessionState | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatNotice, setChatNotice] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -456,6 +480,13 @@ export function CanonicalEntryFlow({
         setMessages(storedMessages);
         setSeedSummary(initialSummary);
         setTitle(initialTitle);
+        const hydratedConversationState = hasMeaningfulConversationState(
+          loadConversationSessionState(parsed.conversationState)
+        )
+          ? loadConversationSessionState(parsed.conversationState)
+          : null;
+
+        setConversationState(hydratedConversationState);
 
         if (parsed.metadata && typeof parsed.metadata === "object") {
           const metadata = parsed.metadata as Record<string, unknown>;
@@ -499,11 +530,12 @@ export function CanonicalEntryFlow({
       lane: initialEntryPathId,
       messages,
       metadata: planningMetadata,
+      conversationState,
       updatedAt: new Date().toISOString()
     };
 
     window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
-  }, [initialEntryPathId, messages, planningMetadata, storageKey, threadId]);
+  }, [conversationState, initialEntryPathId, messages, planningMetadata, storageKey, threadId]);
 
   useEffect(() => {
     if (!threadViewportRef.current) {
@@ -546,6 +578,7 @@ export function CanonicalEntryFlow({
     setThreadId(clearedThread.threadId);
     setMessages(clearedThread.messages);
     setThreadMetadata(null);
+    setConversationState(null);
     setChatError(null);
     setChatNotice(
       notice ??
@@ -560,6 +593,7 @@ export function CanonicalEntryFlow({
         lane: initialEntryPathId,
         messages: clearedThread.messages,
         metadata: clearedThread.metadata,
+        conversationState: null,
         updatedAt: new Date().toISOString()
       };
 
@@ -605,6 +639,7 @@ export function CanonicalEntryFlow({
           title: title.trim(),
           summary: effectiveSummary || seedSummary,
           message: cleanDraft,
+          conversationState,
           messages: previousMessages.map((message) => ({
             id: message.id,
             role: message.role,
@@ -622,6 +657,7 @@ export function CanonicalEntryFlow({
       setThreadId(payload.threadId ?? payload.threadState.threadId);
       setMessages(payload.threadState.messages);
       setThreadMetadata(payload.threadState.metadata);
+      setConversationState(payload.threadState.conversationState ?? null);
 
       if (!title.trim() && payload.threadState.metadata.projectTitle) {
         setTitle(payload.threadState.metadata.projectTitle);

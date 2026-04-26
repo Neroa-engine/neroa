@@ -1,3 +1,5 @@
+import type { ConversationSessionState } from "@/lib/intelligence/conversation";
+
 export type PlanningLaneId = "diy" | "managed";
 
 export type PlanningMessageRole = "assistant" | "user";
@@ -22,6 +24,7 @@ export type PlanningThreadState = {
   lane: PlanningLaneId;
   messages: PlanningMessage[];
   metadata: PlanningThreadMetadata;
+  conversationState?: ConversationSessionState | null;
   updatedAt: string;
 };
 

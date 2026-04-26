@@ -1,5 +1,13 @@
 import { routeAI } from "@/lib/ai/router";
 import {
+  buildConversationSessionState,
+  buildConversationTurnGuidance,
+  recordConversationQuestionAsked,
+  sanitizeConversationText,
+  type ConversationQuestionKey,
+  type ConversationSessionState
+} from "@/lib/intelligence/conversation";
+import {
   buildStartVisibleStrategistDecision,
   type StartVisibleStrategistLog
 } from "@/lib/intelligence/runtime-bridge";
@@ -28,6 +36,7 @@ export type PlanningChatResult = {
 };
 
 type VisibleConversationState = StartVisibleStrategistLog["visibleConversationState"];
+type RenderedTopicCategory = StartVisibleStrategistLog["renderedTopicCategory"];
 
 const INTERNAL_NAME_PATTERN =
   /\b(?:vector|axiom|forge|anchor|nureo|nuroa|narua|openai|anthropic|codex|gpt|claude)\b/gi;
@@ -282,15 +291,17 @@ function sanitizeVisiblePlanningText(value: string, allowExecutionPath: boolean)
   const sanitized = sanitizeInternalReferences(value);
 
   if (allowExecutionPath) {
-    return sanitized;
+    return sanitizeConversationText(sanitized);
   }
 
-  return sanitized
+  return sanitizeConversationText(
+    sanitized
     .replace(EXECUTION_REFERENCE_PATTERN, "the current plan")
     .replace(/\b(?:DIY|Managed)\b/gi, "")
     .replace(/\s{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
-    .trim();
+    .trim()
+  );
 }
 
 function splitIntoSentences(value: string, allowExecutionPath: boolean) {
@@ -819,6 +830,55 @@ function buildFallbackPlanningNotes(args: {
   ], 1);
 }
 
+function mapConversationQuestionKeyToVisibleQuestionType(
+  questionKey: ConversationQuestionKey | null
+) {
+  switch (questionKey) {
+    case "buyer_or_operator_persona":
+      return "actor_clarification" as const;
+    case "problem_statement":
+    case "product_category":
+    case "outcome_promise":
+      return "critical_unknown" as const;
+    case "must_have_features":
+    case "nice_to_have_features":
+      return "mvp_boundary_clarification" as const;
+    case "constraints_and_compliance":
+      return "constraint_clarification" as const;
+    case "integrations_and_data_sources":
+      return "systems_integration_clarification" as const;
+    case "monetization":
+      return "partial_truth_narrowing" as const;
+    default:
+      return null;
+  }
+}
+
+function mapConversationQuestionKeyToTopicCategory(
+  questionKey: ConversationQuestionKey | null
+): RenderedTopicCategory {
+  switch (questionKey) {
+    case "product_category":
+      return "product_shape";
+    case "buyer_or_operator_persona":
+      return "actors";
+    case "problem_statement":
+    case "outcome_promise":
+      return "outcome";
+    case "must_have_features":
+    case "nice_to_have_features":
+      return "mvp_scope";
+    case "constraints_and_compliance":
+      return "constraints";
+    case "integrations_and_data_sources":
+      return "data_integrations";
+    case "monetization":
+      return "business_model";
+    default:
+      return null;
+  }
+}
+
 export async function runPlanningChat(args: {
   threadId: string;
   lane: PlanningLaneId;
@@ -826,6 +886,7 @@ export async function runPlanningChat(args: {
   summary?: string | null;
   messages: PlanningMessageInput[];
   message: string;
+  conversationState?: ConversationSessionState | null;
 }) {
   const now = new Date().toISOString();
   const cleanMessage = cleanText(args.message);
@@ -858,6 +919,7 @@ export async function runPlanningChat(args: {
     lane: args.lane,
     messages: threadMessages,
     metadata,
+    conversationState: args.conversationState ?? null,
     updatedAt: now
   };
   const visibleStrategistDecision = buildStartVisibleStrategistDecision({
@@ -865,7 +927,19 @@ export async function runPlanningChat(args: {
     latestUserMessage: cleanMessage,
     preparedBy: "Live Behavior Calibration Pass v1"
   });
-  const latestLikelyName = extractLikelyName(cleanMessage);
+  const conversationSessionBuild = buildConversationSessionState({
+    previousState: args.conversationState,
+    messages: threadMessages,
+    hiddenBundle: visibleStrategistDecision.bundle
+  });
+  const conversationGuidance = buildConversationTurnGuidance({
+    state: conversationSessionBuild.state,
+    updatedSlotPaths: conversationSessionBuild.updatedSlotPaths,
+    hiddenBundle: visibleStrategistDecision.bundle
+  });
+  const useConversationPlanner = Boolean(conversationGuidance.question);
+  const latestLikelyName =
+    conversationSessionBuild.state.founderName ?? extractLikelyName(cleanMessage);
   const casualGreetingMode =
     planningSignals.meaningfulTurnCount === 0 &&
     isCasualOpeningMessage(cleanMessage) &&
@@ -874,16 +948,19 @@ export async function runPlanningChat(args: {
     planningSignals.meaningfulTurnCount === 0 &&
     !INTRODUCTION_PATTERN.test(cleanMessage) &&
     !!latestLikelyName;
-  const preserveLegacyGreetingFlow = casualGreetingMode || greetingHandoffMode;
+  const preserveLegacyGreetingFlow =
+    (casualGreetingMode || greetingHandoffMode) && !useConversationPlanner;
   const visibleConversationState = inferVisibleConversationStateFromSignals({
-    greetingModeActive: preserveLegacyGreetingFlow,
+    greetingModeActive:
+      preserveLegacyGreetingFlow || conversationGuidance.greetingModeActive,
     greetingHandoffMode,
     strategistState: visibleStrategistDecision.log.visibleConversationState,
     hasAudience: planningSignals.hasAudience,
     hasOutcome: planningSignals.hasOutcome,
     hasWorkflow: planningSignals.hasWorkflow
   });
-  const earlySingleQuestionMode = visibleConversationState !== "product_shaping";
+  const earlySingleQuestionMode =
+    visibleConversationState !== "product_shaping" || useConversationPlanner;
   const useHiddenVisibleStrategist =
     visibleStrategistDecision.usedHidden && !preserveLegacyGreetingFlow;
   const visibleStrategist =
@@ -921,6 +998,30 @@ export async function runPlanningChat(args: {
               ? "legacy_greeting_or_name_flow_preserved"
               : visibleStrategistDecision.log.fallbackReason
         };
+  const conversationDrivenVisibleStrategist =
+    useConversationPlanner
+      ? {
+          ...visibleStrategist,
+          visibleConversationState: conversationGuidance.greetingModeActive
+            ? ("greeting" as const)
+            : visibleConversationState,
+          greetingModeActive: conversationGuidance.greetingModeActive,
+          renderedTargetSelected:
+            conversationGuidance.targetSlotPaths[0] != null
+              ? `slot:${conversationGuidance.targetSlotPaths[0]}`
+              : visibleStrategist.renderedTargetSelected,
+          renderedQuestionType:
+            mapConversationQuestionKeyToVisibleQuestionType(conversationGuidance.questionKey) ??
+            visibleStrategist.renderedQuestionType,
+          questionStyleType: "narrowing" as const,
+          renderedTopicCategory:
+            mapConversationQuestionKeyToTopicCategory(conversationGuidance.questionKey) ??
+            visibleStrategist.renderedTopicCategory,
+          fallbackUsed: false,
+          fallbackPhrasingUsed: false,
+          preservedGreetingFlow: false
+        }
+      : visibleStrategist;
 
   let provider: "vector" | "axiom" | "fallback" = "vector";
   let rawAssistantContent = "";
@@ -974,10 +1075,14 @@ export async function runPlanningChat(args: {
           hasWorkflow: planningSignals.hasWorkflow,
           allowExecutionPath,
           maxQuestions: earlySingleQuestionMode ? 1 : 2,
-          controlledNextQuestions: useHiddenVisibleStrategist
+          controlledNextQuestions: useConversationPlanner
+            ? [conversationGuidance.question ?? ""]
+            : useHiddenVisibleStrategist
             ? [visibleStrategistDecision.renderedQuestion ?? ""]
             : null,
-          controlledLeadIn: useHiddenVisibleStrategist
+          controlledLeadIn: useConversationPlanner
+            ? conversationGuidance.leadIn
+            : useHiddenVisibleStrategist
             ? visibleStrategistDecision.strategistLeadIn
             : null
         })
@@ -992,10 +1097,14 @@ export async function runPlanningChat(args: {
           hasWorkflow: planningSignals.hasWorkflow,
           meaningfulTurnCount: planningSignals.meaningfulTurnCount,
           maxQuestions: earlySingleQuestionMode ? 1 : 2,
-          controlledNextQuestions: useHiddenVisibleStrategist
+          controlledNextQuestions: useConversationPlanner
+            ? [conversationGuidance.question ?? ""]
+            : useHiddenVisibleStrategist
             ? [visibleStrategistDecision.renderedQuestion ?? ""]
             : null,
-          controlledLeadIn: useHiddenVisibleStrategist
+          controlledLeadIn: useConversationPlanner
+            ? conversationGuidance.leadIn
+            : useHiddenVisibleStrategist
             ? visibleStrategistDecision.strategistLeadIn
             : null
         }),
@@ -1004,10 +1113,10 @@ export async function runPlanningChat(args: {
   const finalVisibleStrategist =
     preserveLegacyGreetingFlow
       ? {
-          ...visibleStrategist,
+          ...conversationDrivenVisibleStrategist,
           greetingQuestionOnly: countQuestions(assistantContent) <= 1
         }
-      : visibleStrategist;
+      : conversationDrivenVisibleStrategist;
 
   const assistantMessage: PlanningMessage = {
     id: buildMessageId("assistant"),
@@ -1015,11 +1124,17 @@ export async function runPlanningChat(args: {
     content: assistantContent,
     createdAt: new Date().toISOString()
   };
+  const finalConversationState = recordConversationQuestionAsked({
+    state: conversationSessionBuild.state,
+    questionKey: useConversationPlanner ? conversationGuidance.questionKey : null,
+    askedTurnId: assistantMessage.id
+  });
   const threadState: PlanningThreadState = {
     threadId: args.threadId,
     lane: args.lane,
     messages: [...threadMessages, assistantMessage].slice(-20),
     metadata,
+    conversationState: finalConversationState,
     updatedAt: new Date().toISOString()
   };
 
