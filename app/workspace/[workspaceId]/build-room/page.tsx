@@ -1,13 +1,20 @@
+import { unstable_noStore as noStore } from "next/cache";
+import { redirect } from "next/navigation";
 import { ActiveProjectPortalShell } from "@/components/portal/portal-shells";
-import { BuildRoomRestrictedState } from "@/components/portal/project-room-placeholders";
+import { BuildRoomControlRoom } from "@/components/workspace/build-room-control-room";
+import { getBuildRoomCodexRelayMode } from "@/lib/build-room/codex-relay";
 import {
   buildPortalProjectSummary,
   loadPortalProjectSummariesForUser
 } from "@/lib/portal/server";
+import { APP_ROUTES } from "@/lib/routes";
 import {
-  buildProjectRoomRoute,
-  buildProjectWorkspaceRoute
-} from "@/lib/portal/routes";
+  BuildRoomStorageUnavailableError,
+  getBuildRoomTaskDetail,
+  listBuildRoomTasks
+} from "@/lib/build-room/data";
+import type { BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
+import { getBuildRoomWorkerTriggerMode } from "@/lib/build-room/worker-trigger";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type BuildRoomPageProps = {
@@ -17,7 +24,8 @@ type BuildRoomPageProps = {
 };
 
 export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
-  const { supabase, user, workspace } = await getWorkspaceProjectContext(
+  noStore();
+  const { supabase, user, workspace, project } = await getWorkspaceProjectContext(
     params.workspaceId,
     params.workspaceId
   );
@@ -28,6 +36,36 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
   const activeProject =
     portalProjects.find((item) => item.workspaceId === params.workspaceId) ??
     buildPortalProjectSummary(workspace);
+  let initialTasks: BuildRoomTask[] = [];
+  let initialTaskDetail: BuildRoomTaskDetail | null = null;
+  let storageMessage: string | null = null;
+  const codexRelayMode = getBuildRoomCodexRelayMode();
+  const workerTriggerMode = getBuildRoomWorkerTriggerMode();
+
+  if (activeProject.customerFacingState !== "current") {
+    redirect(APP_ROUTES.projects);
+  }
+
+  try {
+    initialTasks = await listBuildRoomTasks({
+      supabase,
+      workspaceId: params.workspaceId,
+      projectId: params.workspaceId
+    });
+    initialTaskDetail =
+      initialTasks.length > 0
+        ? await getBuildRoomTaskDetail({
+            supabase,
+            taskId: initialTasks[0].id
+          })
+        : null;
+  } catch (error) {
+    if (error instanceof BuildRoomStorageUnavailableError) {
+      storageMessage = error.message;
+    } else {
+      throw error;
+    }
+  }
 
   return (
     <ActiveProjectPortalShell
@@ -36,9 +74,15 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
       activeProject={activeProject}
       availableProjects={portalProjects}
     >
-      <BuildRoomRestrictedState
-        commandCenterHref={buildProjectRoomRoute(params.workspaceId, "command-center")}
-        workspaceHref={buildProjectWorkspaceRoute(params.workspaceId)}
+      <BuildRoomControlRoom
+        workspaceId={params.workspaceId}
+        project={project}
+        accessMode={activeProject.accessMode}
+        initialTasks={initialTasks}
+        initialTaskDetail={initialTaskDetail}
+        codexRelayMode={codexRelayMode}
+        workerTriggerMode={workerTriggerMode}
+        storageMessage={storageMessage}
       />
     </ActiveProjectPortalShell>
   );
