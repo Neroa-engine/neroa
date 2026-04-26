@@ -6,6 +6,10 @@ import { getOrCreateProjectLiveViewSession } from "@/lib/live-view/store";
 import { resolveBrowserRuntimeRequestOrigin } from "@/lib/browser-runtime-v2/runtime-target";
 import { isLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import {
+  buildPendingExecutionCaptureRecord,
+  loadPlatformContext
+} from "@/lib/intelligence/platform-context";
+import {
   normalizeCommandCenterDecisionStatus,
   type StoredCommandCenterDecision
 } from "@/lib/workspace/command-center-decisions";
@@ -278,18 +282,19 @@ export async function captureCommandCenterPendingExecutionRequest(
 
   const { supabase, workspace } = await getOwnedWorkspace(workspaceId);
   const parsed = parseWorkspaceProjectDescription(workspace.description);
+  const platformContext = loadPlatformContext(parsed.metadata?.platformContext);
   const existingTasks = parsed.metadata?.commandCenterTasks ?? [];
   const now = new Date().toISOString();
-  const nextTask: StoredCommandCenterTask = {
+  const pendingExecutionCapture = buildPendingExecutionCaptureRecord({
+    platformContext,
     id: crypto.randomUUID(),
     title: buildTaskTitle(titleInput, request),
     request,
-    status: "waiting_on_decision",
     roadmapArea,
-    sourceType: "roadmap_follow_up",
     createdAt: now,
     updatedAt: now
-  };
+  });
+  const nextTask: StoredCommandCenterTask = pendingExecutionCapture.commandCenterTask;
 
   const { data, error } = await supabase
     .from("workspaces")

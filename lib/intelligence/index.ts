@@ -5,3 +5,4 @@ export * from "./adapters";
 export * from "./runtime-bridge";
 export * from "./contracts";
 export * from "./strategy";
+export * from "./platform-context";

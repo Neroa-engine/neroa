@@ -1,5 +1,9 @@
 import type { BuildRoomRelayMode } from "@/lib/build-room/contracts";
 import type { BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
+import type {
+  PlatformContext,
+  PlatformExecutionGateSignalInput
+} from "@/lib/intelligence/platform-context";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -13,6 +17,7 @@ import {
 type ProjectCommandCenterV1Props = {
   project: ProjectRecord;
   commandCenter: CommandCenterSummary;
+  platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
   accessMode: "owner" | "member";
@@ -26,6 +31,7 @@ type ProjectCommandCenterV1Props = {
 export function ProjectCommandCenterV1({
   project,
   commandCenter,
+  platformContext,
   liveViewSession,
   canManageDecisions,
   accessMode,
@@ -35,11 +41,11 @@ export function ProjectCommandCenterV1({
   buildRoomWorkerTriggerMode,
   buildRoomStorageMessage = null
 }: ProjectCommandCenterV1Props) {
-  const roadmapApprovalRequired =
-    commandCenter.roomState.dataState === "degraded" ||
-    commandCenter.decisionInbox.blockingOpenCount > 0 ||
-    commandCenter.activePhase.label === "Strategy" ||
-    commandCenter.activePhase.label === "Scope Definition";
+  const roadmapGateSignals: PlatformExecutionGateSignalInput = {
+    roomStateDataState: commandCenter.roomState.dataState,
+    blockingOpenCount: commandCenter.decisionInbox.blockingOpenCount,
+    activePhaseLabel: commandCenter.activePhase.label
+  };
 
   return (
     <section className="surface-main relative overflow-visible rounded-[42px] p-5 xl:p-6 2xl:p-8">
@@ -72,12 +78,13 @@ export function ProjectCommandCenterV1({
             workspaceId={project.workspaceId}
             project={project}
             accessMode={accessMode}
+            platformContext={platformContext}
+            roadmapGateSignals={roadmapGateSignals}
             initialTasks={initialBuildRoomTasks}
             initialTaskDetail={initialBuildRoomTaskDetail}
             codexRelayMode={buildRoomCodexRelayMode}
             workerTriggerMode={buildRoomWorkerTriggerMode}
             storageMessage={buildRoomStorageMessage}
-            roadmapApprovalRequired={roadmapApprovalRequired}
             roadmapAreaLabel={
               commandCenter.taskQueue.currentRoadmapArea ?? commandCenter.activePhase.label
             }

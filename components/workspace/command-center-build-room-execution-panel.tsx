@@ -12,7 +12,12 @@ import type {
   BuildRoomTaskType
 } from "@/lib/build-room/contracts";
 import type { BuildRoomArtifact, BuildRoomRun, BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
-import { buildProjectRoomRoute, buildProjectWorkspaceRoute } from "@/lib/portal/routes";
+import {
+  resolvePlatformExecutionGateState,
+  type PlatformContext,
+  type PlatformExecutionGateSignalInput
+} from "@/lib/intelligence/platform-context";
+import { buildProjectRoomRoute } from "@/lib/portal/routes";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import { CommandCenterPanel, CommandCenterSourceBadge } from "@/components/workspace/command-center-ui";
 
@@ -20,12 +25,13 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   workspaceId: string;
   project: ProjectRecord;
   accessMode: "owner" | "member";
+  platformContext: PlatformContext;
+  roadmapGateSignals: PlatformExecutionGateSignalInput;
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
   storageMessage?: string | null;
-  roadmapApprovalRequired: boolean;
   roadmapAreaLabel: string;
 };
 
@@ -326,18 +332,23 @@ export function CommandCenterBuildRoomExecutionPanel({
   workspaceId,
   project,
   accessMode,
+  platformContext,
+  roadmapGateSignals,
   initialTasks,
   initialTaskDetail,
   codexRelayMode,
   workerTriggerMode,
   storageMessage = null,
-  roadmapApprovalRequired,
   roadmapAreaLabel
 }: CommandCenterBuildRoomExecutionPanelProps) {
   const router = useRouter();
   const buildRoomHref = buildProjectRoomRoute(workspaceId, "build-room");
-  const projectWorkspaceHref = buildProjectWorkspaceRoute(workspaceId);
-  const strategyRoomHref = buildProjectRoomRoute(workspaceId, "strategy-room");
+  const executionGate = resolvePlatformExecutionGateState({
+    platformContext,
+    workspaceId,
+    signals: roadmapGateSignals
+  });
+  const roadmapApprovalRequired = executionGate.approvalRequired;
   const [tasks, setTasks] = useState(initialTasks);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
     initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null
@@ -361,7 +372,7 @@ export function CommandCenterBuildRoomExecutionPanel({
   const selectedWorkerRun = selectedDetail ? latestWorkerRun(selectedDetail.runs) : null;
   const selectedWorkerArtifacts = selectedDetail ? artifactPreview(selectedDetail.artifacts) : [];
   const showExecutionBlockedMessage =
-    roadmapApprovalRequired && selectedTask?.status === "draft";
+    executionGate.blockedPanel.show && selectedTask?.status === "draft";
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const canApproveWorker =
     accessMode === "owner" &&
@@ -451,7 +462,7 @@ export function CommandCenterBuildRoomExecutionPanel({
       setTasks((current) => replaceTaskSummary(current, savedDetail.task));
       setComposer(createComposerFromTask(savedDetail.task));
 
-      if (roadmapApprovalRequired) {
+      if (!executionGate.shouldExecute) {
         await captureCommandCenterPendingExecutionRequest({
           workspaceId,
           title: normalizedTitle,
@@ -623,29 +634,29 @@ export function CommandCenterBuildRoomExecutionPanel({
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="max-w-3xl">
               <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-amber-700">
-                Status
+                {executionGate.blockedPanel.statusLabel}
               </p>
-              <p className="mt-3 text-base font-semibold text-slate-950">Execution blocked</p>
-              <p className="mt-3 text-sm leading-7 text-slate-700">
-                Your recent task was saved, but it cannot be executed yet because the current
-                roadmap and scope have not been approved.
+              <p className="mt-3 text-base font-semibold text-slate-950">
+                {executionGate.blockedPanel.title}
               </p>
               <p className="mt-3 text-sm leading-7 text-slate-700">
-                You can continue submitting requests, but execution will remain paused until the
-                roadmap is tightened and approved.
+                {executionGate.blockedPanel.body}
               </p>
               <p className="mt-4 inline-flex rounded-full border border-amber-200 bg-white/80 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-700">
-                Saved as pending execution
+                {executionGate.blockedPanel.noteLabel}
               </p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Link href={projectWorkspaceHref} className="button-primary text-sm">
-                Review and approve roadmap
-              </Link>
-              <Link href={strategyRoomHref} className="button-secondary text-sm">
-                Open Strategy Room
-              </Link>
+              {executionGate.blockedPanel.ctas.map((cta, index) => (
+                <Link
+                  key={`${cta.label}:${cta.href}`}
+                  href={cta.href}
+                  className={index === 0 ? "button-primary text-sm" : "button-secondary text-sm"}
+                >
+                  {cta.label}
+                </Link>
+              ))}
             </div>
           </div>
         </div>

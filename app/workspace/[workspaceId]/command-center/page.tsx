@@ -19,6 +19,7 @@ import {
   buildPortalProjectSummary,
   loadPortalProjectSummariesForUser
 } from "@/lib/portal/server";
+import { loadPlatformContext } from "@/lib/intelligence/platform-context";
 import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
@@ -108,6 +109,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
       <ProjectCommandCenterV1
         project={project}
         commandCenter={commandCenter}
+        platformContext={loadPlatformContext(projectMetadata?.platformContext)}
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}
         accessMode={activeProjectSummary.accessMode}

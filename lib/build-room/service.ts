@@ -26,8 +26,13 @@ import {
   getBuildRoomWorkerTriggerMode,
   triggerBuildRoomWorker
 } from "@/lib/build-room/worker-trigger";
+import {
+  loadPlatformContext,
+  resolvePlatformExecutionGateState
+} from "@/lib/intelligence/platform-context";
 import { type ServerSupabaseClient } from "@/lib/platform/foundation";
 import type { BuildRoomTaskDetail } from "@/lib/build-room/types";
+import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
 
 type BuildRoomWriteClient = SupabaseClient | ServerSupabaseClient;
 
@@ -171,6 +176,27 @@ export async function submitBuildRoomTaskToCodex(args: {
     workspaceId: task.workspaceId,
     projectId: task.projectId
   });
+  const platformContext = loadPlatformContext(projectContext.projectMetadata?.platformContext);
+  const commandCenter = buildCommandCenterSummary({
+    project: projectContext.project,
+    projectMetadata: projectContext.projectMetadata
+  });
+  const executionGate = resolvePlatformExecutionGateState({
+    platformContext,
+    workspaceId: task.workspaceId,
+    signals: {
+      roomStateDataState: commandCenter.roomState.dataState,
+      blockingOpenCount: commandCenter.decisionInbox.blockingOpenCount,
+      activePhaseLabel: commandCenter.activePhase.label
+    }
+  });
+
+  if (executionGate.approvalRequired && !executionGate.shouldExecute) {
+    throw new Error(
+      `${executionGate.blockedPanel.title}. ${executionGate.blockedPanel.body}`
+    );
+  }
+
   const packet = createBuildRoomTaskPacket({
     task,
     projectContext

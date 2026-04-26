@@ -1,5 +1,9 @@
 import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
 import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
+import {
+  isPlatformApprovalAuthority,
+  type PlatformContext
+} from "@/lib/intelligence/platform-context";
 import type { PlanningLaneId } from "@/lib/start/planning-thread";
 import { buildProjectContextSnapshot } from "@/lib/workspace/project-context-summary";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -9,6 +13,7 @@ type ProjectStrategyRoomV1Props = {
   userEmail?: string;
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
+  platformContext: PlatformContext;
   initialError?: string | null;
   initialNotice?: string | null;
 };
@@ -50,11 +55,17 @@ function resolvePlanningPathId(projectMetadata?: StoredProjectMetadata | null): 
 export function ProjectStrategyRoomV1({
   project,
   projectMetadata,
+  platformContext,
   initialError,
   initialNotice
 }: ProjectStrategyRoomV1Props) {
   const workspaceHref = buildProjectWorkspaceRoute(project.workspaceId);
   const projectContext = buildProjectContextSnapshot({ project, projectMetadata });
+  const strategyRoomSurface = platformContext.surfaces.strategyRoom;
+  const strategyRoomIsApprovalAuthority = isPlatformApprovalAuthority(
+    platformContext,
+    "strategy_room"
+  );
   const planningPathId = resolvePlanningPathId(projectMetadata);
   const threadSummary = projectContext.buildingSummary ?? project.description ?? project.title;
   const currentPlanningFocus =
@@ -66,6 +77,14 @@ export function ProjectStrategyRoomV1({
     <div className="space-y-5">
       {initialError ? <StrategyRoomStatus message={initialError} tone="error" /> : null}
       {initialNotice ? <StrategyRoomStatus message={initialNotice} tone="notice" /> : null}
+      {strategyRoomIsApprovalAuthority ? (
+        <section className="floating-plane rounded-[24px] border border-cyan-200/70 bg-cyan-50/80 px-5 py-4 text-cyan-800">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em]">
+            Approval authority
+          </p>
+          <p className="mt-2 text-sm leading-7">{strategyRoomSurface.purpose}</p>
+        </section>
+      ) : null}
       <CanonicalEntryFlow
         initialEntryPathId={planningPathId}
         initialTitle={project.title}
@@ -78,7 +97,7 @@ export function ProjectStrategyRoomV1({
         roomCopy={{
           heading: `Resume strategy for ${project.title}.`,
           intro:
-            "Keep shaping the product direction for this project from here. The conversation stays connected to your active project workspace.",
+            `${strategyRoomSurface.purpose} The conversation stays connected to your active project workspace.`,
           threadEyebrow: "Project planning thread",
           threadDescription:
             "Resume planning for this project without leaving the active project portal.",

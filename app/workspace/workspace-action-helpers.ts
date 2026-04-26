@@ -12,6 +12,7 @@ import {
   type StoredCommandCenterBrandSystem,
   type StoredProjectAsset
 } from "@/lib/workspace/project-metadata";
+import type { PlatformContext } from "@/lib/intelligence/platform-context";
 import type { StoredCommandCenterDecision } from "@/lib/workspace/command-center-decisions";
 import type { StoredCommandCenterChangeReview } from "@/lib/workspace/command-center-change-impact";
 import type {
@@ -118,6 +119,7 @@ export function buildDescriptionWithMetadata(args: {
     description: string | null;
   };
   title?: string;
+  platformContext?: PlatformContext | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -136,6 +138,7 @@ export function buildDescriptionWithMetadata(args: {
       description: parsed.visibleDescription,
       templateId: parsed.metadata?.templateId ?? null,
       customLanes: parsed.metadata?.customLanes ?? [],
+      platformContext: args.platformContext ?? parsed.metadata?.platformContext ?? null,
       archived: args.archived ?? parsed.metadata?.archived ?? false,
       assets: args.assets ?? parsed.metadata?.assets ?? [],
       commandCenterBrandSystem:

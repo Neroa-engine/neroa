@@ -4,6 +4,7 @@ import {
   buildPortalProjectSummary,
   loadPortalProjectSummariesForUser
 } from "@/lib/portal/server";
+import { loadPlatformContext } from "@/lib/intelligence/platform-context";
 import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type StrategyRoomPageProps = {
@@ -58,6 +59,7 @@ export default async function StrategyRoomPage({
         userEmail={user.email ?? undefined}
         project={project}
         projectMetadata={projectMetadata}
+        platformContext={loadPlatformContext(projectMetadata?.platformContext)}
         initialError={sanitizeStrategyMessage(firstValue(searchParams?.error) ?? null)}
         initialNotice={sanitizeStrategyMessage(firstValue(searchParams?.notice) ?? null)}
       />

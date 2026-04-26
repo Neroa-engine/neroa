@@ -36,6 +36,10 @@ import {
   normalizeStoredCommandCenterTask,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
+import {
+  loadPlatformContext,
+  type PlatformContext
+} from "@/lib/intelligence/platform-context";
 
 const METADATA_PREFIX = "<!--NEROA_PROJECT_META:";
 const METADATA_SUFFIX = "-->";
@@ -44,6 +48,7 @@ export type StoredProjectMetadata = {
   version: 1;
   templateId: ProjectTemplateId;
   customLanes: CustomProjectLaneInput[];
+  platformContext?: PlatformContext | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -575,6 +580,7 @@ export function buildStoredProjectMetadata(args: {
   templateId?: string | ProjectTemplateId | null;
   primaryLaneId?: LaneId | string | null;
   customLanes?: CustomProjectLaneInput[];
+  platformContext?: PlatformContext | null;
   archived?: boolean;
   assets?: StoredProjectAsset[];
   commandCenterBrandSystem?: StoredCommandCenterBrandSystem | null;
@@ -604,6 +610,7 @@ export function buildStoredProjectMetadata(args: {
     version: 1 as const,
     templateId: resolvedTemplateId,
     customLanes: args.customLanes ?? [],
+    platformContext: loadPlatformContext(args.platformContext),
     archived: args.archived ?? false,
     assets: args.assets ?? [],
     commandCenterBrandSystem: args.commandCenterBrandSystem ?? null,
@@ -646,6 +653,7 @@ function decodeMetadata(value: string) {
             .map((item) => normalizeCustomLane(item))
             .filter((item): item is CustomProjectLaneInput => Boolean(item))
         : [],
+      platformContext: loadPlatformContext(parsed.platformContext),
       archived: Boolean(parsed.archived),
       assets: Array.isArray(parsed.assets)
         ? parsed.assets
