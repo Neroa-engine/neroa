@@ -7,53 +7,55 @@ const commandCenterSource = readFileSync(
   "utf8"
 );
 
-test("Command Center keeps the primary execution intake above support surfaces", () => {
-  const buildRoomPanelIndex = commandCenterSource.indexOf("<CommandCenterBuildRoomExecutionPanel");
+test("Command Center restores the visible operator surface ahead of the rest of the workflow", () => {
   const analyzerPanelIndex = commandCenterSource.indexOf("<CommandCenterAnalyzerPanelView");
+  const buildRoomPanelIndex = commandCenterSource.indexOf("<CommandCenterBuildRoomExecutionPanel");
   const taskQueuePanelIndex = commandCenterSource.indexOf("<CommandCenterTaskQueuePanelView");
   const promptRunnerPanelIndex = commandCenterSource.indexOf("<CommandCenterPromptRunnerPanelView");
 
-  assert.notEqual(buildRoomPanelIndex, -1);
   assert.notEqual(analyzerPanelIndex, -1);
+  assert.notEqual(buildRoomPanelIndex, -1);
   assert.notEqual(taskQueuePanelIndex, -1);
   assert.notEqual(promptRunnerPanelIndex, -1);
-  assert.ok(buildRoomPanelIndex < analyzerPanelIndex);
-  assert.ok(buildRoomPanelIndex < taskQueuePanelIndex);
-  assert.ok(buildRoomPanelIndex < promptRunnerPanelIndex);
+  assert.ok(analyzerPanelIndex < buildRoomPanelIndex);
+  assert.ok(analyzerPanelIndex < taskQueuePanelIndex);
+  assert.ok(analyzerPanelIndex < promptRunnerPanelIndex);
 });
 
-test("Command Center exposes a compact status strip before the main intake", () => {
-  assert.match(commandCenterSource, /label="Current status"/);
-  assert.match(commandCenterSource, /label="Blocking now"/);
-  assert.match(commandCenterSource, /label="Active phase"/);
-  assert.match(commandCenterSource, /label="What to do now"/);
+test("Customer Tasks and Prompt Runner stay visible in the main page flow", () => {
   assert.match(
     commandCenterSource,
-    /<div className="grid gap-3 lg:grid-cols-2 2xl:grid-cols-4">[\s\S]*<CommandCenterBuildRoomExecutionPanel/
+    /<div className="grid gap-3 md:grid-cols-2 md:items-stretch">[\s\S]*<CommandCenterTaskQueuePanelView[\s\S]*<CommandCenterPromptRunnerPanelView/
   );
 });
 
-test("Support and intelligence surfaces are collapsed behind compact summaries", () => {
-  assert.match(commandCenterSource, /eyebrow="Operator support"/);
-  assert.match(commandCenterSource, /eyebrow="Execution watch"/);
-  assert.match(commandCenterSource, /eyebrow="Project intelligence"/);
-  assert.match(commandCenterSource, /actionLabel="Open support controls"/);
-  assert.match(commandCenterSource, /actionLabel="Open queue detail"/);
-  assert.match(commandCenterSource, /actionLabel="Expand intelligence"/);
+test("Command Center no longer hides the main operator structure behind restoration regressions", () => {
+  assert.doesNotMatch(commandCenterSource, /CommandCenterCompactSignal/);
+  assert.doesNotMatch(commandCenterSource, /CommandCenterSupportSummary/);
+  assert.doesNotMatch(commandCenterSource, /eyebrow="Operator support"/);
+  assert.doesNotMatch(commandCenterSource, /eyebrow="Execution watch"/);
+  assert.doesNotMatch(commandCenterSource, /eyebrow="Project intelligence"/);
 });
 
-test("Reference slabs no longer sit ahead of the primary Command Center intake", () => {
-  assert.doesNotMatch(
-    commandCenterSource,
-    /<GovernanceReferencePanel governancePolicy=\{governancePolicy\} \/>\s*<RoadmapReferencePanel roadmapPlan=\{roadmapPlan\} \/>\s*<ArchitectureReferencePanel architectureBlueprint=\{architectureBlueprint\} \/>\s*<CommandCenterAnalyzerPanelView[\s\S]*<CommandCenterBuildRoomExecutionPanel/
+test("Governance, roadmap, and architecture reference remain present without replacing the operator surface", () => {
+  const taskPromptGridIndex = commandCenterSource.indexOf(
+    '<div className="grid gap-3 md:grid-cols-2 md:items-stretch">'
   );
-});
+  const governancePanelIndex = commandCenterSource.indexOf(
+    "<GovernanceReferencePanel governancePolicy={governancePolicy} />"
+  );
+  const roadmapPanelIndex = commandCenterSource.indexOf(
+    "<RoadmapReferencePanel roadmapPlan={roadmapPlan} />"
+  );
+  const architecturePanelIndex = commandCenterSource.indexOf(
+    "<ArchitectureReferencePanel architectureBlueprint={architectureBlueprint} />"
+  );
 
-test("Project intelligence still retains governance, roadmap, and architecture references", () => {
-  assert.match(commandCenterSource, /<GovernanceReferencePanel governancePolicy=\{governancePolicy\} \/>/);
-  assert.match(commandCenterSource, /<RoadmapReferencePanel roadmapPlan=\{roadmapPlan\} \/>/);
-  assert.match(
-    commandCenterSource,
-    /<ArchitectureReferencePanel architectureBlueprint=\{architectureBlueprint\} \/>/
-  );
+  assert.notEqual(taskPromptGridIndex, -1);
+  assert.notEqual(governancePanelIndex, -1);
+  assert.notEqual(roadmapPanelIndex, -1);
+  assert.notEqual(architecturePanelIndex, -1);
+  assert.ok(taskPromptGridIndex < governancePanelIndex);
+  assert.ok(taskPromptGridIndex < roadmapPanelIndex);
+  assert.ok(taskPromptGridIndex < architecturePanelIndex);
 });
