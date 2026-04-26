@@ -87,6 +87,8 @@ type CanonicalEntryFlowProps = {
   projectWorkspaceLabel?: string;
   storageKeyOverride?: string;
   seedSummaryIntoThread?: boolean;
+  layoutVariant?: "default" | "embedded";
+  showProjectFooter?: boolean;
 };
 
 const DEFAULT_STRATEGY_ROOM_COPY: StrategyRoomCopy = {
@@ -355,7 +357,9 @@ export function CanonicalEntryFlow({
   projectWorkspaceHref,
   projectWorkspaceLabel,
   storageKeyOverride,
-  seedSummaryIntoThread = true
+  seedSummaryIntoThread = true,
+  layoutVariant = "default",
+  showProjectFooter = true
 }: CanonicalEntryFlowProps) {
   const strategyRoomCopy = useMemo(
     () => ({
@@ -401,6 +405,9 @@ export function CanonicalEntryFlow({
   const didHydrateRef = useRef(false);
   const threadViewportRef = useRef<HTMLDivElement | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const isEmbedded = layoutVariant === "embedded";
+  const composerMinHeight = isEmbedded ? 132 : 220;
+  const composerMaxHeight = isEmbedded ? 260 : 420;
 
   const compiledTitle = useMemo(() => deriveTitle(title, messages), [messages, title]);
   const compiledSummary = useMemo(
@@ -602,10 +609,10 @@ export function CanonicalEntryFlow({
 
     composerRef.current.style.height = "0px";
     composerRef.current.style.height = `${Math.min(
-      Math.max(composerRef.current.scrollHeight, 220),
-      420
+      Math.max(composerRef.current.scrollHeight, composerMinHeight),
+      composerMaxHeight
     )}px`;
-  }, [draft]);
+  }, [composerMaxHeight, composerMinHeight, draft]);
 
   function resetPlanningThread(notice?: string) {
     const resetTitle = surfaceMode === "project" ? initialTitle : "";
@@ -742,30 +749,64 @@ export function CanonicalEntryFlow({
   }
 
   return (
-    <section className="mx-auto flex w-full max-w-[1720px] flex-col gap-8 pb-8 pt-2 sm:gap-10 lg:pb-12 lg:pt-4">
-      <header className="mx-auto w-full max-w-[980px] px-4 text-center">
-        <div className="inline-flex items-center rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-          {strategyRoomCopy.badge}
-        </div>
-        <h1 className="mt-6 text-4xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.02]">
-          {strategyRoomCopy.heading}
-        </h1>
-        <p className="mx-auto mt-5 max-w-[860px] text-base leading-8 text-slate-600 sm:text-lg">
-          {strategyRoomCopy.intro}
-        </p>
-      </header>
+    <section
+      className={
+        isEmbedded
+          ? "flex h-[clamp(640px,calc(100vh-16rem),920px)] min-h-0 w-full flex-col"
+          : "mx-auto flex w-full max-w-[1720px] flex-col gap-8 pb-8 pt-2 sm:gap-10 lg:pb-12 lg:pt-4"
+      }
+    >
+      {!isEmbedded ? (
+        <header className="mx-auto w-full max-w-[980px] px-4 text-center">
+          <div className="inline-flex items-center rounded-full border border-cyan-300/25 bg-cyan-300/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+            {strategyRoomCopy.badge}
+          </div>
+          <h1 className="mt-6 text-4xl font-semibold tracking-[-0.06em] text-slate-950 sm:text-5xl lg:text-6xl lg:leading-[1.02]">
+            {strategyRoomCopy.heading}
+          </h1>
+          <p className="mx-auto mt-5 max-w-[860px] text-base leading-8 text-slate-600 sm:text-lg">
+            {strategyRoomCopy.intro}
+          </p>
+        </header>
+      ) : null}
 
-      <StrategyResumePanel snapshot={resumeSnapshot} />
+      {!isEmbedded ? <StrategyResumePanel snapshot={resumeSnapshot} /> : null}
 
-      <section className="floating-plane overflow-hidden rounded-[42px]">
-        <div className="floating-wash rounded-[42px]" />
-        <div className="relative flex min-h-[calc(100vh-17rem)] flex-col bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(248,250,252,0.82))] px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1320px] items-center justify-between gap-4 border-b border-white/70 pb-4">
+      <section
+        className={`floating-plane overflow-hidden ${
+          isEmbedded
+            ? "h-full min-h-0 rounded-[32px] border border-white/10 bg-slate-950/88"
+            : "rounded-[42px]"
+        }`}
+      >
+        <div className={`floating-wash ${isEmbedded ? "rounded-[32px] opacity-80" : "rounded-[42px]"}`} />
+        <div
+          className={`relative flex flex-col ${
+            isEmbedded
+              ? "h-full min-h-0 bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.18),transparent_34%),linear-gradient(180deg,rgba(15,23,42,0.96),rgba(2,6,23,0.98))] px-4 pb-4 pt-4 text-slate-100 sm:px-5 sm:pb-5 sm:pt-5"
+              : "min-h-[calc(100vh-17rem)] bg-[linear-gradient(180deg,rgba(255,255,255,0.7),rgba(248,250,252,0.82))] px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5 lg:px-8"
+          }`}
+        >
+          <div
+            className={`mx-auto flex w-full items-center justify-between gap-4 border-b pb-4 ${
+              isEmbedded
+                ? "max-w-none border-white/10"
+                : "max-w-[1320px] border-white/70"
+            }`}
+          >
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">
+              <p
+                className={`text-[11px] font-semibold uppercase tracking-[0.24em] ${
+                  isEmbedded ? "text-cyan-200/80" : "text-slate-500"
+                }`}
+              >
                 {strategyRoomCopy.threadEyebrow}
               </p>
-              <p className="mt-2 text-sm leading-7 text-slate-500">
+              <p
+                className={`mt-2 text-sm leading-7 ${
+                  isEmbedded ? "text-slate-300" : "text-slate-500"
+                }`}
+              >
                 {strategyRoomCopy.threadDescription}
               </p>
             </div>
@@ -774,17 +815,26 @@ export function CanonicalEntryFlow({
                 type="button"
                 onClick={() => resetPlanningThread()}
                 disabled={isSending}
-                className="rounded-full border border-slate-200/80 bg-white/75 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-500 transition hover:border-slate-300 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className={`rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isEmbedded
+                    ? "border border-white/12 bg-white/8 text-slate-300 hover:border-cyan-300/40 hover:text-white"
+                    : "border border-slate-200/80 bg-white/75 text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                }`}
               >
                 Start over
               </button>
             ) : null}
           </div>
 
-          <div ref={threadViewportRef} className="flex-1 overflow-y-auto px-1 pb-8 pt-6 sm:px-2 lg:pt-8">
-            <div className="mx-auto w-full max-w-[1180px]">
+          <div
+            ref={threadViewportRef}
+            className={`flex-1 min-h-0 overflow-y-auto ${
+              isEmbedded ? "px-0 pb-6 pt-5 sm:pt-6" : "px-1 pb-8 pt-6 sm:px-2 lg:pt-8"
+            }`}
+          >
+            <div className={`mx-auto w-full ${isEmbedded ? "max-w-none" : "max-w-[1180px]"}`}>
               {hasVisibleMessages ? (
-                <div className="space-y-8 lg:space-y-10">
+                <div className={isEmbedded ? "space-y-6" : "space-y-8 lg:space-y-10"}>
                   {visibleMessages.map((message) => (
                     <div key={message.id} className="w-full">
                       <div
@@ -802,18 +852,22 @@ export function CanonicalEntryFlow({
                           <p
                             className={`text-[11px] font-semibold uppercase tracking-[0.26em] ${
                               message.role === "assistant"
-                                ? "text-slate-400"
-                                : "text-cyan-700"
+                                ? isEmbedded
+                                  ? "text-slate-400"
+                                  : "text-slate-400"
+                                : isEmbedded
+                                  ? "text-cyan-300"
+                                  : "text-cyan-700"
                             }`}
                           >
                             {message.role === "assistant" ? "Neroa" : "You"}
                           </p>
                           <div
-                            className={`mt-3 whitespace-pre-wrap text-[16px] leading-8 text-slate-900 sm:text-[17px] ${
+                            className={`mt-3 whitespace-pre-wrap text-[16px] leading-8 sm:text-[17px] ${
                               message.role === "assistant"
                                 ? "max-w-[720px]"
                                 : "ml-auto max-w-[720px]"
-                            }`}
+                            } ${isEmbedded ? "text-slate-100" : "text-slate-900"}`}
                           >
                             {message.content}
                           </div>
@@ -822,22 +876,42 @@ export function CanonicalEntryFlow({
                     </div>
                   ))}
                   {isSending ? (
-                    <div className="flex items-center gap-3 pt-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    <div
+                      className={`flex items-center gap-3 pt-2 text-xs font-semibold uppercase tracking-[0.22em] ${
+                        isEmbedded ? "text-slate-400" : "text-slate-500"
+                      }`}
+                    >
                       <span className="h-2.5 w-2.5 rounded-full bg-cyan-500 animate-pulse" />
                       {pendingStatusLabel}
                     </div>
                   ) : null}
                 </div>
               ) : (
-                <div className="flex min-h-[460px] items-center justify-center px-4 py-10 sm:min-h-[520px]">
+                <div
+                  className={`flex items-center justify-center px-4 py-10 ${
+                    isEmbedded ? "min-h-[360px] sm:min-h-[420px]" : "min-h-[460px] sm:min-h-[520px]"
+                  }`}
+                >
                   <div className="max-w-[760px] text-center">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+                    <p
+                      className={`text-[11px] font-semibold uppercase tracking-[0.28em] ${
+                        isEmbedded ? "text-cyan-200/80" : "text-slate-500"
+                      }`}
+                    >
                       {strategyRoomCopy.badge}
                     </p>
-                    <h2 className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-3xl">
+                    <h2
+                      className={`mt-4 text-2xl font-semibold tracking-[-0.04em] sm:text-3xl ${
+                        isEmbedded ? "text-white" : "text-slate-950"
+                      }`}
+                    >
                       {strategyRoomCopy.emptyStateTitle}
                     </h2>
-                    <p className="mt-4 text-base leading-8 text-slate-500">
+                    <p
+                      className={`mt-4 text-base leading-8 ${
+                        isEmbedded ? "text-slate-300" : "text-slate-500"
+                      }`}
+                    >
                       {strategyRoomCopy.emptyStateBody}
                     </p>
                   </div>
@@ -846,16 +920,40 @@ export function CanonicalEntryFlow({
             </div>
           </div>
 
-          <div className="border-t border-white/70 bg-white/68 pb-2 pt-4 backdrop-blur-xl sm:pb-3 sm:pt-5">
-            <div className="mx-auto w-full max-w-[1180px]">
-              <div className="rounded-[32px] border border-white/80 bg-white/90 p-4 shadow-[0_30px_80px_rgba(15,23,42,0.08)] sm:p-5 lg:p-6">
+          <div
+            className={`border-t backdrop-blur-xl ${
+              isEmbedded
+                ? "sticky bottom-0 border-white/10 bg-slate-950/92 pb-3 pt-4"
+                : "border-white/70 bg-white/68 pb-2 pt-4 sm:pb-3 sm:pt-5"
+            }`}
+          >
+            <div className={`mx-auto w-full ${isEmbedded ? "max-w-none" : "max-w-[1180px]"}`}>
+              <div
+                className={`rounded-[32px] p-4 sm:p-5 ${
+                  isEmbedded
+                    ? "border border-white/10 bg-white/6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] lg:p-5"
+                    : "border border-white/80 bg-white/90 shadow-[0_30px_80px_rgba(15,23,42,0.08)] lg:p-6"
+                }`}
+              >
                 <label className="block space-y-3">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                  <span
+                    className={`text-[11px] font-semibold uppercase tracking-[0.22em] ${
+                      isEmbedded ? "text-cyan-200/80" : "text-slate-500"
+                    }`}
+                  >
                     {strategyRoomCopy.composerLabel}
                   </span>
                   <textarea
                     ref={composerRef}
-                    className="max-h-[420px] min-h-[220px] w-full resize-none rounded-[26px] border border-slate-200/80 bg-slate-50/60 px-5 py-5 text-[16px] leading-8 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-300 focus:bg-white focus:ring-4 focus:ring-cyan-100 sm:px-6 sm:py-6 sm:text-[17px]"
+                    className={`w-full resize-none rounded-[26px] px-5 py-4 text-[16px] leading-8 outline-none transition placeholder:text-slate-400 sm:px-6 sm:text-[17px] ${
+                      isEmbedded
+                        ? "border border-white/10 bg-slate-950/70 text-white focus:border-cyan-300 focus:bg-slate-950/90 focus:ring-4 focus:ring-cyan-500/20"
+                        : "border border-slate-200/80 bg-slate-50/60 text-slate-900 focus:border-cyan-300 focus:bg-white focus:ring-4 focus:ring-cyan-100"
+                    }`}
+                    style={{
+                      minHeight: `${composerMinHeight}px`,
+                      maxHeight: `${composerMaxHeight}px`
+                    }}
                     value={draft}
                     onChange={(event) => setDraft(event.target.value)}
                     onKeyDown={handleComposerKeyDown}
@@ -865,14 +963,22 @@ export function CanonicalEntryFlow({
                 </label>
 
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-xs leading-6 text-slate-500">
+                  <div
+                    className={`text-xs leading-6 ${
+                      isEmbedded ? "text-slate-400" : "text-slate-500"
+                    }`}
+                  >
                     Enter sends. Shift + Enter adds a new line. Type "start over" to clear the thread.
                   </div>
                   <button
                     type="button"
                     onClick={() => void handleSend()}
                     disabled={!draft.trim() || isSending}
-                    className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+                    className={`inline-flex items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed ${
+                      isEmbedded
+                        ? "bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-700"
+                        : "bg-slate-950 hover:bg-slate-800 disabled:bg-slate-300"
+                    }`}
                   >
                     {isSending ? "Sending..." : "Send"}
                   </button>
@@ -936,7 +1042,7 @@ export function CanonicalEntryFlow({
                   </form>
                 ) : null}
 
-                {surfaceMode === "project" ? (
+                {surfaceMode === "project" && showProjectFooter ? (
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-4 border-t border-slate-200/80 pt-5">
                     <div className="max-w-[760px]">
                       <p className="text-sm font-semibold text-slate-950">
