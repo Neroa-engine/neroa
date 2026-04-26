@@ -7,7 +7,9 @@ import {
   type ConversationQuestionKey,
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
+import { generateArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import { generateProjectBrief } from "@/lib/intelligence/project-brief-generator";
+import { generateRoadmapPlan } from "@/lib/intelligence/roadmap";
 import {
   buildStartVisibleStrategistDecision,
   type StartVisibleStrategistLog
@@ -922,6 +924,8 @@ export async function runPlanningChat(args: {
     metadata,
     conversationState: args.conversationState ?? null,
     projectBrief: null,
+    architectureBlueprint: null,
+    roadmapPlan: null,
     updatedAt: now
   };
   const visibleStrategistDecision = buildStartVisibleStrategistDecision({
@@ -1138,6 +1142,15 @@ export async function runPlanningChat(args: {
     conversationState: finalConversationState,
     hiddenBundle: visibleStrategistDecision.bundle
   });
+  const architectureBlueprint = generateArchitectureBlueprint({
+    projectName: metadata.projectTitle ?? args.title ?? null,
+    projectBrief
+  });
+  const roadmapPlan = generateRoadmapPlan({
+    projectName: metadata.projectTitle ?? args.title ?? null,
+    projectBrief,
+    architectureBlueprint
+  });
   const threadState: PlanningThreadState = {
     threadId: args.threadId,
     lane: args.lane,
@@ -1145,6 +1158,8 @@ export async function runPlanningChat(args: {
     metadata,
     conversationState: finalConversationState,
     projectBrief,
+    architectureBlueprint,
+    roadmapPlan,
     updatedAt: new Date().toISOString()
   };
 

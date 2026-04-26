@@ -65,6 +65,7 @@ import {
   type BrowserRuntimeBridgeState
 } from "@/lib/workspace/browser-runtime-bridge";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import {
   isOpenCommandCenterTaskStatus,
   type CommandCenterTaskSourceType,
@@ -2793,6 +2794,7 @@ export function buildCommandCenterSummary(args: {
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief?: ProjectBrief | null;
+  roadmapPlan?: RoadmapPlan | null;
   liveViewSession?: LiveViewSession | null;
   browserRuntimeSupported?: boolean;
 }): CommandCenterSummary {
@@ -2800,7 +2802,8 @@ export function buildCommandCenterSummary(args: {
   const projectContext = buildProjectContextSnapshot({
     project: args.project,
     projectMetadata: args.projectMetadata,
-    projectBrief: args.projectBrief
+    projectBrief: args.projectBrief,
+    roadmapPlan: args.roadmapPlan
   });
   const roomState = buildRoomState({
     projectMetadata: args.projectMetadata,

@@ -5,6 +5,10 @@ import type { KeyboardEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
+  loadArchitectureBlueprint,
+  type ArchitectureBlueprint
+} from "@/lib/intelligence/architecture";
+import {
   loadConversationSessionState,
   type ConversationSessionState
 } from "@/lib/intelligence/conversation";
@@ -12,6 +16,10 @@ import {
   loadProjectBrief,
   type ProjectBrief
 } from "@/lib/intelligence/project-brief";
+import {
+  loadRoadmapPlan,
+  type RoadmapPlan
+} from "@/lib/intelligence/roadmap";
 import { APP_ROUTES } from "@/lib/routes";
 import {
   analyzePlanningInputs,
@@ -377,6 +385,9 @@ export function CanonicalEntryFlow({
   const [conversationState, setConversationState] =
     useState<ConversationSessionState | null>(null);
   const [projectBrief, setProjectBrief] = useState<ProjectBrief | null>(null);
+  const [architectureBlueprint, setArchitectureBlueprint] =
+    useState<ArchitectureBlueprint | null>(null);
+  const [roadmapPlan, setRoadmapPlan] = useState<RoadmapPlan | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatNotice, setChatNotice] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -491,9 +502,15 @@ export function CanonicalEntryFlow({
           ? loadConversationSessionState(parsed.conversationState)
           : null;
         const hydratedProjectBrief = loadProjectBrief(parsed.projectBrief);
+        const hydratedArchitectureBlueprint = loadArchitectureBlueprint(
+          parsed.architectureBlueprint
+        );
+        const hydratedRoadmapPlan = loadRoadmapPlan(parsed.roadmapPlan);
 
         setConversationState(hydratedConversationState);
         setProjectBrief(hydratedProjectBrief);
+        setArchitectureBlueprint(hydratedArchitectureBlueprint);
+        setRoadmapPlan(hydratedRoadmapPlan);
 
         if (parsed.metadata && typeof parsed.metadata === "object") {
           const metadata = parsed.metadata as Record<string, unknown>;
@@ -539,16 +556,20 @@ export function CanonicalEntryFlow({
       metadata: planningMetadata,
       conversationState,
       projectBrief,
+      architectureBlueprint,
+      roadmapPlan,
       updatedAt: new Date().toISOString()
     };
 
     window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
   }, [
     conversationState,
+    architectureBlueprint,
     initialEntryPathId,
     messages,
     planningMetadata,
     projectBrief,
+    roadmapPlan,
     storageKey,
     threadId
   ]);
@@ -596,6 +617,8 @@ export function CanonicalEntryFlow({
     setThreadMetadata(null);
     setConversationState(null);
     setProjectBrief(null);
+    setArchitectureBlueprint(null);
+    setRoadmapPlan(null);
     setChatError(null);
     setChatNotice(
       notice ??
@@ -612,6 +635,8 @@ export function CanonicalEntryFlow({
         metadata: clearedThread.metadata,
         conversationState: null,
         projectBrief: null,
+        architectureBlueprint: null,
+        roadmapPlan: null,
         updatedAt: new Date().toISOString()
       };
 
@@ -677,6 +702,8 @@ export function CanonicalEntryFlow({
       setThreadMetadata(payload.threadState.metadata);
       setConversationState(payload.threadState.conversationState ?? null);
       setProjectBrief(payload.threadState.projectBrief ?? null);
+      setArchitectureBlueprint(payload.threadState.architectureBlueprint ?? null);
+      setRoadmapPlan(payload.threadState.roadmapPlan ?? null);
 
       if (!title.trim() && payload.threadState.metadata.projectTitle) {
         setTitle(payload.threadState.metadata.projectTitle);

@@ -12,6 +12,8 @@ import {
   generateArchitectureBlueprint
 } from "./architecture/generator.ts";
 import type { ArchitectureBlueprint } from "./architecture/types.ts";
+import { generateRoadmapPlan } from "./roadmap/generator.ts";
+import type { RoadmapPlan } from "./roadmap/types.ts";
 import {
   type ProjectBriefReadinessStage,
   type ProjectBriefSlotId
@@ -910,6 +912,7 @@ export type WorkspaceProjectIntelligence = {
   domainResolution: DomainResolution;
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
 };
 
 export function buildWorkspaceProjectIntelligence(args: {
@@ -937,11 +940,19 @@ export function buildWorkspaceProjectIntelligence(args: {
     projectName: args.projectTitle,
     projectBrief
   });
+  const roadmapPlan = generateRoadmapPlan({
+    workspaceId: args.workspaceId,
+    projectId: args.projectId,
+    projectName: args.projectTitle,
+    projectBrief,
+    architectureBlueprint
+  });
 
   return {
     platformContext,
     domainResolution: resolution,
     projectBrief,
-    architectureBlueprint
+    architectureBlueprint,
+    roadmapPlan
   } satisfies WorkspaceProjectIntelligence;
 }

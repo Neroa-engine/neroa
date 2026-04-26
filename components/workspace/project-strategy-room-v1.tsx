@@ -5,6 +5,10 @@ import {
   type ArchitectureBlueprint
 } from "@/lib/intelligence/architecture";
 import {
+  buildRoadmapPlanSummary,
+  type RoadmapPlan
+} from "@/lib/intelligence/roadmap";
+import {
   isPlatformApprovalAuthority,
   type PlatformContext
 } from "@/lib/intelligence/platform-context";
@@ -20,6 +24,7 @@ type ProjectStrategyRoomV1Props = {
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
   platformContext: PlatformContext;
   initialError?: string | null;
   initialNotice?: string | null;
@@ -57,6 +62,73 @@ function resolvePlanningPathId(projectMetadata?: StoredProjectMetadata | null): 
     projectMetadata?.guidedEntryContext?.recommendedPathId;
 
   return pathId === "managed" ? "managed" : "diy";
+}
+
+function RoadmapDraftPanel({
+  roadmapPlan
+}: {
+  roadmapPlan: RoadmapPlan;
+}) {
+  const roadmapSummary = buildRoadmapPlanSummary(roadmapPlan);
+
+  return (
+    <section className="floating-plane rounded-[24px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Roadmap draft
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {roadmapSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {roadmapSummary.statusLabel}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {roadmapPlan.phases.length} phases / {roadmapPlan.openQuestions.length} open questions
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            MVP definition
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">{roadmapSummary.mvpSummary}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Phase order
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.phaseNames.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Critical path
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.criticalPathLabels.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Not in scope now
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.notInScopeLabels.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
 }
 
 function ArchitectureDraftPanel({
@@ -136,6 +208,7 @@ export function ProjectStrategyRoomV1({
   projectMetadata,
   projectBrief,
   architectureBlueprint,
+  roadmapPlan,
   platformContext,
   initialError,
   initialNotice
@@ -144,7 +217,8 @@ export function ProjectStrategyRoomV1({
   const projectContext = buildProjectContextSnapshot({
     project,
     projectMetadata,
-    projectBrief
+    projectBrief,
+    roadmapPlan
   });
   const strategyRoomSurface = platformContext.surfaces.strategyRoom;
   const strategyRoomIsApprovalAuthority = isPlatformApprovalAuthority(
@@ -170,6 +244,7 @@ export function ProjectStrategyRoomV1({
           <p className="mt-2 text-sm leading-7">{strategyRoomSurface.purpose}</p>
         </section>
       ) : null}
+      <RoadmapDraftPanel roadmapPlan={roadmapPlan} />
       <ArchitectureDraftPanel architectureBlueprint={architectureBlueprint} />
       <CanonicalEntryFlow
         initialEntryPathId={planningPathId}

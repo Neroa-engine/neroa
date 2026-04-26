@@ -8,6 +8,10 @@ import {
   buildArchitectureBlueprintSummary,
   type ArchitectureBlueprint
 } from "@/lib/intelligence/architecture";
+import {
+  buildRoadmapPlanSummary,
+  type RoadmapPlan
+} from "@/lib/intelligence/roadmap";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
@@ -22,6 +26,7 @@ type ProjectCommandCenterV1Props = {
   project: ProjectRecord;
   commandCenter: CommandCenterSummary;
   architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
   platformContext: PlatformContext;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
@@ -32,6 +37,75 @@ type ProjectCommandCenterV1Props = {
   buildRoomWorkerTriggerMode: BuildRoomRelayMode;
   buildRoomStorageMessage?: string | null;
 };
+
+function RoadmapReferencePanel({
+  roadmapPlan
+}: {
+  roadmapPlan: RoadmapPlan;
+}) {
+  const roadmapSummary = buildRoadmapPlanSummary(roadmapPlan);
+
+  return (
+    <section className="floating-plane rounded-[28px] border border-slate-200/70 bg-white/80 px-5 py-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+            Roadmap reference
+          </p>
+          <h2 className="mt-2 text-lg font-semibold text-slate-900">
+            {roadmapSummary.headline}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-slate-600">
+            {roadmapSummary.statusLabel}
+          </p>
+        </div>
+        <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600">
+          {roadmapPlan.phases.length} phases / {roadmapPlan.criticalPath.length} critical steps
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            MVP definition
+          </p>
+          <p className="mt-2 text-sm leading-7 text-slate-700">{roadmapSummary.mvpSummary}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Phase order
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.phaseNames.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Critical path
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.criticalPathLabels.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Open roadmap questions
+          </p>
+          <ul className="mt-2 space-y-1 text-sm text-slate-700">
+            {roadmapSummary.openQuestionLabels.length > 0 ? (
+              roadmapSummary.openQuestionLabels.map((item) => <li key={item}>{item}</li>)
+            ) : (
+              <li>Roadmap questions are currently covered.</li>
+            )}
+          </ul>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function ArchitectureReferencePanel({
   architectureBlueprint
@@ -109,6 +183,7 @@ export function ProjectCommandCenterV1({
   project,
   commandCenter,
   architectureBlueprint,
+  roadmapPlan,
   platformContext,
   liveViewSession,
   canManageDecisions,
@@ -133,6 +208,7 @@ export function ProjectCommandCenterV1({
 
       <div className="relative space-y-4">
         <section className="space-y-3">
+          <RoadmapReferencePanel roadmapPlan={roadmapPlan} />
           <ArchitectureReferencePanel architectureBlueprint={architectureBlueprint} />
           <CommandCenterAnalyzerPanelView
             workspaceId={project.workspaceId}

@@ -2,6 +2,7 @@ import {
   buildWorkspaceProjectIntelligence
 } from "@/lib/intelligence/project-brief-generator";
 import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 
@@ -246,8 +247,17 @@ function resolveCurrentFocus(args: {
   audienceSummary: string | null;
   primaryGoal: string | null;
   projectBrief: ProjectBrief;
+  roadmapPlan?: RoadmapPlan | null;
 }) {
   const phaseCopy = resolvePhaseCopy(args.activePhase);
+
+  if (args.activePhase !== "strategy" && args.roadmapPlan?.openQuestions.length) {
+    return args.roadmapPlan.openQuestions.slice(0, 3).map((question) => question.label);
+  }
+
+  if (args.activePhase !== "strategy" && args.roadmapPlan?.phases.length) {
+    return args.roadmapPlan.phases.slice(0, 3).map((phase) => phase.name);
+  }
 
   if (args.activePhase !== "strategy") {
     return phaseCopy.focus;
@@ -270,7 +280,25 @@ function resolveNextStep(args: {
   audienceSummary: string | null;
   primaryGoal: string | null;
   projectBrief: ProjectBrief;
+  roadmapPlan?: RoadmapPlan | null;
 }) {
+  if (args.roadmapPlan?.openQuestions.length) {
+    const nextRoadmapQuestion = args.roadmapPlan.openQuestions[0];
+
+    return {
+      title: nextRoadmapQuestion.label,
+      body: nextRoadmapQuestion.question
+    };
+  }
+
+  if (args.roadmapPlan && args.roadmapPlan.status !== "draft") {
+    return {
+      title: "Review MVP And Phase Boundaries",
+      body:
+        "Tighten the MVP definition, the critical path, and the phase boundaries before widening execution."
+    };
+  }
+
   if (args.activePhase === "strategy" && args.projectBrief.openQuestions.length > 0) {
     const nextQuestion = args.projectBrief.openQuestions[0];
 
@@ -330,14 +358,22 @@ export function buildProjectContextSnapshot(args: {
   project: ProjectRecord;
   projectMetadata?: StoredProjectMetadata | null;
   projectBrief?: ProjectBrief | null;
+  roadmapPlan?: RoadmapPlan | null;
 }): ProjectContextSnapshot {
-  const projectBrief =
-    args.projectBrief ??
-    buildWorkspaceProjectIntelligence({
-      projectTitle: args.project.title,
-      projectDescription: args.project.description,
-      projectMetadata: args.projectMetadata
-    }).projectBrief;
+  const derivedProjectIntelligence =
+    args.projectBrief && args.roadmapPlan
+      ? null
+      : buildWorkspaceProjectIntelligence({
+          projectTitle: args.project.title,
+          projectDescription: args.project.description,
+          projectMetadata: args.projectMetadata
+        });
+  const projectBrief = args.projectBrief ?? derivedProjectIntelligence?.projectBrief;
+  const roadmapPlan = args.roadmapPlan ?? derivedProjectIntelligence?.roadmapPlan ?? null;
+
+  if (!projectBrief) {
+    throw new Error("ProjectBrief is required to build the project context snapshot.");
+  }
   const buildingSummary = buildBuildingSummary(args.project, args.projectMetadata, projectBrief);
   const audienceSummary = buildAudienceSummary(args.projectMetadata, projectBrief);
   const primaryGoal = buildPrimaryGoal(args.projectMetadata, projectBrief);
@@ -351,14 +387,16 @@ export function buildProjectContextSnapshot(args: {
     buildingSummary,
     audienceSummary,
     primaryGoal,
-    projectBrief
+    projectBrief,
+    roadmapPlan
   });
   const nextStep = resolveNextStep({
     activePhase,
     buildingSummary,
     audienceSummary,
     primaryGoal,
-    projectBrief
+    projectBrief,
+    roadmapPlan
   });
 
   return {
