@@ -28,6 +28,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - assumption capture
   - shared ProjectBrief enrichment through system archetypes, capability profiles, optional vertical overlays, and backward-compatible domain compatibility mapping
   - shared blocker libraries, blocker-specific output schemas, normalization helpers, provider adapters, and eval fixtures for typed Strategy Room answer extraction
+  - blocker-library coverage expansion for broader feature, access, surface, billing, workflow, and marketplace planning answers when active blocker routing and write-target safety stay app-controlled
 - Must not do:
   - change workspace behavior directly
   - patch billing/auth/routing to compensate for missing extraction truth
@@ -67,6 +68,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - Strategy Room chat-primary blocker resolution when the main thread captures answers, shared revisions/intelligence update automatically, and the right rail remains supportive instead of acting like a second answer form
   - Strategy Room chat-submit reliability fixes when valid short semantic answers must remain visible in-thread, map into the shared save-back spine when possible, and surface explicit failure states instead of silently disappearing
   - Strategy Room blocker-orchestrator integration when the active blocker is resolved from the shared intent library, extraction is restricted to that blocker's schema/write targets, and safe structured patches flow through the existing revision persistence path
+  - Strategy Room use of blocker-library partial parses, clarification prompts, and safe secondary hints when the room still renders one chat thread, persists through the same revision spine, and never allows cross-blocker freeform writes
   - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
   - typed QA and acceptance validation when they derive from approved shared intelligence plus the existing Build Room task, run, and artifact records
 - Must not do:

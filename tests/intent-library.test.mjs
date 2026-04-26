@@ -85,6 +85,81 @@ test("wallet boundary regression accepts not in MVP and keeps the answer in the 
   );
 });
 
+test("multi-part answers keep writes scoped to the active blocker while emitting safe secondary hints", async () => {
+  const result = await extractStructuredAnswerForBlocker({
+    blockerState: createBlockerState("chains_in_scope", "chainsInScope"),
+    rawAnswer: "Ethereum and Solana, analytics only, no wallet for MVP"
+  });
+
+  assert.equal(result.status, "parsed");
+  assert.deepEqual(result.writeTargets, ["answeredInputs.chainsInScope"]);
+  assert.equal(
+    result.structuredPatch?.answeredInputs?.some(
+      (item) => item.inputId === "walletConnectionMvp" || item.inputId === "adviceAdjacency"
+    ),
+    false
+  );
+  assert.deepEqual(
+    result.secondaryHints.map((item) => item.blockerId),
+    ["analytics_vs_advice_posture", "wallet_boundary"]
+  );
+});
+
+test("POS multi-part answers can surface safe secondary hints without cross-writing them", async () => {
+  const result = await extractStructuredAnswerForBlocker({
+    blockerState: createBlockerState("first_pos_connector", "firstPosConnector"),
+    rawAnswer: "Toast first, single location at launch, exports required"
+  });
+
+  assert.equal(result.status, "parsed");
+  assert.deepEqual(result.writeTargets, ["answeredInputs.firstPosConnector"]);
+  assert.equal(result.normalizedAnswer?.connectorId, "toast_pos");
+  assert.deepEqual(
+    result.secondaryHints.map((item) => item.blockerId),
+    ["launch_location_model", "exports_requirement"]
+  );
+  assert.equal(result.structuredPatch?.projectBrief, undefined);
+});
+
+test("provider-backed blockers can normalize multiple providers without mutating unrelated slots", async () => {
+  const result = await extractStructuredAnswerForBlocker({
+    blockerState: createBlockerState("payments_billing_requirement", "integrations"),
+    rawAnswer: "Stripe and QuickBooks"
+  });
+
+  assert.equal(result.status, "parsed");
+  assert.equal(result.writeTargets.includes("projectBrief.integrations"), true);
+  assert.equal(result.writeTargets.includes("projectBrief.mustHaveFeatures"), true);
+  assert.equal(result.normalizedAnswer?.providers?.[0]?.canonicalId, "stripe");
+  assert.equal(result.normalizedAnswer?.providers?.[1]?.canonicalId, "quickbooks");
+  assert.deepEqual(result.structuredPatch?.projectBrief?.integrations, ["Stripe", "QuickBooks"]);
+  assert.equal(result.structuredPatch?.projectBrief?.founderName, undefined);
+});
+
+test("role blockers can save buyer and operator roles while clarifying admin or customer coverage", async () => {
+  const result = await extractStructuredAnswerForBlocker({
+    blockerState: createBlockerState("core_user_roles", "buyerPersonas"),
+    rawAnswer: "owners and managers"
+  });
+
+  assert.equal(result.status, "partial");
+  assert.deepEqual(result.structuredPatch?.projectBrief?.buyerPersonas, ["owners"]);
+  assert.deepEqual(result.structuredPatch?.projectBrief?.operatorPersonas, ["managers"]);
+  assert.match(result.clarificationPrompt ?? "", /admin|customer/i);
+});
+
+test("surface blockers normalize internal-only launches without drifting into unrelated slots", async () => {
+  const result = await extractStructuredAnswerForBlocker({
+    blockerState: createBlockerState("public_vs_internal_surface", "surfaces"),
+    rawAnswer: "internal only"
+  });
+
+  assert.equal(result.status, "parsed");
+  assert.deepEqual(result.writeTargets, ["projectBrief.surfaces"]);
+  assert.deepEqual(result.structuredPatch?.projectBrief?.surfaces, ["Internal operations app"]);
+  assert.equal(result.structuredPatch?.projectBrief?.founderName, undefined);
+});
+
 test("known founder protection blocks unrelated blockers from overwriting founderName", async () => {
   const result = await extractStructuredAnswerForBlocker({
     blockerState: createBlockerState("constraints", "constraints"),

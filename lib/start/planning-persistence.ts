@@ -211,7 +211,7 @@ function chooseProviderAdapter() {
   }
 
   return createOpenAIBlockerExtractionAdapter({
-    modelId: "gpt-5.4"
+    modelId: "gpt-5.4-thinking"
   }) satisfies ModelProviderAdapter;
 }
 

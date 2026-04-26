@@ -76,5 +76,12 @@ for (const evalCase of getSeedBlockerEvalCases()) {
         new RegExp(evalCase.expectedClarificationPattern, "i")
       );
     }
+
+    if (evalCase.expectedSecondaryHintBlockerIds) {
+      assert.deepEqual(
+        result.secondaryHints.map((item) => item.blockerId),
+        evalCase.expectedSecondaryHintBlockerIds
+      );
+    }
   });
 }

@@ -74,6 +74,28 @@ const registryEntries = [
     allowsNotes: true
   },
   {
+    id: "provider_requirement",
+    label: "Provider-backed requirement",
+    description: "Captures whether a provider-backed capability is in MVP plus any normalized providers.",
+    answerMode: "enum_plus_notes",
+    fields: [
+      {
+        name: "featureDecision",
+        label: "Requirement decision",
+        type: "enum",
+        required: true,
+        enumValues: ["in_mvp", "post_mvp", "not_in_scope"]
+      },
+      {
+        name: "providers",
+        label: "Providers",
+        type: "provider_ref",
+        required: false
+      }
+    ],
+    allowsNotes: true
+  },
+  {
     id: "chain_list",
     label: "Chains",
     description: "Captures supported chains with canonical chain IDs.",
@@ -183,6 +205,18 @@ const registryEntries = [
         label: "Operator personas",
         type: "string_list",
         required: false
+      },
+      {
+        name: "endCustomerPersonas",
+        label: "End-customer personas",
+        type: "string_list",
+        required: false
+      },
+      {
+        name: "adminPersonas",
+        label: "Admin personas",
+        type: "string_list",
+        required: false
       }
     ],
     allowsNotes: true
@@ -236,6 +270,98 @@ const registryEntries = [
         type: "enum",
         required: true,
         enumValues: ["in_mvp", "post_mvp", "not_in_scope"]
+      }
+    ],
+    allowsNotes: true
+  },
+  {
+    id: "pricing_model",
+    label: "Pricing model",
+    description: "Captures the pricing model or explicit uncertainty about it.",
+    answerMode: "enum_plus_notes",
+    fields: [
+      {
+        name: "pricingModel",
+        label: "Pricing model",
+        type: "enum",
+        required: true,
+        enumValues: [
+          "subscription",
+          "usage_based",
+          "transactional",
+          "quote_based",
+          "donation",
+          "free",
+          "unknown"
+        ]
+      }
+    ],
+    allowsNotes: true
+  },
+  {
+    id: "tenancy_requirement",
+    label: "Tenancy requirement",
+    description: "Captures the account or tenant model the product needs to support.",
+    answerMode: "enum_plus_notes",
+    fields: [
+      {
+        name: "tenancyModel",
+        label: "Tenancy model",
+        type: "enum",
+        required: true,
+        enumValues: [
+          "single_workspace",
+          "single_tenant_per_client",
+          "multi_tenant_saas",
+          "multi_location_hierarchy",
+          "internal_team_only"
+        ]
+      }
+    ],
+    allowsNotes: true
+  },
+  {
+    id: "surface_boundary",
+    label: "Surface boundary",
+    description: "Captures whether the planned product is internal, public, portal-based, or mobile-prioritized.",
+    answerMode: "enum_plus_notes",
+    fields: [
+      {
+        name: "surfaceMode",
+        label: "Surface mode",
+        type: "enum",
+        required: true,
+        enumValues: [
+          "internal_only",
+          "customer_portal",
+          "public_app",
+          "hybrid",
+          "mobile_first",
+          "mobile_later",
+          "desktop_primary"
+        ]
+      }
+    ],
+    allowsNotes: true
+  },
+  {
+    id: "notification_channels",
+    label: "Notification channels",
+    description: "Captures whether notifications belong in scope plus any specific channels.",
+    answerMode: "enum_plus_notes",
+    fields: [
+      {
+        name: "featureDecision",
+        label: "Requirement decision",
+        type: "enum",
+        required: true,
+        enumValues: ["in_mvp", "post_mvp", "not_in_scope"]
+      },
+      {
+        name: "channels",
+        label: "Channels",
+        type: "string_list",
+        required: false
       }
     ],
     allowsNotes: true

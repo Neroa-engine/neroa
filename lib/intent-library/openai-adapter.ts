@@ -16,6 +16,7 @@ const OPENAI_EXTRACTION_RESPONSE_SCHEMA_DESCRIPTION = `Return strict JSON with:
   "confidence": number between 0 and 1,
   "normalizedAnswer": object or null,
   "structuredPatch": StrategyRevisionPatch-compatible object or null,
+  "secondaryHints": [{ "blockerId": string, "summary": string, "normalizedValue": object | null }] or [],
   "clarificationPrompt": string or null,
   "notes": string[]
 }
@@ -27,7 +28,7 @@ export class OpenAIBlockerExtractionAdapter implements ModelProviderAdapter {
   mode = "live" as const;
 
   constructor(args?: { modelId?: string }) {
-    this.modelId = args?.modelId ?? "gpt-5.4";
+    this.modelId = args?.modelId ?? "gpt-5.4-thinking";
   }
 
   async extractStructuredAnswer(
@@ -80,6 +81,7 @@ export class OpenAIBlockerExtractionAdapter implements ModelProviderAdapter {
           : null,
       writeTargets: request.allowedWriteTargets,
       blockedWriteTargets: request.blockedWriteTargets,
+      secondaryHints: Array.isArray(parsed.secondaryHints) ? parsed.secondaryHints : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes.filter((item: unknown) => typeof item === "string") : [],
       providerMetadata: {
         providerId: this.providerId,

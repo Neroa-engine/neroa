@@ -22,6 +22,26 @@ export const blockerIdSchema = z.enum([
   "core_user_roles",
   "compliance_sensitivity",
   "ai_integration_boundary",
+  "pricing_model",
+  "payments_billing_requirement",
+  "marketplace_listings_requirement",
+  "scheduling_dispatch_requirement",
+  "customer_portal_requirement",
+  "exports_requirement",
+  "role_based_access_requirement",
+  "multi_tenancy_requirement",
+  "workflow_approval_requirement",
+  "document_case_intake_requirement",
+  "api_access_requirement",
+  "reporting_depth_requirement",
+  "admin_permissions_requirement",
+  "notification_channels",
+  "file_storage_requirement",
+  "support_human_review_requirement",
+  "mobile_priority_requirement",
+  "public_vs_internal_surface",
+  "search_saved_views_requirement",
+  "audit_trail_requirement",
   "file_upload_requirement",
   "notifications_requirement",
   "admin_console_requirement",
@@ -61,6 +81,7 @@ export const blockerSchemaIdSchema = z.enum([
   "product_direction",
   "constraints",
   "provider_list",
+  "provider_requirement",
   "chain_list",
   "wallet_boundary",
   "posture_boundary",
@@ -70,7 +91,11 @@ export const blockerSchemaIdSchema = z.enum([
   "role_split",
   "compliance_sensitivity",
   "ai_integration_boundary",
-  "feature_requirement"
+  "feature_requirement",
+  "pricing_model",
+  "tenancy_requirement",
+  "surface_boundary",
+  "notification_channels"
 ]);
 
 export type BlockerSchemaId = z.infer<typeof blockerSchemaIdSchema>;
@@ -117,12 +142,17 @@ export const normalizationRuleIdSchema = z.enum([
   "mvp_boundary",
   "analytics_only",
   "provider_aliases",
+  "pricing_aliases",
+  "tenancy_aliases",
+  "surface_aliases",
+  "notification_channel_aliases",
   "chain_aliases",
   "pos_connector_aliases",
   "launch_location_aliases",
   "role_aliases",
   "report_aliases",
   "compliance_aliases",
+  "feature_signal_aliases",
   "feature_requirement_aliases"
 ]);
 
@@ -198,6 +228,7 @@ export const blockerDefinitionSchema = z
     clarificationRules: stringListSchema,
     completionCriteria: stringListSchema,
     nextBlockerHints: stringListSchema.default([]),
+    safeSecondaryHintBlockerIds: z.array(blockerIdSchema).default([]),
     activeWhen: blockerActiveWhenSchema,
     defaultClarificationPrompt: trimmedStringSchema,
     allowPartialSave: z.boolean()
@@ -254,6 +285,18 @@ export type StructuredAnswerProviderMetadata = z.infer<
   typeof structuredAnswerProviderMetadataSchema
 >;
 
+export const structuredAnswerSecondaryHintSchema = z
+  .object({
+    blockerId: blockerIdSchema,
+    summary: trimmedStringSchema,
+    normalizedValue: z.record(z.string(), z.unknown()).nullable()
+  })
+  .strict();
+
+export type StructuredAnswerSecondaryHint = z.infer<
+  typeof structuredAnswerSecondaryHintSchema
+>;
+
 export const structuredAnswerExtractionResultSchema = z
   .object({
     blockerId: blockerIdSchema,
@@ -265,6 +308,7 @@ export const structuredAnswerExtractionResultSchema = z
     clarificationPrompt: trimmedStringSchema.nullable(),
     writeTargets: z.array(strategyWriteTargetSchema),
     blockedWriteTargets: z.array(strategyWriteTargetSchema),
+    secondaryHints: z.array(structuredAnswerSecondaryHintSchema).default([]),
     notes: stringListSchema,
     providerMetadata: structuredAnswerProviderMetadataSchema.nullable()
   })
@@ -296,7 +340,8 @@ export const blockerEvalCaseSchema = z
     forbiddenWriteTargets: z.array(strategyWriteTargetSchema),
     expectedNormalizedSubset: z.record(z.string(), z.unknown()).nullable(),
     expectedPatch: strategyRevisionPatchSchema.nullable(),
-    expectedClarificationPattern: trimmedStringSchema.nullable().optional()
+    expectedClarificationPattern: trimmedStringSchema.nullable().optional(),
+    expectedSecondaryHintBlockerIds: z.array(blockerIdSchema).optional()
   })
   .strict();
 
