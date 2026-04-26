@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type {
   BuildRoomOutputMode,
@@ -275,6 +276,8 @@ export function BuildRoomControlRoom({
   const executionArtifacts = selectedDetail ? artifactPreview(selectedDetail.artifacts) : [];
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
+  const intakeIsReadOnly = true;
+  const commandCenterHref = `/workspace/${workspaceId}/command-center`;
   const canApproveWorker =
     accessMode === "owner" &&
     selectedDetail?.task.status === "codex_complete" &&
@@ -436,13 +439,24 @@ export function BuildRoomControlRoom({
       setSelectedTaskId(response.detail.task.id);
       setTasks((current) => replaceTaskSummary(current, response.detail.task));
       setComposer(createComposerFromTask(response.detail.task));
-      setNoticeMessage("The task is back in revision mode and loaded into the composer.");
+      setNoticeMessage(
+        "The task is back in revision mode. Use Command Center to update the request before the next relay pass."
+      );
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to move the task into revision.");
     } finally {
       setPendingAction(null);
     }
   }
+
+  useEffect(() => {
+    if (selectedDetail) {
+      setComposer(createComposerFromTask(selectedDetail.task));
+      return;
+    }
+
+    setComposer(createEmptyComposer(project));
+  }, [project, selectedDetail]);
 
   useEffect(() => {
     if (!selectedTaskId || storageMessage) {
@@ -487,21 +501,21 @@ export function BuildRoomControlRoom({
           <div className="space-y-4">
             <div className="floating-plane rounded-[34px] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Build Room v1
+                Build Room Execution Surface
               </p>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                Govern Codex first. Approve execution second.
+                Review execution state. Approve guarded runs.
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Build Room now acts as a thin control surface: structure the task, send it through
-                Neroa&apos;s backend relay to Codex, review the result, and only then approve the
-                worker path.
+                Command Center now owns the main request intake. Build Room stays focused on the
+                lower-level execution surface: relay status, approval gating, worker history, and
+                stored run artifacts.
               </p>
               <div className="mt-5 grid gap-3">
                 {[
-                  "Codex stays cloud-side and returns a governed response packet.",
+                  "Command Center creates and submits Build Room tasks through the current backend relay.",
                   "Worker execution never auto-starts after generation.",
-                  "Result, logs, and approval state stay visible in one room."
+                  "Result, logs, artifacts, and approval state stay visible in one room."
                 ].map((item) => (
                   <div
                     key={item}
@@ -549,9 +563,24 @@ export function BuildRoomControlRoom({
 
             <div className="floating-plane rounded-[34px] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Task Composer
+                Execution Intake Snapshot
               </p>
               <div className="mt-5 space-y-4">
+                <div className="rounded-[24px] border border-cyan-200 bg-cyan-50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
+                    Command Center owns intake
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-cyan-800">
+                    New execution requests should be typed and sent from Command Center. Build Room
+                    now mirrors the selected task so this page can stay focused on execution detail.
+                  </p>
+                  <div className="mt-4">
+                    <Link href={commandCenterHref} className="button-secondary text-sm">
+                      Open Command Center Intake
+                    </Link>
+                  </div>
+                </div>
+
                 <div>
                   <label htmlFor="build-room-title" className="mb-2 block text-sm font-semibold text-slate-950">
                     Task title
@@ -567,7 +596,7 @@ export function BuildRoomControlRoom({
                     }
                     className="input"
                     placeholder="Tighten the auth handoff for the Build Room worker trigger"
-                    disabled={Boolean(storageMessage)}
+                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
                   />
                 </div>
 
@@ -586,7 +615,7 @@ export function BuildRoomControlRoom({
                         }))
                       }
                       className="input"
-                      disabled={Boolean(storageMessage)}
+                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
                     >
                       {buildRoomTaskTypeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -619,7 +648,7 @@ export function BuildRoomControlRoom({
                         }))
                       }
                       className="input"
-                      disabled={Boolean(storageMessage)}
+                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
                     >
                       {buildRoomOutputModeOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -655,7 +684,7 @@ export function BuildRoomControlRoom({
                         }))
                       }
                       className="input"
-                      disabled={Boolean(storageMessage)}
+                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
                     >
                       <option value="">No lane selected</option>
                       {project.lanes.map((lane) => (
@@ -672,7 +701,7 @@ export function BuildRoomControlRoom({
                     htmlFor="build-room-user-request"
                     className="mb-2 block text-sm font-semibold text-slate-950"
                   >
-                    Task composer input
+                    Request snapshot from Command Center
                   </label>
                   <textarea
                     id="build-room-user-request"
@@ -686,7 +715,7 @@ export function BuildRoomControlRoom({
                     rows={7}
                     className="input min-h-[180px] resize-y"
                     placeholder="Describe the build task, current problem, constraints, and what success should look like."
-                    disabled={Boolean(storageMessage)}
+                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
                   />
                 </div>
 
@@ -709,7 +738,7 @@ export function BuildRoomControlRoom({
                     rows={5}
                     className="input min-h-[140px] resize-y"
                     placeholder="List the conditions that need to be true before you would approve this task."
-                    disabled={Boolean(storageMessage)}
+                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
                   />
                 </div>
 
@@ -726,16 +755,16 @@ export function BuildRoomControlRoom({
                     onChange={(event) =>
                       setComposer((current) => ({
                         ...current,
-                        riskLevel: event.target.value as BuildRoomRiskLevel
-                      }))
-                    }
-                    className="input"
-                    disabled={Boolean(storageMessage)}
-                  >
-                    {buildRoomRiskOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                          riskLevel: event.target.value as BuildRoomRiskLevel
+                        }))
+                      }
+                      className="input"
+                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
+                    >
+                      {buildRoomRiskOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
                     ))}
                   </select>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
@@ -748,27 +777,23 @@ export function BuildRoomControlRoom({
                     Generation boundary
                   </p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
-                    Sending to Codex creates or updates the task, builds a governed packet, and
-                    stores the returned result. It does not run a worker until someone approves it.
+                    Build Room no longer acts as the primary request entry. Command Center creates
+                    and sends the task; Build Room keeps the governed packet, result, and approval
+                    history in one place.
                   </p>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
+                  <Link href={commandCenterHref} className="button-primary text-sm">
+                    Start or Revise in Command Center
+                  </Link>
                   <button
                     type="button"
-                    className="button-secondary"
-                    onClick={() => void persistComposer(false)}
-                    disabled={pendingAction !== null || Boolean(storageMessage)}
-                  >
-                    {pendingAction === "save" ? "Saving..." : composer.taskId ? "Update Draft" : "Save Draft"}
-                  </button>
-                  <button
-                    type="button"
-                    className="button-primary"
+                    className="button-secondary opacity-70"
                     onClick={() => void persistComposer(true)}
-                    disabled={pendingAction !== null || Boolean(storageMessage)}
+                    disabled
                   >
-                    {pendingAction === "send" ? "Sending..." : "Send to Codex"}
+                    Intake moved to Command Center
                   </button>
                 </div>
               </div>
@@ -793,7 +818,8 @@ export function BuildRoomControlRoom({
               <div className="mt-5 grid gap-3">
                 {tasks.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-slate-200 bg-white/70 px-4 py-5 text-sm leading-7 text-slate-500">
-                    No Build Room tasks are stored for this project yet.
+                    No Build Room tasks are stored for this project yet. Start the first execution
+                    request from Command Center.
                   </div>
                 ) : (
                   tasks.map((task) => (

@@ -3,6 +3,14 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ActiveProjectPortalShell } from "@/components/portal/portal-shells";
 import { ProjectCommandCenterV1 } from "@/components/workspace/project-command-center-v1";
+import { getBuildRoomCodexRelayMode } from "@/lib/build-room/codex-relay";
+import {
+  BuildRoomStorageUnavailableError,
+  getBuildRoomTaskDetail,
+  listBuildRoomTasks
+} from "@/lib/build-room/data";
+import type { BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
+import { getBuildRoomWorkerTriggerMode } from "@/lib/build-room/worker-trigger";
 import { listLiveViewSessionsForProject, mapLiveViewSessionToRuntimeTarget } from "@/lib/live-view/store";
 import { isLocalRuntimeStorageEnabled } from "@/lib/runtime/local-runtime-storage";
 import { APP_ROUTES } from "@/lib/routes";
@@ -29,6 +37,11 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
     params.workspaceId,
     params.workspaceId
   );
+  let initialBuildRoomTasks: BuildRoomTask[] = [];
+  let initialBuildRoomTaskDetail: BuildRoomTaskDetail | null = null;
+  let buildRoomStorageMessage: string | null = null;
+  const buildRoomCodexRelayMode = getBuildRoomCodexRelayMode();
+  const buildRoomWorkerTriggerMode = getBuildRoomWorkerTriggerMode();
   const liveViewSession =
     (
       await listLiveViewSessionsForProject({
@@ -58,6 +71,27 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
     redirect(APP_ROUTES.projects);
   }
 
+  try {
+    initialBuildRoomTasks = await listBuildRoomTasks({
+      supabase,
+      workspaceId: params.workspaceId,
+      projectId: params.workspaceId
+    });
+    initialBuildRoomTaskDetail =
+      initialBuildRoomTasks.length > 0
+        ? await getBuildRoomTaskDetail({
+            supabase,
+            taskId: initialBuildRoomTasks[0].id
+          })
+        : null;
+  } catch (error) {
+    if (error instanceof BuildRoomStorageUnavailableError) {
+      buildRoomStorageMessage = error.message;
+    } else {
+      throw error;
+    }
+  }
+
   const activeProject = {
     ...activeProjectSummary,
     phaseLabel: commandCenter.activePhase.label,
@@ -76,6 +110,12 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
         commandCenter={commandCenter}
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}
+        accessMode={activeProjectSummary.accessMode}
+        initialBuildRoomTasks={initialBuildRoomTasks}
+        initialBuildRoomTaskDetail={initialBuildRoomTaskDetail}
+        buildRoomCodexRelayMode={buildRoomCodexRelayMode}
+        buildRoomWorkerTriggerMode={buildRoomWorkerTriggerMode}
+        buildRoomStorageMessage={buildRoomStorageMessage}
       />
     </ActiveProjectPortalShell>
   );

@@ -1,6 +1,9 @@
+import type { BuildRoomRelayMode } from "@/lib/build-room/contracts";
+import type { BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
+import { CommandCenterBuildRoomExecutionPanel } from "@/components/workspace/command-center-build-room-execution-panel";
 import {
   CommandCenterAnalyzerPanelView,
   CommandCenterPromptRunnerPanelView,
@@ -12,13 +15,25 @@ type ProjectCommandCenterV1Props = {
   commandCenter: CommandCenterSummary;
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
+  accessMode: "owner" | "member";
+  initialBuildRoomTasks: BuildRoomTask[];
+  initialBuildRoomTaskDetail: BuildRoomTaskDetail | null;
+  buildRoomCodexRelayMode: BuildRoomRelayMode;
+  buildRoomWorkerTriggerMode: BuildRoomRelayMode;
+  buildRoomStorageMessage?: string | null;
 };
 
 export function ProjectCommandCenterV1({
   project,
   commandCenter,
   liveViewSession,
-  canManageDecisions
+  canManageDecisions,
+  accessMode,
+  initialBuildRoomTasks,
+  initialBuildRoomTaskDetail,
+  buildRoomCodexRelayMode,
+  buildRoomWorkerTriggerMode,
+  buildRoomStorageMessage = null
 }: ProjectCommandCenterV1Props) {
   return (
     <section className="surface-main relative overflow-visible rounded-[42px] p-5 xl:p-6 2xl:p-8">
@@ -46,6 +61,16 @@ export function ProjectCommandCenterV1({
             initialLiveViewSession={liveViewSession}
             activePhase={commandCenter.activePhase}
             canManage={canManageDecisions}
+          />
+          <CommandCenterBuildRoomExecutionPanel
+            workspaceId={project.workspaceId}
+            project={project}
+            accessMode={accessMode}
+            initialTasks={initialBuildRoomTasks}
+            initialTaskDetail={initialBuildRoomTaskDetail}
+            codexRelayMode={buildRoomCodexRelayMode}
+            workerTriggerMode={buildRoomWorkerTriggerMode}
+            storageMessage={buildRoomStorageMessage}
           />
           <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
             <CommandCenterTaskQueuePanelView
