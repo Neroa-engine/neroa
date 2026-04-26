@@ -61,6 +61,7 @@ This file defines what belongs in each major Neroa system and what must not be p
   - approved execution surfaces
   - workspace and project delivery flows
   - approved planning-to-execution handoff
+  - persisted Strategy Room thread continuity when existing projects must reopen into their saved planning conversation instead of starter onboarding content
   - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
   - typed QA and acceptance validation when they derive from approved shared intelligence plus the existing Build Room task, run, and artifact records
 - Must not do:

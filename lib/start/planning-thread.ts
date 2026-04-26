@@ -66,6 +66,12 @@ const WORKFLOW_SIGNAL_PATTERN =
   /\b(?:onboarding|dashboard|portal|checkout|booking|payment|billing|approval|reporting|sync|upload|search|messaging|workflow|login|auth|crm|subscription|analytics)\b/i;
 const CONSTRAINT_SIGNAL_PATTERN =
   /\b(?:budget|timeline|deadline|constraint|integration|migration|compliance|permission|auth|technical|ops|staffing|handoff|launch risk)\b/i;
+const SYNTHETIC_PLANNING_MESSAGE_IDS = new Set([
+  "assistant-intro",
+  "user-initial-summary",
+  "project-resume-summary",
+  "project-resume-assistant"
+]);
 
 function cleanPlanningText(value?: string | null) {
   return typeof value === "string" ? value.trim() : "";
@@ -158,15 +164,6 @@ function parsePlanningMetadata(
     scopeNotes,
     recommendedNextStep
   };
-}
-
-function parsePlanningTimestamp(value: string | undefined) {
-  if (!value) {
-    return 0;
-  }
-
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
 function cleanPlanningValue(value?: string | null) {
@@ -265,7 +262,9 @@ export function hasPlanningThreadHistory(value: PlanningThreadState | null | und
   }
 
   return value.messages.some(
-    (message) => message.id !== "assistant-intro" && cleanPlanningText(message.content).length > 0
+    (message) =>
+      !SYNTHETIC_PLANNING_MESSAGE_IDS.has(message.id) &&
+      cleanPlanningText(message.content).length > 0
   );
 }
 
@@ -296,17 +295,15 @@ export function choosePreferredPlanningThreadState(args: {
   const persisted = args.persistedThreadState ?? null;
   const local = args.localThreadState ?? null;
 
-  if (!local) {
+  if (hasPlanningThreadHistory(persisted)) {
     return persisted;
   }
 
-  if (!persisted) {
+  if (hasPlanningThreadHistory(local)) {
     return local;
   }
 
-  return parsePlanningTimestamp(local.updatedAt) >= parsePlanningTimestamp(persisted.updatedAt)
-    ? local
-    : persisted;
+  return persisted ?? local;
 }
 
 export function buildProjectResumePlanningThread(args: {
@@ -377,11 +374,9 @@ export function hasSavedProjectPlanningState(args: {
 }) {
   return Boolean(
     hasPlanningThreadHistory(args.planningThreadState ?? null) ||
-      hasMeaningfulPlanningConversationState(args.conversationState ?? null) ||
-      args.hasStrategyOverrides ||
-      args.hasRevisionHistory ||
-      args.hasSavedPlanningArtifacts ||
-      cleanPlanningText(args.projectSummary).length > 0
+      hasMeaningfulPlanningConversationState(
+        args.conversationState ?? args.planningThreadState?.conversationState ?? null
+      )
   );
 }
 

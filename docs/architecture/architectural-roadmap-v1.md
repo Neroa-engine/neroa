@@ -106,6 +106,7 @@ This promoted scope does **not** include:
   - typed execution-packet generation and approved-scope packet release when they reuse the existing Build Room task, relay, and run contracts
   - typed QA and acceptance validation derived from the approved execution packet, roadmap acceptance criteria, governance QA rules, and existing Build Room task, run, and artifact outputs
   - shared Strategy Room save-back, revision persistence, and intelligence rehydration when they stay inside the existing ProjectBrief, ArchitectureBlueprint, RoadmapPlan, and GovernancePolicy spine
+  - persisted Strategy Room thread continuity and reopen hydration when existing projects must prefer their saved project-specific planning thread/history over starter onboarding content without changing approval semantics or backend contracts
   - Browser Runtime Core V2 and Live Session Design Library Bridge when they stay inside the promoted exception above
 - Not allowed to touch:
   - unapproved new branches
@@ -113,7 +114,7 @@ This promoted scope does **not** include:
   - a second execution system or replacement Build Room contract path beside the approved Build Room pipeline
   - a second QA executor, separate completion engine, or replacement acceptance gate outside the shared intelligence spine and existing Build Room records
   - billing/auth/platform trust changes unless Phase 4 is explicitly engaged
-- Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 also owns deterministic execution-packet generation, pending-execution release, and typed QA/completion validation when they derive from the approved ProjectBrief, ArchitectureBlueprint, RoadmapPlan, GovernancePolicy, Strategy revision spine, and existing Build Room task/run/artifact records, then map back into the current Build Room pipeline without redefining execution gates, trust-layer rules, or backend contracts. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
+- Boundary: execution must remain inside the approved phase and approved systems list. Phase 3 now owns the current-promoted Browser Runtime Core V2 foundation for deterministic browser open/attach/bind/tab targeting, unified command lifecycle, Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and shared Design Library session attachment. Phase 3 also owns deterministic execution-packet generation, pending-execution release, typed QA/completion validation, and persisted Strategy Room thread continuity when they derive from the approved ProjectBrief, ArchitectureBlueprint, RoadmapPlan, GovernancePolicy, Strategy revision spine, and existing Build Room task/run/artifact records, then map back into the current Build Room pipeline without redefining execution gates, trust-layer rules, or backend contracts. Phase 3 still may not absorb the full Phase 5 browser visual editor or the full Phase 6 orchestration layer.
 
 ### Phase 4 - Platform Trust and Commerce Control
 

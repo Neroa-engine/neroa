@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildConversationSessionState } from "../lib/intelligence/conversation/index.ts";
 import { buildWorkspaceProjectIntelligence } from "../lib/intelligence/project-brief-generator.ts";
 import {
-  buildProjectResumePlanningThread,
+  buildInitialPlanningMessages,
   buildStrategyRoomInitialThreadState,
   choosePreferredPlanningThreadState,
   createPersistedPlanningThreadState
@@ -50,18 +50,32 @@ test("existing project reopen prefers the persisted planning thread instead of a
     "Crypto investors are my main customer."
   ];
   const conversationBuild = buildConversationState(messages);
-  const persistedThreadState = createPersistedPlanningThreadState(
-    buildProjectResumePlanningThread({
-      threadId: "project-thread-crypto",
+  const persistedThreadState = createPersistedPlanningThreadState({
+    threadId: "project-thread-crypto",
+    lane: "managed",
+    messages: [
+      {
+        id: "user-real-crypto-1",
+        role: "user",
+        content: "We already agreed the launch audience is crypto investors."
+      },
+      {
+        id: "assistant-real-crypto-1",
+        role: "assistant",
+        content:
+          "Perfect. I'll keep the launch focused on crypto investors and tighten the remaining scope decisions from there."
+      }
+    ],
+    metadata: {
       lane: "managed",
       projectTitle: "Tom Crypto Risk",
-      projectSummary: "Resume the crypto risk planning room.",
-      currentFocus: "Clarifying the launch analytics scope",
-      blockers: ["Supported chains are still unresolved"],
-      nextStep: "Confirm the supported chains for launch.",
-      conversationState: conversationBuild.state
-    })
-  );
+      perceivedProject: "Crypto risk analytics planning",
+      scopeNotes: ["Crypto investors launch audience"],
+      recommendedNextStep: "Confirm the supported chains for launch."
+    },
+    conversationState: conversationBuild.state,
+    updatedAt: "2026-04-26T13:00:00.000Z"
+  });
   const projectMetadata = buildStoredProjectMetadata({
     title: "Tom Crypto Risk",
     description: messages.join(" "),
@@ -90,6 +104,18 @@ test("existing project reopen prefers the persisted planning thread instead of a
   assert.equal(resumedThreadState?.metadata.projectTitle, "Tom Crypto Risk");
   assert.equal(resumedThreadState?.messages.length, persistedThreadState.messages.length);
   assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      message.content.includes("launch audience is crypto investors")
+    ),
+    true
+  );
+  assert.equal(
+    resumedThreadState?.messages.some((message) =>
+      /What should I call you\?|What are you thinking about building\?/i.test(message.content)
+    ),
+    false
+  );
+  assert.equal(
     choosePreferredPlanningThreadState({
       persistedThreadState: resumedThreadState,
       localThreadState: null
@@ -98,7 +124,70 @@ test("existing project reopen prefers the persisted planning thread instead of a
   );
 });
 
-test("existing project with saved intelligence but no persisted thread builds a real resume context", () => {
+test("existing project refresh prefers the persisted project thread over a stale starter snapshot", () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const conversationBuild = buildConversationState(messages);
+  const persistedThreadState = createPersistedPlanningThreadState({
+    threadId: "project-thread-refresh",
+    lane: "managed",
+    messages: [
+      {
+        id: "user-real-1",
+        role: "user",
+        content: "We already decided the launch should cover Ethereum and Solana."
+      },
+      {
+        id: "assistant-real-1",
+        role: "assistant",
+        content: "Perfect. I'll keep the launch scope on Ethereum and Solana and leave wallet import out of MVP."
+      }
+    ],
+    metadata: {
+      lane: "managed",
+      projectTitle: "Tom Crypto Risk",
+      perceivedProject: "Crypto risk analytics planning",
+      scopeNotes: ["Ethereum and Solana launch scope"],
+      recommendedNextStep: "Tighten the remaining score-signal questions."
+    },
+    conversationState: conversationBuild.state,
+    updatedAt: "2026-04-26T13:00:00.000Z"
+  });
+  const localStarterSnapshot = {
+    threadId: "project-thread-starter",
+    lane: "managed",
+    messages: buildInitialPlanningMessages({
+      lane: "managed",
+      initialSummary: "Crypto risk analytics planning"
+    }),
+    metadata: {
+      lane: "managed",
+      projectTitle: "Tom Crypto Risk",
+      perceivedProject: "Crypto risk analytics planning",
+      scopeNotes: ["Crypto risk analytics planning"],
+      recommendedNextStep: "Keep sharpening the user, workflow, and outcome before the workspace opens."
+    },
+    updatedAt: "2026-04-26T14:00:00.000Z"
+  };
+
+  const preferredThreadState = choosePreferredPlanningThreadState({
+    persistedThreadState,
+    localThreadState: localStarterSnapshot
+  });
+
+  assert.equal(preferredThreadState?.threadId, "project-thread-refresh");
+  assert.equal(
+    preferredThreadState?.messages.some((message) =>
+      /What should I call you\?|What are you thinking about building\?/i.test(message.content)
+    ),
+    false
+  );
+});
+
+test("existing project with saved conversation state but no persisted thread builds a real resume context", () => {
   const messages = [
     "I want a restaurant sales platform.",
     "It's for owners and managers.",
@@ -172,6 +261,12 @@ test("fallback only appears when a project truly has no saved planning state", (
   });
 
   assert.equal(resumedThreadState, null);
+  assert.equal(
+    buildInitialPlanningMessages({
+      lane: "diy"
+    })[0]?.id,
+    "assistant-intro"
+  );
 });
 
 test("Strategy Room and Command Center still share the same project intelligence source during resume", () => {
