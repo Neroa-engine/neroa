@@ -123,6 +123,12 @@ function buildSafePayloadSummary(payload: unknown) {
   };
 }
 
+function logDevelopmentInspectFailure(label: string, details: Record<string, unknown>) {
+  if (process.env.NODE_ENV !== "production") {
+    console.error(label, details);
+  }
+}
+
 export async function POST(request: NextRequest) {
   const token = readBearerToken(request);
   if (!token) {
@@ -134,17 +140,27 @@ export async function POST(request: NextRequest) {
   try {
     json = await request.json();
   } catch {
+    logDevelopmentInspectFailure("LIVE_VIEW_INSPECT_JSON_PARSE_FAILURE", {
+      error: "Invalid request payload."
+    });
     return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
   }
 
   const parsed = inspectSchema.safeParse(json);
   if (!parsed.success) {
+    const payloadSummary = buildSafePayloadSummary(json);
+
     if (process.env.NODE_ENV !== "production") {
+      logDevelopmentInspectFailure("LIVE_VIEW_INSPECT_SCHEMA_FAILURE", {
+        issues: parsed.error.flatten(),
+        payloadSummary
+      });
+
       return NextResponse.json(
         {
           error: "Invalid Live View inspection payload.",
           issues: parsed.error.flatten(),
-          payloadSummary: buildSafePayloadSummary(json)
+          payloadSummary
         },
         { status: 400 }
       );
@@ -174,6 +190,12 @@ export async function POST(request: NextRequest) {
       guardrails: result.session.guardrails
     });
   } catch (error) {
+    logDevelopmentInspectFailure("LIVE_VIEW_INSPECT_RUNTIME_FAILURE", {
+      error: error instanceof Error ? error.message : "Unable to inspect the live session.",
+      hasToken: token.length > 0,
+      payloadSummary: buildSafePayloadSummary(parsed.data)
+    });
+
     return NextResponse.json(
       {
         ok: false,
