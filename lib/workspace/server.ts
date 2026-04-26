@@ -20,6 +20,7 @@ import {
   getAccessibleWorkspace,
   recordPlatformEvent
 } from "@/lib/platform/foundation";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 
 type WorkspaceProjectContextOptions = {
   requestedPrimaryLaneId?: string | null;
@@ -77,12 +78,23 @@ function buildWorkspaceProjectFromRecord(args: {
   });
 }
 
-function getProjectNotFoundRoute(workspaceId: string, projectId: string) {
-  return `/workspace/${workspaceId}/project/${projectId}?error=Project not found.`;
+function buildCanonicalWorkspaceErrorRoute(workspaceId: string, message: string) {
+  return `${buildProjectWorkspaceRoute(workspaceId)}?error=${encodeURIComponent(message)}`;
 }
 
-function getLaneNotFoundRoute(workspaceId: string, projectId: string) {
-  return `/workspace/${workspaceId}/project/${projectId}?error=Lane not found.`;
+function getProjectNotFoundRoute(workspaceId: string, projectId: string) {
+  if (projectId !== workspaceId) {
+    return buildCanonicalWorkspaceErrorRoute(
+      workspaceId,
+      "This legacy project route has been retired. Continue in the active project portal."
+    );
+  }
+
+  return buildCanonicalWorkspaceErrorRoute(workspaceId, "Project not found.");
+}
+
+function getLaneNotFoundRoute(workspaceId: string) {
+  return buildCanonicalWorkspaceErrorRoute(workspaceId, "Lane not found.");
 }
 
 export async function getWorkspaceProjectContext(
@@ -93,7 +105,7 @@ export async function getWorkspaceProjectContext(
   const { supabase, user, access, workspace } = await getWorkspaceForCurrentUser(workspaceId);
 
   if (projectId !== workspace.id) {
-    redirect(getProjectNotFoundRoute(workspaceId, workspace.id));
+    redirect(getProjectNotFoundRoute(workspaceId, projectId));
   }
 
   const parsedWorkspace = parseWorkspaceProjectDescription(workspace.description);
@@ -141,13 +153,13 @@ export async function getWorkspaceProjectLaneContext(
   const resolvedLaneSlug = resolveProjectLaneSlug(project, laneSlug);
 
   if (!resolvedLaneSlug) {
-    redirect(getLaneNotFoundRoute(workspaceId, projectId));
+    redirect(getLaneNotFoundRoute(workspaceId));
   }
 
   const lane = getProjectLaneBySlug(project, resolvedLaneSlug);
 
   if (!lane) {
-    redirect(getLaneNotFoundRoute(workspaceId, projectId));
+    redirect(getLaneNotFoundRoute(workspaceId));
   }
 
   const requiredStage = resolveRequiredWorkflowStage({
@@ -173,9 +185,10 @@ export async function getWorkspaceProjectLaneContext(
     });
 
     redirect(
-      `/workspace/${workspaceId}/project/${projectId}?error=${encodeURIComponent(
+      buildCanonicalWorkspaceErrorRoute(
+        workspaceId,
         buildWorkflowUpgradeMessage(access, requiredStage)
-      )}`
+      )
     );
   }
 

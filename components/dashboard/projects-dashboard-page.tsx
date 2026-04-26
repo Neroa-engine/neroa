@@ -26,6 +26,7 @@ import {
   listSelectablePortalProjects,
   resolveActivePortalProject
 } from "@/lib/portal/server";
+import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
 import { unstable_noStore as noStore } from "next/cache";
 
 type ProjectsDashboardPageProps = {
@@ -362,7 +363,7 @@ function buildDashboardProject(args: {
     id: project.id,
     title: project.title,
     description: project.description,
-    route: `/workspace/${project.workspaceId}`,
+    route: buildProjectWorkspaceRoute(project.workspaceId),
     templateLabel:
       parsed.metadata?.buildSession?.scope.productTypeLabel ??
       parsed.metadata?.buildSession?.scope.buildTypeLabel ??

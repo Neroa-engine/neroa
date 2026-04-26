@@ -26,6 +26,7 @@ import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import { buildQAValidationSummary, buildTaskQAValidationContext } from "@/lib/intelligence/qa";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
+import { buildProjectCommandCenterRoute } from "@/lib/portal/routes";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
 type BuildRoomControlRoomProps = {
@@ -366,7 +367,7 @@ export function BuildRoomControlRoom({
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
   const intakeIsReadOnly = true;
-  const commandCenterHref = `/workspace/${workspaceId}/command-center`;
+  const commandCenterHref = buildProjectCommandCenterRoute(workspaceId);
   const canApproveWorker =
     accessMode === "owner" &&
     selectedDetail?.task.status === "codex_complete" &&

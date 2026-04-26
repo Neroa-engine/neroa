@@ -5,6 +5,10 @@ import type {
   ProjectQcRecording,
   ProjectQcReport
 } from "@/lib/workspace/project-qc-library";
+import {
+  buildProjectCommandCenterRoute,
+  buildProjectWorkspaceRoute
+} from "@/lib/portal/routes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
@@ -383,8 +387,8 @@ export function ProjectLibraryPage({
   snapshot,
   browserRuntimeOutputs
 }: ProjectLibraryPageProps) {
-  const projectWorkspaceHref = `/workspace/${project.workspaceId}/project/${project.id}`;
-  const commandCenterHref = `/workspace/${project.workspaceId}/command-center`;
+  const projectWorkspaceHref = buildProjectWorkspaceRoute(project.workspaceId);
+  const commandCenterHref = buildProjectCommandCenterRoute(project.workspaceId);
   const totalAssets = snapshot.reports.length + snapshot.recordings.length + browserRuntimeOutputs.length;
   const metadataAssetCount = snapshot.registeredAssets.length;
 

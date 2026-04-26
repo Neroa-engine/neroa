@@ -8,6 +8,7 @@ import { APP_ROUTES } from "@/lib/routes";
 import {
   buildProjectRoomRoute,
   projectPortalRoomRegistry,
+  resolveProjectPortalHref,
   type ProjectPortalRoomId
 } from "@/lib/portal/routes";
 import {
@@ -263,7 +264,7 @@ function ProjectRoomNav({
         return (
           <Link
             key={roomId}
-            href={buildProjectRoomRoute(activeProject.workspaceId, roomId)}
+            href={resolveProjectPortalHref(activeProject, roomId)}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
               active
                 ? "border-[rgba(159,214,255,0.24)] bg-[linear-gradient(135deg,rgba(16,28,46,0.98),rgba(10,17,29,0.94))] text-white shadow-[0_20px_42px_rgba(0,0,0,0.28)]"
@@ -437,7 +438,7 @@ export function ActiveProjectPortalShell({
                 {isCommandCenter ? (
                   <div className="pointer-events-auto relative z-10 flex flex-wrap items-center gap-2 xl:justify-end">
                     <Link
-                      href={buildProjectRoomRoute(activeProject.workspaceId, "build-room")}
+                      href={activeProject.buildRoomRoute}
                       className="button-secondary text-sm"
                     >
                       Review Build Room Gate

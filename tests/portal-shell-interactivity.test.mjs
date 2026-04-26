@@ -76,10 +76,10 @@ test("Portal shell route targets stay mapped to the intended destinations", () =
   );
   assert.match(
     portalShellSource,
-    /href=\{buildProjectRoomRoute\(activeProject\.workspaceId, roomId\)\}/
+    /href=\{resolveProjectPortalHref\(activeProject, roomId\)\}/
   );
   assert.match(
     portalShellSource,
-    /href=\{buildProjectRoomRoute\(activeProject\.workspaceId, "build-room"\)\}/
+    /href=\{activeProject\.buildRoomRoute\}/
   );
 });

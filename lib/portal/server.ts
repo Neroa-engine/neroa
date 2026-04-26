@@ -15,7 +15,9 @@ import {
   resolveActiveProjectId
 } from "@/lib/portal/active-project";
 import {
-  buildProjectRoomRoute,
+  buildProjectBuildRoomRoute,
+  buildProjectCommandCenterRoute,
+  buildProjectStrategyRoomRoute,
   buildProjectWorkspaceRoute
 } from "@/lib/portal/routes";
 import {
@@ -102,9 +104,9 @@ export function buildPortalProjectSummary(workspace: PortalWorkspaceSource): Por
     countsTowardCurrentProjects: customerProjectState.countsTowardCurrentProjects,
     accessMode: workspace.accessMode === "member" ? "member" : "owner",
     workspaceRoute: buildProjectWorkspaceRoute(workspace.id),
-    strategyRoomRoute: buildProjectRoomRoute(workspace.id, "strategy-room"),
-    commandCenterRoute: buildProjectRoomRoute(workspace.id, "command-center"),
-    buildRoomRoute: buildProjectRoomRoute(workspace.id, "build-room")
+    strategyRoomRoute: buildProjectStrategyRoomRoute(workspace.id),
+    commandCenterRoute: buildProjectCommandCenterRoute(workspace.id),
+    buildRoomRoute: buildProjectBuildRoomRoute(workspace.id)
   };
 }
 
