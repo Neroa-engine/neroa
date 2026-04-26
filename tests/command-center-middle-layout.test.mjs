@@ -12,27 +12,29 @@ const commandCenterSource = readFileSync(
 );
 
 test("Command Center middle stack keeps one primary request surface", () => {
+  assert.match(buildRoomExecutionSource, /Request intake/);
   assert.match(buildRoomExecutionSource, /Request details/);
   assert.equal(buildRoomExecutionSource.match(/Request details/g)?.length ?? 0, 1);
-  assert.doesNotMatch(buildRoomExecutionSource, /Command Center to Build Room/);
-  assert.doesNotMatch(buildRoomExecutionSource, /Pending release queue/);
-  assert.doesNotMatch(buildRoomExecutionSource, /Start Build Room work from Command Center/);
+  assert.match(buildRoomExecutionSource, /Submit Request/);
+  assert.doesNotMatch(buildRoomExecutionSource, /Routing/);
+  assert.doesNotMatch(buildRoomExecutionSource, /Pending queue/);
+  assert.doesNotMatch(buildRoomExecutionSource, /Working task/);
+  assert.doesNotMatch(buildRoomExecutionSource, /Pending execution support/);
 });
 
-test("Execution support is merged into one status surface with compact details", () => {
+test("Execution admin slabs are hidden out of the main Command Center flow", () => {
   const requestDetailsIndex = buildRoomExecutionSource.indexOf("Request details");
-  const executionStatusIndex = buildRoomExecutionSource.indexOf("Execution status");
-  const recentTasksIndex = buildRoomExecutionSource.indexOf("Recent Build Room tasks");
+  const hiddenExecutionIndex = buildRoomExecutionSource.indexOf('className="hidden space-y-4"');
+  const hiddenRecentTasksIndex = buildRoomExecutionSource.indexOf('className="hidden mt-4');
 
   assert.notEqual(requestDetailsIndex, -1);
-  assert.notEqual(executionStatusIndex, -1);
-  assert.notEqual(recentTasksIndex, -1);
-  assert.ok(requestDetailsIndex < executionStatusIndex);
-  assert.ok(executionStatusIndex < recentTasksIndex);
-  assert.match(buildRoomExecutionSource, /Pending execution support/);
-  assert.match(buildRoomExecutionSource, /QA \/ release/);
-  assert.match(buildRoomExecutionSource, /Billing \/ protection/);
-  assert.doesNotMatch(buildRoomExecutionSource, /No execution request selected/);
+  assert.notEqual(hiddenExecutionIndex, -1);
+  assert.notEqual(hiddenRecentTasksIndex, -1);
+  assert.ok(requestDetailsIndex < hiddenExecutionIndex);
+  assert.ok(hiddenExecutionIndex < hiddenRecentTasksIndex);
+  assert.match(buildRoomExecutionSource, /Execution status/);
+  assert.match(buildRoomExecutionSource, /Recent Build Room tasks/);
+  assert.match(buildRoomExecutionSource, /Open Build Room Detail/);
 });
 
 test("Top operator structure and lower task or prompt support remain visible", () => {

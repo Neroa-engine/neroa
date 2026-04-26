@@ -215,37 +215,6 @@ function buildFallbackTitle(request: string, taskType: BuildRoomTaskType) {
   return `${formatTaskTypeLabel(taskType)} request`;
 }
 
-function buildClassification(
-  taskType: BuildRoomTaskType,
-  riskLevel: BuildRoomRiskLevel,
-  roadmapApprovalRequired: boolean
-) {
-  const family =
-    taskType === "research"
-      ? "Guidance-oriented request"
-      : taskType === "qa"
-        ? "Validation-oriented request"
-        : "Execution-oriented request";
-  const route =
-    roadmapApprovalRequired
-      ? "Roadmap approval is still required. Command Center will save the Build Room task as a draft, capture the submission as roadmap-tightening / pending execution work, and hold the existing relay until the roadmap is tightened and approved."
-      : taskType === "research"
-      ? "Codex relay will return governed implementation guidance before any lower-level run work is considered."
-      : "Command Center will create a Build Room task behind the scenes, send it through the existing relay, and preserve explicit worker approval gating.";
-  const risk =
-    riskLevel === "high"
-      ? "High-governance review"
-      : riskLevel === "medium"
-        ? "Standard operator review"
-        : "Low-risk review";
-
-  return {
-    family,
-    risk,
-    route
-  };
-}
-
 function statusBadgeClasses(status: string) {
   if (status.toLowerCase().includes("pending roadmap")) {
     return "border-amber-200 bg-amber-50 text-amber-700";
@@ -474,25 +443,9 @@ export function CommandCenterBuildRoomExecutionPanel({
     !workerBlockedByBlockers &&
     !storageMessage &&
     !roadmapApprovalRequired;
-  const classification = buildClassification(
-    composer.taskType,
-    composer.riskLevel,
-    roadmapApprovalRequired
-  );
   const selectedTaskStatusLabel = selectedTask
     ? resolveExecutionStatusLabel(selectedTask, workerTriggerMode, roadmapApprovalRequired)
     : null;
-  const pendingSummaryLabel =
-    executionSummary.pendingCount > 0
-      ? `${executionSummary.pendingCount} request${
-          executionSummary.pendingCount === 1 ? "" : "s"
-        } waiting on approval or scope clearance`
-      : "Pending queue is clear";
-  const pendingSummaryDetail =
-    executionSummary.pendingCount > 0
-      ? "Blocked or revision-needed requests stay in shared pending execution until governance and approval allow the current Build Room relay to release them."
-      : "No pending execution follow-up is waiting right now.";
-  const visiblePendingExecutions = executionSummary.pendingExecutions.slice(0, 2);
 
   async function refreshTask(taskId: string, quiet = false) {
     if (!quiet) {
@@ -703,14 +656,14 @@ export function CommandCenterBuildRoomExecutionPanel({
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-            Execution Intake
+            Request intake
           </p>
           <h2 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
-            Send governed work to Build Room
+            Keep one main request surface in Command Center
           </h2>
           <p className="mt-3 text-sm leading-7 text-slate-600">
-            Keep one Command Center intake here for new requests, revisions, and governed handoff
-            into the existing Build Room task pipeline.
+            Submit or revise the request here. Command Center keeps the intake visible while the
+            existing Build Room handoff stays behind the scenes.
           </p>
         </div>
 
@@ -767,7 +720,7 @@ export function CommandCenterBuildRoomExecutionPanel({
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,0.85fr)]">
+      <div className="mt-5">
         <div>
           <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -776,102 +729,63 @@ export function CommandCenterBuildRoomExecutionPanel({
                   Request details
                 </p>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Use one primary intake here. Command Center still creates or updates the existing
-                  Build Room task and preserves the current approval path.
+                  Keep one primary composer here. The request still maps into the existing Build
+                  Room pipeline without turning this page into a full execution admin surface.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  className="button-quiet rounded-full border border-slate-200 bg-white/82 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                  onClick={() => {
-                    setComposer(createEmptyComposer(project));
-                    setNoticeMessage("Execution intake reset for a new request.");
-                    setErrorMessage(null);
-                  }}
-                  disabled={pendingAction !== null}
-                >
-                  New Request
-                </button>
-                <button
-                  type="button"
-                  className="button-secondary text-sm"
-                  onClick={() => void handleReleasePendingExecutions()}
-                  disabled={
-                    pendingAction !== null ||
-                    Boolean(storageMessage) ||
-                    executionSummary.pendingCount === 0
-                  }
-                >
-                  {pendingAction === "release_pending" ? "Re-checking..." : "Re-check Pending"}
-                </button>
-              </div>
+              <button
+                type="button"
+                className="button-quiet rounded-full border border-slate-200 bg-white/82 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
+                onClick={() => {
+                  setComposer(createEmptyComposer(project));
+                  setNoticeMessage("Request intake reset for a new request.");
+                  setErrorMessage(null);
+                }}
+                disabled={pendingAction !== null}
+              >
+                New Request
+              </button>
             </div>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Routing
-                  </p>
-                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                    {classification.risk}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{classification.family}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{classification.route}</p>
-              </div>
-              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Pending queue
-                  </p>
-                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                    {executionSummary.pendingCount}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm font-semibold text-slate-950">{pendingSummaryLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{pendingSummaryDetail}</p>
-              </div>
-              <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Working task
+            {roadmapApprovalRequired ? (
+              <div className="mt-4 rounded-[20px] border border-amber-200 bg-amber-50/80 px-4 py-4">
+                <p className="text-sm font-semibold text-slate-950">
+                  Roadmap approval still has to clear before this handoff can advance.
                 </p>
-                <p className="mt-2 text-sm font-semibold text-slate-950">
-                  {selectedTask ? selectedTask.title : "No task loaded"}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {selectedTaskStatusLabel
-                    ? `${selectedTaskStatusLabel}. Load it into the intake to revise or resend it.`
-                    : "Use the form below to start the next request, or pick a recent task to load it into the intake."}
+                <p className="mt-2 text-sm leading-6 text-slate-700">
+                  Command Center will keep the request captured here while the existing approval and
+                  release rules remain intact.
                 </p>
               </div>
-            </div>
+            ) : null}
 
-            {visiblePendingExecutions.length > 0 ? (
-              <details className="mt-4 rounded-[20px] border border-slate-200/70 bg-slate-50/80 px-4 py-4">
-                <summary className="cursor-pointer list-none text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Pending execution support
-                </summary>
-                <div className="mt-3 grid gap-3">
-                  {visiblePendingExecutions.map((item) => (
-                    <div
-                      key={item.pendingExecutionId}
-                      className="rounded-[18px] border border-slate-200/70 bg-white px-4 py-4"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="text-sm font-semibold text-slate-950">{item.title}</p>
-                        <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
-                          {formatStatusLabel(item.status)}
-                        </span>
-                      </div>
-                      <p className="mt-2 text-xs leading-6 text-slate-500">
-                        {item.latestReason ?? "Awaiting the next approval and scope check."}
-                      </p>
-                    </div>
-                  ))}
+            {executionSummary.pendingCount > 0 ? (
+              <div className="mt-4 rounded-[20px] border border-slate-200/70 bg-slate-50/80 px-4 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-950">
+                      Background handoff is still holding {executionSummary.pendingCount} request
+                      {executionSummary.pendingCount === 1 ? "" : "s"}.
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      That queue stays out of the main flow here. Use Build Room detail only when
+                      you need the deeper release or history view.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="button-secondary text-sm"
+                    onClick={() => void handleReleasePendingExecutions()}
+                    disabled={
+                      pendingAction !== null ||
+                      Boolean(storageMessage) ||
+                      executionSummary.pendingCount === 0
+                    }
+                  >
+                    {pendingAction === "release_pending" ? "Re-checking..." : "Re-check Pending"}
+                  </button>
                 </div>
-              </details>
+              </div>
             ) : null}
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -938,7 +852,7 @@ export function CommandCenterBuildRoomExecutionPanel({
                   }
                   rows={7}
                   className="input min-h-[180px] resize-y"
-                  placeholder="Describe the change, problem, and desired result. Command Center will turn this into the existing Build Room task pipeline."
+                  placeholder="Describe the change, problem, and desired result. Neroa will preserve the existing request handoff behind this surface."
                   disabled={Boolean(storageMessage) || pendingAction !== null}
                 />
               </label>
@@ -996,53 +910,29 @@ export function CommandCenterBuildRoomExecutionPanel({
 
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/70 pt-4">
               <p className="text-xs leading-6 text-slate-600">
-                {roadmapApprovalRequired
-                  ? "Submitting now captures this as pending execution until roadmap approval lands."
-                  : "Sending now creates or updates the existing Build Room task and keeps worker approval separate."}
+                {composer.taskId
+                  ? "This saved request stays loaded in the composer so you can revise it without leaving Command Center."
+                  : roadmapApprovalRequired
+                    ? "Submitting here captures the request and keeps the current approval and release rules intact."
+                    : "Submitting here preserves the current Build Room handoff while Command Center stays focused on intake."}
               </p>
-              <div className="flex flex-wrap items-center gap-2">
-                {selectedTask ? (
-                  <button
-                    type="button"
-                    className="button-quiet rounded-full border border-slate-200 bg-white/82 px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:text-slate-950"
-                    onClick={() => {
-                      setComposer(createComposerFromTask(selectedTask));
-                      setNoticeMessage("Selected Build Room task loaded into Command Center intake.");
-                      setErrorMessage(null);
-                    }}
-                    disabled={pendingAction !== null}
-                  >
-                    Load Selected Task
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="button-primary text-sm"
-                  onClick={() => void handleSendToExecution()}
-                  disabled={
-                    pendingAction !== null ||
-                    Boolean(storageMessage) ||
-                    !composer.userRequest.trim()
-                  }
-                >
-                  {pendingAction === "send"
-                    ? roadmapApprovalRequired
-                      ? "Capturing..."
-                      : "Sending..."
-                    : roadmapApprovalRequired
-                      ? composer.taskId
-                        ? "Update Pending Execution"
-                        : "Capture Pending Execution"
-                      : composer.taskId
-                        ? "Resend to Execution"
-                        : "Send to Execution"}
-                </button>
-              </div>
+              <button
+                type="button"
+                className="button-primary text-sm"
+                onClick={() => void handleSendToExecution()}
+                disabled={pendingAction !== null || Boolean(storageMessage) || !composer.userRequest.trim()}
+              >
+                {pendingAction === "send"
+                  ? "Submitting..."
+                  : composer.taskId
+                    ? "Update Request"
+                    : "Submit Request"}
+              </button>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="hidden space-y-4">
           <div className="rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -1419,7 +1309,7 @@ export function CommandCenterBuildRoomExecutionPanel({
         </div>
       </div>
 
-      <div className="mt-4 rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
+      <div className="hidden mt-4 rounded-[26px] border border-slate-200/70 bg-white/78 px-5 py-5 shadow-[0_18px_44px_rgba(15,23,42,0.08)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
