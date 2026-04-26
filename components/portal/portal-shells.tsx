@@ -255,7 +255,7 @@ function ProjectRoomNav({
   className?: string;
 }) {
   return (
-    <div className={`${className} flex flex-wrap gap-2`}>
+    <div className={`${className} pointer-events-auto relative z-10 flex flex-wrap gap-2`}>
       {(Object.keys(projectPortalRoomRegistry) as ProjectPortalRoomId[]).map((roomId) => {
         const item = projectPortalRoomRegistry[roomId];
         const active = roomId === currentRoom;
@@ -299,14 +299,18 @@ export function OuterPortalShell({
   return (
     <main className="front-door-theme relative isolate min-h-screen overflow-x-hidden pb-16">
       <NeroaAtmosphere />
-      <header className="relative z-40 mx-auto w-full max-w-[1880px] px-4 pb-0 pt-4 sm:px-6 xl:px-8">
+      <header className="pointer-events-none relative z-[200] mx-auto w-full max-w-[1880px] px-4 pb-0 pt-4 sm:px-6 xl:px-8">
         <div className="neroa-header-row">
-          <Link href={APP_ROUTES.projects} className="neroa-brand-link" aria-label="NEROA projects">
+          <Link
+            href={APP_ROUTES.projects}
+            className="neroa-brand-link pointer-events-auto relative z-10"
+            aria-label="NEROA projects"
+          >
             <Logo tone="dark" presentation="header" />
           </Link>
 
-          <div className="floating-nav neroa-nav-pane flex flex-wrap items-center justify-between gap-4 rounded-[30px] px-4 py-3 sm:px-5 lg:px-6">
-            <div className="hidden items-center gap-3 lg:flex">
+          <div className="floating-nav neroa-nav-pane pointer-events-auto relative z-10 flex flex-wrap items-center justify-between gap-4 rounded-[30px] px-4 py-3 sm:px-5 lg:px-6">
+            <div className="relative z-10 flex-wrap items-center gap-3 hidden lg:flex">
               <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700">
                 Outer Portal
               </span>
@@ -320,7 +324,7 @@ export function OuterPortalShell({
               ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="pointer-events-auto relative z-10 flex flex-wrap items-center gap-2">
               <Link href={APP_ROUTES.home} className="button-quiet px-4 py-3 text-sm">
                 Home
               </Link>
@@ -336,13 +340,13 @@ export function OuterPortalShell({
         </div>
       </header>
 
-      <section className="relative mx-auto w-full max-w-[1880px] px-4 py-4 sm:px-6 xl:px-8">
+      <section className="relative z-0 mx-auto w-full max-w-[1880px] px-4 py-4 sm:px-6 xl:px-8">
         <div
           className={`grid gap-6 ${
             showActiveProjectPanel ? "xl:grid-cols-[300px_minmax(0,1fr)]" : "xl:grid-cols-[240px_minmax(0,1fr)]"
           }`}
         >
-          <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
+          <aside className="relative z-10 space-y-4 xl:sticky xl:top-24 xl:self-start">
             <OuterPortalNav currentPath={currentPath} />
             {showActiveProjectPanel ? (
               <OuterPortalActiveProject
@@ -375,15 +379,19 @@ export function ActiveProjectPortalShell({
   return (
     <main className="front-door-theme relative isolate min-h-screen overflow-x-hidden pb-16">
       <NeroaAtmosphere />
-      <header className="relative z-40 mx-auto w-full max-w-[1880px] px-4 pb-0 pt-4 sm:px-6 xl:px-8">
+      <header className="pointer-events-none relative z-[200] mx-auto w-full max-w-[1880px] px-4 pb-0 pt-4 sm:px-6 xl:px-8">
         <div className="neroa-header-row">
-          <Link href={APP_ROUTES.projects} className="neroa-brand-link" aria-label="NEROA projects">
+          <Link
+            href={APP_ROUTES.projects}
+            className="neroa-brand-link pointer-events-auto relative z-10"
+            aria-label="NEROA projects"
+          >
             <Logo tone="dark" presentation="header" />
           </Link>
 
-          <div className="floating-nav neroa-nav-pane rounded-[30px] px-4 py-4 sm:px-5 lg:px-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="flex flex-col gap-3">
+          <div className="floating-nav neroa-nav-pane pointer-events-auto relative z-10 rounded-[30px] px-4 py-4 sm:px-5 lg:px-6">
+            <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="relative z-10 flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700">
                     Active Project Portal
@@ -410,8 +418,8 @@ export function ActiveProjectPortalShell({
                 </p>
               </div>
 
-              <div className="flex flex-col gap-2 xl:items-end">
-                <div className="flex flex-wrap items-center gap-2">
+              <div className="relative z-10 flex flex-col gap-2 xl:items-end">
+                <div className="pointer-events-auto relative z-10 flex flex-wrap items-center gap-2">
                   <Link href={APP_ROUTES.home} className="button-quiet px-4 py-3 text-sm">
                     Home
                   </Link>
@@ -427,7 +435,7 @@ export function ActiveProjectPortalShell({
                 </div>
 
                 {isCommandCenter ? (
-                  <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                  <div className="pointer-events-auto relative z-10 flex flex-wrap items-center gap-2 xl:justify-end">
                     <Link
                       href={buildProjectRoomRoute(activeProject.workspaceId, "build-room")}
                       className="button-secondary text-sm"
@@ -439,7 +447,7 @@ export function ActiveProjectPortalShell({
               </div>
             </div>
 
-            <div className="mt-4 border-t border-[rgba(118,179,232,0.14)] pt-4">
+            <div className="relative z-10 mt-4 border-t border-[rgba(118,179,232,0.14)] pt-4">
               <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <ProjectRoomNav
                   activeProject={activeProject}
@@ -463,7 +471,7 @@ export function ActiveProjectPortalShell({
         </div>
       </header>
 
-      <section className="relative mx-auto w-full max-w-[1880px] px-4 py-4 sm:px-6 xl:px-8">
+      <section className="relative z-0 mx-auto w-full max-w-[1880px] px-4 py-4 sm:px-6 xl:px-8">
         {children}
       </section>
     </main>

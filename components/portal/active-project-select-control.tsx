@@ -35,16 +35,26 @@ export function ActiveProjectSelectControl({
     <form
       ref={formRef}
       action={setActiveProjectContext}
-      className={inline ? "flex flex-wrap items-center gap-2" : "mt-4 space-y-3"}
+      className={
+        inline
+          ? "pointer-events-auto relative z-10 shrink-0 flex flex-wrap items-center gap-2"
+          : "mt-4 space-y-3"
+      }
     >
       <input type="hidden" name="destination" value={destination} />
       <input type="hidden" name="returnTo" value={returnTo} />
       {roomId ? <input type="hidden" name="roomId" value={roomId} /> : null}
-      <label className={inline ? "flex min-w-[250px] items-center gap-3" : "space-y-2"}>
+      <label
+        className={
+          inline
+            ? "relative z-10 flex min-w-[250px] items-center gap-3"
+            : "space-y-2"
+        }
+      >
         <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           {label}
         </span>
-        <span className="relative block min-w-[220px] flex-1">
+        <span className="relative z-10 block min-w-[220px] flex-1">
           <select
             name="workspaceId"
             defaultValue={activeWorkspaceId ?? ""}
