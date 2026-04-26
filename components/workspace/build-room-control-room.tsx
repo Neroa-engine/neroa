@@ -16,6 +16,14 @@ import {
   getPendingExecutionRelationship,
   type ExecutionState
 } from "@/lib/intelligence/execution";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import {
+  buildQAValidationSummary,
+  buildTaskQAValidationContext
+} from "@/lib/intelligence/qa";
+import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
+import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
 type BuildRoomControlRoomProps = {
@@ -24,6 +32,10 @@ type BuildRoomControlRoomProps = {
   accessMode: "owner" | "member";
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
+  projectBrief: ProjectBrief;
+  architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
   executionState: ExecutionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
@@ -255,6 +267,10 @@ export function BuildRoomControlRoom({
   accessMode,
   initialTasks,
   initialTaskDetail,
+  projectBrief,
+  architectureBlueprint,
+  roadmapPlan,
+  governancePolicy,
   executionState,
   codexRelayMode,
   workerTriggerMode,
@@ -291,6 +307,23 @@ export function BuildRoomControlRoom({
     executionState,
     buildRoomTaskId: selectedDetail?.task.id ?? null
   });
+  const selectedQaContext = selectedDetail
+    ? buildTaskQAValidationContext({
+        workspaceId,
+        projectId: project.id,
+        projectName: project.title,
+        executionState,
+        taskDetail: selectedDetail,
+        projectBrief,
+        architectureBlueprint,
+        roadmapPlan,
+        governancePolicy
+      })
+    : null;
+  const selectedQaValidation = selectedQaContext?.qaValidation ?? null;
+  const qaSummary = selectedQaContext
+    ? buildQAValidationSummary(selectedQaContext.qaValidation)
+    : null;
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
   const intakeIsReadOnly = true;
@@ -978,7 +1011,7 @@ export function BuildRoomControlRoom({
                       <div className="mt-5 grid gap-3">
                         {[
                           {
-                            label: "Task status",
+                            label: "Run status",
                             value: formatStatusLabel(selectedDetail.task.status)
                           },
                           {
@@ -1016,6 +1049,15 @@ export function BuildRoomControlRoom({
                               : packetRelationship.packetSummary
                                 ? `Scope ${formatStatusLabel(packetRelationship.packetSummary.scopeOutcome)} across ${packetRelationship.packetSummary.laneIds.join(", ") || "shared lanes"}.`
                                 : "The task exists in Build Room, but no released execution packet is linked yet."
+                          },
+                          {
+                            label: "QA / release",
+                            value: qaSummary
+                              ? qaSummary.completionLabel
+                              : "Awaiting QA validation",
+                            note: qaSummary
+                              ? `${qaSummary.artifactProgressLabel}. ${qaSummary.criterionProgressLabel}. ${qaSummary.releaseLabel}.`
+                              : "Run-complete and accepted are separate states. Shared QA validation decides when this task can be presented as complete."
                           }
                         ].map((item) => (
                           <div
@@ -1089,6 +1131,95 @@ export function BuildRoomControlRoom({
                           </p>
                         ) : null}
                       </div>
+                    </div>
+
+                    <div className="floating-plane rounded-[34px] p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                            QA / acceptance gate
+                          </p>
+                          <p className="mt-3 text-lg font-semibold text-slate-950">
+                            {qaSummary?.headline ?? "QA validation will appear after packet generation."}
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            {selectedQaContext
+                              ? selectedQaContext.qaValidation.completionReadiness.reason
+                              : "Build Room now keeps run state separate from acceptance state. A finished run is not treated as accepted until the shared QA gate says it is release-ready."}
+                          </p>
+                        </div>
+                        {qaSummary ? (
+                          <span
+                            className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                              qaSummary.canPresentAsComplete
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : qaSummary.status === "awaiting_review"
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : qaSummary.status === "awaiting_artifacts"
+                                    ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                    : "border-slate-200 bg-white/82 text-slate-600"
+                            }`}
+                          >
+                            {qaSummary.completionLabel}
+                          </span>
+                        ) : null}
+                      </div>
+                      {qaSummary && selectedQaValidation ? (
+                        <>
+                          <div className="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {qaSummary.artifactProgressLabel}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {qaSummary.criterionProgressLabel}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-white/82 px-2.5 py-1">
+                              {qaSummary.releaseLabel}
+                            </span>
+                            {qaSummary.needsHumanReview ? (
+                              <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
+                                Human review required
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                            <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Blocking now
+                              </p>
+                              <ul className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+                                {selectedQaValidation.blockers.length > 0 ? (
+                                  selectedQaValidation.blockers.map((item) => (
+                                    <li key={item}>{item}</li>
+                                  ))
+                                ) : (
+                                  <li>No QA blockers are open right now.</li>
+                                )}
+                              </ul>
+                            </div>
+
+                            <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                Artifact requirements
+                              </p>
+                              <ul className="mt-3 space-y-1 text-sm leading-7 text-slate-600">
+                                {selectedQaValidation.artifactRequirements.map((requirement) => {
+                                  const satisfied = selectedQaValidation.artifacts.some(
+                                    (artifact) => artifact.kind === requirement.kind
+                                  );
+
+                                  return (
+                                    <li key={requirement.id}>
+                                      {requirement.label}: {satisfied ? "Attached" : "Missing"}
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          </div>
+                        </>
+                      ) : null}
                     </div>
 
                     <div className="floating-plane rounded-[34px] p-5">

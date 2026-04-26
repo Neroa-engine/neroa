@@ -60,10 +60,12 @@ This file defines what belongs in each major Neroa system and what must not be p
   - workspace and project delivery flows
   - approved planning-to-execution handoff
   - typed execution-packet generation and pending-execution release when they reuse the approved Build Room pipeline
+  - typed QA and acceptance validation when they derive from approved shared intelligence plus the existing Build Room task, run, and artifact records
 - Must not do:
   - redefine governance
   - bypass trust rules
   - create a second execution backend or silently replace the approved Build Room contracts
+  - create a second QA executor or completion engine beside the shared execution spine and current Build Room records
   - insert future-phase editor/orchestration capabilities
 
 ### Browser / Live-View / Future Editor System

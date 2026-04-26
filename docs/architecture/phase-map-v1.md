@@ -23,6 +23,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Backend governance | 2 | Current | 0, 1 | Governs change classification, phase mapping, confidence, and blocking decisions. |
 | Workspace/project surfaces | 3 | Current | 0, 1, 2 | Runtime execution surfaces for approved work only. |
 | Execution packet handoff and pending release | 3 | Current | 0, 1, 2, 3 | Turns approved shared intelligence into typed execution packets and releases eligible pending execution through the existing Build Room task/run pipeline without creating a second executor. |
+| QA artifact gate and completion validation | 3 | Current | 0, 1, 2, 3 | Derives artifact requirements, acceptance checks, and release readiness from approved shared intelligence plus existing Build Room task/run/artifact outputs without replacing the Build Room relay or statuses. |
 | Browser Runtime Core V2 | 3 | Current-promoted | 0, 1, 2, 3, 4 | Unified current-promoted browser runtime core that may replace Browser Runtime Bridge v1 now. Includes deterministic open/attach/bind/tab targeting, unified command lifecycle, real Inspect, Record foundation, bounded AI walkthrough/test foundation, SOP/result output foundation, and project/library linkage. |
 | Live Session Design Library Bridge | 3 | Current-promoted | 0, 1, 2, 3, 4 | Lets Design Library run against the same connected Browser Runtime Core V2 session for staged preview/package state only. |
 | Billing/account | 4 | Current-supporting | 0, 2, 3 | High-impact trust surface; maintenance only unless roadmap promoted. |
@@ -41,6 +42,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 | Browser/live-view mutation tooling | 5 | Full browser visual editor, unrestricted live manipulation, and full rebuild tooling remain future-phase. |
 | Strategy intelligence save-back | 3 with 1 and 2 support | Shared Strategy Room save-back, revision persistence, and derived-intelligence rehydration stay inside the existing ProjectBrief, ArchitectureBlueprint, RoadmapPlan, and GovernancePolicy spine. Material scope or architecture revisions still flow back through Phase 2 governance before execution can widen. |
 | Execution packet intelligence | 3 with 1 and 2 support | Shared execution packets, in-scope pending release, and Build Room handoff derive from the approved intelligence spine and governance decisions. They may not replace the existing Build Room backend contracts or bypass Strategy Room approval authority. |
+| QA and completion intelligence | 3 with 1 and 2 support | Shared QA validation, artifact requirements, completion readiness, and release decisions derive from the approved execution spine and existing Build Room task/run/artifact records. They may not create a second QA executor, silently alter Build Room statuses, or bypass governance and approval authority. |
 
 ## Phase Assignment Rules
 
@@ -65,6 +67,7 @@ This file maps major Neroa workstreams to their owning phase so future requests 
 - "Add Delta review before approving change requests" -> Phase 2
 - "Adjust approved workspace execution flow after gate passes" -> Phase 3
 - "Generate typed execution packets and release eligible pending execution through the existing Build Room pipeline" -> Phase 3
+- "Generate typed QA validation and release-readiness results from execution packets and existing Build Room artifacts" -> Phase 3
 - "Rebuild Browser Runtime Core V2 with one shared command/session model and bounded Inspect/Record/AI walkthrough/SOP foundations" -> Phase 3 (promoted exception)
 - "Reuse existing Live View from Command Center and attach Design Library to the same session" -> Phase 3 (promoted exception)
 - "Modify billing entitlement or auth gating" -> Phase 4

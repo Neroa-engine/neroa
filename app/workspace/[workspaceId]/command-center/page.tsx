@@ -112,6 +112,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
       <ProjectCommandCenterV1
         project={project}
         commandCenter={commandCenter}
+        projectBrief={projectIntelligence.projectBrief}
         architectureBlueprint={projectIntelligence.architectureBlueprint}
         roadmapPlan={projectIntelligence.roadmapPlan}
         governancePolicy={projectIntelligence.governancePolicy}

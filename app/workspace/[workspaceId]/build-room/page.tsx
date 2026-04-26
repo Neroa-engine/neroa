@@ -80,6 +80,10 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
         accessMode={activeProject.accessMode}
         initialTasks={initialTasks}
         initialTaskDetail={initialTaskDetail}
+        projectBrief={projectIntelligence.projectBrief}
+        architectureBlueprint={projectIntelligence.architectureBlueprint}
+        roadmapPlan={projectIntelligence.roadmapPlan}
+        governancePolicy={projectIntelligence.governancePolicy}
         executionState={projectIntelligence.executionState}
         codexRelayMode={codexRelayMode}
         workerTriggerMode={workerTriggerMode}

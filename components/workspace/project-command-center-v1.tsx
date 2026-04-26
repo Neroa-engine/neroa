@@ -4,6 +4,7 @@ import type {
   PlatformContext,
   PlatformExecutionGateSignalInput
 } from "@/lib/intelligence/platform-context";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import {
   buildArchitectureBlueprintSummary,
   type ArchitectureBlueprint
@@ -30,6 +31,7 @@ import {
 type ProjectCommandCenterV1Props = {
   project: ProjectRecord;
   commandCenter: CommandCenterSummary;
+  projectBrief: ProjectBrief;
   architectureBlueprint: ArchitectureBlueprint;
   roadmapPlan: RoadmapPlan;
   governancePolicy: GovernancePolicy;
@@ -273,6 +275,7 @@ function ArchitectureReferencePanel({
 export function ProjectCommandCenterV1({
   project,
   commandCenter,
+  projectBrief,
   architectureBlueprint,
   roadmapPlan,
   governancePolicy,
@@ -329,6 +332,10 @@ export function ProjectCommandCenterV1({
             accessMode={accessMode}
             platformContext={platformContext}
             roadmapGateSignals={roadmapGateSignals}
+            projectBrief={projectBrief}
+            architectureBlueprint={architectureBlueprint}
+            roadmapPlan={roadmapPlan}
+            governancePolicy={governancePolicy}
             initialTasks={initialBuildRoomTasks}
             initialTaskDetail={initialBuildRoomTaskDetail}
             initialExecutionState={executionState}

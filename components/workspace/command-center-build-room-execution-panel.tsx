@@ -20,6 +20,14 @@ import {
   getPendingExecutionRelationship,
   type ExecutionState
 } from "@/lib/intelligence/execution";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
+import {
+  buildQAValidationSummary,
+  buildTaskQAValidationContext
+} from "@/lib/intelligence/qa";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
+import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import {
   resolvePlatformExecutionGateState,
   type PlatformContext,
@@ -35,6 +43,10 @@ type CommandCenterBuildRoomExecutionPanelProps = {
   accessMode: "owner" | "member";
   platformContext: PlatformContext;
   roadmapGateSignals: PlatformExecutionGateSignalInput;
+  projectBrief: ProjectBrief;
+  architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
   initialTasks: BuildRoomTask[];
   initialTaskDetail: BuildRoomTaskDetail | null;
   initialExecutionState: ExecutionState | null;
@@ -343,6 +355,10 @@ export function CommandCenterBuildRoomExecutionPanel({
   accessMode,
   platformContext,
   roadmapGateSignals,
+  projectBrief,
+  architectureBlueprint,
+  roadmapPlan,
+  governancePolicy,
   initialTasks,
   initialTaskDetail,
   initialExecutionState,
@@ -393,6 +409,23 @@ export function CommandCenterBuildRoomExecutionPanel({
     executionState,
     buildRoomTaskId: selectedTask?.id ?? null
   });
+  const selectedQaContext = selectedDetail
+    ? buildTaskQAValidationContext({
+        workspaceId,
+        projectId: project.id,
+        projectName: project.title,
+        executionState,
+        taskDetail: selectedDetail,
+        projectBrief,
+        architectureBlueprint,
+        roadmapPlan,
+        governancePolicy
+      })
+    : null;
+  const selectedQaValidation = selectedQaContext?.qaValidation ?? null;
+  const qaSummary = selectedQaContext
+    ? buildQAValidationSummary(selectedQaContext.qaValidation)
+    : null;
   const showExecutionBlockedMessage =
     executionGate.blockedPanel.show && selectedTask?.status === "draft";
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
@@ -1034,7 +1067,7 @@ export function CommandCenterBuildRoomExecutionPanel({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Execution status
+                  Run status
                 </p>
                 <p className="mt-2 text-base font-semibold text-slate-950">
                   {selectedTask
@@ -1088,7 +1121,7 @@ export function CommandCenterBuildRoomExecutionPanel({
 
                 <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Current result
+                    Current run result
                   </p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
                     {roadmapApprovalRequired && selectedTask.status === "draft"
@@ -1123,6 +1156,93 @@ export function CommandCenterBuildRoomExecutionPanel({
                         {formatStatusLabel(packetRelationship.packetSummary.readinessStatus)}
                       </span>
                     </div>
+                  ) : null}
+                </div>
+
+                <div className="rounded-[18px] border border-slate-200/70 bg-slate-50 px-4 py-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        QA / release status
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-950">
+                        {qaSummary?.headline ?? "QA validation will appear here after packet generation."}
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        {selectedQaContext
+                          ? selectedQaContext.qaValidation.completionReadiness.reason
+                          : "Run-complete and release-ready are intentionally separate. The shared QA gate decides when a task can be presented as complete."}
+                      </p>
+                    </div>
+                    {qaSummary ? (
+                      <span
+                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${
+                          qaSummary.canPresentAsComplete
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : qaSummary.status === "awaiting_review"
+                              ? "border-amber-200 bg-amber-50 text-amber-700"
+                              : qaSummary.status === "awaiting_artifacts"
+                                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                                : "border-slate-200 bg-white text-slate-600"
+                        }`}
+                      >
+                        {qaSummary.completionLabel}
+                      </span>
+                    ) : null}
+                  </div>
+                  {qaSummary && selectedQaValidation ? (
+                    <>
+                      <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {qaSummary.artifactProgressLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {qaSummary.criterionProgressLabel}
+                        </span>
+                        <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1">
+                          {qaSummary.releaseLabel}
+                        </span>
+                        {qaSummary.needsHumanReview ? (
+                          <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-amber-700">
+                            Human review required
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Blocking now
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                            {selectedQaValidation.blockers.length > 0 ? (
+                              selectedQaValidation.blockers.map((item) => (
+                                <li key={item}>{item}</li>
+                              ))
+                            ) : (
+                              <li>No QA blockers are open right now.</li>
+                            )}
+                          </ul>
+                        </div>
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            Required artifacts
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+                            {selectedQaValidation.artifactRequirements.map((requirement) => {
+                              const satisfied = selectedQaValidation.artifacts.some(
+                                (artifact) => artifact.kind === requirement.kind
+                              );
+
+                              return (
+                                <li key={requirement.id}>
+                                  {requirement.label}: {satisfied ? "Attached" : "Missing"}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </div>
+                      </div>
+                    </>
                   ) : null}
                 </div>
 
