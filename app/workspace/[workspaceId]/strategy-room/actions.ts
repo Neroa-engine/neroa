@@ -242,6 +242,7 @@ function buildStrategyPatchFromFormData(args: {
 export async function saveStrategyRevision(formData: FormData) {
   const workspaceId = safeString(formData.get("workspaceId"));
   const returnTo = getReturnTo(formData, `/workspace/${workspaceId}/strategy-room`);
+  const saveMode = safeString(formData.get("saveMode"));
 
   if (!workspaceId) {
     redirectWithError(returnTo, "Strategy save requires a workspace id.");
@@ -268,7 +269,11 @@ export async function saveStrategyRevision(formData: FormData) {
   });
 
   if (!hasStrategyRevisionPatchContent(patch)) {
-    redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}notice=${encodeURIComponent("No structured strategy changes were detected.")}`);
+    const notice =
+      saveMode === "chat_checkpoint"
+        ? "Chat answers save into the shared project automatically. No extra side-panel changes were pending."
+        : "No structured strategy changes were detected.";
+    redirect(`${returnTo}${returnTo.includes("?") ? "&" : "?"}notice=${encodeURIComponent(notice)}`);
   }
 
   const update = createStrategyRevisionPersistenceUpdate({

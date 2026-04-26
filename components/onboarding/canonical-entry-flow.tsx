@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { KeyboardEvent } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   loadArchitectureBlueprint,
@@ -78,6 +79,12 @@ type PersistedProjectContext = {
   projectId: string;
 };
 
+type StrategyRoomChatGuidance = {
+  eyebrow: string;
+  title: string;
+  description: string;
+};
+
 type CanonicalEntryFlowProps = {
   initialUserEmail?: string;
   initialEntryPathId: PlanningLaneId;
@@ -98,6 +105,7 @@ type CanonicalEntryFlowProps = {
   initialThreadState?: PlanningThreadState | null;
   persistedProjectContext?: PersistedProjectContext | null;
   allowStarterThread?: boolean;
+  chatGuidance?: StrategyRoomChatGuidance | null;
 };
 
 const DEFAULT_STRATEGY_ROOM_COPY: StrategyRoomCopy = {
@@ -320,8 +328,10 @@ export function CanonicalEntryFlow({
   showProjectFooter = true,
   initialThreadState = null,
   persistedProjectContext = null,
-  allowStarterThread = true
+  allowStarterThread = true,
+  chatGuidance = null
 }: CanonicalEntryFlowProps) {
+  const router = useRouter();
   const strategyRoomCopy = useMemo(
     () => ({
       ...DEFAULT_STRATEGY_ROOM_COPY,
@@ -761,6 +771,12 @@ export function CanonicalEntryFlow({
       if (!title.trim() && normalizedThreadState.metadata.projectTitle) {
         setTitle(normalizedThreadState.metadata.projectTitle);
       }
+
+      if (surfaceMode === "project" && persistedProjectContext?.workspaceId) {
+        startTransition(() => {
+          router.refresh();
+        });
+      }
     } catch (error) {
       setMessages(previousMessages);
       setDraft(cleanDraft);
@@ -976,6 +992,29 @@ export function CanonicalEntryFlow({
                   >
                     {strategyRoomCopy.composerLabel}
                   </span>
+                  {chatGuidance ? (
+                    <div
+                      className={`rounded-[24px] border px-4 py-3 ${
+                        isEmbedded
+                          ? "border-cyan-400/18 bg-cyan-400/8 text-slate-200"
+                          : "border-cyan-100 bg-cyan-50/80 text-slate-700"
+                      }`}
+                    >
+                      <p
+                        className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
+                          isEmbedded ? "text-cyan-200/80" : "text-cyan-700"
+                        }`}
+                      >
+                        {chatGuidance.eyebrow}
+                      </p>
+                      <p className={`mt-2 text-sm font-medium ${isEmbedded ? "text-white" : "text-slate-950"}`}>
+                        {chatGuidance.title}
+                      </p>
+                      <p className={`mt-2 text-sm leading-7 ${isEmbedded ? "text-slate-300" : "text-slate-600"}`}>
+                        {chatGuidance.description}
+                      </p>
+                    </div>
+                  ) : null}
                   <textarea
                     ref={composerRef}
                     className={`w-full resize-none rounded-[26px] px-5 py-4 text-[16px] leading-8 outline-none transition placeholder:text-slate-400 sm:px-6 sm:text-[17px] ${

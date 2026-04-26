@@ -1,3 +1,13 @@
+import {
+  architectureInputIdSchema,
+  type ArchitectureBlueprint,
+  type ArchitectureInputId
+} from "@/lib/intelligence/architecture";
+import type { GovernancePolicy } from "@/lib/intelligence/governance";
+import type { ProjectBrief } from "@/lib/intelligence/project-brief";
+import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
+import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
+
 export type StrategyRoomSupportIntent = {
   hasHelpIntent: boolean;
   wantsHumanSupport: boolean;
@@ -12,6 +22,20 @@ export type StrategyRoomSupportIntent = {
   mentionsBuild: boolean;
   mentionsNextStep: boolean;
   hasConcreteProjectSignal: boolean;
+};
+
+export type StrategyQuestionRow = {
+  inputId: ArchitectureInputId;
+  label: string;
+  question: string;
+  value: string;
+  source: "project_brief" | "architecture" | "roadmap";
+};
+
+export type StrategyRoomChatHelper = {
+  eyebrow: string;
+  title: string;
+  description: string;
 };
 
 const CONFUSION_PATTERN =
@@ -46,6 +70,10 @@ const PROJECT_SIGNAL_PATTERN =
 
 function cleanSupportMessage(value: string) {
   return value.trim().replace(/\s+/g, " ");
+}
+
+function cleanText(value?: string | null) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 export function analyzeStrategyRoomSupportIntent(message: string): StrategyRoomSupportIntent {
@@ -113,4 +141,95 @@ export function analyzeStrategyRoomSupportIntent(message: string): StrategyRoomS
 
 export function shouldLogStrategyRoomBlocker(intent: StrategyRoomSupportIntent) {
   return intent.mentionsBlockage || intent.mentionsFrustration || intent.mentionsNotWorking;
+}
+
+export function buildStrategyQuestionRows(args: {
+  projectMetadata?: StoredProjectMetadata | null;
+  projectBrief: ProjectBrief;
+  architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
+}) {
+  const seen = new Set<string>();
+  const currentAnswers = new Map(
+    (args.projectMetadata?.strategyState?.overrideState?.answeredInputs ?? []).map((item) => [
+      item.inputId,
+      item.value
+    ])
+  );
+  const rows: StrategyQuestionRow[] = [];
+
+  const addQuestion = (
+    source: StrategyQuestionRow["source"],
+    inputId: ArchitectureInputId,
+    label: string,
+    question: string
+  ) => {
+    if (!inputId || seen.has(inputId)) {
+      return;
+    }
+
+    seen.add(inputId);
+    rows.push({
+      inputId,
+      label,
+      question,
+      value: currentAnswers.get(inputId) ?? "",
+      source
+    });
+  };
+
+  for (const question of args.roadmapPlan.openQuestions) {
+    addQuestion("roadmap", question.inputId, question.label, question.question);
+  }
+
+  for (const question of args.architectureBlueprint.openQuestions) {
+    addQuestion("architecture", question.inputId, question.label, question.question);
+  }
+
+  for (const question of args.projectBrief.openQuestions) {
+    const parsedInputId = architectureInputIdSchema.safeParse(question.slotId);
+
+    if (!parsedInputId.success) {
+      continue;
+    }
+
+    addQuestion("project_brief", parsedInputId.data, question.label, question.question);
+  }
+
+  return rows;
+}
+
+export function buildStrategyRoomChatHelper(args: {
+  projectMetadata?: StoredProjectMetadata | null;
+  projectBrief: ProjectBrief;
+  architectureBlueprint: ArchitectureBlueprint;
+  roadmapPlan: RoadmapPlan;
+  governancePolicy: GovernancePolicy;
+}) {
+  const questionRows = buildStrategyQuestionRows(args);
+  const primaryQuestion = questionRows[0] ?? null;
+  const primaryBlocker = cleanText(args.governancePolicy.approvalReadiness.blockers[0]);
+
+  if (primaryQuestion) {
+    return {
+      eyebrow: "Current blocker to resolve",
+      title: primaryQuestion.label,
+      description: `${primaryQuestion.question} Answer here and Neroa will update the shared project plan automatically.`
+    } satisfies StrategyRoomChatHelper;
+  }
+
+  if (primaryBlocker) {
+    return {
+      eyebrow: "Current blocker to resolve",
+      title: "Approval readiness",
+      description: `${primaryBlocker} Answer here and Neroa will update the shared project plan automatically.`
+    } satisfies StrategyRoomChatHelper;
+  }
+
+  return {
+    eyebrow: "Planning stays in chat",
+    title: "Keep shaping the plan here",
+    description:
+      "Continue answering scope or approval questions in the main thread and Neroa will save the updates into the shared project automatically."
+  } satisfies StrategyRoomChatHelper;
 }

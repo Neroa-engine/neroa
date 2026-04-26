@@ -11,6 +11,8 @@ import {
 import {
   createStrategyRevisionPersistenceUpdate
 } from "../lib/intelligence/revisions/index.ts";
+import { createPlanningChatPersistenceUpdate } from "../lib/start/planning-persistence.ts";
+import { runPlanningChat } from "../lib/start/planning-chat.ts";
 import {
   buildStoredProjectMetadata,
   encodeWorkspaceProjectDescription,
@@ -386,6 +388,109 @@ test("delta analysis stays deterministic after revisions and still sees the revi
 
   assert.deepEqual(firstDelta, secondDelta);
   assert.notEqual(firstDelta.outcome, "execution_ready_after_gate");
+});
+
+test("Strategy Room chat answers persist blocker resolution through the shared revision spine", async () => {
+  const messages = [
+    "Hi, my name is Tom.",
+    "I want to build a crypto analytics website with a risk engine for pre-sales.",
+    "Crypto investors are my main customer."
+  ];
+  const projectName = "Tom Crypto Risk";
+  const projectDescription = messages.join(" ");
+  const workspaceId = `workspace-${slugify(projectName)}`;
+  const projectId = `project-${slugify(projectName)}`;
+  const base = buildSharedIntelligence({
+    messages,
+    projectName,
+    projectDescription
+  });
+  const userAnswer = "Ethereum and Solana. Keep wallet connection out of MVP.";
+  const chatResult = await runPlanningChat({
+    threadId: "strategy-room-chat-sync",
+    lane: "managed",
+    title: projectName,
+    summary: projectDescription,
+    messages: messages.map((message, index) => buildUserMessage(`u${index + 1}`, message)),
+    message: userAnswer,
+    conversationState: base.projectMetadata.conversationState,
+    existingProjectContext: true
+  });
+  const persistenceUpdate = createPlanningChatPersistenceUpdate({
+    workspaceId,
+    projectId,
+    projectName,
+    projectMetadata: base.projectMetadata,
+    previousIntelligence: base.projectIntelligence,
+    threadState: chatResult.threadState,
+    latestUserMessage: userAnswer,
+    createdAt: "2026-04-26T13:30:00.000Z",
+    createdBy: "owner@example.com"
+  });
+  const hydratedMetadata = buildStoredProjectMetadata({
+    title: projectName,
+    description: projectDescription,
+    conversationState: persistenceUpdate.updatedThreadState.conversationState,
+    governanceState: persistenceUpdate.governanceState,
+    strategyState: persistenceUpdate.strategyState
+  });
+  const hydratedIntelligence = buildWorkspaceProjectIntelligence({
+    workspaceId,
+    projectId,
+    projectTitle: projectName,
+    projectDescription,
+    projectMetadata: hydratedMetadata
+  });
+
+  assert.ok(persistenceUpdate.strategyUpdate);
+  assert.ok(
+    persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "chainsInScope")
+  );
+  assert.ok(
+    persistenceUpdate.patch.answeredInputs?.some((item) => item.inputId === "walletConnectionMvp")
+  );
+  assert.ok(
+    hydratedIntelligence.projectBrief.constraints.some((item) =>
+      /Launch chains: Ethereum and Solana/i.test(item)
+    )
+  );
+  assert.ok(
+    hydratedIntelligence.projectBrief.constraints.some((item) =>
+      /Wallet connection boundary: Ethereum and Solana\. Keep wallet connection out of MVP\./i.test(
+        item
+      )
+    )
+  );
+  assert.ok(
+    hydratedIntelligence.projectBrief.excludedFeatures.includes("wallet connection")
+  );
+  assert.ok(
+    hydratedIntelligence.governancePolicy.approvalReadiness.blockers.length <
+      base.projectIntelligence.governancePolicy.approvalReadiness.blockers.length
+  );
+  assert.equal(
+    hydratedIntelligence.architectureBlueprint.openQuestions.some(
+      (question) => question.inputId === "chainsInScope"
+    ),
+    false
+  );
+});
+
+test("Strategy Room right rail keeps blocker status visible without exposing primary answer inputs", () => {
+  const strategySavebackSource = readFileSync(
+    new URL("../components/workspace/strategy-room-saveback-panel.tsx", import.meta.url),
+    "utf8"
+  );
+  const strategyRoomSource = readFileSync(
+    new URL("../components/workspace/project-strategy-room-v1.tsx", import.meta.url),
+    "utf8"
+  );
+
+  assert.match(strategySavebackSource, /Resolve in chat/);
+  assert.match(strategySavebackSource, /Answer in chat/);
+  assert.doesNotMatch(strategySavebackSource, /strategyAnswer:/);
+  assert.doesNotMatch(strategySavebackSource, /name="projectName"|name="problemStatement"|name="evidence:/);
+  assert.match(strategyRoomSource, /chatGuidance=\{chatHelper\}/);
 });
 
 test("generic strategy revisions still persist and rehydrate without undefined behavior", () => {

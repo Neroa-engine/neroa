@@ -28,6 +28,7 @@ import {
 import { buildProjectContextSnapshot } from "@/lib/workspace/project-context-summary";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 import type { StoredProjectMetadata } from "@/lib/workspace/project-metadata";
+import { buildStrategyRoomChatHelper } from "@/lib/workspace/strategy-room-support";
 
 type ProjectStrategyRoomV1Props = {
   userEmail?: string;
@@ -328,6 +329,13 @@ export function ProjectStrategyRoomV1({
     blockers: governancePolicy.approvalReadiness.blockers,
     nextStep: projectContext.nextStepBody
   });
+  const chatHelper = buildStrategyRoomChatHelper({
+    projectMetadata,
+    projectBrief,
+    architectureBlueprint,
+    roadmapPlan,
+    governancePolicy
+  });
 
   return (
     <div className="space-y-4 text-slate-100">
@@ -448,6 +456,7 @@ export function ProjectStrategyRoomV1({
               workspaceId: project.workspaceId,
               projectId: project.id
             }}
+            chatGuidance={chatHelper}
             surfaceMode="project"
             seedSummaryIntoThread={false}
             storageKeyOverride={`neroa:project-strategy-thread:${project.workspaceId}:${project.id}`}
@@ -461,7 +470,7 @@ export function ProjectStrategyRoomV1({
                 `${strategyRoomSurface.purpose} The conversation stays connected to your active project workspace.`,
               threadEyebrow: "Live planning thread",
               threadDescription:
-                "Shape scope, unblock approval, and keep the project plan moving without leaving this room.",
+                "Shape scope, resolve blockers, and keep the shared project plan moving from one live conversation.",
               composerLabel: "Continue shaping this project",
               placeholder:
                 "Tell Neroa what changed, what still needs to be clarified, or what should happen next...",
@@ -487,8 +496,8 @@ export function ProjectStrategyRoomV1({
                   Secondary room surfaces
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-300">
-                  The shared brief, architecture, roadmap, governance, and revision controls stay
-                  available here without taking over the room.
+                  The shared brief, architecture, roadmap, governance, and revision state stay
+                  visible here as support surfaces while blocker answers happen in chat.
                 </p>
               </div>
 

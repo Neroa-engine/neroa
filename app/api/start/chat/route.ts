@@ -48,17 +48,25 @@ export async function POST(request: NextRequest) {
       conversationState: body.conversationState ?? null,
       existingProjectContext: Boolean(body.workspaceId?.trim())
     });
+    let deliveredThreadState = result.threadState;
 
     if (body.workspaceId?.trim()) {
-      await persistProjectPlanningThreadState({
+      const persistenceResult = await persistProjectPlanningThreadState({
         supabase: auth.supabase,
         userId: auth.user.id,
         workspaceId: body.workspaceId.trim(),
         projectId: body.projectId?.trim() || body.workspaceId.trim(),
-        threadState: result.threadState
+        threadState: result.threadState,
+        latestUserMessage: body.message,
+        createdBy: auth.user.email ?? auth.user.id
       }).catch(() => {
         // Thread continuity persistence should never break visible planning chat delivery.
+        return null;
       });
+
+      if (persistenceResult?.threadState) {
+        deliveredThreadState = persistenceResult.threadState;
+      }
     }
 
     if (result.visibleStrategist.enabled) {
@@ -114,7 +122,7 @@ export async function POST(request: NextRequest) {
         lane: body.lane,
         provider: result.provider,
         usedFallback: result.usedFallback,
-        messageCount: result.threadState.messages.length,
+        messageCount: deliveredThreadState.messages.length,
         visibleIntelligenceEnabled: result.visibleStrategist.enabled,
         visibleIntelligenceUsedHidden: result.visibleStrategist.usedHidden,
         visibleConversationState: result.visibleStrategist.visibleConversationState,
@@ -161,7 +169,7 @@ export async function POST(request: NextRequest) {
 
     try {
       mirrorStartPlanningThreadShadowIfEnabled({
-        threadState: result.threadState,
+        threadState: deliveredThreadState,
         assistantMessage: result.assistantMessage,
         visibleStrategist: result.visibleStrategist,
         title: body.title,
@@ -174,11 +182,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      threadId,
-      provider: result.provider,
-      usedFallback: result.usedFallback,
-      assistantMessage: result.assistantMessage,
-      threadState: result.threadState
+        threadId,
+        provider: result.provider,
+        usedFallback: result.usedFallback,
+        assistantMessage: result.assistantMessage,
+        threadState: deliveredThreadState
     });
   } catch (error) {
     return NextResponse.json(
