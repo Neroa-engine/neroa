@@ -279,8 +279,8 @@ button {
   }
 
   .neroa-nav-pane {
-    width: min(56rem, calc(100% - 1rem));
-    min-width: min(56rem, calc(100% - 1rem));
+    width: min(72rem, calc(100% - 1rem));
+    min-width: min(72rem, calc(100% - 1rem));
     max-width: calc(100% - 1rem);
     margin-left: auto;
     margin-right: auto;

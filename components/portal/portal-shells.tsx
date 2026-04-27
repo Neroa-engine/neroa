@@ -256,7 +256,9 @@ function ProjectRoomNav({
   className?: string;
 }) {
   return (
-    <div className={`${className} pointer-events-auto relative z-10 flex flex-wrap gap-2`}>
+    <div
+      className={`${className} pointer-events-auto relative z-10 flex flex-wrap gap-2 xl:min-w-0 xl:flex-1`}
+    >
       {(Object.keys(projectPortalRoomRegistry) as ProjectPortalRoomId[]).map((roomId) => {
         const item = projectPortalRoomRegistry[roomId];
         const active = roomId === currentRoom;
@@ -392,7 +394,7 @@ export function ActiveProjectPortalShell({
 
           <div className="floating-nav neroa-nav-pane pointer-events-auto relative z-10 rounded-[30px] px-4 py-4 sm:px-5 lg:px-6">
             <div className="relative z-10 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-              <div className="relative z-10 flex flex-col gap-3">
+              <div className="relative z-10 flex min-w-0 flex-1 flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-700">
                     Active Project Portal
@@ -419,7 +421,7 @@ export function ActiveProjectPortalShell({
                 </p>
               </div>
 
-              <div className="relative z-10 flex flex-col gap-2 xl:items-end">
+              <div className="relative z-10 flex shrink-0 flex-col gap-2 xl:items-end">
                 <div className="pointer-events-auto relative z-10 flex flex-wrap items-center gap-2">
                   <Link href={APP_ROUTES.home} className="button-quiet px-4 py-3 text-sm">
                     Home
