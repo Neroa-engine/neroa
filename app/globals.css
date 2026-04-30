@@ -178,11 +178,11 @@ button {
 }
 
 .neroa-site-header-logo.neroa-site-header-logo-landing {
-  height: 144px;
+  height: 120px;
 }
 
 .neroa-site-header-logo.neroa-site-header-logo-prominent.neroa-site-header-logo-landing {
-  height: 144px;
+  height: 120px;
 }
 
 @media (min-width: 640px) {
@@ -232,11 +232,11 @@ button {
   }
 
   .neroa-site-header-logo.neroa-site-header-logo-landing {
-    height: 159px;
+    height: 132px;
   }
 
   .neroa-site-header-logo.neroa-site-header-logo-prominent.neroa-site-header-logo-landing {
-    height: 156px;
+    height: 132px;
   }
 }
 
@@ -305,11 +305,11 @@ button {
   }
 
   .neroa-site-header-logo.neroa-site-header-logo-landing {
-    height: 129px;
+    height: 108px;
   }
 
   .neroa-site-header-logo.neroa-site-header-logo-prominent.neroa-site-header-logo-landing {
-    height: 126px;
+    height: 108px;
   }
 }
 
@@ -2383,6 +2383,7 @@ button {
 .front-door-theme .homepage-front-shell {
   padding-top: 0.5rem;
   padding-bottom: 3.5rem;
+  overflow-x: clip;
 }
 
 .front-door-theme .homepage-front-shell::before {
@@ -2456,8 +2457,8 @@ button {
 
 @media (min-width: 1280px) {
   .front-door-theme .homepage-hero-grid {
-    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
-    gap: 18rem;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+    gap: clamp(2.5rem, 5vw, 6rem);
   }
 
   .front-door-theme .homepage-hero-title {
@@ -2475,7 +2476,7 @@ button {
 
   .front-door-theme .homepage-hero-copy,
   .front-door-theme .homepage-hero-visual {
-    margin-top: 0.5in;
+    margin-top: clamp(1rem, 2.2vw, 2rem);
   }
 }
 
@@ -2630,13 +2631,15 @@ button {
 
 @media (min-width: 1280px) {
   .front-door-theme .homepage-hero-visual {
-    max-width: 76rem;
+    width: 100%;
+    max-width: min(100%, 52rem);
     justify-self: end;
-    padding: 2.15rem 0 2.55rem;
+    padding: 1rem 0 1.35rem;
   }
 
   .front-door-theme .homepage-chat-shell {
     justify-content: flex-end;
+    width: 100%;
   }
 
   .front-door-theme .homepage-trust-row-centered {
@@ -3266,13 +3269,13 @@ button {
   }
 
   .front-door-theme .homepage-chat-shell .ai-builder-product-card {
-    width: min(100%, 59.925rem);
-    min-height: calc(39.375rem + 0.5in);
+    width: min(100%, 46rem);
+    min-height: clamp(30rem, 40vw, 34rem);
     aspect-ratio: 799 / 525;
   }
 
   .front-door-theme .homepage-chat-shell .ai-builder-product-card-header-summary-side {
-    grid-template-columns: minmax(0, 17.5rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
     grid-template-areas:
       "main status"
       "main summary";
@@ -3285,7 +3288,7 @@ button {
 
   .front-door-theme .homepage-chat-shell .ai-builder-product-card-summary-header-side {
     justify-self: end;
-    width: min(100%, 25rem);
+    width: min(100%, 19rem);
   }
 }
 
