@@ -992,7 +992,7 @@ export function CanonicalEntryFlow({
           <div
             className={`relative z-10 border-t backdrop-blur-xl ${
               isEmbedded
-                ? "sticky bottom-0 border-white/10 bg-slate-950/92 pb-3 pt-4"
+                ? "mt-auto border-white/10 bg-slate-950/92 pb-3 pt-4"
                 : "border-white/70 bg-white/68 pb-2 pt-4 sm:pb-3 sm:pt-5"
             }`}
           >

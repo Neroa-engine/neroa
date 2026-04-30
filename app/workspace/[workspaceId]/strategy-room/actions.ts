@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { buildWorkspaceProjectIntelligence } from "@/lib/intelligence/project-brief-generator";
 import {
+  buildProjectBuildRoomRoute,
+  buildProjectCommandCenterRoute,
+  buildProjectStrategyRoomRoute,
+  buildProjectWorkspaceRoute
+} from "@/lib/portal/routes";
+import {
   architectureInputIdSchema
 } from "@/lib/intelligence/architecture/types.ts";
 import {
@@ -57,10 +63,36 @@ function sameList(left: readonly string[], right: readonly string[]) {
 }
 
 function revalidateStrategyRoomPaths(workspaceId: string) {
-  revalidatePath(`/workspace/${workspaceId}`);
-  revalidatePath(`/workspace/${workspaceId}/strategy-room`);
-  revalidatePath(`/workspace/${workspaceId}/command-center`);
-  revalidatePath(`/workspace/${workspaceId}/build-room`);
+  revalidatePath(buildProjectWorkspaceRoute(workspaceId));
+  revalidatePath(buildProjectStrategyRoomRoute(workspaceId));
+  revalidatePath(buildProjectCommandCenterRoute(workspaceId));
+  revalidatePath(buildProjectBuildRoomRoute(workspaceId));
+}
+
+function resolveStrategyActionContext(formData: FormData) {
+  const workspaceId = safeString(formData.get("workspaceId"));
+  const projectId = safeString(formData.get("projectId")) || workspaceId;
+  const fallbackReturnTo = workspaceId
+    ? buildProjectStrategyRoomRoute(workspaceId)
+    : "/workspace";
+  const returnTo = getReturnTo(formData, fallbackReturnTo);
+
+  if (!workspaceId) {
+    redirectWithError(returnTo, "Strategy save requires a workspace id.");
+  }
+
+  if (projectId !== workspaceId) {
+    redirectWithError(
+      returnTo,
+      "This checkpoint only supports Strategy saves inside the active workspace project."
+    );
+  }
+
+  return {
+    workspaceId,
+    projectId,
+    returnTo
+  };
 }
 
 function buildStrategyPatchFromFormData(args: {
@@ -240,13 +272,8 @@ function buildStrategyPatchFromFormData(args: {
 }
 
 export async function saveStrategyRevision(formData: FormData) {
-  const workspaceId = safeString(formData.get("workspaceId"));
-  const returnTo = getReturnTo(formData, `/workspace/${workspaceId}/strategy-room`);
+  const { workspaceId, projectId, returnTo } = resolveStrategyActionContext(formData);
   const saveMode = safeString(formData.get("saveMode"));
-
-  if (!workspaceId) {
-    redirectWithError(returnTo, "Strategy save requires a workspace id.");
-  }
 
   const ownedWorkspace = await getOwnedWorkspace(workspaceId).catch((error) =>
     redirectWithError(
@@ -258,7 +285,7 @@ export async function saveStrategyRevision(formData: FormData) {
   const parsed = parseWorkspaceProjectDescription(workspace.description);
   const currentIntelligence = buildWorkspaceProjectIntelligence({
     workspaceId,
-    projectId: workspaceId,
+    projectId,
     projectTitle: workspace.name,
     projectDescription: parsed.visibleDescription,
     projectMetadata: parsed.metadata
@@ -278,7 +305,7 @@ export async function saveStrategyRevision(formData: FormData) {
 
   const update = createStrategyRevisionPersistenceUpdate({
     workspaceId,
-    projectId: workspaceId,
+    projectId,
     projectName: workspace.name,
     projectMetadata: parsed.metadata,
     projectBrief: currentIntelligence.projectBrief,
@@ -322,12 +349,7 @@ export async function saveStrategyRevision(formData: FormData) {
 }
 
 export async function approveStrategyScope(formData: FormData) {
-  const workspaceId = safeString(formData.get("workspaceId"));
-  const returnTo = getReturnTo(formData, `/workspace/${workspaceId}/strategy-room`);
-
-  if (!workspaceId) {
-    redirectWithError(returnTo, "Scope approval requires a workspace id.");
-  }
+  const { workspaceId, projectId, returnTo } = resolveStrategyActionContext(formData);
 
   const ownedWorkspace = await getOwnedWorkspace(workspaceId).catch((error) =>
     redirectWithError(
@@ -339,7 +361,7 @@ export async function approveStrategyScope(formData: FormData) {
   const parsed = parseWorkspaceProjectDescription(workspace.description);
   const currentIntelligence = buildWorkspaceProjectIntelligence({
     workspaceId,
-    projectId: workspaceId,
+    projectId,
     projectTitle: workspace.name,
     projectDescription: parsed.visibleDescription,
     projectMetadata: parsed.metadata

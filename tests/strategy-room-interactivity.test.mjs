@@ -30,6 +30,11 @@ test("Strategy Room visible controls are mounted above inert decorative layers",
 test("Header actions remain wired to the shared Strategy Room actions", () => {
   assert.match(strategyHeaderActionsSource, /<form action=\{saveStrategyRevision\}/);
   assert.match(strategyHeaderActionsSource, /<form action=\{approveStrategyScope\}/);
+  assert.match(strategyHeaderActionsSource, /name="projectId" value=\{projectId\}/);
+  assert.match(
+    strategyHeaderActionsSource,
+    /const returnTo = providedReturnTo \?\? buildProjectStrategyRoomRoute\(workspaceId\);/
+  );
 });
 
 test("Chat controls stay in the interactive stack for the embedded Strategy Room", () => {
@@ -47,8 +52,11 @@ test("Chat controls stay in the interactive stack for the embedded Strategy Room
     canonicalEntryFlowSource,
     /relative z-10 border-t backdrop-blur-xl/
   );
+  assert.match(canonicalEntryFlowSource, /\? "mt-auto border-white\/10 bg-slate-950\/92 pb-3 pt-4"/);
   assert.match(canonicalEntryFlowSource, /onClick=\{\(\) => resetPlanningThread\(\)\}/);
   assert.match(canonicalEntryFlowSource, /onClick=\{\(\) => void handleSend\(\)\}/);
+  assert.match(canonicalEntryFlowSource, /<button\s+type="button"[\s\S]*onClick=\{\(\) => resetPlanningThread\(\)\}/);
+  assert.match(canonicalEntryFlowSource, /<button\s+type="button"[\s\S]*onClick=\{\(\) => void handleSend\(\)\}/);
 });
 
 test("No Strategy Room header overlay remains able to intercept primary controls", () => {

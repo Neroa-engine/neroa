@@ -21,12 +21,16 @@ const strategyActionsSource = readFileSync(
 
 test("Save revision button stays wired to the shared Strategy Room save action", () => {
   assert.match(strategyRoomSource, /<StrategyRoomHeaderActions/);
+  assert.match(strategyRoomSource, /projectId=\{project\.id\}/);
+  assert.match(strategyRoomSource, /returnTo=\{strategyRoomHref\}/);
   assert.match(
     strategyHeaderActionsSource,
     /className="relative z-10 flex flex-wrap items-center gap-3"/
   );
+  assert.match(strategyHeaderActionsSource, /data-strategy-header-actions="true"/);
   assert.match(strategyHeaderActionsSource, /<form action=\{saveStrategyRevision\}/);
   assert.match(strategyHeaderActionsSource, /name="workspaceId" value=\{workspaceId\}/);
+  assert.match(strategyHeaderActionsSource, /name="projectId" value=\{projectId\}/);
   assert.match(strategyHeaderActionsSource, /name="returnTo" value=\{returnTo\}/);
   assert.match(strategyHeaderActionsSource, /name="saveMode" value="chat_checkpoint"/);
   assert.match(strategyHeaderActionsSource, /idleLabel="Save revision"/);
@@ -54,6 +58,10 @@ test("Visible Strategy Room actions no longer point to orphaned form ids after c
 test("Strategy Room header preserves the shared save and approval backend path", () => {
   assert.match(strategyActionsSource, /export async function saveStrategyRevision/);
   assert.match(strategyActionsSource, /export async function approveStrategyScope/);
+  assert.match(strategyActionsSource, /function resolveStrategyActionContext\(formData: FormData\)/);
+  assert.match(strategyActionsSource, /const projectId = safeString\(formData\.get\("projectId"\)\) \|\| workspaceId/);
+  assert.match(strategyActionsSource, /buildProjectStrategyRoomRoute\(workspaceId\)/);
+  assert.match(strategyActionsSource, /if \(projectId !== workspaceId\)/);
   assert.match(
     strategyHeaderActionsSource,
     /from "@\/app\/workspace\/\[workspaceId\]\/strategy-room\/actions"/

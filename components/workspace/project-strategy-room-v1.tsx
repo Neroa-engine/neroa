@@ -3,7 +3,10 @@ import type { ReactNode } from "react";
 import { CanonicalEntryFlow } from "@/components/onboarding/canonical-entry-flow";
 import { StrategyRoomHeaderActions } from "@/components/workspace/strategy-room-header-actions";
 import { StrategyRoomSavebackPanel } from "@/components/workspace/strategy-room-saveback-panel";
-import { buildProjectWorkspaceRoute } from "@/lib/portal/routes";
+import {
+  buildProjectStrategyRoomRoute,
+  buildProjectWorkspaceRoute
+} from "@/lib/portal/routes";
 import {
   buildArchitectureBlueprintSummary,
   type ArchitectureBlueprint
@@ -273,6 +276,7 @@ export function ProjectStrategyRoomV1({
   initialNotice
 }: ProjectStrategyRoomV1Props) {
   const workspaceHref = buildProjectWorkspaceRoute(project.workspaceId);
+  const strategyRoomHref = buildProjectStrategyRoomRoute(project.workspaceId);
   const projectContext = buildProjectContextSnapshot({
     project,
     projectMetadata,
@@ -397,6 +401,8 @@ export function ProjectStrategyRoomV1({
 
               <StrategyRoomHeaderActions
                 workspaceId={project.workspaceId}
+                projectId={project.id}
+                returnTo={strategyRoomHref}
                 approvalAllowed={governancePolicy.approvalReadiness.approvalAllowed}
               />
             </div>
