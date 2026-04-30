@@ -2,6 +2,11 @@
 
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import {
+  formatCommandCenterCustomerRequestTypeLabel,
+  inferCommandCenterCustomerRequestType,
+  type CommandCenterCustomerRequestType
+} from "@/lib/workspace/command-center-tasks";
 
 type SmartOperatorModeId =
   | "requests"
@@ -100,6 +105,22 @@ type CommandCenterSmartOperatorSurfaceProps = {
   footerControl?: ReactNode;
 };
 
+function inferRequestTypeFromMode(mode: SmartOperatorModeId): CommandCenterCustomerRequestType {
+  if (mode === "revisions") {
+    return "revision";
+  }
+
+  if (mode === "roadmap_updates") {
+    return "change_direction";
+  }
+
+  if (mode === "execution_clarifications" || mode === "decisions") {
+    return "question_decision";
+  }
+
+  return "new_request";
+}
+
 export function CommandCenterSmartOperatorSurface({
   workspaceId,
   returnTo,
@@ -116,16 +137,29 @@ export function CommandCenterSmartOperatorSurface({
   const [activeMode, setActiveMode] = useState<SmartOperatorModeId>("requests");
   const [openBubbleMode, setOpenBubbleMode] = useState<SmartOperatorModeId | null>(null);
   const [requestValue, setRequestValue] = useState("");
+  const [manualRequestType, setManualRequestType] =
+    useState<CommandCenterCustomerRequestType | null>(null);
 
   const activeConfig = useMemo(
     () => SMART_OPERATOR_MODE_CONFIG[activeMode],
     [activeMode]
   );
+  const inferredRequestType = useMemo(() => {
+    if (requestValue.trim()) {
+      return inferCommandCenterCustomerRequestType(requestValue);
+    }
+
+    return inferRequestTypeFromMode(activeMode);
+  }, [activeMode, requestValue]);
+  const effectiveRequestType = manualRequestType ?? inferredRequestType;
+  const requestTypeSource =
+    manualRequestType !== null ? "manual" : requestValue.trim() ? "inferred" : "system";
   const canSubmitRequest = requestValue.trim().length > 0;
 
   function selectMode(mode: SmartOperatorModeId) {
     setActiveMode(mode);
     setOpenBubbleMode(mode);
+    setManualRequestType(inferRequestTypeFromMode(mode));
   }
 
   return (
@@ -196,6 +230,9 @@ export function CommandCenterSmartOperatorSurface({
           <span className="rounded-full border border-white/16 bg-[#15233a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
             {activeConfig.label} mode
           </span>
+          <span className="rounded-full border border-white/16 bg-[#15233a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
+            {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}
+          </span>
         </div>
 
         <div className={utilityTray ? "mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]" : ""}>
@@ -210,6 +247,8 @@ export function CommandCenterSmartOperatorSurface({
                 <input type="hidden" name="returnTo" value={returnTo} />
                 <input type="hidden" name="mutation" value="create_task" />
                 <input type="hidden" name="sourceType" value="customer_request" />
+                <input type="hidden" name="requestType" value={effectiveRequestType} />
+                <input type="hidden" name="requestTypeSource" value={requestTypeSource} />
                 <textarea
                   name="request"
                   rows={6}
@@ -232,6 +271,12 @@ export function CommandCenterSmartOperatorSurface({
                       ))}
                     </select>
                   </label>
+                  <p className="max-w-xl text-xs leading-5 text-slate-300 sm:flex-1">
+                    Request type: {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}.
+                    {" "}
+                    This stays on the task metadata so Command Center can keep planning,
+                    decision, and bug context attached without adding any portal routing logic.
+                  </p>
                   <button
                     type="submit"
                     disabled={!canSubmitRequest}
