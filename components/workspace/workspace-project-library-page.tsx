@@ -10,12 +10,12 @@ import { getWorkspaceProjectContext } from "@/lib/workspace/server";
 
 type WorkspaceProjectLibraryPageProps = {
   workspaceId: string;
-  projectId: string;
+  projectId?: string;
 };
 
 export async function WorkspaceProjectLibraryPage({
   workspaceId,
-  projectId
+  projectId = workspaceId
 }: WorkspaceProjectLibraryPageProps) {
   const { supabase, user, workspace, project, projectMetadata } = await getWorkspaceProjectContext(
     workspaceId,

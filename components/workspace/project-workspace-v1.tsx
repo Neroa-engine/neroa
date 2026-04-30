@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { buildProjectRoomRoute } from "@/lib/portal/routes";
+import {
+  buildProjectLibraryRoute,
+  buildProjectRoomRoute
+} from "@/lib/portal/routes";
 import {
   buildProjectContextSnapshot,
   type WorkspacePhaseId
@@ -111,7 +114,7 @@ export function ProjectWorkspaceV1({
   const projectContext = buildProjectContextSnapshot({ project, projectMetadata });
   const leadingLane = getFirstProjectLane(project);
   const strategyRoomHref = buildProjectRoomRoute(project.workspaceId, "strategy-room");
-  const projectLibraryHref = `/workspace/${project.workspaceId}/project/${project.id}/library`;
+  const projectLibraryHref = buildProjectLibraryRoute(project.workspaceId);
 
   return (
     <section className="surface-main relative overflow-hidden rounded-[42px] p-6 xl:p-8 2xl:p-10">

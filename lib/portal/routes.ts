@@ -6,6 +6,7 @@ export type ProjectPortalRoomId =
 
 export type ProjectPortalRouteSummary = {
   workspaceRoute: string;
+  libraryRoute?: string;
   strategyRoomRoute: string;
   commandCenterRoute: string;
   buildRoomRoute: string;
@@ -40,6 +41,10 @@ export const projectPortalRoomRegistry: Record<
 
 export function buildProjectWorkspaceRoute(workspaceId: string) {
   return `/workspace/${workspaceId}`;
+}
+
+export function buildProjectLibraryRoute(workspaceId: string) {
+  return `/workspace/${workspaceId}/library`;
 }
 
 export function buildProjectStrategyRoomRoute(workspaceId: string) {

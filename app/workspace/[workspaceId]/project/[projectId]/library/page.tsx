@@ -1,5 +1,5 @@
-import { unstable_noStore as noStore } from "next/cache";
-import { WorkspaceProjectLibraryPage } from "@/components/workspace/workspace-project-library-page";
+import { redirect } from "next/navigation";
+import { buildProjectLibraryRoute } from "@/lib/portal/routes";
 
 type ProjectLibraryRouteProps = {
   params: {
@@ -9,12 +9,5 @@ type ProjectLibraryRouteProps = {
 };
 
 export default function ProjectLibraryRoute({ params }: ProjectLibraryRouteProps) {
-  noStore();
-
-  return (
-    <WorkspaceProjectLibraryPage
-      workspaceId={params.workspaceId}
-      projectId={params.projectId}
-    />
-  );
+  redirect(buildProjectLibraryRoute(params.workspaceId));
 }

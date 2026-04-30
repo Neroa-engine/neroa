@@ -14,6 +14,14 @@ const strategyRoomSource = readFileSync(
   new URL("../components/workspace/project-strategy-room-v1.tsx", import.meta.url),
   "utf8"
 );
+const projectWorkspaceSource = readFileSync(
+  new URL("../components/workspace/project-workspace-v1.tsx", import.meta.url),
+  "utf8"
+);
+const legacyProjectLibraryRouteSource = readFileSync(
+  new URL("../app/workspace/[workspaceId]/project/[projectId]/library/page.tsx", import.meta.url),
+  "utf8"
+);
 const canonicalEntryFlowSource = readFileSync(
   new URL("../components/onboarding/canonical-entry-flow.tsx", import.meta.url),
   "utf8"
@@ -81,5 +89,13 @@ test("Portal shell route targets stay mapped to the intended destinations", () =
   assert.match(
     portalShellSource,
     /href=\{activeProject\.buildRoomRoute\}/
+  );
+});
+
+test("Project library navigation now points at the canonical workspace room path", () => {
+  assert.match(projectWorkspaceSource, /buildProjectLibraryRoute\(project\.workspaceId\)/);
+  assert.match(
+    legacyProjectLibraryRouteSource,
+    /redirect\(buildProjectLibraryRoute\(params\.workspaceId\)\)/
   );
 });

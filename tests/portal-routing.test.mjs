@@ -41,6 +41,7 @@ const publicAccountMenuSource = readFileSync(
 
 test("Project nav destination correctness stays explicit by room", () => {
   assert.match(portalRoutesSource, /export function buildProjectWorkspaceRoute/);
+  assert.match(portalRoutesSource, /export function buildProjectLibraryRoute/);
   assert.match(portalRoutesSource, /export function buildProjectStrategyRoomRoute/);
   assert.match(portalRoutesSource, /export function buildProjectCommandCenterRoute/);
   assert.match(portalRoutesSource, /export function buildProjectBuildRoomRoute/);
@@ -103,6 +104,10 @@ test("Shared portal routing surfaces now use the canonical route helpers", () =>
   assert.match(
     projectLibrarySource,
     /const commandCenterHref = buildProjectCommandCenterRoute\(project\.workspaceId\);/
+  );
+  assert.match(
+    projectLibrarySource,
+    /const projectWorkspaceHref = buildProjectWorkspaceRoute\(project\.workspaceId\);/
   );
 });
 
