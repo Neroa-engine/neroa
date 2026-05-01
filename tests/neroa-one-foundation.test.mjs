@@ -21,6 +21,8 @@ import {
   canNeroaOneOutcomeLaneEnterCodexExecution,
   canCreateCustomerFollowUpItemFromOutcomeLaneItem,
   canCreateCustomerFollowUpItemFromOutputReview,
+  canCreateStrategyEscalationItemFromOutcomeLaneItem,
+  canCreateStrategyEscalationItemFromOutputReview,
   createPlaceholderOutputReviewDecisionFromOutputItem,
   createPlaceholderOutputReviewDecisionsFromOutputItems,
   createCustomerFollowUpItemFromOutcomeLaneItem,
@@ -28,9 +30,14 @@ import {
   createCustomerFollowUpItemsFromOutcomeLaneItems,
   createCustomerFollowUpItemsFromOutputReviews,
   createCustomerSafeFollowUpText,
+  createCustomerSafeStrategyEscalationText,
   createCustomerSafeRepairSummary,
   createRepairQueueItemFromOutputReview,
   createRepairQueueItemsFromOutputReviews,
+  createStrategyEscalationItemFromOutcomeLaneItem,
+  createStrategyEscalationItemFromOutputReview,
+  createStrategyEscalationItemsFromOutcomeLaneItems,
+  createStrategyEscalationItemsFromOutputReviews,
   createQueuedQcStationJobFromApprovedOutputReview,
   createQueuedQcStationJobsFromApprovedOutputReview,
   classifyCustomerIntent,
@@ -56,6 +63,7 @@ import {
   getCustomerSafeAuditEventView,
   getCustomerSafeCustomerFollowUpItemView,
   getCustomerSafeEvidenceSummary,
+  getCustomerSafeStrategyEscalationItemView,
   getEligibleCodexOutputStatusesForFreshReview,
   getEvidenceArtifactPointerTypes,
   getEvidenceLinkStatuses,
@@ -71,6 +79,10 @@ import {
   getRejectedOutputReviewDecisionsForQcStation,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   getAllowedOutputReviewNextDestinations,
+  getStrategyEscalationImpactLevels,
+  getStrategyEscalationItemStatuses,
+  getStrategyEscalationSourceTypes,
+  getStrategyEscalationTypes,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
   NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES,
   NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES,
@@ -81,6 +93,10 @@ import {
   NEROA_ONE_CUSTOMER_FOLLOW_UP_ITEM_STATUSES,
   NEROA_ONE_CUSTOMER_FOLLOW_UP_SOURCE_TYPES,
   NEROA_ONE_CUSTOMER_FOLLOW_UP_TYPES,
+  NEROA_ONE_STRATEGY_ESCALATION_IMPACT_LEVELS,
+  NEROA_ONE_STRATEGY_ESCALATION_ITEM_STATUSES,
+  NEROA_ONE_STRATEGY_ESCALATION_SOURCE_TYPES,
+  NEROA_ONE_STRATEGY_ESCALATION_TYPES,
   NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES,
   NEROA_ONE_EVIDENCE_LINK_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
@@ -107,10 +123,13 @@ import {
   validateEvidenceLinkPipelineRecords,
   validateEvidenceLinkForAuditRoomEvent,
   validateOutcomeLaneItemForCustomerFollowUp,
+  validateOutcomeLaneItemForStrategyEscalation,
   validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
   validateOutputReviewDecisionForCustomerFollowUp,
+  validateOutputReviewDecisionForStrategyEscalation,
   validateOutputReviewForCustomerFollowUp,
+  validateOutputReviewForStrategyEscalation,
   validateOutputReviewDecisionForRepairQueue,
   validateOutputReviewForRepairQueue,
   neroaOneAuditRoomLane,
@@ -125,6 +144,7 @@ import {
   neroaOnePromptRoomLane,
   neroaOneRepairQueueLane,
   neroaOneQcStationLane,
+  neroaOneStrategyEscalationLane,
   resolveNeroaOneCostPolicy,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane,
@@ -146,6 +166,7 @@ const moduleSources = [
   "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/output-review.ts",
   "../lib/neroa-one/customer-follow-up.ts",
+  "../lib/neroa-one/strategy-escalation.ts",
   "../lib/neroa-one/repair-queue.ts",
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
@@ -322,6 +343,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const customerFollowUpSource = moduleSources.find((source) =>
     source.includes("neroaOneCustomerFollowUpItemSchema")
   );
+  const strategyEscalationSource = moduleSources.find((source) =>
+    source.includes("neroaOneStrategyEscalationItemSchema")
+  );
   const repairQueueSource = moduleSources.find((source) =>
     source.includes("neroaOneRepairQueueItemSchema")
   );
@@ -342,6 +366,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(codexOutputBoxSource);
   assert.ok(outputReviewSource);
   assert.ok(customerFollowUpSource);
+  assert.ok(strategyEscalationSource);
   assert.ok(repairQueueSource);
   assert.ok(qcStationSource);
   assert.ok(evidenceLinkingSource);
@@ -353,7 +378,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(
     outcomeLaneSource,
-    /ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview/i
+    /ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|ready_for_strategy_review|waiting_for_customer_decision|impactLevel|futureStrategyEscalationServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview|createStrategyEscalationItemFromOutcomeLaneItem|createStrategyEscalationItemFromOutputReview/i
   );
   assert.doesNotMatch(codexPacketSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
@@ -416,7 +441,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(
     outputReviewSource,
-    /repairPriority|futureRepairServiceTarget|ready_for_prompt_room|ready_for_worker_rerun|ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview/i
+    /repairPriority|futureRepairServiceTarget|ready_for_prompt_room|ready_for_worker_rerun|ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|ready_for_strategy_review|waiting_for_customer_decision|impactLevel|futureStrategyEscalationServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview|createStrategyEscalationItemFromOutcomeLaneItem|createStrategyEscalationItemFromOutputReview/i
   );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
@@ -437,6 +462,27 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.match(
     customerFollowUpSource,
     /interface\s+NeroaOneCustomerFollowUpStorageAdapter/
+  );
+  assert.doesNotMatch(strategyEscalationSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    strategyEscalationSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    strategyEscalationSource,
+    /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    strategyEscalationSource,
+    /analyzeTaskWithNeroaOne|createNeroaOneOutcomeQueueEntry|createDraftCodexExecutionPacket|buildBuildRoomHandoffPackage|buildBuildRoomTaskHandoffPackage|buildBuildRoomCustomerTaskHandoffPackage|createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createRepairQueueItemFromOutputReview|createQueuedQcStationJobFromApprovedOutputReview|createDraftEvidenceLinkFromPipelineRecords|createDraftEvidenceLinkFromPipelineIds|createAuditRoomEventFromEvidenceLink|createAuditRoomEventFromLaneAndEvidenceIds|createAdminOversightSummaryFromAuditEvents/i
+  );
+  assert.doesNotMatch(
+    strategyEscalationSource,
+    /saveOutputReview|getOutputReviewsByOutputId|saveRepairQueueItem|getRepairQueueItemById|saveCustomerFollowUpItem|getCustomerFollowUpItemById|savePromptRoomItem|saveWorkerRun/i
+  );
+  assert.match(
+    strategyEscalationSource,
+    /interface\s+NeroaOneStrategyEscalationStorageAdapter/
   );
   assert.doesNotMatch(repairQueueSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
@@ -766,6 +812,86 @@ test("Customer Follow-Up lane stays typed, backend-only, and extraction-ready", 
   );
   assert.match(
     neroaOneCustomerFollowUpLane.internalOnlyNotes.join(" "),
+    /must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions/i
+  );
+});
+
+test("Strategy Escalation lane stays typed, backend-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_SOURCE_TYPES], [
+    "roadmap_revision_required",
+    "strategy_escalation"
+  ]);
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_ITEM_STATUSES], [
+    "draft",
+    "ready_for_strategy_review",
+    "waiting_for_customer_decision",
+    "approved",
+    "rejected",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_TYPES], [
+    "roadmap_change",
+    "scope_change",
+    "budget_change",
+    "timeline_change",
+    "product_direction_change",
+    "architecture_change",
+    "dependency_change",
+    "risk_escalation",
+    "other"
+  ]);
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_IMPACT_LEVELS], [
+    "low",
+    "medium",
+    "high",
+    "critical"
+  ]);
+  assert.deepEqual(getStrategyEscalationSourceTypes(), [
+    "roadmap_revision_required",
+    "strategy_escalation"
+  ]);
+  assert.deepEqual(getStrategyEscalationItemStatuses(), [
+    "draft",
+    "ready_for_strategy_review",
+    "waiting_for_customer_decision",
+    "approved",
+    "rejected",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual(getStrategyEscalationTypes(), [
+    "roadmap_change",
+    "scope_change",
+    "budget_change",
+    "timeline_change",
+    "product_direction_change",
+    "architecture_change",
+    "dependency_change",
+    "risk_escalation",
+    "other"
+  ]);
+  assert.deepEqual(getStrategyEscalationImpactLevels(), [
+    "low",
+    "medium",
+    "high",
+    "critical"
+  ]);
+  assert.equal(neroaOneStrategyEscalationLane.backendOnly, true);
+  assert.equal(neroaOneStrategyEscalationLane.extractionReady, true);
+  assert.equal(neroaOneStrategyEscalationLane.independentlyReplaceable, true);
+  assert.equal(neroaOneStrategyEscalationLane.sideEffectLight, true);
+  assert.equal(neroaOneStrategyEscalationLane.uiDecoupled, true);
+  assert.equal(neroaOneStrategyEscalationLane.exposesCustomerSafeProjectionOnly, true);
+  assert.equal(neroaOneStrategyEscalationLane.storesStrategyEscalationItemsNow, false);
+  assert.equal(neroaOneStrategyEscalationLane.routesStrategyRoomNow, false);
+  assert.equal(neroaOneStrategyEscalationLane.writesPersistenceNow, false);
+  assert.match(
+    neroaOneStrategyEscalationLane.internalOnlyNotes.join(" "),
+    /must not classify analyzer outcomes/i
+  );
+  assert.match(
+    neroaOneStrategyEscalationLane.internalOnlyNotes.join(" "),
     /must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions/i
   );
 });
@@ -2655,6 +2781,434 @@ test("Customer Follow-Up remains follow-up-only and does not own analyzer, revie
   assert.equal("repairItemId" in outcomeFollowUp, false);
   assert.equal("evidenceId" in outcomeFollowUp, false);
   assert.equal("auditEventId" in outcomeFollowUp, false);
+});
+
+test("Strategy Escalation accepts only roadmap_revision_required outcome lanes and output review strategy escalations", async () => {
+  const roadmapRevisionItem = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-strategy-escalation-1",
+    analyzerOutcome: "roadmap_revision_required",
+    normalizedRequest: "re-sequence the launch roadmap for a phased rollout",
+    riskLevel: "high",
+    readinessBlockers: ["Roadmap sequencing review is required before work can continue."],
+    customerFacingSummary:
+      "This request affects roadmap or sequencing decisions and needs planning review first.",
+    internalSummary:
+      "Analyzer requires roadmap review before execution eligibility can be reconsidered.",
+    createdAt: "2026-05-01T16:00:00.000Z",
+    source: {
+      requestSource: "build_room",
+      analyzerSource: "mock_fallback",
+      caller: "neroa_one_strategy_escalation_test"
+    }
+  };
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-strategy-escalation-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-strategy-escalation-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest:
+        "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_strategy_escalation_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep strategy escalation backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-strategy-escalation-1",
+    createdAt: "2026-05-01T16:01:00.000Z"
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "strategy_escalation",
+    createdAt: "2026-05-01T16:02:00.000Z"
+  });
+  const roadmapValidation = validateOutcomeLaneItemForStrategyEscalation({
+    item: roadmapRevisionItem
+  });
+  const reviewDecisionValidation = validateOutputReviewDecisionForStrategyEscalation({
+    decision: "strategy_escalation"
+  });
+  const reviewValidation = validateOutputReviewForStrategyEscalation({
+    review
+  });
+  const roadmapEscalation = createStrategyEscalationItemFromOutcomeLaneItem({
+    item: roadmapRevisionItem,
+    createdAt: "2026-05-01T16:03:00.000Z",
+    updatedAt: "2026-05-01T16:04:00.000Z"
+  });
+  const reviewEscalation = createStrategyEscalationItemFromOutputReview({
+    review,
+    status: "waiting_for_customer_decision",
+    impactLevel: "high",
+    createdAt: "2026-05-01T16:05:00.000Z"
+  });
+  const roadmapSet = createStrategyEscalationItemsFromOutcomeLaneItems({
+    items: [roadmapRevisionItem],
+    status: "draft",
+    createdAt: "2026-05-01T16:06:00.000Z"
+  });
+  const reviewSet = createStrategyEscalationItemsFromOutputReviews({
+    reviews: [review],
+    status: "ready_for_strategy_review",
+    createdAt: "2026-05-01T16:07:00.000Z"
+  });
+
+  assert.equal(roadmapValidation.allowed, true);
+  assert.equal(reviewDecisionValidation.allowed, true);
+  assert.equal(reviewValidation.allowed, true);
+  assert.equal(
+    canCreateStrategyEscalationItemFromOutcomeLaneItem({ item: roadmapRevisionItem }),
+    true
+  );
+  assert.equal(canCreateStrategyEscalationItemFromOutputReview({ review }), true);
+  assert.equal(roadmapEscalation.sourceLaneId, "roadmap_revision_required");
+  assert.equal(roadmapEscalation.sourceType, "roadmap_revision_required");
+  assert.equal(roadmapEscalation.escalationType, "roadmap_change");
+  assert.equal(roadmapEscalation.impactLevel, "high");
+  assert.equal(roadmapEscalation.status, "ready_for_strategy_review");
+  assert.equal(reviewEscalation.sourceLaneId, "output_review");
+  assert.equal(reviewEscalation.sourceType, "strategy_escalation");
+  assert.equal(reviewEscalation.sourceId, review.reviewId);
+  assert.equal(reviewEscalation.escalationType, "risk_escalation");
+  assert.equal(reviewEscalation.impactLevel, "high");
+  assert.equal(reviewEscalation.status, "waiting_for_customer_decision");
+  assert.equal(
+    reviewEscalation.futureStrategyEscalationServiceTarget.deploymentProvider,
+    "digitalocean"
+  );
+  assert.equal(
+    reviewEscalation.futureStrategyEscalationServiceTarget.readyForDispatch,
+    false
+  );
+  assert.equal(roadmapSet.length, 1);
+  assert.equal(roadmapSet[0].sourceType, "roadmap_revision_required");
+  assert.equal(reviewSet.length, 1);
+  assert.equal(reviewSet[0].sourceType, "strategy_escalation");
+});
+
+test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy output review decisions", async () => {
+  const rejectedOutcomeItems = [
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-strategy-reject-ready",
+      analyzerOutcome: "ready_to_build",
+      normalizedRequest: "prepare the approved implementation packet",
+      riskLevel: "low",
+      readinessBlockers: [],
+      customerFacingSummary: "This request is approved for backend preparation.",
+      internalSummary: "Execution packaging may begin.",
+      createdAt: "2026-05-01T16:08:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_strategy_escalation_test"
+      }
+    },
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-strategy-reject-customer",
+      analyzerOutcome: "needs_customer_answer",
+      normalizedRequest: "confirm the launch checklist",
+      riskLevel: "moderate",
+      readinessBlockers: ["Please confirm the launch checklist."],
+      customerFacingSummary: "A customer answer is needed before work can continue.",
+      internalSummary: "Waiting for customer clarification.",
+      createdAt: "2026-05-01T16:09:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_strategy_escalation_test"
+      }
+    },
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-strategy-reject-missing",
+      analyzerOutcome: "blocked_missing_information",
+      normalizedRequest: "provide the asset bundle details",
+      riskLevel: "moderate",
+      readinessBlockers: ["Please provide the missing asset bundle details."],
+      customerFacingSummary: "More information is needed before work can continue.",
+      internalSummary: "Missing information blocks routing.",
+      createdAt: "2026-05-01T16:10:00.000Z",
+      source: {
+        requestSource: "system",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_strategy_escalation_test"
+      }
+    },
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-strategy-reject-scope",
+      analyzerOutcome: "rejected_outside_scope",
+      normalizedRequest: "add an out-of-scope delivery platform",
+      riskLevel: "low",
+      readinessBlockers: [],
+      customerFacingSummary: "This request is outside the approved scope.",
+      internalSummary: "Scope guard rejected the request.",
+      createdAt: "2026-05-01T16:11:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_strategy_escalation_test"
+      }
+    }
+  ];
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-strategy-escalation-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-strategy-escalation-2",
+      title: "Prepare strategy rejection boundary",
+      request: "Prepare the strategy escalation rejection contract for review decisions.",
+      normalizedRequest:
+        "prepare the strategy escalation rejection contract for review decisions."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_strategy_escalation_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep strategy escalation boundary isolated."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-strategy-escalation-2",
+    createdAt: "2026-05-01T16:12:00.000Z"
+  });
+
+  for (const item of rejectedOutcomeItems) {
+    const validation = validateOutcomeLaneItemForStrategyEscalation({
+      item
+    });
+
+    assert.equal(validation.allowed, false);
+    assert.equal(canCreateStrategyEscalationItemFromOutcomeLaneItem({ item }), false);
+    assert.match(validation.reason, /allowed source types/i);
+    assert.throws(
+      () =>
+        createStrategyEscalationItemFromOutcomeLaneItem({
+          item
+        }),
+      /cannot create a strategy escalation item/i
+    );
+  }
+
+  for (const decision of NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+    (value) => value !== "strategy_escalation"
+  )) {
+    const decisionValidation = validateOutputReviewDecisionForStrategyEscalation({
+      decision
+    });
+    const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+      output,
+      decision,
+      createdAt: "2026-05-01T16:13:00.000Z"
+    });
+    const reviewValidation = validateOutputReviewForStrategyEscalation({
+      review
+    });
+
+    assert.equal(decisionValidation.allowed, false);
+    assert.equal(reviewValidation.allowed, false);
+    assert.equal(canCreateStrategyEscalationItemFromOutputReview({ review }), false);
+    assert.match(decisionValidation.reason, /allowed source types/i);
+    assert.match(reviewValidation.reason, new RegExp(`decision ${decision}`, "i"));
+    assert.throws(
+      () =>
+        createStrategyEscalationItemFromOutputReview({
+          review
+        }),
+      /cannot create a strategy escalation item/i
+    );
+  }
+});
+
+test("Strategy Escalation customer-safe projection strips internal execution details", () => {
+  const unsafeText = createCustomerSafeStrategyEscalationText(
+    "Review internalPromptDraft promptText and raw worker instructions in lib/neroa-one/strategy-escalation.ts; check browser.runtime, audit-only notes, selectedEngine codex_cli, futureStrategyEscalationServiceTarget, futureAuditServiceTarget, and C:\\secret\\notes.md."
+  );
+  const item = createStrategyEscalationItemFromOutcomeLaneItem({
+    item: {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-strategy-safe-1",
+      analyzerOutcome: "roadmap_revision_required",
+      normalizedRequest: "re-sequence the launch roadmap",
+      riskLevel: "high",
+      readinessBlockers: ["Roadmap review is required before work can continue."],
+      customerFacingSummary: "Roadmap review is required before work can continue.",
+      internalSummary:
+        "internalPromptDraft promptText selectedEngine codex_cli browser.runtime C:\\secret\\build.ts raw worker instructions futureStrategyEscalationServiceTarget",
+      createdAt: "2026-05-01T16:14:00.000Z",
+      source: {
+        requestSource: "build_room",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_strategy_escalation_test"
+      }
+    },
+    strategyQuestion:
+      "Use internalPromptDraft promptText and raw worker instructions in lib/neroa-one/strategy-escalation.ts before planning review. futureStrategyEscalationServiceTarget.",
+    customerSafeContext:
+      "Review selectedEngine codex_cli, audit-only notes, browser.runtime, futureAuditServiceTarget, and C:\\secret\\build.ts before planning review.",
+    proposedRoadmapImpactSummary:
+      "Review futureStrategyEscalationServiceTarget and internalPromptDraft promptText in C:\\secret\\roadmap.md before roadmap review.",
+    createdAt: "2026-05-01T16:15:00.000Z"
+  });
+  const customerView = getCustomerSafeStrategyEscalationItemView({
+    item
+  });
+
+  assert.doesNotMatch(
+    unsafeText,
+    /internalPromptDraft|promptText|raw worker instructions|selectedEngine|browser\.runtime|audit-only|codex_cli|futureStrategyEscalationServiceTarget|futureAuditServiceTarget|strategy-escalation\.ts|C:\\secret/i
+  );
+  assert.match(
+    unsafeText,
+    /strategy escalation details are available|internal detail|review/i
+  );
+  assert.doesNotMatch(
+    item.strategyQuestion,
+    /internalPromptDraft|promptText|raw worker instructions|futureStrategyEscalationServiceTarget|strategy-escalation\.ts/i
+  );
+  assert.doesNotMatch(
+    item.customerSafeContext,
+    /selectedEngine|browser\.runtime|audit-only|codex_cli|futureAuditServiceTarget|C:\\secret/i
+  );
+  assert.doesNotMatch(
+    item.proposedRoadmapImpactSummary,
+    /futureStrategyEscalationServiceTarget|internalPromptDraft|promptText|C:\\secret/i
+  );
+  assert.equal(customerView.strategyEscalationItemId, item.strategyEscalationItemId);
+  assert.equal(customerView.sourceId, item.sourceId);
+  assert.equal(customerView.impactLevel, item.impactLevel);
+  assert.equal(customerView.strategyQuestion, item.strategyQuestion);
+  assert.equal(customerView.customerSafeContext, item.customerSafeContext);
+  assert.equal(
+    customerView.proposedRoadmapImpactSummary,
+    item.proposedRoadmapImpactSummary
+  );
+  assert.equal("internalReason" in customerView, false);
+  assert.equal("futureStrategyEscalationServiceTarget" in customerView, false);
+});
+
+test("Strategy Escalation remains escalation-only and does not own analyzer, review, execution, repair, evidence, audit, follow-up, strategy runtime, or UI behavior", async () => {
+  const roadmapRevisionItem = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-strategy-boundary-1",
+    analyzerOutcome: "roadmap_revision_required",
+    normalizedRequest: "re-sequence the release roadmap",
+    riskLevel: "high",
+    readinessBlockers: ["Roadmap review is required before work can continue."],
+    customerFacingSummary: "Roadmap review is required before work can continue.",
+    internalSummary: "Analyzer is waiting for roadmap review.",
+    createdAt: "2026-05-01T16:16:00.000Z",
+    source: {
+      requestSource: "build_room",
+      analyzerSource: "mock_fallback",
+      caller: "neroa_one_strategy_escalation_test"
+    }
+  };
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-strategy-escalation-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-strategy-escalation-3",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest:
+        "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_strategy_escalation_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the strategy escalation lane escalation-only."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-strategy-escalation-3",
+    createdAt: "2026-05-01T16:17:00.000Z"
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "strategy_escalation",
+    createdAt: "2026-05-01T16:18:00.000Z"
+  });
+  const roadmapEscalation = createStrategyEscalationItemFromOutcomeLaneItem({
+    item: roadmapRevisionItem,
+    status: "ready_for_strategy_review",
+    impactLevel: "critical",
+    createdAt: "2026-05-01T16:19:00.000Z"
+  });
+  const reviewEscalation = createStrategyEscalationItemFromOutputReview({
+    review,
+    status: "approved",
+    impactLevel: "medium",
+    createdAt: "2026-05-01T16:20:00.000Z"
+  });
+
+  assert.equal(roadmapRevisionItem.analyzerOutcome, "roadmap_revision_required");
+  assert.equal("status" in roadmapRevisionItem, false);
+  assert.equal("impactLevel" in roadmapRevisionItem, false);
+  assert.equal("futureStrategyEscalationServiceTarget" in roadmapRevisionItem, false);
+  assert.equal(review.decision, "strategy_escalation");
+  assert.equal("status" in review, false);
+  assert.equal("impactLevel" in review, false);
+  assert.equal("futureStrategyEscalationServiceTarget" in review, false);
+  assert.equal(roadmapEscalation.sourceType, "roadmap_revision_required");
+  assert.equal(roadmapEscalation.status, "ready_for_strategy_review");
+  assert.equal(roadmapEscalation.impactLevel, "critical");
+  assert.equal(reviewEscalation.sourceType, "strategy_escalation");
+  assert.equal(reviewEscalation.status, "approved");
+  assert.equal(reviewEscalation.impactLevel, "medium");
+  assert.equal("decision" in roadmapEscalation, false);
+  assert.equal("analyzerOutcome" in roadmapEscalation, false);
+  assert.equal("executionPacketId" in roadmapEscalation, false);
+  assert.equal("followUpItemId" in roadmapEscalation, false);
+  assert.equal("repairItemId" in roadmapEscalation, false);
+  assert.equal("evidenceId" in roadmapEscalation, false);
+  assert.equal("auditEventId" in roadmapEscalation, false);
 });
 
 test("Repair Queue accepts only needs_repair and rerun_required output review decisions", async () => {
