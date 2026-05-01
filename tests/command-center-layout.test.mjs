@@ -73,7 +73,7 @@ test("Review outcomes show compact lane guidance in the task row summary", () =>
     /Add clarification in Decisions before this request moves forward\./
   );
   assert.match(smartSurfaceSource, /Not in current roadmap\./);
-  assert.match(smartSurfaceSource, /Ready for execution review\./);
+  assert.match(smartSurfaceSource, /Ready for prompt review queue\./);
   assert.match(smartSurfaceSource, /Reviewing roadmap fit\./);
 });
 
@@ -95,19 +95,25 @@ test("Roadmap revision-needed tasks show a compact revision review prompt when e
   assert.match(smartSurfaceSource, /disabled/);
 });
 
-test("Approved roadmap tasks show a compact execution review prompt when expanded", () => {
+test("Approved roadmap tasks show a compact prompt review queue prompt when expanded", () => {
   assert.match(smartSurfaceSource, /function shouldShowExecutionReviewPrompt\(task: CommandCenterWorkflowTaskCard\)/);
-  assert.match(smartSurfaceSource, /Execution Review/);
+  assert.match(smartSurfaceSource, /Prompt Review Queue/);
   assert.match(
+    smartSurfaceSource,
+    /This task fits the current roadmap and will be prepared for\s+the internal prompt\/build queue\./
+  );
+  assert.match(smartSurfaceSource, /Prepare Queue Entry/);
+  assert.match(smartSurfaceSource, /Pause Queue Prep/);
+  assert.doesNotMatch(
     smartSurfaceSource,
     /This task fits the current roadmap and is ready for execution\s+review\./
   );
-  assert.match(
+  assert.doesNotMatch(
     smartSurfaceSource,
     /Please approve before sending to Build Room\./
   );
-  assert.match(smartSurfaceSource, /Approve Execution/);
-  assert.match(smartSurfaceSource, /Hold Task/);
+  assert.doesNotMatch(smartSurfaceSource, /Approve Execution/);
+  assert.doesNotMatch(smartSurfaceSource, /Hold Task/);
   assert.match(smartSurfaceSource, /Not yet wired/);
   assert.match(smartSurfaceSource, /type="button"/);
   assert.match(smartSurfaceSource, /disabled/);

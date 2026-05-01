@@ -237,7 +237,7 @@ function reviewLaneGuidance(task: CommandCenterWorkflowTaskCard) {
   }
 
   if (task.reviewOutcome === "approved_for_roadmap") {
-    return "Ready for execution review.";
+    return "Ready for prompt review queue.";
   }
 
   return "Reviewing roadmap fit.";
@@ -737,11 +737,11 @@ export function CommandCenterSmartOperatorSurface({
                             {shouldShowExecutionReviewPrompt(task) ? (
                               <div className="rounded-[16px] border border-emerald-300/25 bg-emerald-400/10 px-4 py-3">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
-                                  Execution Review
+                                  Prompt Review Queue
                                 </p>
                                 <p className="mt-2 text-sm leading-6 text-emerald-50">
-                                  This task fits the current roadmap and is ready for execution
-                                  review. Please approve before sending to Build Room.
+                                  This task fits the current roadmap and will be prepared for
+                                  the internal prompt/build queue.
                                 </p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                   <button
@@ -750,7 +750,7 @@ export function CommandCenterSmartOperatorSurface({
                                     aria-disabled="true"
                                     className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
-                                    Approve Execution
+                                    Prepare Queue Entry
                                   </button>
                                   <button
                                     type="button"
@@ -758,7 +758,7 @@ export function CommandCenterSmartOperatorSurface({
                                     aria-disabled="true"
                                     className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
-                                    Hold Task
+                                    Pause Queue Prep
                                   </button>
                                   <span className="self-center text-[11px] text-slate-400">
                                     Not yet wired
