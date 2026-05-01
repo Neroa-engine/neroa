@@ -21,6 +21,9 @@ import {
   canNeroaOneOutcomeLaneEnterCodexExecution,
   createPlaceholderOutputReviewDecisionFromOutputItem,
   createPlaceholderOutputReviewDecisionsFromOutputItems,
+  createCustomerSafeRepairSummary,
+  createRepairQueueItemFromOutputReview,
+  createRepairQueueItemsFromOutputReviews,
   createQueuedQcStationJobFromApprovedOutputReview,
   createQueuedQcStationJobsFromApprovedOutputReview,
   classifyCustomerIntent,
@@ -47,6 +50,10 @@ import {
   getPromptRoomCustomerSafeStatus,
   getPromptRoomCustomerSafeStatuses,
   getPromptRoomStatuses,
+  getRepairQueueItemStatuses,
+  getRepairQueuePriorities,
+  getRepairQueueSourceDecisions,
+  getRepairQueueTypes,
   getQcStationJobStatuses,
   getQcStationJobTypes,
   getRejectedOutputReviewDecisionsForQcStation,
@@ -64,8 +71,13 @@ import {
   NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
   NEROA_ONE_PROMPT_ROOM_CUSTOMER_SAFE_STATUSES,
   NEROA_ONE_PROMPT_ROOM_STATUSES,
+  NEROA_ONE_REPAIR_QUEUE_ITEM_STATUSES,
+  NEROA_ONE_REPAIR_QUEUE_PRIORITIES,
+  NEROA_ONE_REPAIR_QUEUE_SOURCE_DECISIONS,
+  NEROA_ONE_REPAIR_QUEUE_TYPES,
   NEROA_ONE_QC_STATION_JOB_STATUSES,
   NEROA_ONE_QC_STATION_JOB_TYPES,
+  canCreateRepairQueueItemFromOutputReview,
   isEligibleCodexOutputStatusForFreshReview,
   isOutputReviewDecisionEligibleForQcStation,
   canCreateQcStationJobFromOutputReview,
@@ -80,6 +92,8 @@ import {
   validateEvidenceLinkForAuditRoomEvent,
   validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
+  validateOutputReviewDecisionForRepairQueue,
+  validateOutputReviewForRepairQueue,
   neroaOneAuditRoomLane,
   neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
@@ -89,10 +103,12 @@ import {
   neroaOneOutcomeQueues,
   neroaOneOutputReviewLane,
   neroaOnePromptRoomLane,
+  neroaOneRepairQueueLane,
   neroaOneQcStationLane,
   resolveNeroaOneCostPolicy,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
-  validateNeroaOneOutcomeQueueItemForLane
+  validateNeroaOneOutcomeQueueItemForLane,
+  getCustomerSafeRepairQueueItemView
 } from "../lib/neroa-one/index.ts";
 
 const moduleSources = [
@@ -109,6 +125,7 @@ const moduleSources = [
   "../lib/neroa-one/code-execution-worker.ts",
   "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/output-review.ts",
+  "../lib/neroa-one/repair-queue.ts",
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
   "../lib/neroa-one/audit-room.ts",
@@ -281,6 +298,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const outputReviewSource = moduleSources.find((source) =>
     source.includes("neroaOneOutputReviewRecordSchema")
   );
+  const repairQueueSource = moduleSources.find((source) =>
+    source.includes("neroaOneRepairQueueItemSchema")
+  );
   const qcStationSource = moduleSources.find((source) =>
     source.includes("neroaOneQcStationJobRecordSchema")
   );
@@ -297,6 +317,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(codeExecutionWorkerSource);
   assert.ok(codexOutputBoxSource);
   assert.ok(outputReviewSource);
+  assert.ok(repairQueueSource);
   assert.ok(qcStationSource);
   assert.ok(evidenceLinkingSource);
   assert.ok(auditRoomSource);
@@ -366,6 +387,17 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
+  assert.doesNotMatch(repairQueueSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    repairQueueSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(repairQueueSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
+  assert.doesNotMatch(
+    repairQueueSource,
+    /createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|savePromptRoomItem|saveWorkerRun/i
+  );
+  assert.match(repairQueueSource, /interface\s+NeroaOneRepairQueueStorageAdapter/);
   assert.doesNotMatch(qcStationSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     qcStationSource,
@@ -599,6 +631,74 @@ test("Output review decisions and explicit destinations stay typed and backend-o
     "command_center_follow_up"
   ]);
   assert.deepEqual(getAllowedOutputReviewNextDestinations("archive_complete"), ["archive_only"]);
+});
+
+test("Repair Queue lane stays typed, backend-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_REPAIR_QUEUE_SOURCE_DECISIONS], [
+    "needs_repair",
+    "rerun_required"
+  ]);
+  assert.deepEqual([...NEROA_ONE_REPAIR_QUEUE_ITEM_STATUSES], [
+    "draft",
+    "queued",
+    "ready_for_prompt_room",
+    "ready_for_worker_rerun",
+    "blocked",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual([...NEROA_ONE_REPAIR_QUEUE_PRIORITIES], [
+    "low",
+    "normal",
+    "high",
+    "critical"
+  ]);
+  assert.deepEqual([...NEROA_ONE_REPAIR_QUEUE_TYPES], [
+    "code_fix",
+    "prompt_revision",
+    "test_failure",
+    "qc_failure",
+    "worker_failure",
+    "scope_conflict",
+    "unknown"
+  ]);
+  assert.deepEqual(getRepairQueueSourceDecisions(), [
+    "needs_repair",
+    "rerun_required"
+  ]);
+  assert.deepEqual(getRepairQueueItemStatuses(), [
+    "draft",
+    "queued",
+    "ready_for_prompt_room",
+    "ready_for_worker_rerun",
+    "blocked",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual(getRepairQueuePriorities(), [
+    "low",
+    "normal",
+    "high",
+    "critical"
+  ]);
+  assert.deepEqual(getRepairQueueTypes(), [
+    "code_fix",
+    "prompt_revision",
+    "test_failure",
+    "qc_failure",
+    "worker_failure",
+    "scope_conflict",
+    "unknown"
+  ]);
+  assert.equal(neroaOneRepairQueueLane.backendOnly, true);
+  assert.equal(neroaOneRepairQueueLane.extractionReady, true);
+  assert.equal(neroaOneRepairQueueLane.independentlyReplaceable, true);
+  assert.equal(neroaOneRepairQueueLane.sideEffectLight, true);
+  assert.equal(neroaOneRepairQueueLane.uiDecoupled, true);
+  assert.equal(neroaOneRepairQueueLane.storesRepairItemsNow, false);
+  assert.equal(neroaOneRepairQueueLane.routesPromptRoomNow, false);
+  assert.equal(neroaOneRepairQueueLane.routesWorkerRerunNow, false);
+  assert.equal(neroaOneRepairQueueLane.writesPersistenceNow, false);
 });
 
 test("QC Station lane stays typed, backend-only, and DigitalOcean-ready", () => {
@@ -1991,6 +2091,178 @@ test("Output review rejects every non-pending output status for fresh review cre
       new RegExp(`status ${outputStatus}`, "i")
     );
   }
+});
+
+test("Repair Queue accepts only needs_repair and rerun_required output review decisions", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-repair-queue-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-repair-queue-1",
+      title: "Prepare repair queue contract",
+      request: "Prepare the repair queue backend contract for review outcomes.",
+      normalizedRequest: "prepare the repair queue backend contract for review outcomes."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_repair_queue_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the repair queue lane backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-repair-1",
+    summary: "Patch proposal staged for repair queue routing.",
+    filesChanged: ["lib/neroa-one/repair-queue.ts"],
+    testsRun: ["node --test tests\\neroa-one-foundation.test.mjs"],
+    createdAt: "2026-05-01T15:00:00.000Z",
+    receivedAt: "2026-05-01T15:01:00.000Z"
+  });
+  const repairReview = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "needs_repair",
+    createdAt: "2026-05-01T15:02:00.000Z"
+  });
+  const rerunReview = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "rerun_required",
+    createdAt: "2026-05-01T15:03:00.000Z"
+  });
+  const blockedDecisionValidation = validateOutputReviewDecisionForRepairQueue({
+    decision: "approve_for_qc"
+  });
+  const repairValidation = validateOutputReviewForRepairQueue({
+    review: repairReview
+  });
+  const rerunValidation = validateOutputReviewForRepairQueue({
+    review: rerunReview
+  });
+  const repairItem = createRepairQueueItemFromOutputReview({
+    review: repairReview,
+    repairType: "code_fix",
+    status: "ready_for_prompt_room",
+    createdAt: "2026-05-01T15:04:00.000Z",
+    updatedAt: "2026-05-01T15:05:00.000Z"
+  });
+  const rerunItem = createRepairQueueItemFromOutputReview({
+    review: rerunReview,
+    status: "ready_for_worker_rerun",
+    createdAt: "2026-05-01T15:06:00.000Z"
+  });
+  const itemSet = createRepairQueueItemsFromOutputReviews({
+    reviews: [repairReview, rerunReview],
+    status: "queued",
+    createdAt: "2026-05-01T15:07:00.000Z"
+  });
+
+  assert.equal(blockedDecisionValidation.allowed, false);
+  assert.match(blockedDecisionValidation.reason, /allowed decisions: needs_repair, rerun_required/i);
+  assert.equal(repairValidation.allowed, true);
+  assert.equal(rerunValidation.allowed, true);
+  assert.equal(canCreateRepairQueueItemFromOutputReview({ review: repairReview }), true);
+  assert.equal(canCreateRepairQueueItemFromOutputReview({ review: rerunReview }), true);
+  assert.equal(repairItem.sourceDecision, "needs_repair");
+  assert.equal(repairItem.repairType, "code_fix");
+  assert.equal(repairItem.priority, "normal");
+  assert.equal(repairItem.status, "ready_for_prompt_room");
+  assert.equal(repairItem.outputId, output.outputId);
+  assert.equal(repairItem.reviewId, repairReview.reviewId);
+  assert.equal(repairItem.futureRepairServiceTarget.deploymentProvider, "digitalocean");
+  assert.equal(repairItem.futureRepairServiceTarget.readyForDispatch, false);
+  assert.match(repairItem.repairItemId, /:repair:/i);
+  assert.equal(rerunItem.sourceDecision, "rerun_required");
+  assert.equal(rerunItem.repairType, "worker_failure");
+  assert.equal(rerunItem.priority, "high");
+  assert.equal(rerunItem.status, "ready_for_worker_rerun");
+  assert.equal(itemSet.length, 2);
+  assert.deepEqual(
+    itemSet.map((item) => item.sourceDecision),
+    ["needs_repair", "rerun_required"]
+  );
+});
+
+test("Repair Queue customer-safe summary strips internal execution details", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-repair-queue-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-repair-queue-2",
+      title: "Prepare repair queue sanitization",
+      request: "Prepare repair queue sanitization coverage for review outcomes.",
+      normalizedRequest:
+        "prepare repair queue sanitization coverage for review outcomes."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_repair_queue_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep repair queue customer summaries safe and backend-only."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-repair-2",
+    createdAt: "2026-05-01T15:10:00.000Z"
+  });
+  const repairReview = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "needs_repair",
+    createdAt: "2026-05-01T15:11:00.000Z"
+  });
+  const unsafeSummary = createCustomerSafeRepairSummary({
+    sourceDecision: "needs_repair",
+    status: "queued",
+    customerSafeSummary:
+      "Use internalPromptDraft promptText and raw worker instructions for codex_cli; review protectedAreas in lib/neroa-one/repair-queue.ts; check browser.runtime and internal audit-only notes."
+  });
+  const item = createRepairQueueItemFromOutputReview({
+    review: repairReview,
+    repairSummary:
+      "Repair lib/neroa-one/repair-queue.ts with raw worker instructions, selectedEngine codex_cli, worker secret rotation, and browser.runtime fallback.",
+    customerSafeSummary:
+      "Repair lib/neroa-one/repair-queue.ts with raw worker instructions, selectedEngine codex_cli, worker secret rotation, and browser.runtime fallback.",
+    createdAt: "2026-05-01T15:12:00.000Z"
+  });
+  const customerView = getCustomerSafeRepairQueueItemView({
+    item
+  });
+
+  assert.doesNotMatch(
+    unsafeSummary,
+    /internalPromptDraft|promptText|raw worker instructions|protectedAreas|selectedEngine|worker secret|browser\.runtime|audit-only|codex_cli/i
+  );
+  assert.match(unsafeSummary, /implementation output needs an internal repair pass|internal detail/i);
+  assert.doesNotMatch(
+    item.customerSafeSummary,
+    /internalPromptDraft|promptText|raw worker instructions|protectedAreas|selectedEngine|worker secret|browser\.runtime|audit-only|codex_cli|repair-queue\.ts/i
+  );
+  assert.equal(customerView.repairItemId, item.repairItemId);
+  assert.equal(customerView.reviewId, item.reviewId);
+  assert.equal(customerView.status, item.status);
+  assert.equal(customerView.priority, item.priority);
+  assert.equal(customerView.customerSafeSummary, item.customerSafeSummary);
+  assert.equal("repairSummary" in customerView, false);
+  assert.equal("internalRepairNotes" in customerView, false);
+  assert.equal("futureRepairServiceTarget" in customerView, false);
 });
 
 test("QC Station can create queued jobs only from approve_for_qc output review decisions", async () => {
