@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type {
   BuildRoomOutputMode,
   BuildRoomRelayMode,
@@ -387,6 +387,35 @@ function artifactPreview(artifacts: BuildRoomArtifact[]) {
   );
 }
 
+type BuildRoomZoneProps = {
+  title: string;
+  description: string;
+  children: ReactNode;
+  badge?: string;
+};
+
+function BuildRoomZone({ title, description, children, badge }: BuildRoomZoneProps) {
+  return (
+    <section className="floating-plane rounded-[34px] p-5 lg:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+            {title}
+          </p>
+          <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">{description}</p>
+        </div>
+        {badge ? (
+          <span className="rounded-full border border-slate-200 bg-white/82 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            {badge}
+          </span>
+        ) : null}
+      </div>
+
+      <div className="mt-5">{children}</div>
+    </section>
+  );
+}
+
 function latestWorkerRun(runs: BuildRoomRun[]) {
   return runs.find((run) => run.runType === "worker") ?? null;
 }
@@ -510,6 +539,31 @@ export function BuildRoomControlRoom({
     selectedDetail?.task.status === "codex_complete" &&
     !workerBlockedByBlockers &&
     !storageMessage;
+  const nextExecutionStep = !selectedDetail
+    ? "Pick a saved task to inspect the next governed execution step."
+    : selectedDetail.task.status === "needs_revision"
+      ? "Revise the request in Command Center, then resend it through the current relay."
+      : canApproveWorker
+        ? "Review the guarded output and approve the worker only when the packet is ready."
+        : workerBlockedByBlockers
+          ? "Resolve the Codex blockers before any worker approval is allowed."
+          : selectedDetail.task.status === "approved_for_worker" ||
+              selectedDetail.task.status === "worker_running"
+            ? "Wait for the worker result, then review QA and evidence."
+            : selectedDetail.task.status === "worker_complete"
+              ? "Review the recorded evidence, QA, and billing protections before closing out the task."
+              : "Refresh the governed task state and keep the packet aligned before the next step.";
+  const qaPlaceholderItems = [
+    "Future browser inspection",
+    "Future visual inspector",
+    "Future QC inspector",
+    "Future video recorder"
+  ];
+  const usagePlaceholderItems = [
+    "Future credits",
+    "Future model level",
+    "Future run limits"
+  ];
 
   async function refreshTask(taskId: string, quiet = false) {
     if (!quiet) {
@@ -737,21 +791,20 @@ export function BuildRoomControlRoom({
           <div className="space-y-4">
             <div className="floating-plane rounded-[34px] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Build Room Execution Surface
+                Build Room Internal Surface
               </p>
               <h1 className="mt-4 text-3xl font-semibold tracking-tight text-slate-950">
-                Review execution state. Approve guarded runs.
+                Organize governed execution work in one internal room.
               </h1>
               <p className="mt-4 text-sm leading-7 text-slate-600">
-                Command Center now owns the main request intake. Build Room stays focused on the
-                lower-level execution surface: relay status, approval gating, worker history, and
-                stored run artifacts.
+                Command Center owns the customer workflow. Build Room stays focused on internal
+                planning, guarded execution, QA, evidence, and usage controls.
               </p>
               <div className="mt-5 grid gap-3">
                 {[
-                  "Command Center creates and submits Build Room tasks through the current backend relay.",
-                  "Worker execution never auto-starts after generation.",
-                  "Result, logs, artifacts, and approval state stay visible in one room."
+                  "Execution Planning keeps the task brief, requested outcome, blockers, and prompt package readiness together.",
+                  "Build Execution keeps the relay state, worker state, approval gate, and next step together.",
+                  "QA, evidence, and usage controls stay visible without changing relay or worker behavior."
                 ].map((item) => (
                   <div
                     key={item}
@@ -761,54 +814,20 @@ export function BuildRoomControlRoom({
                   </div>
                 ))}
               </div>
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                    Codex relay
-                  </p>
-                  <p className="mt-3 text-sm font-semibold text-slate-950">
-                    {relayModeLabel(codexRelayMode)}
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    {relayModeDescription(codexRelayMode)}
-                  </p>
-                </div>
-                <div
-                  className={`rounded-[22px] border px-4 py-4 ${
-                    workerModeIsMock
-                      ? "border-amber-200 bg-amber-50"
-                      : "border-emerald-200 bg-emerald-50"
-                  }`}
-                >
-                  <p
-                    className={`text-[11px] font-semibold uppercase tracking-[0.18em] ${
-                      workerModeIsMock ? "text-amber-700" : "text-emerald-700"
-                    }`}
-                  >
-                    Worker execution
-                  </p>
-                  <p className="mt-3 text-sm font-semibold text-slate-950">
-                    {workerModeLabel(workerTriggerMode)}
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-slate-600">
-                    {workerModeDescription(workerTriggerMode)}
-                  </p>
-                </div>
-              </div>
             </div>
 
             <div className="floating-plane rounded-[34px] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Execution Intake Snapshot
+                Intake Handoff
               </p>
               <div className="mt-5 space-y-4">
                 <div className="rounded-[24px] border border-cyan-200 bg-cyan-50 px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-cyan-700">
-                    Command Center owns intake
+                    Command Center owns request entry
                   </p>
                   <p className="mt-3 text-sm leading-7 text-cyan-800">
-                    New execution requests should be typed and sent from Command Center. Build Room
-                    now mirrors the selected task so this page can stay focused on execution detail.
+                    Build Room mirrors the selected task so this room can stay focused on internal
+                    execution detail instead of customer-facing intake.
                   </p>
                   <div className="mt-4">
                     <Link href={commandCenterHref} className="button-secondary text-sm">
@@ -1027,12 +1046,12 @@ export function BuildRoomControlRoom({
 
                 <div className="rounded-[24px] border border-slate-200/70 bg-white/78 px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
-                    Generation boundary
+                    Internal-only boundary
                   </p>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
                     Build Room no longer acts as the primary request entry. Command Center creates
-                    and sends the task; Build Room keeps the governed packet, result, and approval
-                    history in one place.
+                    and sends the task; Build Room keeps the governed packet, result, approval, and
+                    evidence history in one place.
                   </p>
                 </div>
 
@@ -1182,12 +1201,18 @@ export function BuildRoomControlRoom({
                     <div className="mt-6 rounded-[26px] border border-slate-200/70 bg-white/74 px-5 py-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
-                            Internal Execution Planning
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-700">
+                            Execution Planning
                           </p>
                           <p className="mt-3 text-sm leading-7 text-slate-600">
-                            Build Room keeps the internal execution package view here. This does not
-                            change worker behavior, relay behavior, or customer-facing intake.
+                            Build Room keeps the internal execution package view here so the task
+                            intent, requested outcome, blockers, and prompt package status stay in
+                            one place.
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            This does not change worker behavior, relay behavior, or
+                            customer-facing intake. This is a read-only planning cue. Worker
+                            approval and execution behavior remain unchanged.
                           </p>
                         </div>
                         <span className="rounded-full border border-slate-200 bg-white/82 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -1215,7 +1240,11 @@ export function BuildRoomControlRoom({
                   <div className="grid gap-4">
                     <div className="floating-plane rounded-[34px] p-5">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                        Response / Status
+                        Build Execution
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">
+                        Relay state, worker state, guarded approvals, and the next execution step
+                        stay together here.
                       </p>
                       <div className="mt-5 grid gap-3">
                         {[
@@ -1228,17 +1257,17 @@ export function BuildRoomControlRoom({
                             value: formatStatusLabel(selectedDetail.task.requestedOutputMode)
                           },
                           {
-                            label: "Codex relay",
+                            label: "Codex relay state",
                             value: relayModeLabel(activeCodexRelayMode),
                             note: relayModeDescription(activeCodexRelayMode)
                           },
                           {
-                            label: "Worker mode",
+                            label: "Worker state",
                             value: workerModeLabel(workerTriggerMode),
                             note: workerModeDescription(workerTriggerMode)
                           },
                           {
-                            label: "Worker gate",
+                            label: "Approval gate",
                             value: selectedDetail.task.approvedForExecution ? "Approved" : "Awaiting approval"
                           },
                           {
@@ -1260,22 +1289,8 @@ export function BuildRoomControlRoom({
                                 : "The task exists in Build Room, but no released execution packet is linked yet."
                           },
                           {
-                            label: "QA / release",
-                            value: qaSummary
-                              ? qaSummary.completionLabel
-                              : "Awaiting QA validation",
-                            note: qaSummary
-                              ? `${qaSummary.artifactProgressLabel}. ${qaSummary.criterionProgressLabel}. ${qaSummary.releaseLabel}.`
-                              : "Run-complete and accepted are separate states. Shared QA validation decides when this task can be presented as complete."
-                          },
-                          {
-                            label: "Billing / protection",
-                            value: billingSummary
-                              ? billingSummary.statusLabel
-                              : "Awaiting billing classification",
-                            note: billingSummary
-                              ? `${billingSummary.chargeabilityLabel}. ${billingSummary.retryLabel}. ${billingSummary.guardrailLabel}.`
-                              : "Approved, in-scope, release-ready work is the only work that can become billable."
+                            label: "Next execution step",
+                            value: nextExecutionStep
                           }
                         ].map((item) => (
                           <div
@@ -1295,7 +1310,7 @@ export function BuildRoomControlRoom({
 
                       <div className="mt-5 border-t border-slate-200/70 pt-5">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                          Execution gate
+                          Approval gate
                         </p>
                         <p className="mt-3 text-sm leading-7 text-slate-600">
                           Codex output never triggers the worker on its own. Approval is a separate
@@ -1355,7 +1370,7 @@ export function BuildRoomControlRoom({
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                            QA / acceptance gate
+                            QA / QC
                           </p>
                           <p className="mt-3 text-lg font-semibold text-slate-950">
                             {qaSummary?.headline ?? "QA validation will appear after packet generation."}
@@ -1438,13 +1453,30 @@ export function BuildRoomControlRoom({
                           </div>
                         </>
                       ) : null}
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {qaPlaceholderItems.map((item) => (
+                          <div
+                            key={item}
+                            className="rounded-[22px] border border-dashed border-slate-200 bg-white/78 px-4 py-4"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              Placeholder
+                            </p>
+                            <p className="mt-3 text-sm font-semibold text-slate-950">{item}</p>
+                            <p className="mt-2 text-xs leading-6 text-slate-500">
+                              Reserved for a later internal-only browser or QC wiring phase.
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="floating-plane rounded-[34px] p-5">
                       <div className="flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                            Billing / protection
+                            Usage / Controls
                           </p>
                           <p className="mt-3 text-lg font-semibold text-slate-950">
                             {billingSummary?.headline ??
@@ -1527,11 +1559,32 @@ export function BuildRoomControlRoom({
                           </div>
                         </>
                       ) : null}
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-3">
+                        {usagePlaceholderItems.map((item) => (
+                          <div
+                            key={item}
+                            className="rounded-[22px] border border-dashed border-slate-200 bg-white/78 px-4 py-4"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              Placeholder
+                            </p>
+                            <p className="mt-3 text-sm font-semibold text-slate-950">{item}</p>
+                            <p className="mt-2 text-xs leading-6 text-slate-500">
+                              Reserved for a later internal-only control pass.
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="floating-plane rounded-[34px] p-5">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                        Execution log / results
+                        Evidence Snapshot
+                      </p>
+                      <p className="mt-3 text-sm leading-7 text-slate-600">
+                        Keep the latest run summary and recorded identifiers close to the detailed
+                        evidence below.
                       </p>
                       <div className="mt-5 grid gap-3">
                         <div className="rounded-[22px] border border-slate-200/70 bg-white/78 px-4 py-4">
@@ -1567,7 +1620,11 @@ export function BuildRoomControlRoom({
 
                 <div className="floating-plane rounded-[34px] p-6">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                    Result Panel
+                    Evidence / Results
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    Generated output, logs, history, and stored artifacts stay grouped here for
+                    internal review.
                   </p>
                   {selectedCodexResult ? (
                     <div className="mt-5 grid gap-4">
@@ -1795,20 +1852,12 @@ export function BuildRoomControlRoom({
               </>
             ) : (
               <div className="grid gap-4">
-                <div className="floating-plane rounded-[34px] p-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                    Response / Status
-                  </p>
-                  <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
-                    Pick a saved task or create a new one to start the Build Room relay flow.
-                  </div>
-                </div>
-
-                <div className="floating-plane rounded-[34px] p-6">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                    Internal Execution Planning
-                  </p>
-                  <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                <BuildRoomZone
+                  title="Execution Planning"
+                  description="Pick a saved task to load the internal execution brief, requested outcome, blockers, and prompt package readiness."
+                  badge="Internal only"
+                >
+                  <div className="grid gap-3 lg:grid-cols-2">
                     {internalExecutionPlanningItems.map((item) => (
                       <div
                         key={item.label}
@@ -1822,7 +1871,65 @@ export function BuildRoomControlRoom({
                       </div>
                     ))}
                   </div>
+                </BuildRoomZone>
+
+                <div className="grid gap-4 xl:grid-cols-2">
+                  <BuildRoomZone
+                    title="Build Execution"
+                    description="Pick a saved task to inspect relay state, worker state, and the next governed step."
+                  >
+                    <div className="rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
+                      Pick a saved task or create a new one to start the Build Room relay flow.
+                    </div>
+                  </BuildRoomZone>
+
+                  <BuildRoomZone
+                    title="QA / QC"
+                    description="Acceptance, artifact readiness, and future inspection placeholders will appear here after a task is selected."
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {qaPlaceholderItems.map((item) => (
+                        <div
+                          key={item}
+                          className="rounded-[22px] border border-dashed border-slate-200 bg-white/74 px-4 py-4"
+                        >
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                            Placeholder
+                          </p>
+                          <p className="mt-3 text-sm font-semibold text-slate-950">{item}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </BuildRoomZone>
                 </div>
+
+                <BuildRoomZone
+                  title="Evidence / Results"
+                  description="Generated output, logs, execution history, and stored artifacts will appear together here once a task is selected."
+                >
+                  <div className="rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
+                    Select a Build Room task to review evidence and results in one place.
+                  </div>
+                </BuildRoomZone>
+
+                <BuildRoomZone
+                  title="Usage / Controls"
+                  description="Billing protection lives here, with future placeholders for credits, model level, and run limits."
+                >
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {usagePlaceholderItems.map((item) => (
+                      <div
+                        key={item}
+                        className="rounded-[22px] border border-dashed border-slate-200 bg-white/74 px-4 py-4"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          Placeholder
+                        </p>
+                        <p className="mt-3 text-sm font-semibold text-slate-950">{item}</p>
+                      </div>
+                    ))}
+                  </div>
+                </BuildRoomZone>
               </div>
             )}
           </div>

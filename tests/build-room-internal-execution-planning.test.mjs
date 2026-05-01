@@ -11,8 +11,12 @@ const commandCenterSource = readFileSync(
   "utf8"
 );
 
-test("Build Room exposes an internal execution planning section", () => {
-  assert.match(buildRoomSource, /Internal Execution Planning/);
+test("Build Room exposes internal execution zones", () => {
+  assert.match(buildRoomSource, /Execution Planning/);
+  assert.match(buildRoomSource, /Build Execution/);
+  assert.match(buildRoomSource, /QA \/ QC/);
+  assert.match(buildRoomSource, /Evidence \/ Results/);
+  assert.match(buildRoomSource, /Usage \/ Controls/);
   assert.match(buildRoomSource, /task intent/i);
   assert.match(buildRoomSource, /requested output mode/i);
   assert.match(buildRoomSource, /prompt package status/i);
@@ -21,12 +25,20 @@ test("Build Room exposes an internal execution planning section", () => {
 test("Build Room internal planning stays read-only and separate from worker changes", () => {
   assert.match(
     buildRoomSource,
-    /does not\s+change worker behavior,\s+relay behavior,\s+or customer-facing intake/i
+    /does not\s+change worker behavior,\s+relay behavior,\s+or\s+customer-facing intake/i
   );
   assert.match(
     buildRoomSource,
     /read-only planning cue\.\s+Worker approval and execution behavior remain unchanged\./i
   );
+});
+
+test("Build Room demotes the old intake snapshot and keeps future QC surfaces as placeholders", () => {
+  assert.doesNotMatch(buildRoomSource, /Execution Intake Snapshot/);
+  assert.match(buildRoomSource, /Future browser inspection/);
+  assert.match(buildRoomSource, /Future visual inspector/);
+  assert.match(buildRoomSource, /Future QC inspector/);
+  assert.match(buildRoomSource, /Future video recorder/);
 });
 
 test("Command Center remains free of Prompt Runner after the stripdown", () => {
