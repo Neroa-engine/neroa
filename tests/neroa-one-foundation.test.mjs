@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   analyzeTaskWithNeroaOne,
+  assertNeroaOneOutcomeQueueItemAllowedInLane,
   buildBuildRoomHandoffPackage,
   buildBuildRoomCustomerTaskHandoffPackage,
   buildNeroaOneTaskAnalysisRequest,
@@ -13,8 +14,10 @@ import {
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
+  neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
-  resolveNeroaOneCostPolicy
+  resolveNeroaOneCostPolicy,
+  validateNeroaOneOutcomeQueueItemForLane
 } from "../lib/neroa-one/index.ts";
 
 const moduleSources = [
@@ -25,6 +28,7 @@ const moduleSources = [
   "../lib/neroa-one/build-room-handoff.ts",
   "../lib/neroa-one/cost-policy.ts",
   "../lib/neroa-one/outcome-queues.ts",
+  "../lib/neroa-one/outcome-lanes.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -101,6 +105,16 @@ test("Five backend outcome queues are represented", () => {
   ]);
 });
 
+test("Five hardened backend outcome lanes are represented", () => {
+  assert.deepEqual(Object.keys(neroaOneOutcomeLanes), [
+    "ready_to_build",
+    "needs_customer_answer",
+    "roadmap_revision_required",
+    "blocked_missing_information",
+    "rejected_outside_scope"
+  ]);
+});
+
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
   const request = buildNeroaOneTaskAnalysisRequest({
     requestId: "req-queue-1",
@@ -135,6 +149,77 @@ test("Analyzer output can be converted into a queue-ready backend item", async (
   assert.equal(entry.item.customerFacingSummary, response.reasoning.summary);
   assert.equal(entry.item.source.requestSource, "command_center");
   assert.equal(entry.item.source.caller, "neroa_one_foundation_test");
+});
+
+test("Queue-ready items can be validated against their hardened lane definitions", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-lane-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-lane-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_lane_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const validation = validateNeroaOneOutcomeQueueItemForLane({
+    laneId: entry.queue,
+    item: entry.item
+  });
+
+  assert.equal(validation.allowed, true);
+  assert.equal(validation.lane.laneId, entry.queue);
+  assert.equal(
+    assertNeroaOneOutcomeQueueItemAllowedInLane({
+      laneId: entry.queue,
+      item: entry.item
+    }).laneId,
+    entry.queue
+  );
+});
+
+test("Lane validation rejects queue items routed to the wrong hardened lane", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-lane-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-lane-2",
+      title: "Roadmap shift request",
+      request: "Please change the roadmap phase order before build starts.",
+      normalizedRequest: "please change the roadmap phase order before build starts.",
+      requestType: "change_direction"
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_lane_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const validation = validateNeroaOneOutcomeQueueItemForLane({
+    laneId: "ready_to_build",
+    item: entry.item
+  });
+
+  assert.equal(entry.queue, "roadmap_revision_required");
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /does not match lane ready_to_build/i);
 });
 
 test("Build Room handoff preserves original customer intent", () => {
