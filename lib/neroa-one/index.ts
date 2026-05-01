@@ -1,4 +1,6 @@
 export * from "./schemas.ts";
+export * from "./analyzer-contract.ts";
+export * from "./analyzer-client.ts";
 export * from "./space-context.ts";
 export * from "./classify-intent.ts";
 export * from "./roadmap-impact.ts";
