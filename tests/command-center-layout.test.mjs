@@ -58,6 +58,25 @@ test("Every live task row shows a compact review status chip", () => {
   assert.match(smartSurfaceSource, /out_of_scope/);
 });
 
+test("Review outcomes show compact lane guidance in the task row summary", () => {
+  assert.match(smartSurfaceSource, /function reviewLaneGuidance\(task: CommandCenterWorkflowTaskCard\)/);
+  assert.match(
+    smartSurfaceSource,
+    /Use Revisions or Roadmap Updates to align this request with the current roadmap\./
+  );
+  assert.match(
+    smartSurfaceSource,
+    /Move this through Decisions so Neroa gets the answer needed to continue\./
+  );
+  assert.match(
+    smartSurfaceSource,
+    /Add clarification in Decisions before this request moves forward\./
+  );
+  assert.match(smartSurfaceSource, /Not in current roadmap\./);
+  assert.match(smartSurfaceSource, /Ready for execution review\./);
+  assert.match(smartSurfaceSource, /Reviewing roadmap fit\./);
+});
+
 test("Command Center composer clears only after successful submit", () => {
   assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
   assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);

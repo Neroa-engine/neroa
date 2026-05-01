@@ -219,6 +219,30 @@ function reviewStatusClasses(task: CommandCenterWorkflowTaskCard) {
   return "border-violet-300/30 bg-violet-400/10 text-violet-100";
 }
 
+function reviewLaneGuidance(task: CommandCenterWorkflowTaskCard) {
+  if (task.reviewOutcome === "roadmap_revision_needed") {
+    return "Use Revisions or Roadmap Updates to align this request with the current roadmap.";
+  }
+
+  if (task.reviewOutcome === "decision_needed") {
+    return "Move this through Decisions so Neroa gets the answer needed to continue.";
+  }
+
+  if (task.reviewOutcome === "needs_clarification") {
+    return "Add clarification in Decisions before this request moves forward.";
+  }
+
+  if (task.reviewOutcome === "out_of_scope") {
+    return "Not in current roadmap.";
+  }
+
+  if (task.reviewOutcome === "approved_for_roadmap") {
+    return "Ready for execution review.";
+  }
+
+  return "Reviewing roadmap fit.";
+}
+
 function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
   return WORKFLOW_CONFIG[tab].sourceType;
 }
@@ -601,6 +625,9 @@ export function CommandCenterSmartOperatorSurface({
                                 {task.title}
                               </p>
                             </div>
+                            <p className="mt-1 truncate text-xs leading-5 text-slate-400">
+                              {reviewLaneGuidance(task)}
+                            </p>
                           </div>
                           <div className="hidden shrink-0 items-center gap-2 lg:flex">
                             <span
