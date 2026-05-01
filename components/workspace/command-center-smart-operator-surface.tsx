@@ -40,6 +40,7 @@ export type CommandCenterWorkflowTaskCard = {
   workflowLane?: CommandCenterWorkflowLane | null;
   requestType?: CommandCenterCustomerRequestType | null;
   reviewOutcome?: CommandCenterRoadmapReviewOutcome | null;
+  roadmapArea?: string | null;
   normalizedRequest?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -257,6 +258,52 @@ function shouldShowDecisionReviewPrompt(task: CommandCenterWorkflowTaskCard) {
 
 function shouldShowClarificationPrompt(task: CommandCenterWorkflowTaskCard) {
   return task.reviewOutcome === "needs_clarification";
+}
+
+const VISUAL_DESIGN_TASK_PATTERNS = [
+  /\bui\/ux\b/,
+  /\bui\b/,
+  /\bux\b/,
+  /\bvisual design\b/,
+  /\bdesign system\b/,
+  /\bredesign\b/,
+  /\brestyle\b/,
+  /\bstyling\b/,
+  /\blayout\b/,
+  /\btypography\b/,
+  /\bcolor\b/,
+  /\bbranding\b/,
+  /\bbrand\b/,
+  /\bhomepage\b/,
+  /\blanding page\b/,
+  /\bhero\b/,
+  /\bscreen\b/,
+  /\bpage design\b/,
+  /\bcomponent design\b/
+] as const;
+
+function isVisualDesignTask(task: CommandCenterWorkflowTaskCard) {
+  const normalizedTaskText = [
+    task.normalizedRequest,
+    task.title.toLowerCase(),
+    task.roadmapArea?.toLowerCase() ?? null
+  ]
+    .filter((value): value is string => Boolean(value && value.trim()))
+    .join(" ");
+
+  if (!normalizedTaskText) {
+    return false;
+  }
+
+  return VISUAL_DESIGN_TASK_PATTERNS.some((pattern) => pattern.test(normalizedTaskText));
+}
+
+function visualCheckpointGuidance(task: CommandCenterWorkflowTaskCard) {
+  if (!isVisualDesignTask(task)) {
+    return null;
+  }
+
+  return "Visual changes will need preview/QC evidence or a visual checkpoint review later.";
 }
 
 function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
@@ -628,6 +675,7 @@ export function CommandCenterSmartOperatorSurface({
                 <div className="grid gap-3">
                   {bucketTasks.map((task) => {
                     const taskTab = resolveTaskTab(task);
+                    const checkpointGuidance = visualCheckpointGuidance(task);
 
                     return (
                       <details
@@ -811,6 +859,11 @@ export function CommandCenterSmartOperatorSurface({
                                   </span>
                                 </div>
                               </div>
+                            ) : null}
+                            {checkpointGuidance ? (
+                              <p className="rounded-[12px] border border-cyan-300/20 bg-cyan-400/10 px-3 py-2 text-[12px] leading-5 text-cyan-100">
+                                {checkpointGuidance}
+                              </p>
                             ) : null}
                             <p className="text-sm leading-6 text-slate-300">{task.request}</p>
                             <div className="flex items-center justify-between gap-3">

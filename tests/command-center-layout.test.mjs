@@ -149,6 +149,20 @@ test("Decision-needed and clarification tasks show compact answer prompts when e
   assert.match(smartSurfaceSource, /disabled/);
 });
 
+test("Visual design tasks show compact checkpoint guidance when expanded", () => {
+  assert.match(smartSurfaceSource, /function isVisualDesignTask\(task: CommandCenterWorkflowTaskCard\)/);
+  assert.match(smartSurfaceSource, /function visualCheckpointGuidance\(task: CommandCenterWorkflowTaskCard\)/);
+  assert.match(
+    smartSurfaceSource,
+    /Visual changes will need preview\/QC evidence or a visual checkpoint review later\./
+  );
+  assert.match(
+    smartSurfaceSource,
+    /rounded-\[12px\] border border-cyan-300\/20 bg-cyan-400\/10 px-3 py-2 text-\[12px\] leading-5 text-cyan-100/
+  );
+  assert.doesNotMatch(smartSurfaceSource, /approve internal prompts/i);
+});
+
 test("Command Center composer clears only after successful submit", () => {
   assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
   assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);
