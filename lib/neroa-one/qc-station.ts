@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
+  getAllowedOutputReviewNextDestinations,
   neroaOneOutputReviewDecisionSchema,
   neroaOneOutputReviewLane,
   neroaOneOutputReviewRecordSchema,
@@ -138,6 +140,23 @@ export type NeroaOneQcStationReviewValidationResult =
       reason: string;
     };
 
+export type NeroaOneQcStationDecisionValidationResult =
+  | {
+      allowed: true;
+      reviewLane: typeof neroaOneOutputReviewLane;
+      qcLane: NeroaOneQcStationLaneDefinition;
+      decision: NeroaOneOutputReviewDecision;
+      requiredDecision: NeroaOneOutputReviewDecision;
+    }
+  | {
+      allowed: false;
+      reviewLane: typeof neroaOneOutputReviewLane;
+      qcLane: NeroaOneQcStationLaneDefinition;
+      decision: NeroaOneOutputReviewDecision;
+      requiredDecision: NeroaOneOutputReviewDecision;
+      reason: string;
+    };
+
 export interface NeroaOneQcStationStorageAdapter {
   saveQcJob(job: NeroaOneQcStationJobRecord): Promise<void>;
   getQcJobsByOutputId(outputId: string): Promise<NeroaOneQcStationJobRecord[]>;
@@ -201,6 +220,23 @@ function buildRejectedReviewValidationResult(
     reason:
       normalizeText(reason) ||
       "Output review decision is not eligible for the Neroa One QC Station lane."
+  };
+}
+
+function buildRejectedDecisionValidationResult(args: {
+  decision: NeroaOneOutputReviewDecision;
+  requiredDecision: NeroaOneOutputReviewDecision;
+  reason: string;
+}): NeroaOneQcStationDecisionValidationResult {
+  return {
+    allowed: false,
+    reviewLane: neroaOneOutputReviewLane,
+    qcLane: neroaOneQcStationLane,
+    decision: args.decision,
+    requiredDecision: args.requiredDecision,
+    reason:
+      normalizeText(args.reason) ||
+      `Review decision ${args.decision} is not eligible for QC Station job creation.`
   };
 }
 
@@ -314,6 +350,41 @@ function buildFutureDigitalOceanWorkerTarget(
   });
 }
 
+export function validateOutputReviewDecisionForQcStation(args: {
+  decision: NeroaOneOutputReviewDecision;
+}): NeroaOneQcStationDecisionValidationResult {
+  const decision = neroaOneOutputReviewDecisionSchema.parse(args.decision);
+  const requiredDecision = neroaOneOutputReviewDecisionSchema.parse(
+    neroaOneQcStationLane.requiredReviewDecision
+  );
+  const allowedDestinations = getAllowedOutputReviewNextDestinations(requiredDecision);
+
+  if (
+    allowedDestinations.length !== 1 ||
+    allowedDestinations[0] !== neroaOneQcStationLane.laneId
+  ) {
+    throw new Error(
+      "QC Station lane must stay aligned with the output review approve_for_qc destination contract."
+    );
+  }
+
+  if (decision !== requiredDecision) {
+    return buildRejectedDecisionValidationResult({
+      decision,
+      requiredDecision,
+      reason: `Review decision ${decision} cannot create a QC Station job. Required decision: ${requiredDecision}.`
+    });
+  }
+
+  return {
+    allowed: true,
+    reviewLane: neroaOneOutputReviewLane,
+    qcLane: neroaOneQcStationLane,
+    decision,
+    requiredDecision
+  };
+}
+
 export function validateApprovedOutputReviewForQcStation(args: {
   review: NeroaOneOutputReviewRecord;
 }): NeroaOneQcStationReviewValidationResult {
@@ -335,13 +406,13 @@ export function validateApprovedOutputReviewForQcStation(args: {
   }
 
   const review = reviewResult.data;
-  const requiredDecision = neroaOneOutputReviewDecisionSchema.parse(
-    neroaOneQcStationLane.requiredReviewDecision
-  );
+  const decisionValidation = validateOutputReviewDecisionForQcStation({
+    decision: review.decision
+  });
 
-  if (review.decision !== requiredDecision) {
+  if (!decisionValidation.allowed) {
     return buildRejectedReviewValidationResult(
-      `Output review ${review.reviewId} has decision ${review.decision} and cannot create a QC Station job. Required decision: ${requiredDecision}.`
+      `Output review ${review.reviewId} has decision ${review.decision} and cannot create a QC Station job. Required decision: ${decisionValidation.requiredDecision}.`
     );
   }
 
@@ -441,5 +512,13 @@ export function getQcStationJobStatuses() {
 export function isOutputReviewDecisionEligibleForQcStation(
   decision: NeroaOneOutputReviewDecision
 ) {
-  return decision === neroaOneQcStationLane.requiredReviewDecision;
+  return validateOutputReviewDecisionForQcStation({
+    decision
+  }).allowed;
+}
+
+export function getRejectedOutputReviewDecisionsForQcStation() {
+  return NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+    (decision) => decision !== neroaOneQcStationLane.requiredReviewDecision
+  );
 }

@@ -26,6 +26,7 @@ import {
   getEligibleCodexOutputStatusesForFreshReview,
   getQcStationJobStatuses,
   getQcStationJobTypes,
+  getRejectedOutputReviewDecisionsForQcStation,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   getAllowedOutputReviewNextDestinations,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
@@ -36,6 +37,7 @@ import {
   isEligibleCodexOutputStatusForFreshReview,
   isOutputReviewDecisionEligibleForQcStation,
   canCreateQcStationJobFromOutputReview,
+  validateOutputReviewDecisionForQcStation,
   validateCodexExecutionPacketForOutputBox,
   validateCodexOutputItemForOutputReview,
   validateApprovedOutputReviewForQcStation,
@@ -162,6 +164,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(outputReviewSource, /openai|anthropic|model review/i);
   assert.doesNotMatch(outputReviewSource, /createPendingReviewCodexOutputItem/i);
+  assert.doesNotMatch(
+    outputReviewSource,
+    /from\s+["']\.\/qc-station\.ts["']|createQueuedQcStationJobFromApprovedOutputReview|createQueuedQcStationJobsFromApprovedOutputReview/i
+  );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
   assert.doesNotMatch(qcStationSource, /codex-relay|worker-trigger/i);
@@ -174,6 +180,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     /extension session|recording state|side-panel runtime messaging|activeTab|chrome\.storage|browser\.runtime|local extension storage/i
   );
   assert.doesNotMatch(qcStationSource, /createPendingReviewCodexOutputItem/i);
+  assert.doesNotMatch(
+    qcStationSource,
+    /createPlaceholderOutputReviewDecisionFromOutputItem|createPlaceholderOutputReviewDecisionsFromOutputItems/i
+  );
   assert.match(qcStationSource, /interface\s+NeroaOneQcStationStorageAdapter/);
 });
 
@@ -298,8 +308,20 @@ test("QC Station lane stays typed, backend-only, and DigitalOcean-ready", () => 
   assert.equal(neroaOneQcStationLane.writesPersistenceNow, false);
   assert.deepEqual(getQcStationJobTypes(), [...NEROA_ONE_QC_STATION_JOB_TYPES]);
   assert.deepEqual(getQcStationJobStatuses(), [...NEROA_ONE_QC_STATION_JOB_STATUSES]);
+  assert.deepEqual(getRejectedOutputReviewDecisionsForQcStation(), [
+    "needs_repair",
+    "rerun_required",
+    "strategy_escalation",
+    "customer_followup",
+    "archive_complete"
+  ]);
   assert.equal(isOutputReviewDecisionEligibleForQcStation("approve_for_qc"), true);
   assert.equal(isOutputReviewDecisionEligibleForQcStation("needs_repair"), false);
+  assert.equal(validateOutputReviewDecisionForQcStation({ decision: "approve_for_qc" }).allowed, true);
+  assert.equal(
+    validateOutputReviewDecisionForQcStation({ decision: "rerun_required" }).allowed,
+    false
+  );
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
@@ -908,6 +930,71 @@ test("QC Station rejects output review decisions that are not approved for QC", 
       }),
     /approve_for_qc/i
   );
+});
+
+test("QC Station rejects every non-QC output review decision from job creation", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-qc-station-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-qc-station-3",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_qc_station_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the QC lane backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-qc-3",
+    createdAt: "2026-05-01T13:00:00.000Z"
+  });
+
+  for (const decision of getRejectedOutputReviewDecisionsForQcStation()) {
+    const decisionValidation = validateOutputReviewDecisionForQcStation({
+      decision
+    });
+    const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+      output,
+      decision,
+      createdAt: "2026-05-01T13:01:00.000Z"
+    });
+    const reviewValidation = validateApprovedOutputReviewForQcStation({
+      review
+    });
+
+    assert.equal(decisionValidation.allowed, false);
+    assert.equal(decisionValidation.decision, decision);
+    assert.equal(decisionValidation.requiredDecision, "approve_for_qc");
+    assert.equal(isOutputReviewDecisionEligibleForQcStation(decision), false);
+    assert.equal(canCreateQcStationJobFromOutputReview({ review }), false);
+    assert.equal(reviewValidation.allowed, false);
+    assert.match(reviewValidation.reason, new RegExp(`decision ${decision}`, "i"));
+    assert.throws(
+      () =>
+        createQueuedQcStationJobFromApprovedOutputReview({
+          review,
+          jobType: "walkthrough_generation",
+          targetUrl: "https://example.com/release-preview",
+          createdAt: "2026-05-01T13:02:00.000Z"
+        }),
+      /approve_for_qc/i
+    );
+  }
 });
 
 test("Codex output box rejects malformed or incomplete execution packet data", () => {
