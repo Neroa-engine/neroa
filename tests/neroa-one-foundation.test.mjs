@@ -9,6 +9,7 @@ import {
   buildNeroaOneTaskAnalysisRequest,
   buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
+  canCreateCodeExecutionWorkerRunFromCodexExecutionPacket,
   canCreateCodexExecutionPacketFromReadyToBuildLaneItem,
   canNeroaOneOutcomeLaneEnterCodexExecution,
   createPlaceholderOutputReviewDecisionFromOutputItem,
@@ -22,7 +23,10 @@ import {
   createDraftCodexExecutionPacketFromQueueEntry,
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
+  createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket,
   evaluateNeroaOneDecisionGate,
+  getCodeExecutionWorkerEngines,
+  getCodeExecutionWorkerRunStatuses,
   getEligibleCodexOutputStatusesForFreshReview,
   getQcStationJobStatuses,
   getQcStationJobTypes,
@@ -30,6 +34,8 @@ import {
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   getAllowedOutputReviewNextDestinations,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
+  NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES,
+  NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
   NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
   NEROA_ONE_QC_STATION_JOB_STATUSES,
@@ -41,7 +47,9 @@ import {
   validateCodexExecutionPacketForOutputBox,
   validateCodexOutputItemForOutputReview,
   validateApprovedOutputReviewForQcStation,
+  validateCodexExecutionPacketForCodeExecutionWorkerRun,
   validateOutputReviewNextDestination,
+  neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
@@ -63,6 +71,7 @@ const moduleSources = [
   "../lib/neroa-one/outcome-queues.ts",
   "../lib/neroa-one/outcome-lanes.ts",
   "../lib/neroa-one/codex-execution-packet.ts",
+  "../lib/neroa-one/code-execution-worker.ts",
   "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/output-review.ts",
   "../lib/neroa-one/qc-station.ts",
@@ -120,6 +129,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const codexPacketSource = moduleSources.find((source) =>
     source.includes("neroaOneCodexExecutionPacketSchema")
   );
+  const codeExecutionWorkerSource = moduleSources.find((source) =>
+    source.includes("neroaOneCodeExecutionWorkerRunSchema")
+  );
   const codexOutputBoxSource = moduleSources.find((source) =>
     source.includes("neroaOneCodexOutputRecordSchema")
   );
@@ -132,6 +144,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
+  assert.ok(codeExecutionWorkerSource);
   assert.ok(codexOutputBoxSource);
   assert.ok(outputReviewSource);
   assert.ok(qcStationSource);
@@ -144,6 +157,17 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(
     codexPacketSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(codeExecutionWorkerSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(codeExecutionWorkerSource, /from\s+["']\.\/build-room-handoff\.ts["']/i);
+  assert.doesNotMatch(
+    codeExecutionWorkerSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(codeExecutionWorkerSource, /fetch\(|DigitalOcean\(/i);
+  assert.match(
+    codeExecutionWorkerSource,
+    /interface\s+NeroaOneCodeExecutionWorkerStorageAdapter/
   );
   assert.doesNotMatch(codexOutputBoxSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
@@ -248,6 +272,35 @@ test("Codex output box statuses stay typed and backend-only", () => {
   assert.equal(neroaOneCodexOutputBoxLane.extractionReady, true);
   assert.equal(neroaOneCodexOutputBoxLane.receivesRealCodexOutputNow, false);
   assert.equal(neroaOneCodexOutputBoxLane.writesPersistenceNow, false);
+});
+
+test("Code execution worker lane stays typed, backend-only, and engine-agnostic", () => {
+  assert.deepEqual([...NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES], [
+    "codex_cli",
+    "codex_cloud",
+    "claude_code",
+    "manual_operator",
+    "future_engine"
+  ]);
+  assert.deepEqual([...NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES], [
+    "queued",
+    "running",
+    "completed",
+    "failed",
+    "canceled"
+  ]);
+  assert.equal(neroaOneCodeExecutionWorkerLane.backendOnly, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.extractionReady, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.engineAgnostic, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.independentlyReplaceable, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.treatsBuildRoomAsViewportOnly, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.dispatchesRealDigitalOceanJobsNow, false);
+  assert.equal(neroaOneCodeExecutionWorkerLane.writesPersistenceNow, false);
+  assert.deepEqual(getCodeExecutionWorkerEngines(), [...NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES]);
+  assert.deepEqual(
+    getCodeExecutionWorkerRunStatuses(),
+    [...NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES]
+  );
 });
 
 test("Output review decisions and explicit destinations stay typed and backend-only", () => {
@@ -492,6 +545,81 @@ test("Ready to build queue items can become safe draft Codex execution packets",
   assert.equal(packet.futureDispatchTarget.owner, "future_digitalocean_codex_dispatch_service");
   assert.equal(packet.futureDispatchTarget.dispatchMode, "deferred");
   assert.equal(packet.futureDispatchTarget.readyForDispatch, false);
+});
+
+test("Valid execution packets can become queued DigitalOcean worker lane runs", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-worker-lane-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-worker-lane-1",
+      title: "Prepare execution worker contract",
+      request: "Prepare the approved execution worker contract for backend execution.",
+      normalizedRequest: "prepare the approved execution worker contract for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_worker_lane_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the worker lane backend-only and replaceable."],
+    testCommands: ["node --test tests\\neroa-one-foundation.test.mjs"]
+  });
+  const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
+    executionPacket: packet
+  });
+  const workerRun = createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+    executionPacket: packet,
+    selectedEngine: "claude_code",
+    executionMode: "implementation_guidance",
+    createdAt: "2026-05-01T12:20:00.000Z"
+  });
+
+  assert.equal(validation.allowed, true);
+  assert.equal(
+    canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
+      executionPacket: packet
+    }),
+    true
+  );
+  assert.equal(validation.packetLane.laneId, "codex_execution_packet_draft");
+  assert.equal(validation.workerLane.laneId, "code_execution_worker");
+  assert.equal(workerRun.workerRunId.includes(":worker:claude_code:"), true);
+  assert.equal(workerRun.executionPacketId, packet.executionPacketId);
+  assert.equal(workerRun.workspaceId, "workspace-alpha");
+  assert.equal(workerRun.projectId, "project-alpha");
+  assert.equal(workerRun.taskId, "task-worker-lane-1");
+  assert.equal(workerRun.selectedEngine, "claude_code");
+  assert.equal(workerRun.executionMode, "implementation_guidance");
+  assert.equal(workerRun.status, "queued");
+  assert.deepEqual(workerRun.acceptanceCriteria, [
+    "Keep the worker lane backend-only and replaceable."
+  ]);
+  assert.deepEqual(workerRun.testCommands, [
+    "node --test tests\\neroa-one-foundation.test.mjs"
+  ]);
+  assert.equal(workerRun.promptPayload.status, "placeholder_only");
+  assert.equal(workerRun.promptPayload.promptText, "PROMPT_GENERATION_DEFERRED");
+  assert.ok(workerRun.protectedAreas.includes("build_room_panels"));
+  assert.equal(workerRun.futureDigitalOceanWorkerTarget.deploymentProvider, "digitalocean");
+  assert.equal(
+    workerRun.futureDigitalOceanWorkerTarget.workerType,
+    "future_code_execution_worker"
+  );
+  assert.equal(workerRun.futureDigitalOceanWorkerTarget.readyForExecution, false);
+  assert.equal(
+    workerRun.futureDigitalOceanWorkerTarget.queueName,
+    "neroa-one.code-execution-worker.claude_code"
+  );
 });
 
 test("Codex output box can create a pending review item from a draft execution packet", async () => {
@@ -1036,6 +1164,55 @@ test("Codex output box rejects malformed or incomplete execution packet data", (
       createPendingReviewCodexOutputItem({
         executionPacket: malformedPacket,
         codexRunId: "codex-run-bad"
+      }),
+    /taskId/i
+  );
+});
+
+test("Malformed execution packets cannot create queued worker lane runs", () => {
+  const malformedPacket = {
+    executionPacketId: "workspace-alpha:project-alpha:task-bad:codex-execution-packet-draft",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    sourceLaneId: "ready_to_build",
+    normalizedRequest: "prepare the approved worker lane contract.",
+    executionTaskType: "implementation",
+    protectedAreas: ["ui_layout"],
+    acceptanceCriteria: [],
+    testCommands: [],
+    riskLevel: "low",
+    requiresQc: false,
+    requiresCustomerCheckpoint: false,
+    promptDraft: {
+      status: "placeholder_only",
+      promptText: "PROMPT_GENERATION_DEFERRED",
+      notes: ["Prompt generation is intentionally deferred."]
+    },
+    createdAt: "2026-05-01T12:21:00.000Z",
+    futureDispatchTarget: {
+      owner: "future_digitalocean_codex_dispatch_service",
+      queueName: "neroa-one.codex-execution-packets",
+      dispatchMode: "deferred",
+      readyForDispatch: false,
+      notes: ["Current lane is contract-only."]
+    }
+  };
+  const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
+    executionPacket: malformedPacket
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /taskId/i);
+  assert.equal(
+    canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
+      executionPacket: malformedPacket
+    }),
+    false
+  );
+  assert.throws(
+    () =>
+      createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+        executionPacket: malformedPacket
       }),
     /taskId/i
   );

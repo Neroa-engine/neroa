@@ -9,6 +9,7 @@ export * from "./cost-policy.ts";
 export * from "./outcome-queues.ts";
 export * from "./outcome-lanes.ts";
 export * from "./codex-execution-packet.ts";
+export * from "./code-execution-worker.ts";
 export * from "./codex-output-box.ts";
 export * from "./output-review.ts";
 export * from "./qc-station.ts";
