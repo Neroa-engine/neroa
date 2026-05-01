@@ -8,6 +8,14 @@ import {
 
 const trimmedStringSchema = z.string().trim().min(1);
 const stringListSchema = z.array(trimmedStringSchema);
+const CODE_EXECUTION_WORKER_INFRASTRUCTURE_MARKERS = [
+  "code-execution-worker",
+  "codex_cli",
+  "codex_cloud",
+  "claude_code",
+  "manual_operator",
+  "future_engine"
+] as const;
 
 export const NEROA_ONE_PROMPT_ROOM_STATUSES = [
   "draft_pending",
@@ -93,6 +101,8 @@ export const neroaOnePromptRoomLaneDefinitionSchema = z
     extractionReady: z.literal(true),
     independentlyReplaceable: z.literal(true),
     exposesCustomerSafeStatusOnly: z.literal(true),
+    selectsExecutionEngineNow: z.literal(false),
+    selectsRuntimeWorkerInfrastructureNow: z.literal(false),
     ownsUiNow: z.literal(false),
     callsAiNow: z.literal(false),
     storesPromptDraftsNow: z.literal(false),
@@ -165,6 +175,8 @@ export const neroaOnePromptRoomLane = neroaOnePromptRoomLaneDefinitionSchema.par
   extractionReady: true,
   independentlyReplaceable: true,
   exposesCustomerSafeStatusOnly: true,
+  selectsExecutionEngineNow: false,
+  selectsRuntimeWorkerInfrastructureNow: false,
   ownsUiNow: false,
   callsAiNow: false,
   storesPromptDraftsNow: false,
@@ -212,6 +224,14 @@ function normalizeStringList(values: readonly string[] | null | undefined) {
   );
 }
 
+function queueNameSelectsRuntimeWorkerInfrastructure(queueName: string) {
+  const normalizedQueueName = normalizeText(queueName).toLowerCase();
+
+  return CODE_EXECUTION_WORKER_INFRASTRUCTURE_MARKERS.some((marker) =>
+    normalizedQueueName.includes(marker.toLowerCase())
+  );
+}
+
 function buildRejectedPacketValidationResult(
   reason: string
 ): NeroaOnePromptRoomPacketValidationResult {
@@ -255,12 +275,19 @@ function buildFuturePromptServiceTarget(
   override: Partial<NeroaOnePromptRoomFuturePromptServiceTarget> | null | undefined
 ): NeroaOnePromptRoomFuturePromptServiceTarget {
   const normalizedNotes = normalizeStringList(override?.notes);
+  const queueName = normalizeText(override?.queueName) || "neroa-one.prompt-room";
+
+  if (queueNameSelectsRuntimeWorkerInfrastructure(queueName)) {
+    throw new Error(
+      `Prompt Room queue ${queueName} cannot select code execution worker infrastructure.`
+    );
+  }
 
   return neroaOnePromptRoomFuturePromptServiceTargetSchema.parse({
     deploymentProvider: "digitalocean",
     serviceName:
       normalizeText(override?.serviceName) || "neroa-one-prompt-room-service",
-    queueName: normalizeText(override?.queueName) || "neroa-one.prompt-room",
+    queueName,
     serviceType: "future_prompt_room_service",
     readyForDrafting: false,
     notes:

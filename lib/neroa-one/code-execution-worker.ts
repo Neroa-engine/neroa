@@ -1,9 +1,9 @@
 import { z } from "zod";
 import {
-  neroaOneCodexExecutionPacketLane,
-  neroaOneCodexExecutionPacketSchema,
-  type NeroaOneCodexExecutionPacket
-} from "./codex-execution-packet.ts";
+  neroaOnePromptRoomItemSchema,
+  neroaOnePromptRoomLane,
+  type NeroaOnePromptRoomItem
+} from "./prompt-room.ts";
 
 const trimmedStringSchema = z.string().trim().min(1);
 const stringListSchema = z.array(trimmedStringSchema);
@@ -110,10 +110,10 @@ export type NeroaOneCodeExecutionWorkerRun = z.infer<
 export const neroaOneCodeExecutionWorkerLaneDefinitionSchema = z
   .object({
     laneId: z.literal("code_execution_worker"),
-    upstreamLaneId: z.literal("codex_execution_packet_draft"),
+    upstreamLaneId: z.literal("prompt_room"),
     backendOnly: z.literal(true),
     extractionReady: z.literal(true),
-    createsRunsOnlyFromValidExecutionPackets: z.literal(true),
+    createsRunsOnlyFromReadyPromptRoomItems: z.literal(true),
     selectsExecutionEngineAtWorkerLane: z.literal(true),
     engineAgnostic: z.literal(true),
     independentlyReplaceable: z.literal(true),
@@ -154,13 +154,13 @@ export type NeroaOneCodeExecutionWorkerLaneDefinition = z.infer<
 export type NeroaOneCodeExecutionWorkerPacketValidationResult =
   | {
       allowed: true;
-      packetLane: typeof neroaOneCodexExecutionPacketLane;
+      promptLane: typeof neroaOnePromptRoomLane;
       workerLane: NeroaOneCodeExecutionWorkerLaneDefinition;
-      executionPacket: NeroaOneCodexExecutionPacket;
+      promptRoomItem: NeroaOnePromptRoomItem;
     }
   | {
       allowed: false;
-      packetLane: typeof neroaOneCodexExecutionPacketLane;
+      promptLane: typeof neroaOnePromptRoomLane;
       workerLane: NeroaOneCodeExecutionWorkerLaneDefinition;
       reason: string;
     };
@@ -173,10 +173,10 @@ export interface NeroaOneCodeExecutionWorkerStorageAdapter {
 export const neroaOneCodeExecutionWorkerLane =
   neroaOneCodeExecutionWorkerLaneDefinitionSchema.parse({
     laneId: "code_execution_worker",
-    upstreamLaneId: "codex_execution_packet_draft",
+    upstreamLaneId: "prompt_room",
     backendOnly: true,
     extractionReady: true,
-    createsRunsOnlyFromValidExecutionPackets: true,
+    createsRunsOnlyFromReadyPromptRoomItems: true,
     selectsExecutionEngineAtWorkerLane: true,
     engineAgnostic: true,
     independentlyReplaceable: true,
@@ -227,30 +227,26 @@ function buildRejectedPacketValidationResult(
 ): NeroaOneCodeExecutionWorkerPacketValidationResult {
   return {
     allowed: false,
-    packetLane: neroaOneCodexExecutionPacketLane,
+    promptLane: neroaOnePromptRoomLane,
     workerLane: neroaOneCodeExecutionWorkerLane,
     reason:
-      normalizeText(reason) ||
-      "Execution packet is not eligible to create a code execution worker run."
+      normalizeText(reason) || "Prompt Room item is not eligible to create a code execution worker run."
   };
 }
 
-function packetDraftLeaksWorkerInfrastructureSelection(executionPacket: NeroaOneCodexExecutionPacket) {
+function promptRoomItemLeaksWorkerInfrastructureSelection(promptRoomItem: NeroaOnePromptRoomItem) {
   return CODE_EXECUTION_WORKER_INFRASTRUCTURE_QUEUE_PATTERN.test(
-    executionPacket.futureDispatchTarget.queueName
+    promptRoomItem.futurePromptServiceTarget.queueName
   );
 }
 
-function buildPromptPayloadFromExecutionPacket(
-  executionPacket: NeroaOneCodexExecutionPacket
+function buildPromptPayloadFromPromptRoomItem(
+  promptRoomItem: NeroaOnePromptRoomItem
 ): NeroaOneCodeExecutionPromptPayload {
   return neroaOneCodeExecutionPromptPayloadSchema.parse({
-    status: executionPacket.promptDraft.status,
-    promptText: executionPacket.promptDraft.promptText,
-    notes: normalizeStringList([
-      ...executionPacket.promptDraft.notes,
-      "Prompt payload remains placeholder-only until a future approved backend dispatcher is implemented."
-    ])
+    status: promptRoomItem.internalPromptDraft.status,
+    promptText: promptRoomItem.internalPromptDraft.promptText,
+    notes: normalizeStringList(promptRoomItem.internalPromptDraft.notes)
   });
 }
 
@@ -292,55 +288,55 @@ function buildWorkerRunId(args: {
 }
 
 export function validateCodexExecutionPacketForCodeExecutionWorkerRun(args: {
-  executionPacket: NeroaOneCodexExecutionPacket;
+  promptRoomItem: NeroaOnePromptRoomItem;
 }): NeroaOneCodeExecutionWorkerPacketValidationResult {
-  if (neroaOneCodeExecutionWorkerLane.upstreamLaneId !== neroaOneCodexExecutionPacketLane.laneId) {
+  if (neroaOneCodeExecutionWorkerLane.upstreamLaneId !== neroaOnePromptRoomLane.laneId) {
     throw new Error(
-      "Code execution worker lane must reference the Codex execution packet lane as its current upstream boundary."
+      "Code execution worker lane must reference the Prompt Room lane as its current upstream boundary."
     );
   }
 
-  const executionPacketResult = neroaOneCodexExecutionPacketSchema.safeParse(args.executionPacket);
+  const promptRoomItemResult = neroaOnePromptRoomItemSchema.safeParse(args.promptRoomItem);
 
-  if (!executionPacketResult.success) {
-    const [issue] = executionPacketResult.error.issues;
-    const issuePath = issue?.path?.length ? issue.path.join(".") : "executionPacket";
+  if (!promptRoomItemResult.success) {
+    const [issue] = promptRoomItemResult.error.issues;
+    const issuePath = issue?.path?.length ? issue.path.join(".") : "promptRoomItem";
 
     return buildRejectedPacketValidationResult(
-      `Execution packet is invalid for the code execution worker boundary at ${issuePath}.`
+      `Prompt Room item is invalid for the code execution worker boundary at ${issuePath}.`
     );
   }
 
-  const executionPacket = executionPacketResult.data;
+  const promptRoomItem = promptRoomItemResult.data;
 
-  if (executionPacket.sourceLaneId !== neroaOneCodexExecutionPacketLane.sourceLaneId) {
+  if (promptRoomItem.status !== "ready_for_code_builder") {
     return buildRejectedPacketValidationResult(
-      `Execution packet source lane ${executionPacket.sourceLaneId} does not match the required ${neroaOneCodexExecutionPacketLane.sourceLaneId} source lane.`
+      `Prompt Room item ${promptRoomItem.promptRoomItemId} must be ready_for_code_builder before worker-run creation.`
     );
   }
 
-  if (packetDraftLeaksWorkerInfrastructureSelection(executionPacket)) {
+  if (promptRoomItemLeaksWorkerInfrastructureSelection(promptRoomItem)) {
     return buildRejectedPacketValidationResult(
-      `Execution packet ${executionPacket.executionPacketId} leaked runtime worker infrastructure selection into the packet draft boundary.`
+      `Prompt Room item ${promptRoomItem.promptRoomItemId} leaked runtime worker infrastructure selection into the prompt draft boundary.`
     );
   }
 
   return {
     allowed: true,
-    packetLane: neroaOneCodexExecutionPacketLane,
+    promptLane: neroaOnePromptRoomLane,
     workerLane: neroaOneCodeExecutionWorkerLane,
-    executionPacket
+    promptRoomItem
   };
 }
 
 export function canCreateCodeExecutionWorkerRunFromCodexExecutionPacket(args: {
-  executionPacket: NeroaOneCodexExecutionPacket;
+  promptRoomItem: NeroaOnePromptRoomItem;
 }) {
   return validateCodexExecutionPacketForCodeExecutionWorkerRun(args).allowed;
 }
 
 export function createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket(args: {
-  executionPacket: NeroaOneCodexExecutionPacket;
+  promptRoomItem: NeroaOnePromptRoomItem;
   selectedEngine?: NeroaOneCodeExecutionWorkerEngine | null;
   executionMode?: NeroaOneCodeExecutionMode | null;
   promptPayload?: NeroaOneCodeExecutionPromptPayload | null;
@@ -354,29 +350,29 @@ export function createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket(args:
     | null;
 }): NeroaOneCodeExecutionWorkerRun {
   const packetValidation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
-    executionPacket: args.executionPacket
+    promptRoomItem: args.promptRoomItem
   });
 
   if (!packetValidation.allowed) {
     throw new Error(packetValidation.reason);
   }
 
-  const executionPacket = packetValidation.executionPacket;
+  const promptRoomItem = packetValidation.promptRoomItem;
   const selectedEngine = neroaOneCodeExecutionWorkerEngineSchema.parse(
     args.selectedEngine ?? "codex_cli"
   );
-  const createdAt = normalizeText(args.createdAt) || executionPacket.createdAt;
+  const createdAt = normalizeText(args.createdAt) || promptRoomItem.createdAt;
 
   return neroaOneCodeExecutionWorkerRunSchema.parse({
     workerRunId: buildWorkerRunId({
-      executionPacketId: executionPacket.executionPacketId,
+      executionPacketId: promptRoomItem.executionPacketId,
       selectedEngine,
       createdAt
     }),
-    executionPacketId: executionPacket.executionPacketId,
-    workspaceId: executionPacket.workspaceId,
-    projectId: executionPacket.projectId,
-    taskId: executionPacket.taskId,
+    executionPacketId: promptRoomItem.executionPacketId,
+    workspaceId: promptRoomItem.workspaceId,
+    projectId: promptRoomItem.projectId,
+    taskId: promptRoomItem.taskId,
     selectedEngine,
     executionMode: args.executionMode ?? "patch_proposal",
     promptPayload:
@@ -385,13 +381,13 @@ export function createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket(args:
             ...args.promptPayload,
             notes: normalizeStringList(args.promptPayload.notes)
           })
-        : buildPromptPayloadFromExecutionPacket(executionPacket),
-    protectedAreas: normalizeStringList(args.protectedAreas ?? executionPacket.protectedAreas),
+        : buildPromptPayloadFromPromptRoomItem(promptRoomItem),
+    protectedAreas: normalizeStringList(args.protectedAreas ?? promptRoomItem.protectedAreas),
     acceptanceCriteria: normalizeStringList(
-      args.acceptanceCriteria ?? executionPacket.acceptanceCriteria
+      args.acceptanceCriteria ?? promptRoomItem.acceptanceCriteria
     ),
-    testCommands: normalizeStringList(args.testCommands ?? executionPacket.testCommands),
-    riskLevel: args.riskLevel ?? executionPacket.riskLevel,
+    testCommands: normalizeStringList(args.testCommands ?? promptRoomItem.testCommands),
+    riskLevel: args.riskLevel ?? promptRoomItem.riskLevel,
     createdAt,
     futureDigitalOceanWorkerTarget: buildFutureDigitalOceanWorkerTarget({
       selectedEngine,

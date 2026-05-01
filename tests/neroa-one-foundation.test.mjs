@@ -196,7 +196,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(
     codeExecutionWorkerSource,
-    /getNeroaOneOutcomeLaneIdsEligibleForCodexExecution|validateReadyToBuildLaneItemForCodexExecutionPacket/i
+    /getNeroaOneOutcomeLaneIdsEligibleForCodexExecution|validateReadyToBuildLaneItemForCodexExecutionPacket|getPromptRoomCustomerSafeStatus/i
   );
   assert.doesNotMatch(codeExecutionWorkerSource, /fetch\(|DigitalOcean\(/i);
   assert.match(
@@ -325,7 +325,8 @@ test("Code execution worker lane stays typed, backend-only, and engine-agnostic"
   ]);
   assert.equal(neroaOneCodeExecutionWorkerLane.backendOnly, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.extractionReady, true);
-  assert.equal(neroaOneCodeExecutionWorkerLane.createsRunsOnlyFromValidExecutionPackets, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.upstreamLaneId, "prompt_room");
+  assert.equal(neroaOneCodeExecutionWorkerLane.createsRunsOnlyFromReadyPromptRoomItems, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.selectsExecutionEngineAtWorkerLane, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.engineAgnostic, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.independentlyReplaceable, true);
@@ -368,6 +369,8 @@ test("Prompt Room lane stays internal-only, backend-only, and customer-safe by p
   assert.equal(neroaOnePromptRoomLane.extractionReady, true);
   assert.equal(neroaOnePromptRoomLane.independentlyReplaceable, true);
   assert.equal(neroaOnePromptRoomLane.exposesCustomerSafeStatusOnly, true);
+  assert.equal(neroaOnePromptRoomLane.selectsExecutionEngineNow, false);
+  assert.equal(neroaOnePromptRoomLane.selectsRuntimeWorkerInfrastructureNow, false);
   assert.equal(neroaOnePromptRoomLane.callsAiNow, false);
   assert.equal(neroaOnePromptRoomLane.storesPromptDraftsNow, false);
   assert.equal(neroaOnePromptRoomLane.writesPersistenceNow, false);
@@ -717,6 +720,44 @@ test("Valid execution packets can become internal Prompt Room draft items", asyn
   assert.equal(promptRoomItem.futurePromptServiceTarget.readyForDrafting, false);
 });
 
+test("Prompt Room rejects worker infrastructure queue selection", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-prompt-room-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-prompt-room-3",
+      title: "Prepare prompt room contract",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_prompt_room_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const executionPacket = createDraftCodexExecutionPacketFromQueueEntry({
+    entry
+  });
+
+  assert.throws(
+    () =>
+      createDraftPromptRoomItemFromCodexExecutionPacket({
+        executionPacket,
+        futurePromptServiceTarget: {
+          queueName: "neroa-one.code-execution-worker.codex_cloud"
+        }
+      }),
+    /cannot select code execution worker infrastructure/i
+  );
+});
+
 test("Prompt Room customer-safe helper never exposes internal prompt draft text", async () => {
   const request = buildNeroaOneTaskAnalysisRequest({
     requestId: "req-prompt-room-2",
@@ -755,12 +796,21 @@ test("Prompt Room customer-safe helper never exposes internal prompt draft text"
   assert.equal(customerSafeStatus.promptRoomItemId, promptRoomItem.promptRoomItemId);
   assert.equal(customerSafeStatus.executionPacketId, packet.executionPacketId);
   assert.equal(customerSafeStatus.customerSafeStatus, "build_queued");
+  assert.deepEqual(Object.keys(customerSafeStatus).sort(), [
+    "customerSafeStatus",
+    "executionPacketId",
+    "promptRoomItemId"
+  ]);
   assert.equal("internalPromptDraft" in customerSafeStatus, false);
+  assert.equal("protectedAreas" in customerSafeStatus, false);
+  assert.equal("selectedEngine" in customerSafeStatus, false);
+  assert.equal("futureDigitalOceanWorkerTarget" in customerSafeStatus, false);
   assert.doesNotMatch(JSON.stringify(customerSafeStatus), /PROMPT_ROOM_DRAFT_DEFERRED/i);
   assert.doesNotMatch(JSON.stringify(customerSafeStatus), /placeholder_only/i);
+  assert.doesNotMatch(JSON.stringify(customerSafeStatus), /build_room_panels|codex_cli|manual_operator/i);
 });
 
-test("Valid execution packets can become queued DigitalOcean worker lane runs", async () => {
+test("Ready_for_code_builder Prompt Room items can become queued DigitalOcean worker lane runs", async () => {
   const request = buildNeroaOneTaskAnalysisRequest({
     requestId: "req-worker-lane-1",
     workspaceId: "workspace-alpha",
@@ -782,16 +832,21 @@ test("Valid execution packets can become queued DigitalOcean worker lane runs", 
     request,
     response
   });
-  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+  const executionPacket = createDraftCodexExecutionPacketFromQueueEntry({
     entry,
     acceptanceCriteria: ["Keep the worker lane backend-only and replaceable."],
     testCommands: ["node --test tests\\neroa-one-foundation.test.mjs"]
   });
+  const promptRoomItem = createDraftPromptRoomItemFromCodexExecutionPacket({
+    executionPacket,
+    status: "ready_for_code_builder",
+    createdAt: "2026-05-01T12:19:00.000Z"
+  });
   const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
-    executionPacket: packet
+    promptRoomItem
   });
   const workerRun = createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
-    executionPacket: packet,
+    promptRoomItem,
     selectedEngine: "claude_code",
     executionMode: "implementation_guidance",
     createdAt: "2026-05-01T12:20:00.000Z"
@@ -800,14 +855,14 @@ test("Valid execution packets can become queued DigitalOcean worker lane runs", 
   assert.equal(validation.allowed, true);
   assert.equal(
     canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
-      executionPacket: packet
+      promptRoomItem
     }),
     true
   );
-  assert.equal(validation.packetLane.laneId, "codex_execution_packet_draft");
+  assert.equal(validation.promptLane.laneId, "prompt_room");
   assert.equal(validation.workerLane.laneId, "code_execution_worker");
   assert.equal(workerRun.workerRunId.includes(":worker:claude_code:"), true);
-  assert.equal(workerRun.executionPacketId, packet.executionPacketId);
+  assert.equal(workerRun.executionPacketId, executionPacket.executionPacketId);
   assert.equal(workerRun.workspaceId, "workspace-alpha");
   assert.equal(workerRun.projectId, "project-alpha");
   assert.equal(workerRun.taskId, "task-worker-lane-1");
@@ -821,7 +876,7 @@ test("Valid execution packets can become queued DigitalOcean worker lane runs", 
     "node --test tests\\neroa-one-foundation.test.mjs"
   ]);
   assert.equal(workerRun.promptPayload.status, "placeholder_only");
-  assert.equal(workerRun.promptPayload.promptText, "PROMPT_GENERATION_DEFERRED");
+  assert.equal(workerRun.promptPayload.promptText, "PROMPT_ROOM_DRAFT_DEFERRED");
   assert.ok(workerRun.protectedAreas.includes("build_room_panels"));
   assert.equal(workerRun.futureDigitalOceanWorkerTarget.deploymentProvider, "digitalocean");
   assert.equal(
@@ -857,13 +912,18 @@ test("Worker lane remains explicit and engine-agnostic across all supported engi
     request,
     response
   });
-  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+  const executionPacket = createDraftCodexExecutionPacketFromQueueEntry({
     entry
+  });
+  const promptRoomItem = createDraftPromptRoomItemFromCodexExecutionPacket({
+    executionPacket,
+    status: "ready_for_code_builder",
+    createdAt: "2026-05-01T12:24:00.000Z"
   });
 
   for (const selectedEngine of getCodeExecutionWorkerEngines()) {
     const workerRun = createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
-      executionPacket: packet,
+      promptRoomItem,
       selectedEngine,
       createdAt: "2026-05-01T12:25:00.000Z"
     });
@@ -874,6 +934,60 @@ test("Worker lane remains explicit and engine-agnostic across all supported engi
     assert.equal(
       workerRun.futureDigitalOceanWorkerTarget.queueName,
       `neroa-one.code-execution-worker.${selectedEngine}`
+    );
+  }
+});
+
+test("Non-ready Prompt Room statuses are rejected from worker-run creation", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-worker-lane-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-worker-lane-3",
+      title: "Prepare execution worker contract",
+      request: "Prepare the approved execution worker contract for backend execution.",
+      normalizedRequest: "prepare the approved execution worker contract for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_worker_lane_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const executionPacket = createDraftCodexExecutionPacketFromQueueEntry({
+    entry
+  });
+
+  for (const status of ["draft_pending", "draft_ready", "validation_failed", "canceled"]) {
+    const promptRoomItem = createDraftPromptRoomItemFromCodexExecutionPacket({
+      executionPacket,
+      status,
+      createdAt: "2026-05-01T12:26:00.000Z"
+    });
+    const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
+      promptRoomItem
+    });
+
+    assert.equal(validation.allowed, false);
+    assert.match(validation.reason, /ready_for_code_builder/i);
+    assert.equal(
+      canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
+        promptRoomItem
+      }),
+      false
+    );
+    assert.throws(
+      () =>
+        createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+          promptRoomItem
+        }),
+      /ready_for_code_builder/i
     );
   }
 });
@@ -1474,100 +1588,102 @@ test("Malformed execution packets cannot create Prompt Room items", () => {
   );
 });
 
-test("Malformed execution packets cannot create queued worker lane runs", () => {
-  const malformedPacket = {
+test("Malformed Prompt Room items cannot create queued worker lane runs", () => {
+  const malformedPromptRoomItem = {
+    promptRoomItemId: "workspace-alpha:project-alpha:task-bad:prompt-room:20260501T122100000Z",
     executionPacketId: "workspace-alpha:project-alpha:task-bad:codex-execution-packet-draft",
     workspaceId: "workspace-alpha",
     projectId: "project-alpha",
     sourceLaneId: "ready_to_build",
     normalizedRequest: "prepare the approved worker lane contract.",
-    executionTaskType: "implementation",
+    internalPromptDraft: {
+      status: "placeholder_only",
+      promptText: "PROMPT_ROOM_DRAFT_DEFERRED",
+      notes: ["Prompt generation is intentionally deferred."]
+    },
+    customerSafeStatus: "build_queued",
     protectedAreas: ["ui_layout"],
     acceptanceCriteria: [],
     testCommands: [],
     riskLevel: "low",
-    requiresQc: false,
-    requiresCustomerCheckpoint: false,
-    promptDraft: {
-      status: "placeholder_only",
-      promptText: "PROMPT_GENERATION_DEFERRED",
-      notes: ["Prompt generation is intentionally deferred."]
-    },
+    status: "ready_for_code_builder",
     createdAt: "2026-05-01T12:21:00.000Z",
-    futureDispatchTarget: {
-      owner: "future_digitalocean_codex_dispatch_service",
-      queueName: "neroa-one.codex-execution-packets",
-      dispatchMode: "deferred",
-      readyForDispatch: false,
+    futurePromptServiceTarget: {
+      deploymentProvider: "digitalocean",
+      serviceName: "neroa-one-prompt-room-service",
+      queueName: "neroa-one.prompt-room",
+      serviceType: "future_prompt_room_service",
+      readyForDrafting: false,
       notes: ["Current lane is contract-only."]
     }
   };
   const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
-    executionPacket: malformedPacket
+    promptRoomItem: malformedPromptRoomItem
   });
 
   assert.equal(validation.allowed, false);
   assert.match(validation.reason, /taskId/i);
   assert.equal(
     canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
-      executionPacket: malformedPacket
+      promptRoomItem: malformedPromptRoomItem
     }),
     false
   );
   assert.throws(
     () =>
       createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
-        executionPacket: malformedPacket
+        promptRoomItem: malformedPromptRoomItem
       }),
     /taskId/i
   );
 });
 
-test("Worker lane rejects execution packets that leak worker infrastructure selection", () => {
-  const leakedBoundaryPacket = {
+test("Worker lane rejects Prompt Room items that leak worker infrastructure selection", () => {
+  const leakedPromptRoomItem = {
+    promptRoomItemId: "workspace-alpha:project-alpha:task-leak:prompt-room:20260501T122200000Z",
     executionPacketId: "workspace-alpha:project-alpha:task-leak:codex-execution-packet-draft",
     workspaceId: "workspace-alpha",
     projectId: "project-alpha",
     taskId: "task-leak",
     sourceLaneId: "ready_to_build",
     normalizedRequest: "prepare the approved implementation packet for backend execution.",
-    executionTaskType: "implementation",
+    internalPromptDraft: {
+      status: "placeholder_only",
+      promptText: "PROMPT_ROOM_DRAFT_DEFERRED",
+      notes: ["Prompt generation is intentionally deferred."]
+    },
+    customerSafeStatus: "build_queued",
     protectedAreas: ["ui_layout"],
     acceptanceCriteria: [],
     testCommands: [],
     riskLevel: "low",
-    requiresQc: false,
-    requiresCustomerCheckpoint: false,
-    promptDraft: {
-      status: "placeholder_only",
-      promptText: "PROMPT_GENERATION_DEFERRED",
-      notes: ["Prompt generation is intentionally deferred."]
-    },
+    status: "ready_for_code_builder",
     createdAt: "2026-05-01T12:22:00.000Z",
-    futureDispatchTarget: {
-      owner: "future_digitalocean_codex_dispatch_service",
+    futurePromptServiceTarget: {
+      deploymentProvider: "digitalocean",
+      serviceName: "neroa-one-prompt-room-service",
       queueName: "neroa-one.code-execution-worker.manual_operator",
-      dispatchMode: "deferred",
-      readyForDispatch: false,
+      serviceType: "future_prompt_room_service",
+      readyForDrafting: false,
       notes: ["Packet boundary should not pick worker infrastructure."]
     }
   };
   const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
-    executionPacket: leakedBoundaryPacket
+    promptRoomItem: leakedPromptRoomItem
   });
 
   assert.equal(validation.allowed, false);
   assert.match(validation.reason, /leaked runtime worker infrastructure selection/i);
   assert.equal(
     canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
-      executionPacket: leakedBoundaryPacket
+      promptRoomItem: leakedPromptRoomItem
     }),
     false
   );
   assert.throws(
     () =>
       createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
-        executionPacket: leakedBoundaryPacket,
+        promptRoomItem: leakedPromptRoomItem,
         selectedEngine: "manual_operator"
       }),
     /leaked runtime worker infrastructure selection/i
