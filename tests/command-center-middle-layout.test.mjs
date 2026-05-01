@@ -58,6 +58,7 @@ test("Customer queue keeps the live row list and empty state behavior", () => {
   assert.match(smartSurfaceSource, /Reviewing/);
   assert.match(smartSurfaceSource, /reviewLaneGuidance\(task\)/);
   assert.match(smartSurfaceSource, /shouldShowRevisionReviewPrompt\(task\)/);
+  assert.match(smartSurfaceSource, /shouldShowExecutionReviewPrompt\(task\)/);
 });
 
 test("Composer stays populated on failure paths and prevents repeat submits while pending", () => {

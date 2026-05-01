@@ -95,6 +95,24 @@ test("Roadmap revision-needed tasks show a compact revision review prompt when e
   assert.match(smartSurfaceSource, /disabled/);
 });
 
+test("Approved roadmap tasks show a compact execution review prompt when expanded", () => {
+  assert.match(smartSurfaceSource, /function shouldShowExecutionReviewPrompt\(task: CommandCenterWorkflowTaskCard\)/);
+  assert.match(smartSurfaceSource, /Execution Review/);
+  assert.match(
+    smartSurfaceSource,
+    /This task fits the current roadmap and is ready for execution\s+review\./
+  );
+  assert.match(
+    smartSurfaceSource,
+    /Please approve before sending to Build Room\./
+  );
+  assert.match(smartSurfaceSource, /Approve Execution/);
+  assert.match(smartSurfaceSource, /Hold Task/);
+  assert.match(smartSurfaceSource, /Not yet wired/);
+  assert.match(smartSurfaceSource, /type="button"/);
+  assert.match(smartSurfaceSource, /disabled/);
+});
+
 test("Command Center composer clears only after successful submit", () => {
   assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
   assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);
