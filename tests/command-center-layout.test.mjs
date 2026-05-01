@@ -45,6 +45,14 @@ test("Customer tasks render as compact expandable live rows instead of oversized
   );
 });
 
+test("Command Center composer clears only after successful submit", () => {
+  assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
+  assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);
+  assert.match(smartSurfaceSource, /finally \{[\s\S]*setIsSubmitting\(false\);/);
+  assert.match(smartSurfaceSource, /disabled=\{!canSubmitRequest\}/);
+  assert.match(smartSurfaceSource, /Sending\.\.\./);
+});
+
 test("Command Center task list does not reintroduce placeholder sample blocks", () => {
   assert.doesNotMatch(smartSurfaceSource, /Start homepage/i);
   assert.doesNotMatch(smartSurfaceSource, /sample task/i);

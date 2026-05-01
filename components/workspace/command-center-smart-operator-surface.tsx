@@ -301,6 +301,7 @@ export function CommandCenterSmartOperatorSurface({
 }: CommandCenterSmartOperatorSurfaceProps) {
   const [activeTab, setActiveTab] = useState<CommandCenterWorkflowTabId>("requests");
   const [requestValue, setRequestValue] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualRequestType, setManualRequestType] =
     useState<CommandCenterCustomerRequestType | null>(requestTypeForTab("requests"));
 
@@ -315,7 +316,7 @@ export function CommandCenterSmartOperatorSurface({
   const effectiveRequestType = manualRequestType ?? inferredRequestType;
   const requestTypeSource =
     manualRequestType !== null ? "manual" : requestValue.trim() ? "inferred" : "system";
-  const canSubmitRequest = canManage && requestValue.trim().length > 0;
+  const canSubmitRequest = canManage && requestValue.trim().length > 0 && !isSubmitting;
   const resolvedRoadmapArea =
     defaultRoadmapArea ?? availableRoadmapAreas[0] ?? "General coordination";
   const tabCounts = useMemo(() => {
@@ -353,6 +354,18 @@ export function CommandCenterSmartOperatorSurface({
   function selectTab(tab: CommandCenterWorkflowTabId) {
     setActiveTab(tab);
     setManualRequestType(requestTypeForTab(tab));
+  }
+
+  async function handleCreateTask(formData: FormData) {
+    setIsSubmitting(true);
+
+    try {
+      await createTaskAction(formData);
+      setRequestValue("");
+      setManualRequestType(requestTypeForTab(activeTab));
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -445,7 +458,7 @@ export function CommandCenterSmartOperatorSurface({
             </span>
           </div>
 
-          <form action={createTaskAction} className="mt-5 space-y-3">
+          <form action={handleCreateTask} className="mt-5 space-y-3">
             <input type="hidden" name="workspaceId" value={workspaceId} />
             <input type="hidden" name="returnTo" value={returnTo} />
             <input type="hidden" name="mutation" value="create_task" />
@@ -459,7 +472,7 @@ export function CommandCenterSmartOperatorSurface({
               rows={6}
               value={requestValue}
               onChange={(event) => setRequestValue(event.target.value)}
-              disabled={!canManage}
+              disabled={!canManage || isSubmitting}
               className="input min-h-[168px] resize-y border-white/18 bg-[#101b2d] text-white placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-70"
               placeholder={activeConfig.placeholder}
             />
@@ -472,6 +485,11 @@ export function CommandCenterSmartOperatorSurface({
                 <p className="text-xs leading-5 text-slate-400">
                   Request type: {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}.
                 </p>
+                {isSubmitting ? (
+                  <p className="text-xs leading-5 text-slate-400">
+                    Sending task to the live customer queue...
+                  </p>
+                ) : null}
                 {!canManage ? (
                   <p className="text-xs leading-5 text-slate-400">
                     Project owners can send new workflow items from this room.
@@ -483,7 +501,7 @@ export function CommandCenterSmartOperatorSurface({
                 disabled={!canSubmitRequest}
                 className="rounded-full border border-[rgba(167,136,250,0.68)] bg-[linear-gradient(135deg,#8f7cff,#a788fa_56%,#c19cff)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_40px_rgba(148,122,255,0.3)] transition hover:brightness-[1.06] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-400 disabled:shadow-none"
               >
-                {activeConfig.submitLabel}
+                {isSubmitting ? "Sending..." : activeConfig.submitLabel}
               </button>
             </div>
           </form>

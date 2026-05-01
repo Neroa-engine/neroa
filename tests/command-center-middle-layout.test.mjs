@@ -52,3 +52,13 @@ test("Customer queue keeps the live row list and empty state behavior", () => {
   assert.match(smartSurfaceSource, /cursor-pointer/);
   assert.match(smartSurfaceSource, /min-h-\[52px\]/);
 });
+
+test("Composer stays populated on failure paths and prevents repeat submits while pending", () => {
+  assert.doesNotMatch(
+    smartSurfaceSource,
+    /catch[\s\S]*setRequestValue\(""\)/
+  );
+  assert.match(smartSurfaceSource, /const \[isSubmitting, setIsSubmitting\] = useState\(false\)/);
+  assert.match(smartSurfaceSource, /disabled=\{!canManage \|\| isSubmitting\}/);
+  assert.match(smartSurfaceSource, /const canSubmitRequest = canManage && requestValue\.trim\(\)\.length > 0 && !isSubmitting;/);
+});
