@@ -10,6 +10,10 @@ import {
   type ExecutionState
 } from "@/lib/intelligence/execution";
 import {
+  buildBuildRoomTaskHandoffPackage,
+  type BuildRoomHandoffPackage
+} from "@/lib/neroa-one";
+import {
   buildBillingProtectionSummaryFromState,
   buildTaskBillingProtectionContext,
   type BillingProtectionState
@@ -132,97 +136,91 @@ function buildPromptPackageStatus(args: {
 }
 
 function buildInternalExecutionPlanningItems(args: {
-  selectedDetail: BuildRoomTaskDetail | null;
-  selectedCodexResult: NonNullable<BuildRoomTaskDetail["task"]["codexResponsePayload"]> | null;
-  packetRelationship: ReturnType<typeof getExecutionPacketRelationship>;
-  pendingRelationship: ReturnType<typeof getPendingExecutionRelationship>;
-  qaSummary: ReturnType<typeof buildQAValidationSummary> | null;
+  neroaOneHandoff: BuildRoomHandoffPackage | null;
+  promptPackageStatus: ReturnType<typeof buildPromptPackageStatus>;
+  nextExecutionStep: string;
 }) {
-  if (!args.selectedDetail) {
+  if (!args.neroaOneHandoff) {
     return [
       {
-        label: "Task intent",
-        value: "No approved build handoff yet",
-        note: "Start from Command Center, then return here to inspect the internal execution plan."
+        label: "Neroa One handoff",
+        value: "No Neroa One handoff package yet.",
+        note: "Build Room will show the typed handoff contract here after a customer workflow reaches execution."
       },
       {
         label: "Prompt package status",
-        value: "Placeholder only",
-        note: "The current Build Room flow will attach packet and relay details here when a task is available."
+        value: args.promptPackageStatus.label,
+        note: args.promptPackageStatus.note
       }
     ];
   }
 
-  const promptPackage = buildPromptPackageStatus({
-    selectedDetail: args.selectedDetail,
-    packetRelationship: args.packetRelationship,
-    pendingRelationship: args.pendingRelationship
-  });
-  const readinessNotes = [
-    args.pendingRelationship.isActivePending
-      ? "Pending execution hold is still active."
-      : "No pending execution hold is active.",
-    args.selectedCodexResult?.blockers.length
-      ? `${args.selectedCodexResult.blockers.length} Codex blocker${
-          args.selectedCodexResult.blockers.length === 1 ? "" : "s"
-        } returned.`
-      : "No Codex blockers are currently attached.",
-    args.qaSummary ? args.qaSummary.releaseLabel : "QA validation has not attached yet."
-  ];
-  const nextExecutionStep = args.pendingRelationship.isActivePending
-    ? "Clear the pending execution hold in the existing governed flow before worker approval."
-    : args.selectedDetail.task.status === "codex_complete"
-      ? "Review blockers, QA status, and packet detail, then decide whether to approve the worker run."
-      : args.selectedDetail.task.status === "worker_complete"
-        ? "Review worker output and QA validation before presenting the task as complete."
-        : args.selectedDetail.task.status === "needs_revision"
-          ? "Tighten the request, acceptance criteria, or risk notes before sending it back through the relay."
-          : "Continue through the existing Build Room relay flow until a result or packet is available.";
-
   return [
     {
-      label: "Task intent",
-      value: formatStatusLabel(args.selectedDetail.task.taskType),
-      note: args.selectedDetail.task.userRequest
+      label: "Neroa One handoff",
+      value: args.neroaOneHandoff.packageId,
+      note: args.neroaOneHandoff.taskSummary
+    },
+    {
+      label: "Customer intent type",
+      value: formatStatusLabel(args.neroaOneHandoff.customerIntentType),
+      note: "Preserved from the deterministic Neroa One handoff contract."
+    },
+    {
+      label: "Command Center lane",
+      value: formatStatusLabel(args.neroaOneHandoff.commandCenterLane),
+      note: "This keeps the originating workflow lane attached to the execution handoff."
+    },
+    {
+      label: "Normalized request",
+      value: "Preserved",
+      note: args.neroaOneHandoff.normalizedRequest
+    },
+    {
+      label: "Execution task type",
+      value: args.neroaOneHandoff.executionTaskType
+        ? formatStatusLabel(args.neroaOneHandoff.executionTaskType)
+        : "Not provided",
+      note: args.neroaOneHandoff.taskTitle
     },
     {
       label: "Requested output mode",
-      value: formatStatusLabel(args.selectedDetail.task.requestedOutputMode),
-      note: args.selectedCodexResult
-        ? `Current relay output mode: ${formatStatusLabel(args.selectedCodexResult.outputMode)}.`
-        : "No relay result has been recorded yet."
+      value: args.neroaOneHandoff.requestedOutputMode
+        ? formatStatusLabel(args.neroaOneHandoff.requestedOutputMode)
+        : "Not provided",
+      note: "This stays read-only and follows the handed-off Build Room task record."
     },
     {
       label: "Risk level",
-      value: formatStatusLabel(args.selectedDetail.task.riskLevel),
-      note: args.selectedDetail.task.status === "needs_revision"
-        ? "This task is currently back in revision."
-        : "Risk stays read-only here and follows the existing Build Room task record."
+      value: args.neroaOneHandoff.riskLevel
+        ? formatStatusLabel(args.neroaOneHandoff.riskLevel)
+        : "Not provided",
+      note: "Risk stays read-only here and follows the existing Build Room task record."
     },
     {
       label: "Acceptance criteria",
-      value: args.selectedDetail.task.acceptanceCriteria ? "Provided" : "Not provided",
+      value: args.neroaOneHandoff.acceptanceCriteria ? "Provided" : "Not provided",
       note:
-        args.selectedDetail.task.acceptanceCriteria ??
-        "No acceptance criteria were saved for this task yet."
+        args.neroaOneHandoff.acceptanceCriteria ??
+        "No acceptance criteria were saved for this handoff yet."
     },
     {
       label: "Readiness / blockers",
-      value:
-        args.selectedCodexResult?.blockers.length || args.pendingRelationship.isActivePending
-          ? "Attention required"
-          : "Ready for internal review",
-      note: readinessNotes.join(" ")
+      value: formatStatusLabel(args.neroaOneHandoff.readinessStatus),
+      note:
+        args.neroaOneHandoff.blockers.length > 0
+          ? args.neroaOneHandoff.blockers.join(" ")
+          : args.neroaOneHandoff.decisionGate.reason
     },
     {
       label: "Next execution step",
-      value: nextExecutionStep,
+      value: args.nextExecutionStep,
       note: "This is a read-only planning cue. Worker approval and execution behavior remain unchanged."
     },
     {
       label: "Prompt package status",
-      value: promptPackage.label,
-      note: promptPackage.note
+      value: args.promptPackageStatus.label,
+      note: args.promptPackageStatus.note
     }
   ];
 }
@@ -397,12 +395,18 @@ export function BuildRoomControlRoom({
   const qaSummary = selectedQaContext
     ? buildQAValidationSummary(selectedQaContext.qaValidation)
     : null;
-  const internalExecutionPlanningItems = buildInternalExecutionPlanningItems({
+  const promptPackageStatus = buildPromptPackageStatus({
     selectedDetail,
-    selectedCodexResult,
     packetRelationship,
-    pendingRelationship,
-    qaSummary
+    pendingRelationship
+  });
+  const neroaOneHandoff = buildBuildRoomTaskHandoffPackage({
+    workspaceId,
+    projectId: project.id,
+    projectTitle: project.title,
+    taskDetail: selectedDetail,
+    isPendingExecution: pendingRelationship.isActivePending,
+    pendingReason: pendingRelationship.pendingItem?.latestReason ?? null
   });
   const selectedBillingState =
     selectedBillingContext?.billingState ?? billingState ?? null;
@@ -430,6 +434,11 @@ export function BuildRoomControlRoom({
             : selectedDetail.task.status === "worker_complete"
               ? "Review the recorded evidence, QA, and billing protections before closing out the task."
               : "Refresh the governed task state and keep the packet aligned before the next step.";
+  const internalExecutionPlanningItems = buildInternalExecutionPlanningItems({
+    neroaOneHandoff,
+    promptPackageStatus,
+    nextExecutionStep
+  });
   const qaPlaceholderItems = [
     "Future browser inspection",
     "Future visual inspector",

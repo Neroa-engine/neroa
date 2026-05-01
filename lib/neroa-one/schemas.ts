@@ -260,6 +260,15 @@ export const buildRoomHandoffPackageSchema = z
     taskTitle: trimmedStringSchema,
     taskSummary: trimmedStringSchema,
     originalIntent: customerIntentEnvelopeSchema,
+    customerIntentType: customerIntentTypeSchema,
+    commandCenterLane: commandCenterLaneSchema,
+    normalizedRequest: trimmedStringSchema,
+    executionTaskType: nullableTrimmedStringSchema.default(null),
+    requestedOutputMode: nullableTrimmedStringSchema.default(null),
+    riskLevel: nullableTrimmedStringSchema.default(null),
+    acceptanceCriteria: nullableTrimmedStringSchema.default(null),
+    blockers: stringListSchema.default([]),
+    readinessStatus: trimmedStringSchema,
     decisionGate: neroaOneDecisionGateSchema,
     emittedEvent: trimmedStringSchema
   })

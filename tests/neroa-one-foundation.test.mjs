@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   buildBuildRoomHandoffPackage,
+  buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
   classifyCustomerIntent,
   commandCenterLanes,
@@ -104,6 +105,67 @@ test("Build Room handoff preserves original customer intent", () => {
     "Create the implementation handoff for the approved request."
   );
   assert.equal(handoff.originalIntent.intentType, "new_request");
+  assert.equal(handoff.customerIntentType, "new_request");
+  assert.equal(handoff.commandCenterLane, "requests");
+  assert.equal(handoff.normalizedRequest, "create the implementation handoff for the approved request.");
+  assert.equal(handoff.readinessStatus, "contract_prepared");
+});
+
+test("Build Room task handoff preserves typed execution contract fields", () => {
+  const handoff = buildBuildRoomTaskHandoffPackage({
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    projectTitle: "Alpha Project",
+    isPendingExecution: true,
+    pendingReason: "Waiting for internal packet release.",
+    taskDetail: {
+      task: {
+        id: "task-42",
+        workspaceId: "workspace-alpha",
+        projectId: "project-alpha",
+        ownerId: "owner-1",
+        createdByUserId: "user-1",
+        laneSlug: "build-lane",
+        title: "Review the staged release package",
+        taskType: "qa",
+        requestedOutputMode: "implementation_guidance",
+        userRequest: "Please review the staged release package and verify the acceptance notes.",
+        acceptanceCriteria: "Acceptance notes are accurate and release-ready.",
+        riskLevel: "medium",
+        status: "codex_complete",
+        codexRequestPayload: null,
+        codexResponsePayload: {
+          summary: "Review completed.",
+          implementationPlan: [],
+          suggestedFileTargets: [],
+          patchText: null,
+          warnings: [],
+          blockers: ["Waiting for artifact upload"],
+          outputMode: "implementation_guidance",
+          relayMode: "mock",
+          rawText: null
+        },
+        approvedForExecution: false,
+        workerRunStatus: "idle",
+        createdAt: "2026-04-30T00:00:00.000Z",
+        updatedAt: "2026-04-30T00:05:00.000Z"
+      },
+      messages: [],
+      runs: [],
+      artifacts: []
+    }
+  });
+
+  assert.ok(handoff);
+  assert.equal(handoff.customerIntentType, "execution_review");
+  assert.equal(handoff.commandCenterLane, "execution_review");
+  assert.equal(handoff.executionTaskType, "qa");
+  assert.equal(handoff.requestedOutputMode, "implementation_guidance");
+  assert.equal(handoff.riskLevel, "medium");
+  assert.equal(handoff.acceptanceCriteria, "Acceptance notes are accurate and release-ready.");
+  assert.deepEqual(handoff.blockers, ["Waiting for artifact upload"]);
+  assert.equal(handoff.readinessStatus, "blocked");
+  assert.equal(handoff.decisionGate.status, "block");
 });
 
 test("Roadmap update can return needsStrategyReview", () => {

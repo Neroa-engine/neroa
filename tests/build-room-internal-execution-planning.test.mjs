@@ -17,7 +17,10 @@ test("Build Room exposes internal execution zones", () => {
   assert.match(buildRoomSource, /QA \/ QC/);
   assert.match(buildRoomSource, /Evidence \/ Results/);
   assert.match(buildRoomSource, /Usage \/ Controls/);
-  assert.match(buildRoomSource, /task intent/i);
+  assert.match(buildRoomSource, /customer intent type/i);
+  assert.match(buildRoomSource, /command center lane/i);
+  assert.match(buildRoomSource, /normalized request/i);
+  assert.match(buildRoomSource, /execution task type/i);
   assert.match(buildRoomSource, /requested output mode/i);
   assert.match(buildRoomSource, /prompt package status/i);
 });
@@ -52,6 +55,7 @@ test("Build Room no longer exposes customer intake controls", () => {
   assert.doesNotMatch(buildRoomSource, /build-room-risk/);
   assert.doesNotMatch(buildRoomSource, /persistComposer/);
   assert.match(buildRoomSource, /No approved build handoff yet\. Start from Command Center\./);
+  assert.match(buildRoomSource, /No Neroa One handoff package yet\./);
 });
 
 test("Command Center remains free of Prompt Runner after the stripdown", () => {
