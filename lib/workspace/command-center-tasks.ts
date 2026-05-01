@@ -2,6 +2,7 @@ import type {
   DeltaAnalysisResult,
   GovernanceSuggestedSurface
 } from "@/lib/intelligence/governance/types";
+import type { NeroaOneTaskAnalysisResponse } from "@/lib/neroa-one/analyzer-contract";
 
 export type CommandCenterTaskStatus =
   | "queued"
@@ -715,6 +716,42 @@ export function resolveCommandCenterRoadmapReviewOutcome(args: {
   return "reviewing";
 }
 
+function mapNeroaOneAnalyzerOutcomeToRoadmapReviewOutcome(args: {
+  analyzerResponse: NeroaOneTaskAnalysisResponse;
+  requestType: CommandCenterCustomerRequestType;
+  workflowLane?: CommandCenterWorkflowLane | null;
+}): CommandCenterRoadmapReviewOutcome {
+  const analyzerOutcome = args.analyzerResponse.outcome;
+
+  if (analyzerOutcome === "ready_to_build") {
+    return "approved_for_roadmap";
+  }
+
+  if (analyzerOutcome === "roadmap_revision_required") {
+    return "roadmap_revision_needed";
+  }
+
+  if (analyzerOutcome === "rejected_outside_scope") {
+    return "out_of_scope";
+  }
+
+  if (
+    analyzerOutcome === "needs_customer_answer" &&
+    (args.requestType === "question_decision" || args.workflowLane === "decisions")
+  ) {
+    return "decision_needed";
+  }
+
+  if (
+    analyzerOutcome === "needs_customer_answer" ||
+    analyzerOutcome === "blocked_missing_information"
+  ) {
+    return "needs_clarification";
+  }
+
+  return "reviewing";
+}
+
 export function buildCommandCenterTaskIntelligenceMetadata(args: {
   request: string | null | undefined;
   requestType?: CommandCenterCustomerRequestType | null;
@@ -722,9 +759,25 @@ export function buildCommandCenterTaskIntelligenceMetadata(args: {
   workflowLane?: CommandCenterWorkflowLane | null;
   roadmapArea?: string | null;
   projectMetadata?: CommandCenterRoadmapReviewProjectMetadata;
+  analyzerResponse?: NeroaOneTaskAnalysisResponse | null;
 }): CommandCenterTaskIntelligenceMetadata {
   const normalizedRequest = normalizeRequestText(args.request);
   const requestType = args.requestType ?? inferCommandCenterCustomerRequestType(normalizedRequest);
+  const fallbackRoadmapReviewOutcome = resolveCommandCenterRoadmapReviewOutcome({
+    request: normalizedRequest,
+    requestType,
+    workflowLane: args.workflowLane ?? null,
+    roadmapArea: args.roadmapArea ?? null,
+    projectMetadata: args.projectMetadata ?? null
+  });
+  const roadmapReviewOutcome =
+    args.analyzerResponse?.analyzer.source === "digitalocean_service"
+      ? mapNeroaOneAnalyzerOutcomeToRoadmapReviewOutcome({
+          analyzerResponse: args.analyzerResponse,
+          requestType,
+          workflowLane: args.workflowLane ?? null
+        })
+      : fallbackRoadmapReviewOutcome;
   const routingHint: CommandCenterTaskRoutingHint =
     requestType === "change_direction"
       ? "planning_review"
@@ -739,13 +792,7 @@ export function buildCommandCenterTaskIntelligenceMetadata(args: {
     requestType,
     requestTypeLabel: formatCommandCenterCustomerRequestTypeLabel(requestType),
     requestTypeSource: args.requestTypeSource ?? "inferred",
-    roadmapReviewOutcome: resolveCommandCenterRoadmapReviewOutcome({
-      request: normalizedRequest,
-      requestType,
-      workflowLane: args.workflowLane ?? null,
-      roadmapArea: args.roadmapArea ?? null,
-      projectMetadata: args.projectMetadata ?? null
-    }),
+    roadmapReviewOutcome,
     routingHint,
     planningCandidate:
       requestType === "change_direction" ||
