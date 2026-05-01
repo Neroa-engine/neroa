@@ -13,12 +13,15 @@ import {
   canNeroaOneOutcomeLaneEnterCodexExecution,
   classifyCustomerIntent,
   commandCenterLanes,
+  createPendingReviewCodexOutputItem,
   createDraftCodexExecutionPacket,
   createDraftCodexExecutionPacketFromQueueEntry,
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
+  NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
+  neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
@@ -37,6 +40,7 @@ const moduleSources = [
   "../lib/neroa-one/outcome-queues.ts",
   "../lib/neroa-one/outcome-lanes.ts",
   "../lib/neroa-one/codex-execution-packet.ts",
+  "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -91,9 +95,13 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const codexPacketSource = moduleSources.find((source) =>
     source.includes("neroaOneCodexExecutionPacketSchema")
   );
+  const codexOutputBoxSource = moduleSources.find((source) =>
+    source.includes("neroaOneCodexOutputRecordSchema")
+  );
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
+  assert.ok(codexOutputBoxSource);
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -104,6 +112,12 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     codexPacketSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
+  assert.doesNotMatch(codexOutputBoxSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    codexOutputBoxSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.match(codexOutputBoxSource, /interface\s+NeroaOneCodexOutputBoxStorageAdapter/);
 });
 
 test("Customer message can be classified deterministically", () => {
@@ -152,6 +166,21 @@ test("Outcome lanes are the only source of Codex execution eligibility", () => {
   assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("roadmap_revision_required"), false);
   assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("blocked_missing_information"), false);
   assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("rejected_outside_scope"), false);
+});
+
+test("Codex output box statuses stay typed and backend-only", () => {
+  assert.deepEqual([...NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES], [
+    "received",
+    "pending_review",
+    "reviewed",
+    "archived",
+    "repair_required",
+    "customer_followup_required"
+  ]);
+  assert.equal(neroaOneCodexOutputBoxLane.backendOnly, true);
+  assert.equal(neroaOneCodexOutputBoxLane.extractionReady, true);
+  assert.equal(neroaOneCodexOutputBoxLane.receivesRealCodexOutputNow, false);
+  assert.equal(neroaOneCodexOutputBoxLane.writesPersistenceNow, false);
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
@@ -322,6 +351,67 @@ test("Ready to build queue items can become safe draft Codex execution packets",
   assert.equal(packet.futureDispatchTarget.owner, "future_digitalocean_codex_dispatch_service");
   assert.equal(packet.futureDispatchTarget.dispatchMode, "deferred");
   assert.equal(packet.futureDispatchTarget.readyForDispatch, false);
+});
+
+test("Codex output box can create a pending review item from a draft execution packet", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-codex-output-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-codex-output-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_codex_output_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the module backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-123",
+    summary: "Patch proposal staged for Neroa One review.",
+    filesChanged: ["lib/neroa-one/codex-output-box.ts"],
+    testsRun: [".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"],
+    artifacts: [
+      {
+        artifactId: "artifact-1",
+        artifactType: "patch",
+        title: "Patch draft",
+        uri: null,
+        notes: ["Backend-only placeholder artifact."]
+      }
+    ],
+    createdAt: "2026-05-01T12:00:00.000Z",
+    receivedAt: "2026-05-01T12:01:00.000Z"
+  });
+
+  assert.equal(output.executionPacketId, packet.executionPacketId);
+  assert.equal(output.workspaceId, "workspace-alpha");
+  assert.equal(output.projectId, "project-alpha");
+  assert.equal(output.taskId, "task-codex-output-1");
+  assert.equal(output.codexRunId, "codex-run-123");
+  assert.equal(output.outputStatus, "pending_review");
+  assert.equal(output.summary, "Patch proposal staged for Neroa One review.");
+  assert.deepEqual(output.filesChanged, ["lib/neroa-one/codex-output-box.ts"]);
+  assert.deepEqual(output.testsRun, [".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"]);
+  assert.match(output.rawOutput, /CODEX_OUTPUT_NOT_WIRED/);
+  assert.equal(output.artifacts.length, 1);
+  assert.equal(output.artifacts[0].artifactType, "patch");
+  assert.equal(output.createdAt, "2026-05-01T12:00:00.000Z");
+  assert.equal(output.receivedAt, "2026-05-01T12:01:00.000Z");
 });
 
 test("Non-ready_to_build items cannot create Codex execution packet drafts", async () => {
