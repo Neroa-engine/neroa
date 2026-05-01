@@ -1057,7 +1057,7 @@ export async function updateCommandCenterTask(formData: FormData) {
       request,
       status: "queued",
       roadmapArea,
-      sourceType: "customer_request",
+      sourceType,
       createdAt: now,
       updatedAt: now
     };

@@ -8,22 +8,25 @@ const commandCenterSource = readFileSync(
 );
 
 test("Command Center keeps the top operator surface ahead of the lower task flow", () => {
-  const analyzerPanelIndex = commandCenterSource.indexOf("<CommandCenterAnalyzerPanelView");
-  const taskQueuePanelIndex = commandCenterSource.indexOf("<CommandCenterTaskQueuePanelView");
-  const promptRunnerPanelIndex = commandCenterSource.indexOf("<CommandCenterPromptRunnerPanelView");
+  const headerIndex = commandCenterSource.indexOf("Send requests, revisions, decisions, and review notes from one place.");
+  const workflowSurfaceIndex = commandCenterSource.indexOf("<CommandCenterSmartOperatorSurface");
+  const taskCardsIndex = commandCenterSource.indexOf("const taskCards: CommandCenterWorkflowTaskCard[] = [];");
 
-  assert.notEqual(analyzerPanelIndex, -1);
-  assert.notEqual(taskQueuePanelIndex, -1);
-  assert.notEqual(promptRunnerPanelIndex, -1);
-  assert.ok(analyzerPanelIndex < taskQueuePanelIndex);
-  assert.ok(analyzerPanelIndex < promptRunnerPanelIndex);
+  assert.notEqual(headerIndex, -1);
+  assert.notEqual(workflowSurfaceIndex, -1);
+  assert.notEqual(taskCardsIndex, -1);
+  assert.ok(headerIndex < workflowSurfaceIndex);
+  assert.ok(taskCardsIndex < workflowSurfaceIndex);
 });
 
-test("Customer Tasks and Prompt Runner stay visible in the main page flow", () => {
+test("Command Center keeps one shared workflow surface and a lower customer task queue", () => {
   assert.match(
     commandCenterSource,
-    /<div className="grid gap-3 md:grid-cols-2 md:items-stretch">[\s\S]*<CommandCenterTaskQueuePanelView[\s\S]*<CommandCenterPromptRunnerPanelView/
+    /<CommandCenterSmartOperatorSurface[\s\S]*tasks=\{taskCards\}/
   );
+  assert.match(commandCenterSource, /Send requests, revisions, decisions, and review notes from one place\./);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
 });
 
 test("Command Center no longer hides the main operator structure behind restoration regressions", () => {
@@ -35,12 +38,11 @@ test("Command Center no longer hides the main operator structure behind restorat
 });
 
 test("Lower half clutter is removed from the main page flow", () => {
-  const taskPromptGridIndex = commandCenterSource.indexOf(
-    '<div className="grid gap-3 md:grid-cols-2 md:items-stretch">'
-  );
-
-  assert.notEqual(taskPromptGridIndex, -1);
+  assert.match(commandCenterSource, /<CommandCenterSmartOperatorSurface/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterBuildRoomExecutionPanel/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterAnalyzerPanelView/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
   assert.doesNotMatch(
     commandCenterSource,
     /<GovernanceReferencePanel governancePolicy={governancePolicy} \/>/

@@ -7,17 +7,17 @@ const commandCenterSource = readFileSync(
   "utf8"
 );
 
-test("Lower half main flow keeps only Customer Tasks and Prompt Runner beneath the top operator surface", () => {
-  const analyzerPanelIndex = commandCenterSource.indexOf("<CommandCenterAnalyzerPanelView");
-  const taskPromptGridIndex = commandCenterSource.indexOf(
-    '<div className="grid gap-3 md:grid-cols-2 md:items-stretch">'
-  );
+test("Main flow keeps one shared workflow surface above the customer task queue", () => {
+  const headerIndex = commandCenterSource.indexOf("Command Center");
+  const workflowSurfaceIndex = commandCenterSource.indexOf("<CommandCenterSmartOperatorSurface");
 
-  assert.notEqual(analyzerPanelIndex, -1);
-  assert.notEqual(taskPromptGridIndex, -1);
-  assert.ok(analyzerPanelIndex < taskPromptGridIndex);
-  assert.match(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
-  assert.match(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
+  assert.notEqual(headerIndex, -1);
+  assert.notEqual(workflowSurfaceIndex, -1);
+  assert.ok(headerIndex < workflowSurfaceIndex);
+  assert.match(commandCenterSource, /<CommandCenterSmartOperatorSurface/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
+  assert.doesNotMatch(commandCenterSource, /<CommandCenterAnalyzerPanelView/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterBuildRoomExecutionPanel/);
   assert.doesNotMatch(
     commandCenterSource,
@@ -30,8 +30,9 @@ test("Lower half main flow keeps only Customer Tasks and Prompt Runner beneath t
   );
 });
 
-test("Top operator structure and lower task or prompt support remain visible", () => {
-  assert.match(commandCenterSource, /<CommandCenterAnalyzerPanelView/);
-  assert.match(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
-  assert.match(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
+test("Customer workflow language replaces the old operator and prompt framing", () => {
+  assert.match(commandCenterSource, /Send requests, revisions, decisions, and review notes from one place\./);
+  assert.match(commandCenterSource, /<CommandCenterSmartOperatorSurface/);
+  assert.doesNotMatch(commandCenterSource, /PromptRunner/);
+  assert.doesNotMatch(commandCenterSource, /AnalyzerPanel/);
 });

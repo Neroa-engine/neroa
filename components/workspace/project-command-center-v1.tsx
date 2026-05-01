@@ -12,11 +12,11 @@ import type { ExecutionState } from "@/lib/intelligence/execution";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
+import { updateCommandCenterTask } from "@/app/workspace/[workspaceId]/command-center/actions";
 import {
-  CommandCenterAnalyzerPanelView,
-  CommandCenterPromptRunnerPanelView,
-  CommandCenterTaskQueuePanelView
-} from "@/components/workspace/command-center-operator-panels";
+  CommandCenterSmartOperatorSurface,
+  type CommandCenterWorkflowTaskCard
+} from "@/components/workspace/command-center-smart-operator-surface";
 
 type ProjectCommandCenterV1Props = {
   project: ProjectRecord;
@@ -42,9 +42,45 @@ export function ProjectCommandCenterV1(props: ProjectCommandCenterV1Props) {
   const {
     project,
     commandCenter,
-    liveViewSession,
     canManageDecisions
   } = props;
+  const taskCards: CommandCenterWorkflowTaskCard[] = [];
+  const seenTaskIds = new Set<string>();
+
+  const appendTasks = (
+    bucketLabel: string,
+    tasks: Array<{
+      id: string;
+      title: string;
+      request: string;
+      status: CommandCenterWorkflowTaskCard["status"];
+      sourceType: CommandCenterWorkflowTaskCard["sourceType"];
+    }>
+  ) => {
+    for (const task of tasks) {
+      if (seenTaskIds.has(task.id)) {
+        continue;
+      }
+
+      seenTaskIds.add(task.id);
+      taskCards.push({
+        id: task.id,
+        title: task.title,
+        request: task.request,
+        status: task.status,
+        sourceType: task.sourceType,
+        bucketLabel
+      });
+    }
+  };
+
+  if (commandCenter.taskQueue.currentTask) {
+    appendTasks("In progress", [commandCenter.taskQueue.currentTask]);
+  }
+
+  appendTasks("Up next", commandCenter.taskQueue.nextTasks);
+  appendTasks("Waiting on answers", commandCenter.taskQueue.waitingOnDecision);
+  appendTasks("Recently cleared", commandCenter.taskQueue.recentlyCleared);
 
   return (
     <section className="surface-main relative overflow-visible rounded-[42px] p-5 xl:p-6 2xl:p-8">
@@ -54,33 +90,36 @@ export function ProjectCommandCenterV1(props: ProjectCommandCenterV1Props) {
 
       <div className="relative space-y-4">
         <section className="space-y-3">
-          <CommandCenterAnalyzerPanelView
-            workspaceId={project.workspaceId}
-            analyzer={commandCenter.analyzer}
-            changeImpactReview={commandCenter.changeImpactReview}
-            roomState={commandCenter.roomState}
-            executionReadiness={commandCenter.executionReadiness}
-            blockers={commandCenter.blockers}
-            decisionInbox={commandCenter.decisionInbox}
-            taskQueue={commandCenter.taskQueue}
-            browserStatus={commandCenter.browserStatus}
-            designPreviewArchitecture={commandCenter.designPreviewArchitecture}
-            designLibrary={commandCenter.designLibrary}
-            brandSystem={commandCenter.brandSystem}
-            projectTitle={project.title}
-            projectId={project.id}
-            initialLiveViewSession={liveViewSession}
-            activePhase={commandCenter.activePhase}
-            canManage={canManageDecisions}
-          />
-          <div className="grid gap-3 md:grid-cols-2 md:items-stretch">
-            <CommandCenterTaskQueuePanelView
-              workspaceId={project.workspaceId}
-              taskQueue={commandCenter.taskQueue}
-              canManage={canManageDecisions}
-            />
-            <CommandCenterPromptRunnerPanelView promptRunner={commandCenter.promptRunner} />
+          <div className="rounded-[28px] border border-slate-200 bg-white/82 px-5 py-5 shadow-[0_24px_60px_rgba(15,23,42,0.1)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Command Center
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold text-slate-950">
+              Send requests, revisions, decisions, and review notes from one place.
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              Keep customer workflow simple here: choose a category, send the update, and track
+              what is open in the queue below.
+            </p>
           </div>
+
+          <CommandCenterSmartOperatorSurface
+            workspaceId={project.workspaceId}
+            returnTo={`/workspace/${project.workspaceId}/command-center`}
+            canManage={canManageDecisions}
+            createTaskAction={updateCommandCenterTask}
+            tasks={taskCards}
+            defaultRoadmapArea={
+              commandCenter.taskQueue.currentRoadmapArea ??
+              commandCenter.taskQueue.availableRoadmapAreas[0] ??
+              "General coordination"
+            }
+            blockedItemCount={commandCenter.blockers.items.length}
+            decisionCount={commandCenter.decisionInbox.openCount}
+            reviewCount={commandCenter.changeImpactReview.activeCount}
+            creditSummary={null}
+            availableRoadmapAreas={commandCenter.taskQueue.availableRoadmapAreas}
+          />
         </section>
       </div>
     </section>

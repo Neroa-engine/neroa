@@ -5,303 +5,510 @@ import { useMemo, useState } from "react";
 import {
   formatCommandCenterCustomerRequestTypeLabel,
   inferCommandCenterCustomerRequestType,
-  type CommandCenterCustomerRequestType
+  type CommandCenterCustomerRequestType,
+  type CommandCenterTaskSourceType,
+  type CommandCenterTaskStatus
 } from "@/lib/workspace/command-center-tasks";
 
-type SmartOperatorModeId =
+export type CommandCenterWorkflowTabId =
   | "requests"
   | "revisions"
   | "roadmap_updates"
-  | "execution_clarifications"
+  | "execution_review"
   | "decisions"
-  | "review";
+  | "qc_evidence";
 
-type SmartOperatorModeConfig = {
+type WorkflowConfig = {
   label: string;
   title: string;
   helper: string;
-  placeholder?: string;
-  bubbleTitle: string;
-  bubbleBody: string;
-  submitLabel?: string;
+  placeholder: string;
+  submitLabel: string;
+  requestType: CommandCenterCustomerRequestType;
+  sourceType: CommandCenterTaskSourceType;
 };
 
-const SMART_OPERATOR_MODE_CONFIG: Record<SmartOperatorModeId, SmartOperatorModeConfig> = {
-  requests: {
-    label: "Requests",
-    title: "Ask Neroa to add, change, or fix something",
-    helper:
-      "Use Requests for new work. Neroa turns the ask into a tracked task and stages prompt support behind it.",
-    placeholder: "Describe what you want Neroa to add, change, or fix next...",
-    bubbleTitle: "Requests",
-    bubbleBody:
-      "Use this mode for new work. Neroa treats the request as a fresh operator task and stages the supporting execution path behind it.",
-    submitLabel: "Create tracked task"
-  },
-  revisions: {
-    label: "Revisions",
-    title: "Revise something already being handled",
-    helper:
-      "Use Revisions when the work already exists and you want Neroa to tighten, reshape, or adjust it without creating a whole new direction.",
-    placeholder: "Describe what needs to be revised, adjusted, or tightened...",
-    bubbleTitle: "Revisions",
-    bubbleBody:
-      "Use this mode to revise work already in motion. Neroa keeps the task chain intact and treats the request as an adjustment to existing operator work.",
-    submitLabel: "Create revision task"
-  },
-  roadmap_updates: {
-    label: "Roadmap Updates",
-    title: "Change roadmap priorities, sequencing, or phase focus",
-    helper:
-      "Use Roadmap Updates when the order of work, current section, or next phase needs to change before the operator flow continues.",
-    placeholder: "Describe the roadmap shift, priority change, or sequencing update...",
-    bubbleTitle: "Roadmap Updates",
-    bubbleBody:
-      "Use this mode to change what should happen next. Neroa treats the request as a roadmap or sequencing adjustment before deeper execution widens.",
-    submitLabel: "Stage roadmap update"
-  },
-  execution_clarifications: {
-    label: "Execution Clarifications",
-    title: "Answer questions or remove blockers so work can continue",
-    helper:
-      "Use Execution Clarifications when Neroa needs sharper direction, missing context, or an answer that lets the current work move forward safely.",
-    placeholder: "Add the clarification, answer, or missing context Neroa needs...",
-    bubbleTitle: "Execution Clarifications",
-    bubbleBody:
-      "Use this mode to clear blockers or answer operator questions. Neroa treats the response as execution guidance rather than a brand-new request.",
-    submitLabel: "Stage clarification"
-  },
-  decisions: {
-    label: "Decisions",
-    title: "Resolve the answers Neroa still needs",
-    helper:
-      "Use Decisions to review open questions, add response notes, and move the project toward safer execution readiness.",
-    bubbleTitle: "Decisions",
-    bubbleBody:
-      "This mode is for unresolved decisions. Review what Neroa is asking, add the answer or status update, and clear what is still shaping readiness."
-  },
-  review: {
-    label: "Review",
-    title: "Review what changed before execution widens",
-    helper:
-      "Use Review to understand current follow-up pressure, update review notes, and confirm whether execution can safely widen from here.",
-    bubbleTitle: "Review",
-    bubbleBody:
-      "This mode is for change review and follow-up. Neroa shows why the current review matters and what still needs attention before moving deeper into execution."
-  }
+export type CommandCenterWorkflowTaskCard = {
+  id: string;
+  title: string;
+  request: string;
+  status: CommandCenterTaskStatus;
+  sourceType: CommandCenterTaskSourceType;
+  bucketLabel: string;
 };
 
 type CommandCenterSmartOperatorSurfaceProps = {
   workspaceId: string;
   returnTo: string;
   canManage: boolean;
-  availableRoadmapAreas: string[];
   createTaskAction: (formData: FormData) => void | Promise<void>;
-  decisionCount: number;
-  reviewCount: number;
-  decisionContent: ReactNode;
-  reviewContent: ReactNode;
+  tasks?: CommandCenterWorkflowTaskCard[];
+  defaultRoadmapArea?: string;
+  blockedItemCount?: number;
+  decisionCount?: number;
+  reviewCount?: number;
+  creditSummary?: string | null;
+  availableRoadmapAreas?: string[];
+  decisionContent?: ReactNode;
+  reviewContent?: ReactNode;
   utilityTray?: ReactNode;
   footerControl?: ReactNode;
 };
 
-function inferRequestTypeFromMode(mode: SmartOperatorModeId): CommandCenterCustomerRequestType {
-  if (mode === "revisions") {
-    return "revision";
+const WORKFLOW_CONFIG: Record<CommandCenterWorkflowTabId, WorkflowConfig> = {
+  requests: {
+    label: "Requests",
+    title: "Start a new request",
+    helper: "Use this for new work you want Neroa to pick up next.",
+    placeholder: "Describe the change, feature, or fix you want next...",
+    submitLabel: "Send request",
+    requestType: "new_request",
+    sourceType: "customer_request"
+  },
+  revisions: {
+    label: "Revisions",
+    title: "Adjust something already in motion",
+    helper: "Use this when work already exists and you want it revised, tightened, or reshaped.",
+    placeholder: "Describe what should be revised or improved...",
+    submitLabel: "Send revision",
+    requestType: "revision",
+    sourceType: "customer_request"
+  },
+  roadmap_updates: {
+    label: "Roadmap Updates",
+    title: "Change what should happen next",
+    helper: "Use this when priorities, sequencing, or the current direction need to change.",
+    placeholder: "Describe the roadmap update or direction change...",
+    submitLabel: "Send roadmap update",
+    requestType: "change_direction",
+    sourceType: "roadmap_follow_up"
+  },
+  execution_review: {
+    label: "Execution Review",
+    title: "Flag review feedback or delivery concerns",
+    helper: "Use this for feedback on work that needs another pass, validation, or follow-up.",
+    placeholder: "Describe the review note, concern, or follow-up you want handled...",
+    submitLabel: "Send review note",
+    requestType: "problem_bug",
+    sourceType: "change_review_follow_up"
+  },
+  decisions: {
+    label: "Decisions",
+    title: "Capture an answer Neroa needs",
+    helper: "Use this when a question needs a decision, approval, or short answer before work can move.",
+    placeholder: "Add the decision, answer, or approval note...",
+    submitLabel: "Send decision",
+    requestType: "question_decision",
+    sourceType: "decision_follow_up"
+  },
+  qc_evidence: {
+    label: "QC / Evidence",
+    title: "Attach proof, findings, or QC notes",
+    helper: "Use this for screenshots, recordings, evidence notes, or validation follow-up.",
+    placeholder: "Describe the QC result, evidence, or finding you want attached...",
+    submitLabel: "Send QC note",
+    requestType: "question_decision",
+    sourceType: "signal_cleanup"
+  }
+};
+
+function taskStatusLabel(status: CommandCenterTaskStatus) {
+  if (status === "in_review") {
+    return "In review";
   }
 
-  if (mode === "roadmap_updates") {
-    return "change_direction";
+  if (status === "waiting_on_decision") {
+    return "Waiting on answer";
   }
 
-  if (mode === "execution_clarifications" || mode === "decisions") {
-    return "question_decision";
+  if (status === "ready") {
+    return "Ready";
   }
 
-  return "new_request";
+  if (status === "active") {
+    return "In progress";
+  }
+
+  if (status === "completed") {
+    return "Completed";
+  }
+
+  return "Open";
+}
+
+function taskStatusClasses(status: CommandCenterTaskStatus) {
+  if (status === "active") {
+    return "border-cyan-300/35 bg-cyan-300/12 text-cyan-700";
+  }
+
+  if (status === "in_review") {
+    return "border-amber-300/35 bg-amber-50/80 text-amber-700";
+  }
+
+  if (status === "waiting_on_decision") {
+    return "border-rose-300/35 bg-rose-50/80 text-rose-700";
+  }
+
+  if (status === "ready") {
+    return "border-emerald-300/35 bg-emerald-50/80 text-emerald-700";
+  }
+
+  if (status === "completed") {
+    return "border-slate-200 bg-slate-100 text-slate-600";
+  }
+
+  return "border-slate-200 bg-white/82 text-slate-500";
+}
+
+function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
+  return WORKFLOW_CONFIG[tab].sourceType;
+}
+
+function requestTypeForTab(tab: CommandCenterWorkflowTabId) {
+  return WORKFLOW_CONFIG[tab].requestType;
+}
+
+function taskCategoryLabel(tab: CommandCenterWorkflowTabId) {
+  return WORKFLOW_CONFIG[tab].label;
+}
+
+function isQcEvidenceRequest(request: string) {
+  const normalized = request.toLowerCase();
+
+  return [
+    "qc",
+    "evidence",
+    "recording",
+    "screenshot",
+    "screen capture",
+    "video",
+    "proof",
+    "test result",
+    "qa note"
+  ].some((candidate) => normalized.includes(candidate));
+}
+
+function resolveTaskTab(task: CommandCenterWorkflowTaskCard): CommandCenterWorkflowTabId {
+  if (task.sourceType === "roadmap_follow_up") {
+    return "roadmap_updates";
+  }
+
+  if (task.sourceType === "change_review_follow_up") {
+    return "execution_review";
+  }
+
+  if (task.sourceType === "decision_follow_up") {
+    return "decisions";
+  }
+
+  if (task.sourceType === "signal_cleanup") {
+    return "qc_evidence";
+  }
+
+  const inferredType = inferCommandCenterCustomerRequestType(task.request);
+
+  if (inferredType === "revision") {
+    return "revisions";
+  }
+
+  if (inferredType === "change_direction") {
+    return "roadmap_updates";
+  }
+
+  if (inferredType === "question_decision") {
+    return "decisions";
+  }
+
+  if (inferredType === "problem_bug") {
+    return "execution_review";
+  }
+
+  if (isQcEvidenceRequest(task.request)) {
+    return "qc_evidence";
+  }
+
+  return "requests";
+}
+
+function compactMetricTone(value: number) {
+  if (value > 0) {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
 export function CommandCenterSmartOperatorSurface({
   workspaceId,
   returnTo,
   canManage,
-  availableRoadmapAreas,
   createTaskAction,
-  decisionCount,
-  reviewCount,
-  decisionContent,
-  reviewContent,
-  utilityTray,
+  tasks = [],
+  defaultRoadmapArea,
+  blockedItemCount = 0,
+  decisionCount = 0,
+  reviewCount = 0,
+  creditSummary = null,
+  availableRoadmapAreas = [],
   footerControl
 }: CommandCenterSmartOperatorSurfaceProps) {
-  const [activeMode, setActiveMode] = useState<SmartOperatorModeId>("requests");
-  const [openBubbleMode, setOpenBubbleMode] = useState<SmartOperatorModeId | null>(null);
+  const [activeTab, setActiveTab] = useState<CommandCenterWorkflowTabId>("requests");
   const [requestValue, setRequestValue] = useState("");
   const [manualRequestType, setManualRequestType] =
-    useState<CommandCenterCustomerRequestType | null>(null);
+    useState<CommandCenterCustomerRequestType | null>(requestTypeForTab("requests"));
 
-  const activeConfig = useMemo(
-    () => SMART_OPERATOR_MODE_CONFIG[activeMode],
-    [activeMode]
-  );
+  const activeConfig = WORKFLOW_CONFIG[activeTab];
   const inferredRequestType = useMemo(() => {
     if (requestValue.trim()) {
       return inferCommandCenterCustomerRequestType(requestValue);
     }
 
-    return inferRequestTypeFromMode(activeMode);
-  }, [activeMode, requestValue]);
+    return requestTypeForTab(activeTab);
+  }, [activeTab, requestValue]);
   const effectiveRequestType = manualRequestType ?? inferredRequestType;
   const requestTypeSource =
     manualRequestType !== null ? "manual" : requestValue.trim() ? "inferred" : "system";
-  const canSubmitRequest = requestValue.trim().length > 0;
+  const canSubmitRequest = canManage && requestValue.trim().length > 0;
+  const resolvedRoadmapArea =
+    defaultRoadmapArea ?? availableRoadmapAreas[0] ?? "General coordination";
+  const tabCounts = useMemo(() => {
+    const counts: Record<CommandCenterWorkflowTabId, number> = {
+      requests: 0,
+      revisions: 0,
+      roadmap_updates: 0,
+      execution_review: 0,
+      decisions: 0,
+      qc_evidence: 0
+    };
 
-  function selectMode(mode: SmartOperatorModeId) {
-    setActiveMode(mode);
-    setOpenBubbleMode(mode);
-    setManualRequestType(inferRequestTypeFromMode(mode));
+    for (const task of tasks) {
+      counts[resolveTaskTab(task)] += 1;
+    }
+
+    return counts;
+  }, [tasks]);
+  const filteredTasks = useMemo(
+    () => tasks.filter((task) => resolveTaskTab(task) === activeTab),
+    [activeTab, tasks]
+  );
+  const groupedTasks = useMemo(() => {
+    const groups = new Map<string, CommandCenterWorkflowTaskCard[]>();
+
+    for (const task of filteredTasks) {
+      const existing = groups.get(task.bucketLabel) ?? [];
+      existing.push(task);
+      groups.set(task.bucketLabel, existing);
+    }
+
+    return Array.from(groups.entries());
+  }, [filteredTasks]);
+
+  function selectTab(tab: CommandCenterWorkflowTabId) {
+    setActiveTab(tab);
+    setManualRequestType(requestTypeForTab(tab));
   }
 
   return (
-    <div className="rounded-[24px] border border-white/12 bg-[#081222]/94 px-4 py-4 shadow-[0_28px_80px_rgba(2,6,23,0.3)]">
-      <div className="relative">
-        <div className="flex flex-wrap gap-2">
-          {(Object.keys(SMART_OPERATOR_MODE_CONFIG) as SmartOperatorModeId[]).map((mode) => {
-            const config = SMART_OPERATOR_MODE_CONFIG[mode];
-            const active = mode === activeMode;
-            const countLabel =
-              mode === "decisions"
-                ? `${decisionCount} open`
-                : mode === "review"
-                  ? `${reviewCount} active`
-                  : null;
+    <div className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-4">
+        <div className="rounded-[20px] border border-slate-200 bg-white/82 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Open decisions
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${compactMetricTone(
+              decisionCount
+            )}`}
+          >
+            {decisionCount}
+          </span>
+        </div>
+        <div className="rounded-[20px] border border-slate-200 bg-white/82 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Active reviews
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${compactMetricTone(
+              reviewCount
+            )}`}
+          >
+            {reviewCount}
+          </span>
+        </div>
+        <div className="rounded-[20px] border border-slate-200 bg-white/82 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Blocked items
+          </p>
+          <span
+            className={`mt-3 inline-flex rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${compactMetricTone(
+              blockedItemCount
+            )}`}
+          >
+            {blockedItemCount}
+          </span>
+        </div>
+        {creditSummary ? (
+          <div className="rounded-[20px] border border-slate-200 bg-white/82 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.08)]">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Credits
+            </p>
+            <p className="mt-3 text-sm font-semibold text-slate-950">{creditSummary}</p>
+          </div>
+        ) : null}
+      </div>
 
+      <div className="rounded-[28px] border border-slate-200 bg-white/88 px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.1)]">
+        <div className="flex flex-wrap gap-2">
+          {(Object.keys(WORKFLOW_CONFIG) as CommandCenterWorkflowTabId[]).map((tab) => {
+            const active = tab === activeTab;
             return (
               <button
-                key={mode}
+                key={tab}
                 type="button"
                 aria-pressed={active}
-                onClick={() => selectMode(mode)}
-                className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] transition ${
+                onClick={() => selectTab(tab)}
+                className={`rounded-full border px-3 py-2 text-[11px] font-semibold tracking-[0.02em] transition ${
                   active
-                    ? "border-[rgba(167,136,250,0.65)] bg-[linear-gradient(135deg,#8f7cff,#a788fa_56%,#c19cff)] text-white shadow-[0_14px_32px_rgba(148,122,255,0.28)]"
-                    : "border-white/14 bg-[#111c2f] text-slate-200 hover:border-white/24 hover:bg-[#16233a]"
+                    ? "border-slate-950 bg-slate-950 text-white shadow-[0_16px_36px_rgba(15,23,42,0.16)]"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
                 }`}
               >
-                <span>{config.label}</span>
-                {countLabel ? <span className="ml-2 text-slate-300/90">{countLabel}</span> : null}
+                {WORKFLOW_CONFIG[tab].label}
+                <span className={`ml-2 ${active ? "text-slate-200" : "text-slate-400"}`}>
+                  {tabCounts[tab]}
+                </span>
               </button>
             );
           })}
         </div>
 
-        {openBubbleMode ? (
-          <div className="mt-3 max-w-[30rem] rounded-[20px] border border-white/14 bg-[#0f1a2c] px-4 py-4 shadow-[0_24px_64px_rgba(15,23,42,0.32)]">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-200">
-                  {SMART_OPERATOR_MODE_CONFIG[openBubbleMode].bubbleTitle}
+        <div className="mt-4 rounded-[24px] border border-slate-200 bg-slate-950 px-5 py-5 text-slate-100">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {activeConfig.label}
+              </p>
+              <p className="mt-2 text-xl font-semibold text-white">{activeConfig.title}</p>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                {activeConfig.helper}
+              </p>
+            </div>
+            <span className="rounded-full border border-white/14 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
+              One shared composer
+            </span>
+          </div>
+
+          <form action={createTaskAction} className="mt-5 space-y-3">
+            <input type="hidden" name="workspaceId" value={workspaceId} />
+            <input type="hidden" name="returnTo" value={returnTo} />
+            <input type="hidden" name="mutation" value="create_task" />
+            <input type="hidden" name="sourceType" value={sourceTypeForTab(activeTab)} />
+            <input type="hidden" name="requestType" value={effectiveRequestType} />
+            <input type="hidden" name="requestTypeSource" value={requestTypeSource} />
+            <input type="hidden" name="roadmapArea" value={resolvedRoadmapArea} />
+            <textarea
+              name="request"
+              rows={6}
+              value={requestValue}
+              onChange={(event) => setRequestValue(event.target.value)}
+              disabled={!canManage}
+              className="input min-h-[168px] resize-y border-white/18 bg-[#101b2d] text-white placeholder:text-slate-400 disabled:cursor-not-allowed disabled:opacity-70"
+              placeholder={activeConfig.placeholder}
+            />
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="text-xs leading-5 text-slate-300">
+                  This entry will be tagged as {taskCategoryLabel(activeTab).toLowerCase()} and
+                  added to the customer task queue.
                 </p>
-                <p className="mt-2 text-sm leading-6 text-slate-200">
-                  {SMART_OPERATOR_MODE_CONFIG[openBubbleMode].bubbleBody}
+                <p className="text-xs leading-5 text-slate-400">
+                  Request type: {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}.
                 </p>
+                {!canManage ? (
+                  <p className="text-xs leading-5 text-slate-400">
+                    Project owners can send new workflow items from this room.
+                  </p>
+                ) : null}
               </div>
               <button
-                type="button"
-                onClick={() => setOpenBubbleMode(null)}
-                className="rounded-full border border-white/14 bg-[#15233a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-100 transition hover:bg-[#1a2b45]"
+                type="submit"
+                disabled={!canSubmitRequest}
+                className="rounded-full border border-[rgba(167,136,250,0.68)] bg-[linear-gradient(135deg,#8f7cff,#a788fa_56%,#c19cff)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_40px_rgba(148,122,255,0.3)] transition hover:brightness-[1.06] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-400 disabled:shadow-none"
               >
-                Dismiss
+                {activeConfig.submitLabel}
               </button>
             </div>
-          </div>
-        ) : null}
+          </form>
+
+          {footerControl ? <div className="mt-4 flex justify-end">{footerControl}</div> : null}
+        </div>
       </div>
 
-      <div className="mt-4 rounded-[22px] border border-white/14 bg-[#0d182a]/94 px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+      <div className="rounded-[28px] border border-slate-200 bg-white/88 px-4 py-4 shadow-[0_24px_60px_rgba(15,23,42,0.1)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
-              {activeConfig.label}
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              Customer tasks
             </p>
-            <p className="mt-2 text-base font-semibold text-white">{activeConfig.title}</p>
-            <p className="mt-2 text-sm leading-6 text-slate-200">{activeConfig.helper}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Track what is open, waiting, and recently cleared from one simple queue.
+            </p>
           </div>
-          <span className="rounded-full border border-white/16 bg-[#15233a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
-            {activeConfig.label} mode
-          </span>
-          <span className="rounded-full border border-white/16 bg-[#15233a] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-100">
-            {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}
+          <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+            {filteredTasks.length} shown
           </span>
         </div>
 
-        <div className={utilityTray ? "mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_18rem]" : ""}>
-          <div className="min-w-0">
-            {activeMode === "decisions" ? (
-              <div>{decisionContent}</div>
-            ) : activeMode === "review" ? (
-              <div>{reviewContent}</div>
-            ) : canManage ? (
-              <form action={createTaskAction} className="space-y-3">
-                <input type="hidden" name="workspaceId" value={workspaceId} />
-                <input type="hidden" name="returnTo" value={returnTo} />
-                <input type="hidden" name="mutation" value="create_task" />
-                <input type="hidden" name="sourceType" value="customer_request" />
-                <input type="hidden" name="requestType" value={effectiveRequestType} />
-                <input type="hidden" name="requestTypeSource" value={requestTypeSource} />
-                <textarea
-                  name="request"
-                  rows={6}
-                  value={requestValue}
-                  onChange={(event) => setRequestValue(event.target.value)}
-                  required
-                  className="input min-h-[168px] resize-y border-white/18 bg-[#101b2d] text-white placeholder:text-slate-400"
-                  placeholder={activeConfig.placeholder}
-                />
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-                  <label className="block w-full max-w-sm space-y-2">
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-300">
-                      Roadmap section
-                    </span>
-                    <select name="roadmapArea" className="input border-white/18 bg-[#101b2d] text-white">
-                      {availableRoadmapAreas.map((area) => (
-                        <option key={area} value={area} className="text-slate-950">
-                          {area}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <p className="max-w-xl text-xs leading-5 text-slate-300 sm:flex-1">
-                    Request type: {formatCommandCenterCustomerRequestTypeLabel(effectiveRequestType)}.
-                    {" "}
-                    This stays on the task metadata so Command Center can keep planning,
-                    decision, and bug context attached without adding any portal routing logic.
-                  </p>
-                  <button
-                    type="submit"
-                    disabled={!canSubmitRequest}
-                    className="rounded-full border border-[rgba(167,136,250,0.68)] bg-[linear-gradient(135deg,#8f7cff,#a788fa_56%,#c19cff)] px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_40px_rgba(148,122,255,0.3)] transition hover:brightness-[1.06] disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/10 disabled:text-slate-400 disabled:shadow-none"
-                  >
-                    {activeConfig.submitLabel}
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <div className="rounded-[20px] border border-white/14 bg-[#101b2d] px-4 py-4">
-                <p className="text-sm leading-6 text-slate-200">
-                  Project owners can use {activeConfig.label.toLowerCase()} mode to turn this context
-                  into tracked operator work from the same Smart Operator surface.
+        {groupedTasks.length > 0 ? (
+          <div className="mt-4 space-y-4">
+            {groupedTasks.map(([bucketLabel, bucketTasks]) => (
+              <section key={bucketLabel} className="space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                  {bucketLabel}
                 </p>
-              </div>
-            )}
+                <div className="grid gap-3">
+                  {bucketTasks.map((task) => {
+                    const taskTab = resolveTaskTab(task);
 
-            {footerControl ? <div className="mt-4 flex justify-end">{footerControl}</div> : null}
+                    return (
+                      <article
+                        key={task.id}
+                        className="rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${taskStatusClasses(
+                                  task.status
+                                )}`}
+                              >
+                                {taskStatusLabel(task.status)}
+                              </span>
+                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                {taskCategoryLabel(taskTab)}
+                              </span>
+                            </div>
+                            <p className="mt-3 text-base font-semibold text-slate-950">
+                              {task.title}
+                            </p>
+                            <p className="mt-2 text-sm leading-6 text-slate-600">{task.request}</p>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
           </div>
-
-          {utilityTray ? (
-            <div className="grid content-start gap-3 xl:self-start">{utilityTray}</div>
-          ) : null}
-        </div>
+        ) : (
+          <div className="mt-4 rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6">
+            <p className="text-sm leading-6 text-slate-500">
+              No customer tasks are in {activeConfig.label.toLowerCase()} right now.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
