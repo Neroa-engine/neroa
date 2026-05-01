@@ -215,6 +215,136 @@ function statusBadgeClasses(status: string) {
   return "border-slate-200 bg-white/82 text-slate-600";
 }
 
+function buildPromptPackageStatus(args: {
+  selectedDetail: BuildRoomTaskDetail | null;
+  packetRelationship: ReturnType<typeof getExecutionPacketRelationship>;
+  pendingRelationship: ReturnType<typeof getPendingExecutionRelationship>;
+}) {
+  if (!args.selectedDetail) {
+    return {
+      label: "Not prepared",
+      note: "Pick a saved Build Room task to review the internal execution package placeholder."
+    };
+  }
+
+  if (args.pendingRelationship.isActivePending) {
+    return {
+      label: "Pending release",
+      note:
+        args.pendingRelationship.pendingItem?.latestReason ??
+        "The task is still held as pending execution, so no released prompt package is attached yet."
+    };
+  }
+
+  if (args.packetRelationship.packetSummary) {
+    return {
+      label: formatStatusLabel(args.packetRelationship.packetSummary.status),
+      note: `Execution packet ${args.packetRelationship.packetSummary.packetId} is the current internal package reference.`
+    };
+  }
+
+  return {
+    label: "Placeholder only",
+    note: "No released execution packet is linked yet. This section stays read-only until the existing packet flow produces one."
+  };
+}
+
+function buildInternalExecutionPlanningItems(args: {
+  selectedDetail: BuildRoomTaskDetail | null;
+  selectedCodexResult: NonNullable<BuildRoomTaskDetail["task"]["codexResponsePayload"]> | null;
+  packetRelationship: ReturnType<typeof getExecutionPacketRelationship>;
+  pendingRelationship: ReturnType<typeof getPendingExecutionRelationship>;
+  qaSummary: ReturnType<typeof buildQAValidationSummary> | null;
+}) {
+  if (!args.selectedDetail) {
+    return [
+      {
+        label: "Task intent",
+        value: "No Build Room task selected",
+        note: "Choose a stored task to inspect internal execution planning."
+      },
+      {
+        label: "Prompt package status",
+        value: "Placeholder only",
+        note: "The current Build Room flow will attach packet and relay details here when a task is available."
+      }
+    ];
+  }
+
+  const promptPackage = buildPromptPackageStatus({
+    selectedDetail: args.selectedDetail,
+    packetRelationship: args.packetRelationship,
+    pendingRelationship: args.pendingRelationship
+  });
+  const readinessNotes = [
+    args.pendingRelationship.isActivePending
+      ? "Pending execution hold is still active."
+      : "No pending execution hold is active.",
+    args.selectedCodexResult?.blockers.length
+      ? `${args.selectedCodexResult.blockers.length} Codex blocker${
+          args.selectedCodexResult.blockers.length === 1 ? "" : "s"
+        } returned.`
+      : "No Codex blockers are currently attached.",
+    args.qaSummary ? args.qaSummary.releaseLabel : "QA validation has not attached yet."
+  ];
+  const nextExecutionStep = args.pendingRelationship.isActivePending
+    ? "Clear the pending execution hold in the existing governed flow before worker approval."
+    : args.selectedDetail.task.status === "codex_complete"
+      ? "Review blockers, QA status, and packet detail, then decide whether to approve the worker run."
+      : args.selectedDetail.task.status === "worker_complete"
+        ? "Review worker output and QA validation before presenting the task as complete."
+        : args.selectedDetail.task.status === "needs_revision"
+          ? "Tighten the request, acceptance criteria, or risk notes before sending it back through the relay."
+          : "Continue through the existing Build Room relay flow until a result or packet is available.";
+
+  return [
+    {
+      label: "Task intent",
+      value: formatStatusLabel(args.selectedDetail.task.taskType),
+      note: args.selectedDetail.task.userRequest
+    },
+    {
+      label: "Requested output mode",
+      value: formatStatusLabel(args.selectedDetail.task.requestedOutputMode),
+      note: args.selectedCodexResult
+        ? `Current relay output mode: ${formatStatusLabel(args.selectedCodexResult.outputMode)}.`
+        : "No relay result has been recorded yet."
+    },
+    {
+      label: "Risk level",
+      value: formatStatusLabel(args.selectedDetail.task.riskLevel),
+      note: args.selectedDetail.task.status === "needs_revision"
+        ? "This task is currently back in revision."
+        : "Risk stays read-only here and follows the existing Build Room task record."
+    },
+    {
+      label: "Acceptance criteria",
+      value: args.selectedDetail.task.acceptanceCriteria ? "Provided" : "Not provided",
+      note:
+        args.selectedDetail.task.acceptanceCriteria ??
+        "No acceptance criteria were saved for this task yet."
+    },
+    {
+      label: "Readiness / blockers",
+      value:
+        args.selectedCodexResult?.blockers.length || args.pendingRelationship.isActivePending
+          ? "Attention required"
+          : "Ready for internal review",
+      note: readinessNotes.join(" ")
+    },
+    {
+      label: "Next execution step",
+      value: nextExecutionStep,
+      note: "This is a read-only planning cue. Worker approval and execution behavior remain unchanged."
+    },
+    {
+      label: "Prompt package status",
+      value: promptPackage.label,
+      note: promptPackage.note
+    }
+  ];
+}
+
 function billingStatusBadgeClasses(status: string) {
   if (/billable/i.test(status)) {
     return "border-emerald-200 bg-emerald-50 text-emerald-700";
@@ -359,6 +489,13 @@ export function BuildRoomControlRoom({
   const qaSummary = selectedQaContext
     ? buildQAValidationSummary(selectedQaContext.qaValidation)
     : null;
+  const internalExecutionPlanningItems = buildInternalExecutionPlanningItems({
+    selectedDetail,
+    selectedCodexResult,
+    packetRelationship,
+    pendingRelationship,
+    qaSummary
+  });
   const selectedBillingState =
     selectedBillingContext?.billingState ?? billingState ?? null;
   const billingSummary = selectedBillingState
@@ -1041,6 +1178,38 @@ export function BuildRoomControlRoom({
                         </p>
                       </div>
                     ) : null}
+
+                    <div className="mt-6 rounded-[26px] border border-slate-200/70 bg-white/74 px-5 py-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+                            Internal Execution Planning
+                          </p>
+                          <p className="mt-3 text-sm leading-7 text-slate-600">
+                            Build Room keeps the internal execution package view here. This does not
+                            change worker behavior, relay behavior, or customer-facing intake.
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-slate-200 bg-white/82 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                          Internal only
+                        </span>
+                      </div>
+
+                      <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                        {internalExecutionPlanningItems.map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-[22px] border border-slate-200/70 bg-white/82 px-4 py-4"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className="mt-3 text-sm font-semibold text-slate-950">{item.value}</p>
+                            <p className="mt-2 text-xs leading-6 text-slate-500">{item.note}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div className="grid gap-4">
@@ -1625,12 +1794,34 @@ export function BuildRoomControlRoom({
                 </div>
               </>
             ) : (
-              <div className="floating-plane rounded-[34px] p-6">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                  Response / Status
-                </p>
-                <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
-                  Pick a saved task or create a new one to start the Build Room relay flow.
+              <div className="grid gap-4">
+                <div className="floating-plane rounded-[34px] p-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                    Response / Status
+                  </p>
+                  <div className="mt-5 rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
+                    Pick a saved task or create a new one to start the Build Room relay flow.
+                  </div>
+                </div>
+
+                <div className="floating-plane rounded-[34px] p-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                    Internal Execution Planning
+                  </p>
+                  <div className="mt-5 grid gap-3 lg:grid-cols-2">
+                    {internalExecutionPlanningItems.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-[22px] border border-dashed border-slate-200 bg-white/74 px-4 py-4"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                          {item.label}
+                        </p>
+                        <p className="mt-3 text-sm font-semibold text-slate-950">{item.value}</p>
+                        <p className="mt-2 text-xs leading-6 text-slate-500">{item.note}</p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
