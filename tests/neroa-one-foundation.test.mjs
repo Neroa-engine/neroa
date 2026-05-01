@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import {
   analyzeTaskWithNeroaOne,
   assertNeroaOneOutcomeQueueItemAllowedInLane,
+  attachArtifactPointersToEvidenceLink,
   buildBuildRoomHandoffPackage,
   buildBuildRoomCustomerTaskHandoffPackage,
   buildNeroaOneTaskAnalysisRequest,
@@ -12,6 +13,8 @@ import {
   canCreateCodeExecutionWorkerRunFromCodexExecutionPacket,
   canCreateCodexExecutionPacketFromReadyToBuildLaneItem,
   canCreatePromptRoomItemFromCodexExecutionPacket,
+  createDraftEvidenceLinkFromPipelineIds,
+  createDraftEvidenceLinkFromPipelineRecords,
   canNeroaOneOutcomeLaneEnterCodexExecution,
   createPlaceholderOutputReviewDecisionFromOutputItem,
   createPlaceholderOutputReviewDecisionsFromOutputItems,
@@ -19,6 +22,7 @@ import {
   createQueuedQcStationJobsFromApprovedOutputReview,
   classifyCustomerIntent,
   commandCenterLanes,
+  createEvidenceArtifactPointer,
   createPendingReviewCodexOutputItem,
   createDraftCodexExecutionPacket,
   createDraftCodexExecutionPacketFromQueueEntry,
@@ -29,7 +33,10 @@ import {
   evaluateNeroaOneDecisionGate,
   getCodeExecutionWorkerEngines,
   getCodeExecutionWorkerRunStatuses,
+  getCustomerSafeEvidenceSummary,
   getEligibleCodexOutputStatusesForFreshReview,
+  getEvidenceArtifactPointerTypes,
+  getEvidenceLinkStatuses,
   getPromptRoomCustomerSafeStatus,
   getPromptRoomCustomerSafeStatuses,
   getPromptRoomStatuses,
@@ -41,6 +48,8 @@ import {
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
   NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES,
   NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES,
+  NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES,
+  NEROA_ONE_EVIDENCE_LINK_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
   NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
   NEROA_ONE_PROMPT_ROOM_CUSTOMER_SAFE_STATUSES,
@@ -56,10 +65,13 @@ import {
   validateApprovedOutputReviewForQcStation,
   validateCodexExecutionPacketForCodeExecutionWorkerRun,
   validateCodexExecutionPacketForPromptRoom,
+  validateEvidenceLinkPipelineIds,
+  validateEvidenceLinkPipelineRecords,
   validateOutputReviewNextDestination,
   neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
+  neroaOneEvidenceLinkingLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
   neroaOneOutputReviewLane,
@@ -85,6 +97,7 @@ const moduleSources = [
   "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/output-review.ts",
   "../lib/neroa-one/qc-station.ts",
+  "../lib/neroa-one/evidence-linking.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -112,6 +125,80 @@ function buildFixtureSpaceContext(overrides = {}) {
     },
     ...overrides
   });
+}
+
+async function buildEvidenceLinkFixturePipeline() {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-evidence-link-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-evidence-link-1",
+      title: "Prepare evidence trace contract",
+      request:
+        "Prepare the approved execution trace contract and keep the backend lane extraction-ready.",
+      normalizedRequest:
+        "prepare the approved execution trace contract and keep the backend lane extraction-ready."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_evidence_link_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const executionPacket = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: [
+      "Keep evidence linking backend-only and extraction-ready.",
+      "Do not expose internal prompt or worker details in customer-safe outputs."
+    ],
+    testCommands: ["node --test tests/neroa-one-foundation.test.mjs"],
+    createdAt: "2026-05-01T14:00:00.000Z"
+  });
+  const promptRoomItem = createDraftPromptRoomItemFromCodexExecutionPacket({
+    executionPacket,
+    status: "ready_for_code_builder",
+    createdAt: "2026-05-01T14:01:00.000Z"
+  });
+  const workerRun = createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+    promptRoomItem,
+    selectedEngine: "codex_cli",
+    createdAt: "2026-05-01T14:02:00.000Z"
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket,
+    codexRunId: "codex-run-evidence-link-1",
+    createdAt: "2026-05-01T14:03:00.000Z",
+    receivedAt: "2026-05-01T14:03:00.000Z"
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "approve_for_qc",
+    createdAt: "2026-05-01T14:04:00.000Z"
+  });
+  const qcJob = createQueuedQcStationJobFromApprovedOutputReview({
+    review,
+    jobType: "qc_report_generation",
+    targetUrl: "https://example.com/evidence-link-preview",
+    createdAt: "2026-05-01T14:05:00.000Z"
+  });
+
+  return {
+    request,
+    response,
+    entry,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob
+  };
 }
 
 test("Neroa One foundation does not import or call model providers", () => {
@@ -154,6 +241,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const qcStationSource = moduleSources.find((source) =>
     source.includes("neroaOneQcStationJobRecordSchema")
   );
+  const evidenceLinkingSource = moduleSources.find((source) =>
+    source.includes("neroaOneEvidenceLinkRecordSchema")
+  );
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
@@ -162,6 +252,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(codexOutputBoxSource);
   assert.ok(outputReviewSource);
   assert.ok(qcStationSource);
+  assert.ok(evidenceLinkingSource);
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -243,6 +334,20 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     /createPlaceholderOutputReviewDecisionFromOutputItem|createPlaceholderOutputReviewDecisionsFromOutputItems/i
   );
   assert.match(qcStationSource, /interface\s+NeroaOneQcStationStorageAdapter/);
+  assert.doesNotMatch(evidenceLinkingSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    evidenceLinkingSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(evidenceLinkingSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
+  assert.doesNotMatch(
+    evidenceLinkingSource,
+    /getPromptRoomCustomerSafeStatus|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createQueuedQcStationJobFromApprovedOutputReview/i
+  );
+  assert.match(
+    evidenceLinkingSource,
+    /interface\s+NeroaOneEvidenceLinkingStorageAdapter/
+  );
 });
 
 test("Customer message can be classified deterministically", () => {
@@ -453,6 +558,194 @@ test("QC Station lane stays typed, backend-only, and DigitalOcean-ready", () => 
     validateOutputReviewDecisionForQcStation({ decision: "rerun_required" }).allowed,
     false
   );
+});
+
+test("Evidence Linking lane stays typed, backend-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_EVIDENCE_LINK_STATUSES], [
+    "draft",
+    "awaiting_qc",
+    "evidence_ready",
+    "customer_result_ready",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual([...NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES], [
+    "screenshot",
+    "video",
+    "qc_report",
+    "raw_worker_output",
+    "audit_trace",
+    "customer_summary",
+    "other"
+  ]);
+  assert.equal(neroaOneEvidenceLinkingLane.backendOnly, true);
+  assert.equal(neroaOneEvidenceLinkingLane.extractionReady, true);
+  assert.equal(neroaOneEvidenceLinkingLane.independentlyReplaceable, true);
+  assert.equal(neroaOneEvidenceLinkingLane.linksExecutionTraceOnly, true);
+  assert.equal(neroaOneEvidenceLinkingLane.ownsExecutionNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.ownsReviewNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.ownsQcNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.ownsCustomerUiNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.storesEvidenceNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.writesPersistenceNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.exposesCustomerSafeProjectionOnly, true);
+  assert.deepEqual(getEvidenceLinkStatuses(), [...NEROA_ONE_EVIDENCE_LINK_STATUSES]);
+  assert.deepEqual(
+    getEvidenceArtifactPointerTypes(),
+    [...NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES]
+  );
+});
+
+test("Valid pipeline records can create a draft evidence link and attach typed artifacts", async () => {
+  const { entry, executionPacket, promptRoomItem, workerRun, output, review, qcJob } =
+    await buildEvidenceLinkFixturePipeline();
+  const validation = validateEvidenceLinkPipelineRecords({
+    outcomeItem: entry.item,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob,
+    evidenceId: "evidence-bundle-1",
+    reportId: "qc-report-1"
+  });
+
+  assert.equal(validation.allowed, true);
+
+  const link = createDraftEvidenceLinkFromPipelineRecords({
+    outcomeItem: entry.item,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob,
+    evidenceId: "evidence-bundle-1",
+    reportId: "qc-report-1",
+    createdAt: "2026-05-01T14:06:00.000Z",
+    updatedAt: "2026-05-01T14:06:00.000Z"
+  });
+  const screenshotPointer = createEvidenceArtifactPointer({
+    evidenceLinkId: link.evidenceLinkId,
+    artifactId: "screenshot-1",
+    pointerType: "screenshot",
+    title: "Release capture",
+    createdAt: "2026-05-01T14:07:00.000Z"
+  });
+  const reportPointer = createEvidenceArtifactPointer({
+    evidenceLinkId: link.evidenceLinkId,
+    artifactId: "qc-report-1",
+    pointerType: "qc_report",
+    title: "QC report",
+    createdAt: "2026-05-01T14:08:00.000Z"
+  });
+  const linkedEvidence = attachArtifactPointersToEvidenceLink({
+    link,
+    pointers: [screenshotPointer, reportPointer],
+    updatedAt: "2026-05-01T14:08:00.000Z"
+  });
+
+  assert.equal(link.status, "evidence_ready");
+  assert.equal(link.outputId, output.outputId);
+  assert.equal(link.reviewId, review.reviewId);
+  assert.equal(link.qcJobId, qcJob.qcJobId);
+  assert.equal(link.evidenceId, "evidence-bundle-1");
+  assert.equal(link.workerRunId, workerRun.workerRunId);
+  assert.equal(link.promptRoomItemId, promptRoomItem.promptRoomItemId);
+  assert.equal(link.executionPacketId, executionPacket.executionPacketId);
+  assert.equal(link.outcomeLaneId, "ready_to_build");
+  assert.equal(linkedEvidence.reportId, "qc-report-1");
+  assert.deepEqual(linkedEvidence.screenshotIds, ["screenshot-1"]);
+  assert.equal(linkedEvidence.artifactPointers.length, 2);
+});
+
+test("Malformed or incomplete pipeline identifiers are rejected for evidence linking", () => {
+  const malformedPipelineIds = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-evidence-link-bad",
+    analyzerOutcome: "ready_to_build",
+    outcomeLaneId: "ready_to_build",
+    executionPacketId: "packet-bad",
+    promptRoomItemId: "prompt-room-bad",
+    workerRunId: "worker-run-bad",
+    outputId: null,
+    reviewId: "review-bad",
+    qcJobId: null,
+    evidenceId: null,
+    recordingId: null,
+    screenshotIds: [],
+    reportId: null,
+    customerResultId: null
+  };
+  const validation = validateEvidenceLinkPipelineIds({
+    pipelineIds: malformedPipelineIds
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /reviewId cannot be attached before outputId/i);
+  assert.throws(
+    () =>
+      createDraftEvidenceLinkFromPipelineIds({
+        pipelineIds: malformedPipelineIds
+      }),
+    /reviewId cannot be attached before outputId/i
+  );
+});
+
+test("Evidence Linking customer-safe summary strips internal prompt, worker, and protected detail", async () => {
+  const { entry, executionPacket, promptRoomItem, workerRun, output, review, qcJob } =
+    await buildEvidenceLinkFixturePipeline();
+  const link = createDraftEvidenceLinkFromPipelineRecords({
+    outcomeItem: entry.item,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob,
+    evidenceId: "evidence-bundle-2",
+    createdAt: "2026-05-01T14:09:00.000Z",
+    updatedAt: "2026-05-01T14:09:00.000Z"
+  });
+  const screenshotPointer = createEvidenceArtifactPointer({
+    evidenceLinkId: link.evidenceLinkId,
+    artifactId: "screenshot-2",
+    pointerType: "screenshot",
+    title: "Customer-safe capture",
+    createdAt: "2026-05-01T14:10:00.000Z"
+  });
+  const rawWorkerPointer = createEvidenceArtifactPointer({
+    evidenceLinkId: link.evidenceLinkId,
+    artifactId: "raw-output-1",
+    pointerType: "raw_worker_output",
+    title: "Internal worker trace",
+    uri: "s3://internal/raw-output-1",
+    createdAt: "2026-05-01T14:10:30.000Z"
+  });
+  const summary = getCustomerSafeEvidenceSummary({
+    link: attachArtifactPointersToEvidenceLink({
+      link,
+      pointers: [screenshotPointer, rawWorkerPointer],
+      updatedAt: "2026-05-01T14:10:30.000Z"
+    })
+  });
+  const summaryJson = JSON.stringify(summary);
+
+  assert.equal(summary.status, "evidence_ready");
+  assert.equal(summary.evidenceId, "evidence-bundle-2");
+  assert.deepEqual(summary.screenshotIds, ["screenshot-2"]);
+  assert.deepEqual(summary.customerSafeArtifactPointers, [
+    {
+      artifactPointerId: screenshotPointer.artifactPointerId,
+      artifactId: "screenshot-2",
+      pointerType: "screenshot"
+    }
+  ]);
+  assert.doesNotMatch(summaryJson, /internalPromptDraft|promptText|protectedAreas/i);
+  assert.doesNotMatch(summaryJson, /raw_worker_output|selectedEngine|futureDigitalOceanWorkerTarget/i);
+  assert.doesNotMatch(summaryJson, /secret|model routing|instruction/i);
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
