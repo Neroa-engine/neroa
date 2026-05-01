@@ -2,14 +2,18 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  analyzeTaskWithNeroaOne,
   buildBuildRoomHandoffPackage,
   buildBuildRoomCustomerTaskHandoffPackage,
+  buildNeroaOneTaskAnalysisRequest,
   buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
   classifyCustomerIntent,
   commandCenterLanes,
+  createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
+  neroaOneOutcomeQueues,
   resolveNeroaOneCostPolicy
 } from "../lib/neroa-one/index.ts";
 
@@ -20,6 +24,7 @@ const moduleSources = [
   "../lib/neroa-one/roadmap-impact.ts",
   "../lib/neroa-one/build-room-handoff.ts",
   "../lib/neroa-one/cost-policy.ts",
+  "../lib/neroa-one/outcome-queues.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -84,6 +89,52 @@ test("Five lanes are represented", () => {
     "execution_review",
     "decisions"
   ]);
+});
+
+test("Five backend outcome queues are represented", () => {
+  assert.deepEqual(Object.keys(neroaOneOutcomeQueues), [
+    "ready_to_build",
+    "needs_customer_answer",
+    "roadmap_revision_required",
+    "blocked_missing_information",
+    "rejected_outside_scope"
+  ]);
+});
+
+test("Analyzer output can be converted into a queue-ready backend item", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-queue-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-queue-1",
+      title: "Revise release checklist",
+      request: "Please revise the release checklist before the next handoff.",
+      normalizedRequest: "please revise the release checklist before the next handoff."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_foundation_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+
+  assert.equal(entry.queue, response.outcome);
+  assert.equal(entry.item.workspaceId, "workspace-alpha");
+  assert.equal(entry.item.projectId, "project-alpha");
+  assert.equal(entry.item.taskId, "task-queue-1");
+  assert.equal(
+    entry.item.normalizedRequest,
+    "please revise the release checklist before the next handoff."
+  );
+  assert.equal(entry.item.customerFacingSummary, response.reasoning.summary);
+  assert.equal(entry.item.source.requestSource, "command_center");
+  assert.equal(entry.item.source.caller, "neroa_one_foundation_test");
 });
 
 test("Build Room handoff preserves original customer intent", () => {
