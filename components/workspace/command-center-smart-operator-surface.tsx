@@ -7,7 +7,8 @@ import {
   inferCommandCenterCustomerRequestType,
   type CommandCenterCustomerRequestType,
   type CommandCenterTaskSourceType,
-  type CommandCenterTaskStatus
+  type CommandCenterTaskStatus,
+  type CommandCenterWorkflowLane
 } from "@/lib/workspace/command-center-tasks";
 
 export type CommandCenterWorkflowTabId =
@@ -34,6 +35,11 @@ export type CommandCenterWorkflowTaskCard = {
   request: string;
   status: CommandCenterTaskStatus;
   sourceType: CommandCenterTaskSourceType;
+  workflowLane?: CommandCenterWorkflowLane | null;
+  requestType?: CommandCenterCustomerRequestType | null;
+  normalizedRequest?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   bucketLabel: string;
 };
 
@@ -189,6 +195,26 @@ function isQcEvidenceRequest(request: string) {
 }
 
 function resolveTaskTab(task: CommandCenterWorkflowTaskCard): CommandCenterWorkflowTabId {
+  if (task.workflowLane) {
+    return task.workflowLane;
+  }
+
+  if (task.requestType === "revision") {
+    return "revisions";
+  }
+
+  if (task.requestType === "change_direction") {
+    return "roadmap_updates";
+  }
+
+  if (task.requestType === "question_decision") {
+    return "decisions";
+  }
+
+  if (task.requestType === "problem_bug") {
+    return "execution_review";
+  }
+
   if (task.sourceType === "roadmap_follow_up") {
     return "roadmap_updates";
   }
@@ -403,6 +429,7 @@ export function CommandCenterSmartOperatorSurface({
             <input type="hidden" name="returnTo" value={returnTo} />
             <input type="hidden" name="mutation" value="create_task" />
             <input type="hidden" name="sourceType" value={sourceTypeForTab(activeTab)} />
+            <input type="hidden" name="workflowLane" value={activeTab} />
             <input type="hidden" name="requestType" value={effectiveRequestType} />
             <input type="hidden" name="requestTypeSource" value={requestTypeSource} />
             <input type="hidden" name="roadmapArea" value={resolvedRoadmapArea} />
@@ -493,6 +520,11 @@ export function CommandCenterSmartOperatorSurface({
                               {task.title}
                             </p>
                             <p className="mt-2 text-sm leading-6 text-slate-600">{task.request}</p>
+                            {task.updatedAt || task.createdAt ? (
+                              <p className="mt-3 text-xs leading-5 text-slate-400">
+                                Updated {task.updatedAt ?? task.createdAt}
+                              </p>
+                            ) : null}
                           </div>
                         </div>
                       </article>

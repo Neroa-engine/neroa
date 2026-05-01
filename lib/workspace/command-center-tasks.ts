@@ -19,8 +19,20 @@ export const COMMAND_CENTER_CUSTOMER_REQUEST_TYPES = [
   "question_decision"
 ] as const;
 
+export const COMMAND_CENTER_WORKFLOW_LANES = [
+  "requests",
+  "revisions",
+  "roadmap_updates",
+  "execution_review",
+  "decisions",
+  "qc_evidence"
+] as const;
+
 export type CommandCenterCustomerRequestType =
   (typeof COMMAND_CENTER_CUSTOMER_REQUEST_TYPES)[number];
+
+export type CommandCenterWorkflowLane =
+  (typeof COMMAND_CENTER_WORKFLOW_LANES)[number];
 
 export type CommandCenterTaskRequestTypeSource = "manual" | "inferred" | "system";
 
@@ -111,9 +123,11 @@ export type StoredCommandCenterTask = {
   id: string;
   title: string;
   request: string;
+  normalizedRequest?: string | null;
   status: CommandCenterTaskStatus;
   roadmapArea: string;
   sourceType: CommandCenterTaskSourceType;
+  workflowLane?: CommandCenterWorkflowLane | null;
   intelligenceMetadata?: CommandCenterTaskIntelligenceMetadata | null;
   roadmapDeviation?: CommandCenterTaskRoadmapDeviation | null;
   createdAt: string | null;
@@ -142,6 +156,8 @@ const taskRequestTypeSources: CommandCenterTaskRequestTypeSource[] = [
   "inferred",
   "system"
 ];
+
+const workflowLanes: CommandCenterWorkflowLane[] = [...COMMAND_CENTER_WORKFLOW_LANES];
 
 const taskRoutingHints: CommandCenterTaskRoutingHint[] = [
   "direct_execution_candidate",
@@ -248,6 +264,10 @@ function normalizeRequestText(value: string | null | undefined) {
   return typeof value === "string" ? value.toLowerCase().replace(/\s+/g, " ").trim() : "";
 }
 
+export function normalizeCommandCenterRequestText(value: string | null | undefined) {
+  return normalizeRequestText(value) || null;
+}
+
 function inferRegressionCandidate(text: string) {
   return includesAny(text, [
     "regression",
@@ -342,6 +362,14 @@ export function normalizeCommandCenterCustomerRequestType(
 ): CommandCenterCustomerRequestType | null {
   return COMMAND_CENTER_CUSTOMER_REQUEST_TYPES.includes(value as CommandCenterCustomerRequestType)
     ? (value as CommandCenterCustomerRequestType)
+    : null;
+}
+
+export function normalizeCommandCenterWorkflowLane(
+  value: unknown
+): CommandCenterWorkflowLane | null {
+  return workflowLanes.includes(value as CommandCenterWorkflowLane)
+    ? (value as CommandCenterWorkflowLane)
     : null;
 }
 
@@ -490,6 +518,46 @@ export function formatCommandCenterCustomerRequestTypeLabel(
   return requestTypeLabels[value];
 }
 
+export function buildCommandCenterTaskIntelligenceMetadata(args: {
+  request: string | null | undefined;
+  requestType?: CommandCenterCustomerRequestType | null;
+  requestTypeSource?: CommandCenterTaskRequestTypeSource;
+}): CommandCenterTaskIntelligenceMetadata {
+  const normalizedRequest = normalizeRequestText(args.request);
+  const requestType = args.requestType ?? inferCommandCenterCustomerRequestType(normalizedRequest);
+  const routingHint: CommandCenterTaskRoutingHint =
+    requestType === "change_direction"
+      ? "planning_review"
+      : requestType === "question_decision"
+        ? "decision_support"
+        : requestType === "problem_bug"
+          ? "bug_regression_review"
+          : "direct_execution_candidate";
+
+  return {
+    classifierVersion: "command_center_customer_request_v1",
+    requestType,
+    requestTypeLabel: formatCommandCenterCustomerRequestTypeLabel(requestType),
+    requestTypeSource: args.requestTypeSource ?? "inferred",
+    routingHint,
+    planningCandidate:
+      requestType === "change_direction" ||
+      includesAny(normalizedRequest, ["plan", "planning", "roadmap", "scope", "milestone"]),
+    bugCandidate: requestType === "problem_bug",
+    regressionCandidate: inferRegressionCandidate(normalizedRequest),
+    billabilityReviewRequired: includesAny(normalizedRequest, [
+      "billing",
+      "credit",
+      "credits",
+      "plan",
+      "pricing",
+      "price",
+      "subscription",
+      "invoice"
+    ])
+  };
+}
+
 export function formatCommandCenterTaskRoadmapDeviationStatusLabel(
   value: CommandCenterTaskRoadmapDeviationStatus
 ) {
@@ -620,9 +688,13 @@ export function normalizeStoredCommandCenterTask(
     id,
     title,
     request,
+    normalizedRequest:
+      normalizeCommandCenterRequestText(asNullableString(record.normalizedRequest)) ??
+      normalizeCommandCenterRequestText(request),
     status,
     roadmapArea,
     sourceType,
+    workflowLane: normalizeCommandCenterWorkflowLane(record.workflowLane),
     intelligenceMetadata: normalizeCommandCenterTaskIntelligenceMetadata(record.intelligenceMetadata),
     roadmapDeviation: normalizeCommandCenterTaskRoadmapDeviation(record.roadmapDeviation),
     createdAt: asNullableString(record.createdAt),

@@ -122,6 +122,7 @@ export default async function CommandCenterPage({ params }: CommandCenterPagePro
         liveViewSession={runtimeTargetSession}
         canManageDecisions={activeProjectSummary.accessMode === "owner"}
         accessMode={activeProjectSummary.accessMode}
+        liveCommandCenterTasks={projectMetadata?.commandCenterTasks ?? []}
         initialBuildRoomTasks={initialBuildRoomTasks}
         initialBuildRoomTaskDetail={initialBuildRoomTaskDetail}
         buildRoomCodexRelayMode={buildRoomCodexRelayMode}

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
   buildBuildRoomHandoffPackage,
+  buildBuildRoomCustomerTaskHandoffPackage,
   buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
   classifyCustomerIntent,
@@ -166,6 +167,47 @@ test("Build Room task handoff preserves typed execution contract fields", () => 
   assert.deepEqual(handoff.blockers, ["Waiting for artifact upload"]);
   assert.equal(handoff.readinessStatus, "blocked");
   assert.equal(handoff.decisionGate.status, "block");
+});
+
+test("Build Room can derive a handoff package from a live Command Center task", () => {
+  const handoff = buildBuildRoomCustomerTaskHandoffPackage({
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    projectTitle: "Alpha Project",
+    task: {
+      id: "task-live-1",
+      title: "Revise the onboarding checklist",
+      request: "Please revise the onboarding checklist and tighten the approval copy.",
+      normalizedRequest: "please revise the onboarding checklist and tighten the approval copy.",
+      status: "queued",
+      roadmapArea: "Launch preparation",
+      sourceType: "customer_request",
+      workflowLane: "revisions",
+      intelligenceMetadata: {
+        classifierVersion: "command_center_customer_request_v1",
+        requestType: "revision",
+        requestTypeLabel: "Revision",
+        requestTypeSource: "manual",
+        routingHint: "direct_execution_candidate",
+        planningCandidate: false,
+        bugCandidate: false,
+        regressionCandidate: false,
+        billabilityReviewRequired: false
+      },
+      createdAt: "2026-04-30T00:00:00.000Z",
+      updatedAt: "2026-04-30T00:05:00.000Z"
+    }
+  });
+
+  assert.ok(handoff);
+  assert.equal(handoff.customerIntentType, "revision");
+  assert.equal(handoff.commandCenterLane, "revisions");
+  assert.equal(
+    handoff.normalizedRequest,
+    "please revise the onboarding checklist and tighten the approval copy."
+  );
+  assert.equal(handoff.executionTaskType, "implementation");
+  assert.equal(handoff.requestedOutputMode, "patch_proposal");
 });
 
 test("Roadmap update can return needsStrategyReview", () => {

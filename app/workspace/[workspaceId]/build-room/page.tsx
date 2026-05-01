@@ -25,10 +25,11 @@ type BuildRoomPageProps = {
 
 export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
   noStore();
-  const { supabase, user, workspace, project, projectIntelligence } = await getWorkspaceProjectContext(
-    params.workspaceId,
-    params.workspaceId
-  );
+  const { supabase, user, workspace, project, projectMetadata, projectIntelligence } =
+    await getWorkspaceProjectContext(
+      params.workspaceId,
+      params.workspaceId
+    );
   const portalProjects = await loadPortalProjectSummariesForUser({
     supabase,
     userId: user.id
@@ -88,6 +89,7 @@ export default async function BuildRoomPage({ params }: BuildRoomPageProps) {
         billingState={projectIntelligence.billingState}
         codexRelayMode={codexRelayMode}
         workerTriggerMode={workerTriggerMode}
+        liveCommandCenterTasks={projectMetadata?.commandCenterTasks ?? []}
         storageMessage={storageMessage}
       />
     </ActiveProjectPortalShell>

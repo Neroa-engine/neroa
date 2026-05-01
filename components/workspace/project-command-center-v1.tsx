@@ -12,6 +12,7 @@ import type { ExecutionState } from "@/lib/intelligence/execution";
 import type { CommandCenterSummary } from "@/lib/workspace/command-center-summary";
 import type { LiveViewSession } from "@/lib/live-view/types";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
+import type { StoredCommandCenterTask } from "@/lib/workspace/command-center-tasks";
 import { updateCommandCenterTask } from "@/app/workspace/[workspaceId]/command-center/actions";
 import {
   CommandCenterSmartOperatorSurface,
@@ -31,6 +32,7 @@ type ProjectCommandCenterV1Props = {
   liveViewSession: LiveViewSession | null;
   canManageDecisions: boolean;
   accessMode: "owner" | "member";
+  liveCommandCenterTasks: StoredCommandCenterTask[];
   initialBuildRoomTasks: BuildRoomTask[];
   initialBuildRoomTaskDetail: BuildRoomTaskDetail | null;
   buildRoomCodexRelayMode: BuildRoomRelayMode;
@@ -38,49 +40,69 @@ type ProjectCommandCenterV1Props = {
   buildRoomStorageMessage?: string | null;
 };
 
+function bucketLabelForTask(task: StoredCommandCenterTask) {
+  if (task.status === "active") {
+    return "In progress";
+  }
+
+  if (task.status === "waiting_on_decision") {
+    return "Waiting on answers";
+  }
+
+  if (task.status === "in_review") {
+    return "In review";
+  }
+
+  if (task.status === "completed") {
+    return "Recently cleared";
+  }
+
+  return "Up next";
+}
+
+function sortTasksForCustomerQueue(tasks: StoredCommandCenterTask[]) {
+  return [...tasks].sort((left, right) => {
+    if (left.status === "completed" && right.status !== "completed") {
+      return 1;
+    }
+
+    if (left.status !== "completed" && right.status === "completed") {
+      return -1;
+    }
+
+    const leftStamp = left.updatedAt ?? left.createdAt ?? "";
+    const rightStamp = right.updatedAt ?? right.createdAt ?? "";
+
+    if (leftStamp !== rightStamp) {
+      return leftStamp < rightStamp ? 1 : -1;
+    }
+
+    return left.title.localeCompare(right.title);
+  });
+}
+
 export function ProjectCommandCenterV1(props: ProjectCommandCenterV1Props) {
   const {
     project,
     commandCenter,
+    liveCommandCenterTasks,
     canManageDecisions
   } = props;
-  const taskCards: CommandCenterWorkflowTaskCard[] = [];
-  const seenTaskIds = new Set<string>();
-
-  const appendTasks = (
-    bucketLabel: string,
-    tasks: Array<{
-      id: string;
-      title: string;
-      request: string;
-      status: CommandCenterWorkflowTaskCard["status"];
-      sourceType: CommandCenterWorkflowTaskCard["sourceType"];
-    }>
-  ) => {
-    for (const task of tasks) {
-      if (seenTaskIds.has(task.id)) {
-        continue;
-      }
-
-      seenTaskIds.add(task.id);
-      taskCards.push({
-        id: task.id,
-        title: task.title,
-        request: task.request,
-        status: task.status,
-        sourceType: task.sourceType,
-        bucketLabel
-      });
-    }
-  };
-
-  if (commandCenter.taskQueue.currentTask) {
-    appendTasks("In progress", [commandCenter.taskQueue.currentTask]);
-  }
-
-  appendTasks("Up next", commandCenter.taskQueue.nextTasks);
-  appendTasks("Waiting on answers", commandCenter.taskQueue.waitingOnDecision);
-  appendTasks("Recently cleared", commandCenter.taskQueue.recentlyCleared);
+  const taskCards: CommandCenterWorkflowTaskCard[] = sortTasksForCustomerQueue(
+    liveCommandCenterTasks
+  ).map((task) => ({
+    id: task.id,
+    title: task.title,
+    request: task.request,
+    status: task.status,
+    sourceType: task.sourceType,
+    workflowLane: task.workflowLane ?? null,
+    requestType: task.intelligenceMetadata?.requestType ?? null,
+    normalizedRequest: task.normalizedRequest ?? null,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    bucketLabel: bucketLabelForTask(task)
+  }));
 
   return (
     <section className="surface-main relative overflow-visible rounded-[42px] p-5 xl:p-6 2xl:p-8">

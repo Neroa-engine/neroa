@@ -10,10 +10,13 @@ const commandCenterSource = readFileSync(
 test("Main flow keeps one shared workflow surface above the customer task queue", () => {
   const headerIndex = commandCenterSource.indexOf("Command Center");
   const workflowSurfaceIndex = commandCenterSource.indexOf("<CommandCenterSmartOperatorSurface");
+  const liveTaskSourceIndex = commandCenterSource.indexOf("sortTasksForCustomerQueue(");
 
   assert.notEqual(headerIndex, -1);
   assert.notEqual(workflowSurfaceIndex, -1);
+  assert.notEqual(liveTaskSourceIndex, -1);
   assert.ok(headerIndex < workflowSurfaceIndex);
+  assert.ok(liveTaskSourceIndex < workflowSurfaceIndex);
   assert.match(commandCenterSource, /<CommandCenterSmartOperatorSurface/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
@@ -33,6 +36,7 @@ test("Main flow keeps one shared workflow surface above the customer task queue"
 test("Customer workflow language replaces the old operator and prompt framing", () => {
   assert.match(commandCenterSource, /Send requests, revisions, decisions, and review notes from one place\./);
   assert.match(commandCenterSource, /<CommandCenterSmartOperatorSurface/);
+  assert.match(commandCenterSource, /liveCommandCenterTasks/);
   assert.doesNotMatch(commandCenterSource, /PromptRunner/);
   assert.doesNotMatch(commandCenterSource, /AnalyzerPanel/);
 });

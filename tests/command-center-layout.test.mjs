@@ -10,7 +10,7 @@ const commandCenterSource = readFileSync(
 test("Command Center keeps the top operator surface ahead of the lower task flow", () => {
   const headerIndex = commandCenterSource.indexOf("Send requests, revisions, decisions, and review notes from one place.");
   const workflowSurfaceIndex = commandCenterSource.indexOf("<CommandCenterSmartOperatorSurface");
-  const taskCardsIndex = commandCenterSource.indexOf("const taskCards: CommandCenterWorkflowTaskCard[] = [];");
+  const taskCardsIndex = commandCenterSource.indexOf("const taskCards: CommandCenterWorkflowTaskCard[] = sortTasksForCustomerQueue(");
 
   assert.notEqual(headerIndex, -1);
   assert.notEqual(workflowSurfaceIndex, -1);
@@ -24,6 +24,7 @@ test("Command Center keeps one shared workflow surface and a lower customer task
     commandCenterSource,
     /<CommandCenterSmartOperatorSurface[\s\S]*tasks=\{taskCards\}/
   );
+  assert.match(commandCenterSource, /liveCommandCenterTasks: StoredCommandCenterTask\[];/);
   assert.match(commandCenterSource, /Send requests, revisions, decisions, and review notes from one place\./);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);

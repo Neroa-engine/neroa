@@ -58,6 +58,11 @@ test("Build Room no longer exposes customer intake controls", () => {
   assert.match(buildRoomSource, /No Neroa One handoff package yet\./);
 });
 
+test("Build Room can bind a read-only handoff preview from live Command Center tasks", () => {
+  assert.match(buildRoomSource, /buildBuildRoomCustomerTaskHandoffPackage/);
+  assert.match(buildRoomSource, /A live Command Center task is staged here as a read-only handoff preview/i);
+});
+
 test("Command Center remains free of Prompt Runner after the stripdown", () => {
   assert.doesNotMatch(commandCenterSource, /PromptRunner/);
   assert.doesNotMatch(commandCenterSource, /Prompt Runner/);

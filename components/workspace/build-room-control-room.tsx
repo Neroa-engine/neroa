@@ -10,6 +10,7 @@ import {
   type ExecutionState
 } from "@/lib/intelligence/execution";
 import {
+  buildBuildRoomCustomerTaskHandoffPackage,
   buildBuildRoomTaskHandoffPackage,
   type BuildRoomHandoffPackage
 } from "@/lib/neroa-one";
@@ -24,6 +25,7 @@ import { buildQAValidationSummary, buildTaskQAValidationContext } from "@/lib/in
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
+import type { StoredCommandCenterTask } from "@/lib/workspace/command-center-tasks";
 
 type BuildRoomControlRoomProps = {
   workspaceId: string;
@@ -39,6 +41,7 @@ type BuildRoomControlRoomProps = {
   billingState: BillingProtectionState | null;
   codexRelayMode: BuildRoomRelayMode;
   workerTriggerMode: BuildRoomRelayMode;
+  liveCommandCenterTasks?: StoredCommandCenterTask[];
   storageMessage?: string | null;
 };
 
@@ -334,6 +337,7 @@ export function BuildRoomControlRoom({
   billingState,
   codexRelayMode,
   workerTriggerMode,
+  liveCommandCenterTasks = [],
   storageMessage = null
 }: BuildRoomControlRoomProps) {
   const [tasks, setTasks] = useState(initialTasks);
@@ -400,7 +404,11 @@ export function BuildRoomControlRoom({
     packetRelationship,
     pendingRelationship
   });
-  const neroaOneHandoff = buildBuildRoomTaskHandoffPackage({
+  const latestLiveCommandCenterTask =
+    liveCommandCenterTasks.find((task) => task.status !== "completed") ??
+    liveCommandCenterTasks[0] ??
+    null;
+  const buildRoomTaskHandoff = buildBuildRoomTaskHandoffPackage({
     workspaceId,
     projectId: project.id,
     projectTitle: project.title,
@@ -408,6 +416,15 @@ export function BuildRoomControlRoom({
     isPendingExecution: pendingRelationship.isActivePending,
     pendingReason: pendingRelationship.pendingItem?.latestReason ?? null
   });
+  const liveTaskHandoff = selectedDetail
+    ? null
+    : buildBuildRoomCustomerTaskHandoffPackage({
+        workspaceId,
+        projectId: project.id,
+        projectTitle: project.title,
+        task: latestLiveCommandCenterTask
+      });
+  const neroaOneHandoff = buildRoomTaskHandoff ?? liveTaskHandoff;
   const selectedBillingState =
     selectedBillingContext?.billingState ?? billingState ?? null;
   const billingSummary = selectedBillingState
@@ -421,7 +438,9 @@ export function BuildRoomControlRoom({
     !workerBlockedByBlockers &&
     !storageMessage;
   const nextExecutionStep = !selectedDetail
-    ? "No approved build handoff yet. Start from Command Center."
+    ? latestLiveCommandCenterTask
+      ? "A live Command Center task is staged here as a read-only handoff preview until an approved Build Room record exists."
+      : "No approved build handoff yet. Start from Command Center."
     : selectedDetail.task.status === "needs_revision"
       ? "Revise the request in Command Center, then resend it through the current relay."
       : canApproveWorker

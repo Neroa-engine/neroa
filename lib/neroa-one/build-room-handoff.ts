@@ -9,6 +9,12 @@ import {
 } from "./schemas.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";
 import type { BuildRoomTaskDetail } from "../build-room/types.ts";
+import type {
+  CommandCenterCustomerRequestType,
+  CommandCenterWorkflowLane,
+  StoredCommandCenterTask
+} from "../workspace/command-center-tasks.ts";
+import { normalizeCommandCenterRequestText } from "../workspace/command-center-tasks.ts";
 
 function clipText(value: string, maxLength = 88) {
   const normalized = value.replace(/\s+/g, " ").trim();
@@ -110,6 +116,86 @@ function buildTaskIntentSummary(args: {
   return "Execution request handoff";
 }
 
+function resolveLaneFromWorkflowLane(
+  workflowLane: CommandCenterWorkflowLane | null | undefined
+): CommandCenterLane {
+  if (workflowLane === "revisions") {
+    return "revisions";
+  }
+
+  if (workflowLane === "roadmap_updates") {
+    return "roadmap_updates";
+  }
+
+  if (workflowLane === "execution_review" || workflowLane === "qc_evidence") {
+    return "execution_review";
+  }
+
+  if (workflowLane === "decisions") {
+    return "decisions";
+  }
+
+  return "requests";
+}
+
+function mapCommandCenterRequestTypeToIntentType(
+  requestType: CommandCenterCustomerRequestType | null | undefined
+): CustomerIntentType | null {
+  if (requestType === "revision") {
+    return "revision";
+  }
+
+  if (requestType === "change_direction") {
+    return "roadmap_update";
+  }
+
+  if (requestType === "problem_bug") {
+    return "execution_review";
+  }
+
+  if (requestType === "question_decision") {
+    return "decision";
+  }
+
+  if (requestType === "new_request") {
+    return "new_request";
+  }
+
+  return null;
+}
+
+function executionProfileForLane(lane: CommandCenterLane) {
+  if (lane === "execution_review") {
+    return {
+      taskType: "qa",
+      requestedOutputMode: "implementation_guidance",
+      riskLevel: "medium"
+    };
+  }
+
+  if (lane === "roadmap_updates") {
+    return {
+      taskType: "research",
+      requestedOutputMode: "plan_only",
+      riskLevel: "medium"
+    };
+  }
+
+  if (lane === "decisions") {
+    return {
+      taskType: "operations",
+      requestedOutputMode: "plan_only",
+      riskLevel: "low"
+    };
+  }
+
+  return {
+    taskType: "implementation",
+    requestedOutputMode: "patch_proposal",
+    riskLevel: "medium"
+  };
+}
+
 export function buildBuildRoomHandoffPackage(args: {
   spaceContext: SpaceContext;
   intent: CustomerIntentEnvelope;
@@ -200,5 +286,72 @@ export function buildBuildRoomTaskHandoffPackage(args: {
     readinessStatus,
     decisionGate,
     emittedEvent: "neroa_one.build_room.handoff_bound"
+  });
+}
+
+export function buildBuildRoomCustomerTaskHandoffPackage(args: {
+  workspaceId: string;
+  projectId: string;
+  projectTitle: string;
+  task: StoredCommandCenterTask | null;
+}): BuildRoomHandoffPackage | null {
+  if (!args.task) {
+    return null;
+  }
+
+  const lane = resolveLaneFromWorkflowLane(args.task.workflowLane);
+  const intentType =
+    mapCommandCenterRequestTypeToIntentType(args.task.intelligenceMetadata?.requestType) ??
+    classifyCustomerIntent({
+      text: args.task.request,
+      source: "command_center",
+      originalPayload: {
+        commandCenterTaskId: args.task.id,
+        sourceType: args.task.sourceType,
+        workflowLane: args.task.workflowLane ?? null
+      }
+    }).intentType;
+  const normalizedRequest =
+    args.task.normalizedRequest ?? normalizeCommandCenterRequestText(args.task.request) ?? args.task.request;
+  const executionProfile = executionProfileForLane(lane);
+  const decisionGate: NeroaOneDecisionGate = {
+    status: "allow",
+    reason: "The live Command Center task is available for a read-only Build Room handoff preview.",
+    blockedActions: [],
+    requiredNextStep: "Create or release the approved Build Room task when execution is ready."
+  };
+
+  return buildRoomHandoffPackageSchema.parse({
+    packageId: `${args.projectId}:command-center-task:${args.task.id}`,
+    workspaceId: args.workspaceId,
+    projectId: args.projectId,
+    taskTitle: args.task.title,
+    taskSummary: `Live Command Center handoff preview for ${args.projectTitle}.`,
+    originalIntent: {
+      messageId: args.task.id,
+      source: "command_center",
+      rawText: args.task.request,
+      normalizedText: normalizedRequest,
+      intentType,
+      lane,
+      signals: [args.task.sourceType],
+      originalPayload: {
+        commandCenterTaskId: args.task.id,
+        workflowLane: args.task.workflowLane ?? null,
+        requestType: args.task.intelligenceMetadata?.requestType ?? null,
+        status: args.task.status
+      }
+    },
+    customerIntentType: intentType,
+    commandCenterLane: lane,
+    normalizedRequest,
+    executionTaskType: executionProfile.taskType,
+    requestedOutputMode: executionProfile.requestedOutputMode,
+    riskLevel: executionProfile.riskLevel,
+    acceptanceCriteria: null,
+    blockers: [],
+    readinessStatus: args.task.status === "completed" ? "execution_recorded" : "draft_handoff",
+    decisionGate,
+    emittedEvent: "neroa_one.build_room.live_task_handoff_bound"
   });
 }

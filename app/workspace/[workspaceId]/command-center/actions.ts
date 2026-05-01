@@ -61,8 +61,13 @@ import {
   type StoredCommandCenterPreviewState
 } from "@/lib/workspace/command-center-design-preview";
 import {
+  buildCommandCenterTaskIntelligenceMetadata,
+  inferCommandCenterCustomerRequestType,
+  normalizeCommandCenterCustomerRequestType,
+  normalizeCommandCenterRequestText,
   normalizeCommandCenterTaskSourceType,
   normalizeCommandCenterTaskStatus,
+  normalizeCommandCenterWorkflowLane,
   type CommandCenterTaskSourceType,
   type StoredCommandCenterTask
 } from "@/lib/workspace/command-center-tasks";
@@ -88,6 +93,34 @@ function resolveActionOrigin() {
 
 function normalizeDecisionFlag(value: FormDataEntryValue | null) {
   return value === "true";
+}
+
+function normalizeRequestTypeSource(value: FormDataEntryValue | null) {
+  if (value === "manual" || value === "inferred" || value === "system") {
+    return value;
+  }
+
+  return null;
+}
+
+function workflowLaneFromSourceType(sourceType: CommandCenterTaskSourceType) {
+  if (sourceType === "roadmap_follow_up") {
+    return "roadmap_updates" as const;
+  }
+
+  if (sourceType === "change_review_follow_up") {
+    return "execution_review" as const;
+  }
+
+  if (sourceType === "decision_follow_up") {
+    return "decisions" as const;
+  }
+
+  if (sourceType === "signal_cleanup") {
+    return "qc_evidence" as const;
+  }
+
+  return "requests" as const;
 }
 
 function parsePreviewSurfaceTargets(formData: FormData) {
@@ -1026,6 +1059,16 @@ export async function updateCommandCenterTask(formData: FormData) {
   const nextStatus = normalizeCommandCenterTaskStatus(formData.get("nextStatus"));
   const sourceType =
     normalizeCommandCenterTaskSourceType(formData.get("sourceType")) ?? "customer_request";
+  const requestType =
+    normalizeCommandCenterCustomerRequestType(formData.get("requestType")) ??
+    inferCommandCenterCustomerRequestType(request);
+  const requestTypeSource =
+    normalizeRequestTypeSource(formData.get("requestTypeSource")) ??
+    (request ? "inferred" : "system");
+  const workflowLane =
+    normalizeCommandCenterWorkflowLane(formData.get("workflowLane")) ??
+    workflowLaneFromSourceType(sourceType);
+  const normalizedRequest = normalizeCommandCenterRequestText(request);
 
   if (!workspaceId || (mutation !== "create_task" && mutation !== "set_status")) {
     redirectWithError(returnTo, "Task update could not be applied.");
@@ -1055,14 +1098,21 @@ export async function updateCommandCenterTask(formData: FormData) {
       id: crypto.randomUUID(),
       title: buildTaskTitle(titleInput, request),
       request,
+      normalizedRequest,
       status: "queued",
       roadmapArea,
       sourceType,
+      workflowLane,
+      intelligenceMetadata: buildCommandCenterTaskIntelligenceMetadata({
+        request,
+        requestType,
+        requestTypeSource
+      }),
       createdAt: now,
       updatedAt: now
     };
 
-    mergedTasks = [nextTask, ...existingTasks];
+    mergedTasks = mergeCommandCenterTasks(existingTasks, nextTask);
   } else {
     const existingTask = existingTasks.find((item) => item.id === taskId) ?? null;
 
@@ -1076,17 +1126,24 @@ export async function updateCommandCenterTask(formData: FormData) {
       id: taskId,
       title: buildTaskTitle(titleInput || existingTask.title, request),
       request,
+      normalizedRequest: normalizedRequest ?? existingTask.normalizedRequest ?? null,
       status: resolvedNextStatus,
       roadmapArea,
       sourceType: sourceType as CommandCenterTaskSourceType,
+      workflowLane: existingTask.workflowLane ?? workflowLane,
+      intelligenceMetadata:
+        existingTask.intelligenceMetadata ??
+        buildCommandCenterTaskIntelligenceMetadata({
+          request,
+          requestType,
+          requestTypeSource
+        }),
+      roadmapDeviation: existingTask.roadmapDeviation ?? null,
       createdAt: existingTask.createdAt ?? now,
       updatedAt: now
     };
 
-    mergedTasks = [
-      nextTask,
-      ...existingTasks.filter((item) => item.id !== taskId)
-    ];
+      mergedTasks = mergeCommandCenterTasks(existingTasks, nextTask);
   }
 
   const { data, error } = await supabase
