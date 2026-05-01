@@ -11,6 +11,8 @@ import {
   buildSpaceContext,
   canCreateCodexExecutionPacketFromReadyToBuildLaneItem,
   canNeroaOneOutcomeLaneEnterCodexExecution,
+  createPlaceholderOutputReviewDecisionFromOutputItem,
+  createPlaceholderOutputReviewDecisionsFromOutputItems,
   classifyCustomerIntent,
   commandCenterLanes,
   createPendingReviewCodexOutputItem,
@@ -20,12 +22,17 @@ import {
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
+  getAllowedOutputReviewNextDestinations,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
+  NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
   validateCodexExecutionPacketForOutputBox,
+  validateCodexOutputItemForOutputReview,
+  validateOutputReviewNextDestination,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
+  neroaOneOutputReviewLane,
   resolveNeroaOneCostPolicy,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane
@@ -42,6 +49,7 @@ const moduleSources = [
   "../lib/neroa-one/outcome-lanes.ts",
   "../lib/neroa-one/codex-execution-packet.ts",
   "../lib/neroa-one/codex-output-box.ts",
+  "../lib/neroa-one/output-review.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -99,10 +107,14 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const codexOutputBoxSource = moduleSources.find((source) =>
     source.includes("neroaOneCodexOutputRecordSchema")
   );
+  const outputReviewSource = moduleSources.find((source) =>
+    source.includes("neroaOneOutputReviewRecordSchema")
+  );
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
   assert.ok(codexOutputBoxSource);
+  assert.ok(outputReviewSource);
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -120,6 +132,13 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(codexOutputBoxSource, /createDraftCodexExecutionPacket/i);
   assert.match(codexOutputBoxSource, /interface\s+NeroaOneCodexOutputBoxStorageAdapter/);
+  assert.doesNotMatch(outputReviewSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    outputReviewSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(outputReviewSource, /openai|anthropic|model review/i);
+  assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
 });
 
 test("Customer message can be classified deterministically", () => {
@@ -183,6 +202,32 @@ test("Codex output box statuses stay typed and backend-only", () => {
   assert.equal(neroaOneCodexOutputBoxLane.extractionReady, true);
   assert.equal(neroaOneCodexOutputBoxLane.receivesRealCodexOutputNow, false);
   assert.equal(neroaOneCodexOutputBoxLane.writesPersistenceNow, false);
+});
+
+test("Output review decisions and explicit destinations stay typed and backend-only", () => {
+  assert.deepEqual([...NEROA_ONE_OUTPUT_REVIEW_DECISIONS], [
+    "approve_for_qc",
+    "needs_repair",
+    "rerun_required",
+    "strategy_escalation",
+    "customer_followup",
+    "archive_complete"
+  ]);
+  assert.equal(neroaOneOutputReviewLane.backendOnly, true);
+  assert.equal(neroaOneOutputReviewLane.extractionReady, true);
+  assert.equal(neroaOneOutputReviewLane.performsRealReviewNow, false);
+  assert.equal(neroaOneOutputReviewLane.callsAiNow, false);
+  assert.equal(neroaOneOutputReviewLane.writesPersistenceNow, false);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("approve_for_qc"), ["qc_station"]);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("needs_repair"), ["repair_lane"]);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("rerun_required"), ["rerun_lane"]);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("strategy_escalation"), [
+    "strategy_room_review"
+  ]);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("customer_followup"), [
+    "command_center_follow_up"
+  ]);
+  assert.deepEqual(getAllowedOutputReviewNextDestinations("archive_complete"), ["archive_only"]);
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
@@ -468,6 +513,136 @@ test("Codex output box validates valid execution packets and safely defaults opt
   assert.match(output.rawOutput, /CODEX_OUTPUT_NOT_WIRED/);
   assert.equal(output.createdAt, "2026-05-01T12:02:00.000Z");
   assert.equal(output.receivedAt, "2026-05-01T12:02:00.000Z");
+});
+
+test("Output review can create safe placeholder review decisions from output box items", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-output-review-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-output-review-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_output_review_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the review lane backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-review-1",
+    summary: "Patch proposal staged for Neroa One review.",
+    filesChanged: ["lib/neroa-one/output-review.ts"],
+    testsRun: ["node --test tests\\neroa-one-foundation.test.mjs"],
+    createdAt: "2026-05-01T12:10:00.000Z",
+    receivedAt: "2026-05-01T12:11:00.000Z"
+  });
+  const validation = validateCodexOutputItemForOutputReview({
+    output
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "needs_repair",
+    internalNotes: ["Review remains placeholder-only for now."],
+    createdAt: "2026-05-01T12:12:00.000Z"
+  });
+
+  assert.equal(validation.allowed, true);
+  assert.equal(validation.outputLane.laneId, "codex_output_box");
+  assert.equal(validation.reviewLane.laneId, "output_review");
+  assert.equal(review.outputId, output.outputId);
+  assert.equal(review.executionPacketId, packet.executionPacketId);
+  assert.equal(review.workspaceId, "workspace-alpha");
+  assert.equal(review.projectId, "project-alpha");
+  assert.equal(review.taskId, "task-output-review-1");
+  assert.equal(review.decision, "needs_repair");
+  assert.equal(review.repairPriority, "medium");
+  assert.match(review.reasoningSummary, /deterministic repair handling only/i);
+  assert.equal(
+    review.customerVisibleSummary,
+    "Implementation output needs an internal repair pass before it can move forward."
+  );
+  assert.match(review.reviewId, /:review:needs_repair:/i);
+  assert.ok(
+    review.internalNotes.includes("Review remains placeholder-only for now."),
+    "expected custom internal note to be preserved"
+  );
+  assert.equal(review.createdAt, "2026-05-01T12:12:00.000Z");
+});
+
+test("Output review destination validation is explicit and review rejects archived outputs", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-output-review-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-output-review-2",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_output_review_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the review lane backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-review-2",
+    createdAt: "2026-05-01T12:20:00.000Z"
+  });
+  const allowedDestination = validateOutputReviewNextDestination({
+    decision: "approve_for_qc",
+    destination: "qc_station"
+  });
+  const blockedDestination = validateOutputReviewNextDestination({
+    decision: "approve_for_qc",
+    destination: "repair_lane"
+  });
+  const archivedValidation = validateCodexOutputItemForOutputReview({
+    output: {
+      ...output,
+      outputStatus: "archived"
+    }
+  });
+  const reviews = createPlaceholderOutputReviewDecisionsFromOutputItems({
+    outputs: [output],
+    decision: "archive_complete",
+    createdAt: "2026-05-01T12:21:00.000Z"
+  });
+
+  assert.equal(allowedDestination.allowed, true);
+  assert.equal(allowedDestination.destination, "qc_station");
+  assert.equal(blockedDestination.allowed, false);
+  assert.match(blockedDestination.reason, /not allowed for decision approve_for_qc/i);
+  assert.equal(archivedValidation.allowed, false);
+  assert.match(archivedValidation.reason, /archived/i);
+  assert.equal(reviews.length, 1);
+  assert.equal(reviews[0].decision, "archive_complete");
+  assert.equal(reviews[0].repairPriority, null);
 });
 
 test("Codex output box rejects malformed or incomplete execution packet data", () => {

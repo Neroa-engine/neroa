@@ -10,6 +10,7 @@ export * from "./outcome-queues.ts";
 export * from "./outcome-lanes.ts";
 export * from "./codex-execution-packet.ts";
 export * from "./codex-output-box.ts";
+export * from "./output-review.ts";
 
 import { buildBuildRoomHandoffPackage } from "./build-room-handoff.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";
