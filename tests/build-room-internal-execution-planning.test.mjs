@@ -41,6 +41,19 @@ test("Build Room demotes the old intake snapshot and keeps future QC surfaces as
   assert.match(buildRoomSource, /Future video recorder/);
 });
 
+test("Build Room no longer exposes customer intake controls", () => {
+  assert.doesNotMatch(buildRoomSource, /Open Command Center Intake/);
+  assert.doesNotMatch(buildRoomSource, /Start or Revise in Command Center/);
+  assert.doesNotMatch(buildRoomSource, /build-room-title/);
+  assert.doesNotMatch(buildRoomSource, /build-room-task-type/);
+  assert.doesNotMatch(buildRoomSource, /build-room-output-mode/);
+  assert.doesNotMatch(buildRoomSource, /build-room-user-request/);
+  assert.doesNotMatch(buildRoomSource, /build-room-acceptance/);
+  assert.doesNotMatch(buildRoomSource, /build-room-risk/);
+  assert.doesNotMatch(buildRoomSource, /persistComposer/);
+  assert.match(buildRoomSource, /No approved build handoff yet\. Start from Command Center\./);
+});
+
 test("Command Center remains free of Prompt Runner after the stripdown", () => {
   assert.doesNotMatch(commandCenterSource, /PromptRunner/);
   assert.doesNotMatch(commandCenterSource, /Prompt Runner/);

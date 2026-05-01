@@ -1,14 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import type {
-  BuildRoomOutputMode,
-  BuildRoomRelayMode,
-  BuildRoomRiskLevel,
-  BuildRoomTaskInput,
-  BuildRoomTaskType
-} from "@/lib/build-room/contracts";
+import type { BuildRoomRelayMode } from "@/lib/build-room/contracts";
 import type { BuildRoomArtifact, BuildRoomRun, BuildRoomTask, BuildRoomTaskDetail } from "@/lib/build-room/types";
 import {
   buildExecutionStateSummary,
@@ -26,7 +19,6 @@ import type { ProjectBrief } from "@/lib/intelligence/project-brief";
 import { buildQAValidationSummary, buildTaskQAValidationContext } from "@/lib/intelligence/qa";
 import type { RoadmapPlan } from "@/lib/intelligence/roadmap";
 import type { ArchitectureBlueprint } from "@/lib/intelligence/architecture";
-import { buildProjectCommandCenterRoute } from "@/lib/portal/routes";
 import type { ProjectRecord } from "@/lib/workspace/project-lanes";
 
 type BuildRoomControlRoomProps = {
@@ -50,116 +42,6 @@ type BuildRoomDetailResponse = {
   ok: true;
   detail: BuildRoomTaskDetail;
 };
-
-type BuildRoomTasksResponse = {
-  ok: true;
-  tasks: BuildRoomTask[];
-};
-
-type BuildRoomComposerState = {
-  taskId: string | null;
-  title: string;
-  taskType: BuildRoomTaskType;
-  requestedOutputMode: BuildRoomOutputMode;
-  laneSlug: string | null;
-  userRequest: string;
-  acceptanceCriteria: string;
-  riskLevel: BuildRoomRiskLevel;
-};
-
-const buildRoomTaskTypeOptions: Array<{ value: BuildRoomTaskType; label: string; description: string }> = [
-  {
-    value: "implementation",
-    label: "Implementation",
-    description: "Ship a focused feature or governed change."
-  },
-  {
-    value: "bug_fix",
-    label: "Bug Fix",
-    description: "Fix a scoped defect with clear acceptance checks."
-  },
-  {
-    value: "qa",
-    label: "QA / Validation",
-    description: "Investigate, reproduce, and verify the current behavior."
-  },
-  {
-    value: "research",
-    label: "Research",
-    description: "Produce grounded implementation guidance before coding."
-  },
-  {
-    value: "operations",
-    label: "Ops",
-    description: "Handle build, test, deploy, or runtime coordination."
-  }
-];
-
-const buildRoomOutputModeOptions: Array<{
-  value: BuildRoomOutputMode;
-  label: string;
-  description: string;
-}> = [
-  {
-    value: "plan_only",
-    label: "Plan only",
-    description: "Return scope, sequencing, risks, and next actions."
-  },
-  {
-    value: "patch_proposal",
-    label: "Patch proposal",
-    description: "Return a plan plus candidate file targets or patch text if the relay can provide it."
-  },
-  {
-    value: "implementation_guidance",
-    label: "Guidance",
-    description: "Return engineering guidance without an explicit patch proposal."
-  }
-];
-
-const buildRoomRiskOptions: Array<{ value: BuildRoomRiskLevel; label: string; description: string }> = [
-  {
-    value: "low",
-    label: "Low",
-    description: "Small contained change with limited downside."
-  },
-  {
-    value: "medium",
-    label: "Medium",
-    description: "Moderate change that still needs review before execution."
-  },
-  {
-    value: "high",
-    label: "High",
-    description: "High-impact change that should stay tightly governed."
-  }
-];
-
-function createEmptyComposer(project: ProjectRecord): BuildRoomComposerState {
-  return {
-    taskId: null,
-    title: "",
-    taskType: "implementation",
-    requestedOutputMode: "patch_proposal",
-    laneSlug: project.lanes[0]?.slug ?? null,
-    userRequest: "",
-    acceptanceCriteria: "",
-    riskLevel: "medium"
-  };
-}
-
-function createComposerFromTask(task: BuildRoomTask): BuildRoomComposerState {
-  return {
-    taskId: task.id,
-    title: task.title,
-    taskType: task.taskType,
-    requestedOutputMode: task.requestedOutputMode,
-    laneSlug: task.laneSlug,
-    userRequest: task.userRequest,
-    acceptanceCriteria: task.acceptanceCriteria ?? "",
-    riskLevel: task.riskLevel
-  };
-}
 
 function replaceTaskSummary(tasks: BuildRoomTask[], updatedTask: BuildRoomTask) {
   const nextTasks = tasks.some((task) => task.id === updatedTask.id)
@@ -260,8 +142,8 @@ function buildInternalExecutionPlanningItems(args: {
     return [
       {
         label: "Task intent",
-        value: "No Build Room task selected",
-        note: "Choose a stored task to inspect internal execution planning."
+        value: "No approved build handoff yet",
+        note: "Start from Command Center, then return here to inspect the internal execution plan."
       },
       {
         label: "Prompt package status",
@@ -461,10 +343,7 @@ export function BuildRoomControlRoom({
     initialTaskDetail?.task.id ?? initialTasks[0]?.id ?? null
   );
   const [selectedDetail, setSelectedDetail] = useState<BuildRoomTaskDetail | null>(initialTaskDetail);
-  const [composer, setComposer] = useState<BuildRoomComposerState>(() =>
-    initialTaskDetail ? createComposerFromTask(initialTaskDetail.task) : createEmptyComposer(project)
-  );
-  const [pendingAction, setPendingAction] = useState<"save" | "send" | "approve" | "refresh" | null>(
+  const [pendingAction, setPendingAction] = useState<"approve" | "refresh" | "revise" | null>(
     null
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -532,15 +411,13 @@ export function BuildRoomControlRoom({
     : null;
   const workerBlockedByBlockers = (selectedCodexResult?.blockers.length ?? 0) > 0;
   const workerModeIsMock = workerTriggerMode === "mock";
-  const intakeIsReadOnly = true;
-  const commandCenterHref = buildProjectCommandCenterRoute(workspaceId);
   const canApproveWorker =
     accessMode === "owner" &&
     selectedDetail?.task.status === "codex_complete" &&
     !workerBlockedByBlockers &&
     !storageMessage;
   const nextExecutionStep = !selectedDetail
-    ? "Pick a saved task to inspect the next governed execution step."
+    ? "No approved build handoff yet. Start from Command Center."
     : selectedDetail.task.status === "needs_revision"
       ? "Revise the request in Command Center, then resend it through the current relay."
       : canApproveWorker
@@ -589,78 +466,6 @@ export function BuildRoomControlRoom({
     }
   }
 
-  async function persistComposer(sendToCodex: boolean) {
-    if (storageMessage) {
-      return;
-    }
-
-    setPendingAction(sendToCodex ? "send" : "save");
-    setErrorMessage(null);
-    setNoticeMessage(null);
-
-    try {
-      const payload: BuildRoomTaskInput = {
-        workspaceId,
-        projectId: project.id,
-        laneSlug: composer.laneSlug,
-        title: composer.title.trim(),
-        taskType: composer.taskType,
-        requestedOutputMode: composer.requestedOutputMode,
-        userRequest: composer.userRequest.trim(),
-        acceptanceCriteria: composer.acceptanceCriteria.trim() || null,
-        riskLevel: composer.riskLevel
-      };
-      const savedDetail = composer.taskId
-        ? (
-            await requestBuildRoomJson<BuildRoomDetailResponse>(
-              `/api/build-room/tasks/${composer.taskId}`,
-              {
-                method: "PATCH",
-                body: JSON.stringify({
-                  laneSlug: payload.laneSlug,
-                  title: payload.title,
-                  taskType: payload.taskType,
-                  requestedOutputMode: payload.requestedOutputMode,
-                  userRequest: payload.userRequest,
-                  acceptanceCriteria: payload.acceptanceCriteria,
-                  riskLevel: payload.riskLevel
-                })
-              }
-            )
-          ).detail
-        : (
-            await requestBuildRoomJson<BuildRoomDetailResponse>("/api/build-room/tasks", {
-              method: "POST",
-              body: JSON.stringify(payload)
-            })
-          ).detail;
-      const finalDetail = sendToCodex
-        ? (
-            await requestBuildRoomJson<BuildRoomDetailResponse>(
-              `/api/build-room/tasks/${savedDetail.task.id}/submit-codex`,
-              {
-                method: "POST"
-              }
-            )
-          ).detail
-        : savedDetail;
-
-      setSelectedTaskId(finalDetail.task.id);
-      setSelectedDetail(finalDetail);
-      setTasks((current) => replaceTaskSummary(current, finalDetail.task));
-      setComposer(createComposerFromTask(finalDetail.task));
-      setNoticeMessage(
-        sendToCodex
-          ? "Task sent through the Codex relay. Review the structured result before any worker approval."
-          : "Draft saved in Build Room."
-      );
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to save the task.");
-    } finally {
-      setPendingAction(null);
-    }
-  }
-
   async function handleApproveWorker() {
     if (!selectedDetail || !canApproveWorker) {
       return;
@@ -699,7 +504,7 @@ export function BuildRoomControlRoom({
       return;
     }
 
-    setPendingAction("save");
+    setPendingAction("revise");
     setErrorMessage(null);
 
     try {
@@ -719,7 +524,6 @@ export function BuildRoomControlRoom({
       setSelectedDetail(response.detail);
       setSelectedTaskId(response.detail.task.id);
       setTasks((current) => replaceTaskSummary(current, response.detail.task));
-      setComposer(createComposerFromTask(response.detail.task));
       setNoticeMessage(
         "The task is back in revision mode. Use Command Center to update the request before the next relay pass."
       );
@@ -729,15 +533,6 @@ export function BuildRoomControlRoom({
       setPendingAction(null);
     }
   }
-
-  useEffect(() => {
-    if (selectedDetail) {
-      setComposer(createComposerFromTask(selectedDetail.task));
-      return;
-    }
-
-    setComposer(createEmptyComposer(project));
-  }, [project, selectedDetail]);
 
   useEffect(() => {
     setTasks(initialTasks);
@@ -818,7 +613,7 @@ export function BuildRoomControlRoom({
 
             <div className="floating-plane rounded-[34px] p-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                Intake Handoff
+                Build Handoff Summary
               </p>
               <div className="mt-5 space-y-4">
                 <div className="rounded-[24px] border border-cyan-200 bg-cyan-50 px-4 py-4">
@@ -826,14 +621,9 @@ export function BuildRoomControlRoom({
                     Command Center owns request entry
                   </p>
                   <p className="mt-3 text-sm leading-7 text-cyan-800">
-                    Build Room mirrors the selected task so this room can stay focused on internal
-                    execution detail instead of customer-facing intake.
+                    Build Room shows the handed-off execution work only. New requests, revisions,
+                    roadmap updates, decisions, and review notes stay in Command Center.
                   </p>
-                  <div className="mt-4">
-                    <Link href={commandCenterHref} className="button-secondary text-sm">
-                      Open Command Center Intake
-                    </Link>
-                  </div>
                 </div>
 
                 <div className="rounded-[24px] border border-slate-200/70 bg-white/78 px-4 py-4">
@@ -853,197 +643,6 @@ export function BuildRoomControlRoom({
                   </p>
                 </div>
 
-                <div>
-                  <label htmlFor="build-room-title" className="mb-2 block text-sm font-semibold text-slate-950">
-                    Task title
-                  </label>
-                  <input
-                    id="build-room-title"
-                    value={composer.title}
-                    onChange={(event) =>
-                      setComposer((current) => ({
-                        ...current,
-                        title: event.target.value
-                      }))
-                    }
-                    className="input"
-                    placeholder="Tighten the auth handoff for the Build Room worker trigger"
-                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                  />
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="build-room-task-type" className="mb-2 block text-sm font-semibold text-slate-950">
-                      Task type
-                    </label>
-                    <select
-                      id="build-room-task-type"
-                      value={composer.taskType}
-                      onChange={(event) =>
-                        setComposer((current) => ({
-                          ...current,
-                          taskType: event.target.value as BuildRoomTaskType
-                        }))
-                      }
-                      className="input"
-                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                    >
-                      {buildRoomTaskTypeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-xs leading-6 text-slate-500">
-                      {
-                        buildRoomTaskTypeOptions.find((option) => option.value === composer.taskType)
-                          ?.description
-                      }
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="build-room-output-mode"
-                      className="mb-2 block text-sm font-semibold text-slate-950"
-                    >
-                      Response mode
-                    </label>
-                    <select
-                      id="build-room-output-mode"
-                      value={composer.requestedOutputMode}
-                      onChange={(event) =>
-                        setComposer((current) => ({
-                          ...current,
-                          requestedOutputMode: event.target.value as BuildRoomOutputMode
-                        }))
-                      }
-                      className="input"
-                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                    >
-                      {buildRoomOutputModeOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-xs leading-6 text-slate-500">
-                      {
-                        buildRoomOutputModeOptions.find(
-                          (option) => option.value === composer.requestedOutputMode
-                        )?.description
-                      }
-                    </p>
-                  </div>
-                </div>
-
-                {project.lanes.length > 0 ? (
-                  <div>
-                    <label
-                      htmlFor="build-room-lane"
-                      className="mb-2 block text-sm font-semibold text-slate-950"
-                    >
-                      Lane context
-                    </label>
-                    <select
-                      id="build-room-lane"
-                      value={composer.laneSlug ?? ""}
-                      onChange={(event) =>
-                        setComposer((current) => ({
-                          ...current,
-                          laneSlug: event.target.value || null
-                        }))
-                      }
-                      className="input"
-                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                    >
-                      <option value="">No lane selected</option>
-                      {project.lanes.map((lane) => (
-                        <option key={lane.slug} value={lane.slug}>
-                          {lane.title}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : null}
-
-                <div>
-                  <label
-                    htmlFor="build-room-user-request"
-                    className="mb-2 block text-sm font-semibold text-slate-950"
-                  >
-                    Request snapshot from Command Center
-                  </label>
-                  <textarea
-                    id="build-room-user-request"
-                    value={composer.userRequest}
-                    onChange={(event) =>
-                      setComposer((current) => ({
-                        ...current,
-                        userRequest: event.target.value
-                      }))
-                    }
-                    rows={7}
-                    className="input min-h-[180px] resize-y"
-                    placeholder="Describe the build task, current problem, constraints, and what success should look like."
-                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="build-room-acceptance"
-                    className="mb-2 block text-sm font-semibold text-slate-950"
-                  >
-                    Requested outcome / acceptance criteria
-                  </label>
-                  <textarea
-                    id="build-room-acceptance"
-                    value={composer.acceptanceCriteria}
-                    onChange={(event) =>
-                      setComposer((current) => ({
-                        ...current,
-                        acceptanceCriteria: event.target.value
-                      }))
-                    }
-                    rows={5}
-                    className="input min-h-[140px] resize-y"
-                    placeholder="List the conditions that need to be true before you would approve this task."
-                    disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="build-room-risk"
-                    className="mb-2 block text-sm font-semibold text-slate-950"
-                  >
-                    Risk level
-                  </label>
-                  <select
-                    id="build-room-risk"
-                    value={composer.riskLevel}
-                    onChange={(event) =>
-                      setComposer((current) => ({
-                        ...current,
-                          riskLevel: event.target.value as BuildRoomRiskLevel
-                        }))
-                      }
-                      className="input"
-                      disabled={intakeIsReadOnly || Boolean(storageMessage)}
-                    >
-                      {buildRoomRiskOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs leading-6 text-slate-500">
-                    {buildRoomRiskOptions.find((option) => option.value === composer.riskLevel)?.description}
-                  </p>
-                </div>
-
                 <div className="rounded-[24px] border border-slate-200/70 bg-white/78 px-4 py-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
                     Internal-only boundary
@@ -1054,20 +653,6 @@ export function BuildRoomControlRoom({
                     evidence history in one place.
                   </p>
                 </div>
-
-                <div className="flex flex-wrap gap-3">
-                  <Link href={commandCenterHref} className="button-primary text-sm">
-                    Start or Revise in Command Center
-                  </Link>
-                  <button
-                    type="button"
-                    className="button-secondary opacity-70"
-                    onClick={() => void persistComposer(true)}
-                    disabled
-                  >
-                    Intake moved to Command Center
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -1075,11 +660,11 @@ export function BuildRoomControlRoom({
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
-                    Saved Tasks
+                    Build Handoffs
                   </p>
                   <p className="mt-2 text-sm leading-7 text-slate-600">
-                    Build Room keeps durable tasks for this project so the relay result, approvals,
-                    and worker history stay visible.
+                    Build Room keeps the handed-off execution work for this project so planning,
+                    approvals, and evidence stay visible in one internal room.
                   </p>
                 </div>
                 <span className="rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-xs font-semibold text-slate-500">
@@ -1090,8 +675,7 @@ export function BuildRoomControlRoom({
               <div className="mt-5 grid gap-3">
                 {tasks.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-slate-200 bg-white/70 px-4 py-5 text-sm leading-7 text-slate-500">
-                    No Build Room tasks are stored for this project yet. Start the first execution
-                    request from Command Center.
+                    No approved build handoff yet. Start from Command Center.
                   </div>
                 ) : (
                   tasks.map((task) => (
@@ -1879,7 +1463,7 @@ export function BuildRoomControlRoom({
                     description="Pick a saved task to inspect relay state, worker state, and the next governed step."
                   >
                     <div className="rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
-                      Pick a saved task or create a new one to start the Build Room relay flow.
+                      No approved build handoff yet. Start from Command Center.
                     </div>
                   </BuildRoomZone>
 
@@ -1908,7 +1492,7 @@ export function BuildRoomControlRoom({
                   description="Generated output, logs, execution history, and stored artifacts will appear together here once a task is selected."
                 >
                   <div className="rounded-[26px] border border-dashed border-slate-200 bg-white/74 px-5 py-6 text-sm leading-7 text-slate-500">
-                    Select a Build Room task to review evidence and results in one place.
+                    No approved build handoff yet. Start from Command Center.
                   </div>
                 </BuildRoomZone>
 
