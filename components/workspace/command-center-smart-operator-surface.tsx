@@ -166,6 +166,30 @@ function taskStatusClasses(status: CommandCenterTaskStatus) {
   return "border-slate-200 bg-white/82 text-slate-500";
 }
 
+function reviewStatusLabel(status: CommandCenterTaskStatus) {
+  if (status === "completed") {
+    return "Reviewed";
+  }
+
+  if (status === "waiting_on_decision") {
+    return "Needs review";
+  }
+
+  return "Reviewing";
+}
+
+function reviewStatusClasses(status: CommandCenterTaskStatus) {
+  if (status === "completed") {
+    return "border-emerald-300/30 bg-emerald-400/10 text-emerald-200";
+  }
+
+  if (status === "waiting_on_decision") {
+    return "border-amber-300/30 bg-amber-400/10 text-amber-200";
+  }
+
+  return "border-violet-300/30 bg-violet-400/10 text-violet-100";
+}
+
 function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
   return WORKFLOW_CONFIG[tab].sourceType;
 }
@@ -550,6 +574,13 @@ export function CommandCenterSmartOperatorSurface({
                             </div>
                           </div>
                           <div className="hidden shrink-0 items-center gap-2 lg:flex">
+                            <span
+                              className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${reviewStatusClasses(
+                                task.status
+                              )}`}
+                            >
+                              {reviewStatusLabel(task.status)}
+                            </span>
                             <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
                               {taskCategoryLabel(taskTab)}
                             </span>
@@ -577,6 +608,13 @@ export function CommandCenterSmartOperatorSurface({
                         </summary>
                         <div className="border-t border-white/8 px-4 py-3">
                           <div className="flex flex-wrap items-center gap-2 lg:hidden">
+                            <span
+                              className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${reviewStatusClasses(
+                                task.status
+                              )}`}
+                            >
+                              {reviewStatusLabel(task.status)}
+                            </span>
                             <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
                               {taskCategoryLabel(taskTab)}
                             </span>

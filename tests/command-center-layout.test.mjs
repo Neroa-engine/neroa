@@ -39,10 +39,19 @@ test("Customer tasks render as compact expandable live rows instead of oversized
   assert.match(smartSurfaceSource, /<summary className="flex min-h-\[52px\] cursor-pointer/);
   assert.match(smartSurfaceSource, /View/);
   assert.match(smartSurfaceSource, /formatTaskTimestamp\(task\)/);
+  assert.match(smartSurfaceSource, /reviewStatusLabel\(task\.status\)/);
+  assert.match(smartSurfaceSource, /reviewStatusClasses\(/);
   assert.doesNotMatch(
     smartSurfaceSource,
     /<article[\s\S]*<p className="mt-2 text-sm leading-6 text-slate-600">\{task\.request\}<\/p>/
   );
+});
+
+test("Every live task row shows a compact review status chip", () => {
+  assert.match(smartSurfaceSource, /function reviewStatusLabel\(status: CommandCenterTaskStatus\)/);
+  assert.match(smartSurfaceSource, /return "Reviewing";/);
+  assert.match(smartSurfaceSource, /return "Needs review";/);
+  assert.match(smartSurfaceSource, /return "Reviewed";/);
 });
 
 test("Command Center composer clears only after successful submit", () => {
