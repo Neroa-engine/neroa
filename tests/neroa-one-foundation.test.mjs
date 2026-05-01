@@ -21,10 +21,13 @@ import {
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
+  getEligibleCodexOutputStatusesForFreshReview,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   getAllowedOutputReviewNextDestinations,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
+  NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
+  isEligibleCodexOutputStatusForFreshReview,
   validateCodexExecutionPacketForOutputBox,
   validateCodexOutputItemForOutputReview,
   validateOutputReviewNextDestination,
@@ -130,7 +133,12 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     codexOutputBoxSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
+  assert.doesNotMatch(
+    codexOutputBoxSource,
+    /"approve_for_qc"|"needs_repair"|"rerun_required"|"strategy_escalation"|"customer_followup"|"archive_complete"/i
+  );
   assert.doesNotMatch(codexOutputBoxSource, /createDraftCodexExecutionPacket/i);
+  assert.doesNotMatch(codexOutputBoxSource, /createPlaceholderOutputReviewDecision/i);
   assert.match(codexOutputBoxSource, /interface\s+NeroaOneCodexOutputBoxStorageAdapter/);
   assert.doesNotMatch(outputReviewSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
@@ -138,6 +146,8 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
   assert.doesNotMatch(outputReviewSource, /openai|anthropic|model review/i);
+  assert.doesNotMatch(outputReviewSource, /createPendingReviewCodexOutputItem/i);
+  assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
 });
 
@@ -213,11 +223,21 @@ test("Output review decisions and explicit destinations stay typed and backend-o
     "customer_followup",
     "archive_complete"
   ]);
+  assert.deepEqual([...NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES], [
+    "pending_review"
+  ]);
   assert.equal(neroaOneOutputReviewLane.backendOnly, true);
   assert.equal(neroaOneOutputReviewLane.extractionReady, true);
   assert.equal(neroaOneOutputReviewLane.performsRealReviewNow, false);
   assert.equal(neroaOneOutputReviewLane.callsAiNow, false);
   assert.equal(neroaOneOutputReviewLane.writesPersistenceNow, false);
+  assert.deepEqual(getEligibleCodexOutputStatusesForFreshReview(), ["pending_review"]);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("pending_review"), true);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("received"), false);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("reviewed"), false);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("archived"), false);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("repair_required"), false);
+  assert.equal(isEligibleCodexOutputStatusForFreshReview("customer_followup_required"), false);
   assert.deepEqual(getAllowedOutputReviewNextDestinations("approve_for_qc"), ["qc_station"]);
   assert.deepEqual(getAllowedOutputReviewNextDestinations("needs_repair"), ["repair_lane"]);
   assert.deepEqual(getAllowedOutputReviewNextDestinations("rerun_required"), ["rerun_lane"]);
@@ -643,6 +663,65 @@ test("Output review destination validation is explicit and review rejects archiv
   assert.equal(reviews.length, 1);
   assert.equal(reviews[0].decision, "archive_complete");
   assert.equal(reviews[0].repairPriority, null);
+});
+
+test("Output review rejects every non-pending output status for fresh review creation", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-output-review-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-output-review-3",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_output_review_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the review lane backend-only and extraction-ready."]
+  });
+  const pendingOutput = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-review-3",
+    createdAt: "2026-05-01T12:30:00.000Z"
+  });
+
+  for (const outputStatus of NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES.filter(
+    (status) => status !== "pending_review"
+  )) {
+    const validation = validateCodexOutputItemForOutputReview({
+      output: {
+        ...pendingOutput,
+        outputStatus
+      }
+    });
+
+    assert.equal(validation.allowed, false);
+    assert.match(validation.reason, new RegExp(`status ${outputStatus}`, "i"));
+    assert.match(validation.reason, /pending_review/i);
+    assert.throws(
+      () =>
+        createPlaceholderOutputReviewDecisionFromOutputItem({
+          output: {
+            ...pendingOutput,
+            outputStatus
+          },
+          decision: "approve_for_qc"
+        }),
+      new RegExp(`status ${outputStatus}`, "i")
+    );
+  }
 });
 
 test("Codex output box rejects malformed or incomplete execution packet data", () => {

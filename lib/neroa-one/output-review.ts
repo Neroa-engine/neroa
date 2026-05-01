@@ -2,6 +2,8 @@ import { z } from "zod";
 import {
   neroaOneCodexOutputBoxLane,
   neroaOneCodexOutputRecordSchema,
+  neroaOneCodexOutputStatusSchema,
+  type NeroaOneCodexOutputStatus,
   type NeroaOneCodexOutputRecord
 } from "./codex-output-box.ts";
 
@@ -33,6 +35,10 @@ export const NEROA_ONE_OUTPUT_REVIEW_NEXT_DESTINATIONS = [
   "archive_only"
 ] as const;
 
+export const NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES = [
+  "pending_review"
+] as const;
+
 export const neroaOneOutputReviewDecisionSchema = z.enum(NEROA_ONE_OUTPUT_REVIEW_DECISIONS);
 export const neroaOneOutputReviewRepairPrioritySchema = z.enum(
   NEROA_ONE_OUTPUT_REVIEW_REPAIR_PRIORITIES
@@ -50,6 +56,8 @@ export type NeroaOneOutputReviewRepairPriority = z.infer<
 export type NeroaOneOutputReviewNextDestination = z.infer<
   typeof neroaOneOutputReviewNextDestinationSchema
 >;
+export type NeroaOneOutputReviewFreshReviewEligibleOutputStatus =
+  (typeof NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES)[number];
 
 const allowedNextDestinationsByDecisionSchema = z
   .object({
@@ -93,6 +101,8 @@ export const neroaOneOutputReviewLaneDefinitionSchema = z
     writesPersistenceNow: z.literal(false),
     displayPurposeInternal: trimmedStringSchema,
     internalOnlyNotes: stringListSchema.min(1),
+    eligibleFreshReviewOutputStatuses: z
+      .tuple([z.literal("pending_review")]),
     allowedNextDestinationsByDecision: allowedNextDestinationsByDecisionSchema,
     futureExtractionTarget: z
       .object({
@@ -157,6 +167,7 @@ export const neroaOneOutputReviewLane = neroaOneOutputReviewLaneDefinitionSchema
     "This lane defines typed review decisions only and must not perform real AI review, queue release, or UI behavior changes.",
     "This lane must remain extraction-ready so a future review service can own review persistence and routing without changing the contract."
   ],
+  eligibleFreshReviewOutputStatuses: ["pending_review"],
   allowedNextDestinationsByDecision: {
     approve_for_qc: ["qc_station"],
     needs_repair: ["repair_lane"],
@@ -300,6 +311,16 @@ function buildInternalNotes(args: {
   ]);
 }
 
+export function getEligibleCodexOutputStatusesForFreshReview() {
+  return [...neroaOneOutputReviewLane.eligibleFreshReviewOutputStatuses];
+}
+
+export function isEligibleCodexOutputStatusForFreshReview(
+  outputStatus: NeroaOneCodexOutputStatus
+) {
+  return getEligibleCodexOutputStatusesForFreshReview().some((status) => status === outputStatus);
+}
+
 export function getAllowedOutputReviewNextDestinations(
   decision: NeroaOneOutputReviewDecision
 ) {
@@ -328,9 +349,9 @@ export function validateCodexOutputItemForOutputReview(args: {
 
   const output = outputResult.data;
 
-  if (output.outputStatus === "archived") {
+  if (!isEligibleCodexOutputStatusForFreshReview(output.outputStatus)) {
     return buildRejectedOutputValidationResult(
-      `Codex output ${output.outputId} is archived and cannot enter output review.`
+      `Codex output ${output.outputId} has status ${output.outputStatus} and cannot create a fresh output review decision. Allowed fresh-review statuses: ${getEligibleCodexOutputStatusesForFreshReview().join(", ")}.`
     );
   }
 
