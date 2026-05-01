@@ -61,6 +61,12 @@ export const NEROA_ONE_STRATEGY_ESCALATION_SOURCE_TYPES = [
   "roadmap_revision_required",
   "strategy_escalation"
 ] as const;
+export const NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTCOME_LANE_IDS = [
+  "roadmap_revision_required"
+] as const;
+export const NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS = [
+  "strategy_escalation"
+] as const;
 
 export const NEROA_ONE_STRATEGY_ESCALATION_ITEM_STATUSES = [
   "draft",
@@ -103,13 +109,16 @@ export const neroaOneStrategyEscalationTypeSchema = z.enum(
 export const neroaOneStrategyEscalationImpactLevelSchema = z.enum(
   NEROA_ONE_STRATEGY_ESCALATION_IMPACT_LEVELS
 );
-export const neroaOneStrategyEscalationAcceptedOutcomeLaneIdSchema = z.enum([
-  "roadmap_revision_required"
-]);
+export const neroaOneStrategyEscalationAcceptedOutcomeLaneIdSchema = z.enum(
+  NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTCOME_LANE_IDS
+);
 export const neroaOneStrategyEscalationSourceLaneIdSchema = z.enum([
   "roadmap_revision_required",
   "output_review"
 ]);
+export const neroaOneStrategyEscalationAcceptedOutputReviewDecisionSchema = z.enum(
+  NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS
+);
 
 export type NeroaOneStrategyEscalationSourceType = z.infer<
   typeof neroaOneStrategyEscalationSourceTypeSchema
@@ -129,6 +138,9 @@ export type NeroaOneStrategyEscalationAcceptedOutcomeLaneId = z.infer<
 export type NeroaOneStrategyEscalationSourceLaneId = z.infer<
   typeof neroaOneStrategyEscalationSourceLaneIdSchema
 >;
+export type NeroaOneStrategyEscalationAcceptedOutputReviewDecision = z.infer<
+  typeof neroaOneStrategyEscalationAcceptedOutputReviewDecisionSchema
+>;
 
 export const neroaOneFutureStrategyEscalationServiceTargetSchema = z
   .object({
@@ -145,14 +157,12 @@ export type NeroaOneFutureStrategyEscalationServiceTarget = z.infer<
   typeof neroaOneFutureStrategyEscalationServiceTargetSchema
 >;
 
-export const neroaOneStrategyEscalationItemSchema = z
+const neroaOneStrategyEscalationItemBaseSchema = z
   .object({
     strategyEscalationItemId: trimmedStringSchema,
     workspaceId: trimmedStringSchema,
     projectId: trimmedStringSchema,
     taskId: trimmedStringSchema,
-    sourceLaneId: neroaOneStrategyEscalationSourceLaneIdSchema,
-    sourceType: neroaOneStrategyEscalationSourceTypeSchema,
     sourceId: trimmedStringSchema,
     status: neroaOneStrategyEscalationItemStatusSchema,
     escalationType: neroaOneStrategyEscalationTypeSchema,
@@ -168,18 +178,27 @@ export const neroaOneStrategyEscalationItemSchema = z
   })
   .strict();
 
+export const neroaOneStrategyEscalationItemSchema = z.union([
+  neroaOneStrategyEscalationItemBaseSchema.extend({
+    sourceLaneId: z.literal("roadmap_revision_required"),
+    sourceType: z.literal("roadmap_revision_required")
+  }),
+  neroaOneStrategyEscalationItemBaseSchema.extend({
+    sourceLaneId: z.literal("output_review"),
+    sourceType: z.literal("strategy_escalation")
+  })
+]);
+
 export type NeroaOneStrategyEscalationItem = z.infer<
   typeof neroaOneStrategyEscalationItemSchema
 >;
 
-export const neroaOneCustomerSafeStrategyEscalationItemViewSchema = z
+const neroaOneCustomerSafeStrategyEscalationItemViewBaseSchema = z
   .object({
     strategyEscalationItemId: trimmedStringSchema,
     workspaceId: trimmedStringSchema,
     projectId: trimmedStringSchema,
     taskId: trimmedStringSchema,
-    sourceLaneId: neroaOneStrategyEscalationSourceLaneIdSchema,
-    sourceType: neroaOneStrategyEscalationSourceTypeSchema,
     sourceId: trimmedStringSchema,
     status: neroaOneStrategyEscalationItemStatusSchema,
     escalationType: neroaOneStrategyEscalationTypeSchema,
@@ -191,6 +210,17 @@ export const neroaOneCustomerSafeStrategyEscalationItemViewSchema = z
     updatedAt: trimmedStringSchema
   })
   .strict();
+
+export const neroaOneCustomerSafeStrategyEscalationItemViewSchema = z.union([
+  neroaOneCustomerSafeStrategyEscalationItemViewBaseSchema.extend({
+    sourceLaneId: z.literal("roadmap_revision_required"),
+    sourceType: z.literal("roadmap_revision_required")
+  }),
+  neroaOneCustomerSafeStrategyEscalationItemViewBaseSchema.extend({
+    sourceLaneId: z.literal("output_review"),
+    sourceType: z.literal("strategy_escalation")
+  })
+]);
 
 export type NeroaOneCustomerSafeStrategyEscalationItemView = z.infer<
   typeof neroaOneCustomerSafeStrategyEscalationItemViewSchema
@@ -327,8 +357,10 @@ export const neroaOneStrategyEscalationLane =
     storesStrategyEscalationItemsNow: false,
     routesStrategyRoomNow: false,
     writesPersistenceNow: false,
-    acceptedOutcomeLaneIds: ["roadmap_revision_required"],
-    acceptedOutputReviewDecisions: ["strategy_escalation"],
+    acceptedOutcomeLaneIds: [...NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTCOME_LANE_IDS],
+    acceptedOutputReviewDecisions: [
+      ...NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS
+    ],
     acceptedSourceTypes: ["roadmap_revision_required", "strategy_escalation"],
     allowedStatuses: [
       "draft",
@@ -354,10 +386,11 @@ export const neroaOneStrategyEscalationLane =
     displayPurposeInternal:
       "Defines the backend-only Neroa One strategy escalation contract for roadmap, scope, architecture, and planning-review items produced by roadmap outcome lanes and output review strategy escalations.",
     internalOnlyNotes: [
+      "This lane owns roadmap and scope escalation item contracts only.",
       "This lane is modular-monolith infrastructure only for now and must remain typed, backend-only, side-effect-light, UI-decoupled, and independently replaceable.",
       "This lane must not wire Strategy Room, Command Center, Build Room, persistence, or execution behavior.",
       "This lane must not classify analyzer outcomes or create or mutate Output Review records.",
-      "This lane must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions.",
+      "This lane must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, customer follow-up items, or roadmap records.",
       "Customer-safe strategy escalation items must never expose internal prompt text, raw worker instructions, protected file details, model routing, worker secrets, legacy extension runtime details, audit-only notes, future service targets, or file-path leakage."
     ],
     futureStrategyEscalationServiceTarget: {
@@ -619,7 +652,7 @@ export function validateOutcomeLaneItemForStrategyEscalation(args: {
   ) {
     return buildRejectedOutcomeValidationResult(
       sourceType,
-      `Outcome lane ${sourceType} cannot create a strategy escalation item. Allowed source types: ${neroaOneStrategyEscalationLane.acceptedSourceTypes.join(", ")}.`
+      `Outcome lane ${sourceType} cannot create a strategy escalation item. Allowed outcome lanes: ${neroaOneStrategyEscalationLane.acceptedOutcomeLaneIds.join(", ")}.`
     );
   }
 
@@ -663,7 +696,7 @@ export function validateOutputReviewDecisionForStrategyEscalation(args: {
   ) {
     return buildRejectedOutputReviewDecisionValidationResult(
       decision,
-      `Output review decision ${decision} cannot create a strategy escalation item. Allowed source types: ${neroaOneStrategyEscalationLane.acceptedSourceTypes.join(", ")}.`
+      `Output review decision ${decision} cannot create a strategy escalation item. Allowed output review decisions: ${neroaOneStrategyEscalationLane.acceptedOutputReviewDecisions.join(", ")}.`
     );
   }
 

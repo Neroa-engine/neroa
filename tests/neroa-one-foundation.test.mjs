@@ -94,6 +94,8 @@ import {
   NEROA_ONE_CUSTOMER_FOLLOW_UP_SOURCE_TYPES,
   NEROA_ONE_CUSTOMER_FOLLOW_UP_TYPES,
   NEROA_ONE_STRATEGY_ESCALATION_IMPACT_LEVELS,
+  NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTCOME_LANE_IDS,
+  NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS,
   NEROA_ONE_STRATEGY_ESCALATION_ITEM_STATUSES,
   NEROA_ONE_STRATEGY_ESCALATION_SOURCE_TYPES,
   NEROA_ONE_STRATEGY_ESCALATION_TYPES,
@@ -145,6 +147,7 @@ import {
   neroaOneRepairQueueLane,
   neroaOneQcStationLane,
   neroaOneStrategyEscalationLane,
+  neroaOneStrategyEscalationItemSchema,
   resolveNeroaOneCostPolicy,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane,
@@ -374,7 +377,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
-    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|admin|library|live-view|browser-extension|supabase)[^"']*["']/i
   );
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -431,7 +434,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(outputReviewSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outputReviewSource,
-    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|admin|library|live-view|browser-extension|supabase)[^"']*["']/i
   );
   assert.doesNotMatch(outputReviewSource, /openai|anthropic|model review/i);
   assert.doesNotMatch(outputReviewSource, /createPendingReviewCodexOutputItem/i);
@@ -466,7 +469,11 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(strategyEscalationSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     strategyEscalationSource,
-    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|supabase)[^"']*["']/i
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|admin|library|live-view|browser-extension|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    strategyEscalationSource,
+    /legacy browser extension|Live View|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
   );
   assert.doesNotMatch(
     strategyEscalationSource,
@@ -715,6 +722,14 @@ test("Output review decisions and explicit destinations stay typed and backend-o
   assert.equal(neroaOneOutputReviewLane.performsRealReviewNow, false);
   assert.equal(neroaOneOutputReviewLane.callsAiNow, false);
   assert.equal(neroaOneOutputReviewLane.writesPersistenceNow, false);
+  assert.match(
+    neroaOneOutputReviewLane.internalOnlyNotes.join(" "),
+    /typed review decisions only/i
+  );
+  assert.match(
+    neroaOneOutputReviewLane.internalOnlyNotes.join(" "),
+    /must not own strategy escalation statuses, impact levels, or future strategy-escalation service routing/i
+  );
   assert.deepEqual(getEligibleCodexOutputStatusesForFreshReview(), ["pending_review"]);
   assert.equal(isEligibleCodexOutputStatusForFreshReview("pending_review"), true);
   assert.equal(isEligibleCodexOutputStatusForFreshReview("received"), false);
@@ -817,6 +832,12 @@ test("Customer Follow-Up lane stays typed, backend-only, and extraction-ready", 
 });
 
 test("Strategy Escalation lane stays typed, backend-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTCOME_LANE_IDS], [
+    "roadmap_revision_required"
+  ]);
+  assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS], [
+    "strategy_escalation"
+  ]);
   assert.deepEqual([...NEROA_ONE_STRATEGY_ESCALATION_SOURCE_TYPES], [
     "roadmap_revision_required",
     "strategy_escalation"
@@ -886,13 +907,23 @@ test("Strategy Escalation lane stays typed, backend-only, and extraction-ready",
   assert.equal(neroaOneStrategyEscalationLane.storesStrategyEscalationItemsNow, false);
   assert.equal(neroaOneStrategyEscalationLane.routesStrategyRoomNow, false);
   assert.equal(neroaOneStrategyEscalationLane.writesPersistenceNow, false);
+  assert.deepEqual(neroaOneStrategyEscalationLane.acceptedOutcomeLaneIds, [
+    "roadmap_revision_required"
+  ]);
+  assert.deepEqual(neroaOneStrategyEscalationLane.acceptedOutputReviewDecisions, [
+    "strategy_escalation"
+  ]);
+  assert.match(
+    neroaOneStrategyEscalationLane.internalOnlyNotes.join(" "),
+    /owns roadmap and scope escalation item contracts only/i
+  );
   assert.match(
     neroaOneStrategyEscalationLane.internalOnlyNotes.join(" "),
     /must not classify analyzer outcomes/i
   );
   assert.match(
     neroaOneStrategyEscalationLane.internalOnlyNotes.join(" "),
-    /must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions/i
+    /must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, customer follow-up items, or roadmap records/i
   );
 });
 
@@ -2974,6 +3005,10 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
       }
     }
   ];
+  const rejectedOutcomeLaneIds = rejectedOutcomeItems.map((item) => item.analyzerOutcome);
+  const expectedRejectedOutcomeLaneIds = Object.keys(neroaOneOutcomeLanes).filter(
+    (laneId) => laneId !== "roadmap_revision_required"
+  );
   const request = buildNeroaOneTaskAnalysisRequest({
     requestId: "req-strategy-escalation-2",
     workspaceId: "workspace-alpha",
@@ -3005,6 +3040,18 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
     codexRunId: "codex-run-strategy-escalation-2",
     createdAt: "2026-05-01T16:12:00.000Z"
   });
+  const rejectedReviewDecisions = NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+    (value) => value !== "strategy_escalation"
+  );
+
+  assert.deepEqual(rejectedOutcomeLaneIds, expectedRejectedOutcomeLaneIds);
+  assert.deepEqual(
+    rejectedReviewDecisions,
+    NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+      (value) =>
+        !NEROA_ONE_STRATEGY_ESCALATION_ACCEPTED_OUTPUT_REVIEW_DECISIONS.includes(value)
+    )
+  );
 
   for (const item of rejectedOutcomeItems) {
     const validation = validateOutcomeLaneItemForStrategyEscalation({
@@ -3013,7 +3060,7 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
 
     assert.equal(validation.allowed, false);
     assert.equal(canCreateStrategyEscalationItemFromOutcomeLaneItem({ item }), false);
-    assert.match(validation.reason, /allowed source types/i);
+    assert.match(validation.reason, /allowed outcome lanes/i);
     assert.throws(
       () =>
         createStrategyEscalationItemFromOutcomeLaneItem({
@@ -3023,9 +3070,7 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
     );
   }
 
-  for (const decision of NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
-    (value) => value !== "strategy_escalation"
-  )) {
+  for (const decision of rejectedReviewDecisions) {
     const decisionValidation = validateOutputReviewDecisionForStrategyEscalation({
       decision
     });
@@ -3041,7 +3086,7 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
     assert.equal(decisionValidation.allowed, false);
     assert.equal(reviewValidation.allowed, false);
     assert.equal(canCreateStrategyEscalationItemFromOutputReview({ review }), false);
-    assert.match(decisionValidation.reason, /allowed source types/i);
+    assert.match(decisionValidation.reason, /allowed output review decisions/i);
     assert.match(reviewValidation.reason, new RegExp(`decision ${decision}`, "i"));
     assert.throws(
       () =>
@@ -3051,6 +3096,43 @@ test("Strategy Escalation rejects non-strategy outcome lanes and non-strategy ou
       /cannot create a strategy escalation item/i
     );
   }
+});
+
+test("Strategy Escalation schema rejects mismatched source lane and source type pairs", () => {
+  assert.throws(
+    () =>
+      neroaOneStrategyEscalationItemSchema.parse({
+        strategyEscalationItemId:
+          "roadmap_revision_required:task-boundary:strategy-escalation:20260501T162100000Z",
+        workspaceId: "workspace-alpha",
+        projectId: "project-alpha",
+        taskId: "task-strategy-schema-boundary-1",
+        sourceLaneId: "roadmap_revision_required",
+        sourceType: "strategy_escalation",
+        sourceId: "roadmap_revision_required:task-strategy-schema-boundary-1:20260501T162100000Z",
+        status: "ready_for_strategy_review",
+        escalationType: "roadmap_change",
+        impactLevel: "high",
+        strategyQuestion: "Please review the proposed strategy escalation.",
+        customerSafeContext: "This request requires strategy review before backend work can continue.",
+        proposedRoadmapImpactSummary:
+          "Roadmap review is required before execution eligibility can be reconsidered.",
+        internalReason: "Strategy escalation required for analyzer outcome roadmap_revision_required.",
+        createdAt: "2026-05-01T16:21:00.000Z",
+        updatedAt: "2026-05-01T16:21:00.000Z",
+        futureStrategyEscalationServiceTarget: {
+          deploymentProvider: "digitalocean",
+          serviceName: "neroa-one-strategy-escalation-service",
+          queueName: "neroa-one.strategy-escalation",
+          serviceType: "future_strategy_escalation_service",
+          readyForDispatch: false,
+          notes: [
+            "Future DigitalOcean strategy escalation services may persist, retrieve, and dispatch escalation items here."
+          ]
+        }
+      }),
+    /sourceType/i
+  );
 });
 
 test("Strategy Escalation customer-safe projection strips internal execution details", () => {

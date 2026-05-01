@@ -172,7 +172,7 @@ export const neroaOneOutcomeLanes = {
     customerVisibility: "customer_safe_roadmap_review_required",
     internalOnlyNotes: [
       "This lane must preserve roadmap-review boundaries and avoid direct execution handoff.",
-      "Lane classifies analyzer outcomes only and must not own strategy escalation statuses, impact levels, or future strategy-escalation service routing.",
+      "Lane classifies analyzer outcomes only and must not create strategy escalation items or own strategy escalation statuses, impact levels, or future strategy-escalation service routing.",
       "Future extraction should support a dedicated roadmap-impact worker or review queue."
     ],
     owner: "neroa_one_roadmap_review_router",
