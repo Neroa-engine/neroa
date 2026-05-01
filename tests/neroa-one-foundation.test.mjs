@@ -19,8 +19,15 @@ import {
   createDraftEvidenceLinkFromPipelineIds,
   createDraftEvidenceLinkFromPipelineRecords,
   canNeroaOneOutcomeLaneEnterCodexExecution,
+  canCreateCustomerFollowUpItemFromOutcomeLaneItem,
+  canCreateCustomerFollowUpItemFromOutputReview,
   createPlaceholderOutputReviewDecisionFromOutputItem,
   createPlaceholderOutputReviewDecisionsFromOutputItems,
+  createCustomerFollowUpItemFromOutcomeLaneItem,
+  createCustomerFollowUpItemFromOutputReview,
+  createCustomerFollowUpItemsFromOutcomeLaneItems,
+  createCustomerFollowUpItemsFromOutputReviews,
+  createCustomerSafeFollowUpText,
   createCustomerSafeRepairSummary,
   createRepairQueueItemFromOutputReview,
   createRepairQueueItemsFromOutputReviews,
@@ -42,7 +49,12 @@ import {
   getAuditRoomSeverityLevels,
   getCodeExecutionWorkerEngines,
   getCodeExecutionWorkerRunStatuses,
+  getCustomerFollowUpAllowedResponseTypes,
+  getCustomerFollowUpItemStatuses,
+  getCustomerFollowUpSourceTypes,
+  getCustomerFollowUpTypes,
   getCustomerSafeAuditEventView,
+  getCustomerSafeCustomerFollowUpItemView,
   getCustomerSafeEvidenceSummary,
   getEligibleCodexOutputStatusesForFreshReview,
   getEvidenceArtifactPointerTypes,
@@ -65,6 +77,10 @@ import {
   NEROA_ONE_AUDIT_ROOM_EVENT_TYPES,
   NEROA_ONE_AUDIT_ROOM_RECOMMENDED_ACTIONS,
   NEROA_ONE_AUDIT_ROOM_SEVERITY_LEVELS,
+  NEROA_ONE_CUSTOMER_FOLLOW_UP_ALLOWED_RESPONSE_TYPES,
+  NEROA_ONE_CUSTOMER_FOLLOW_UP_ITEM_STATUSES,
+  NEROA_ONE_CUSTOMER_FOLLOW_UP_SOURCE_TYPES,
+  NEROA_ONE_CUSTOMER_FOLLOW_UP_TYPES,
   NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES,
   NEROA_ONE_EVIDENCE_LINK_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
@@ -90,14 +106,18 @@ import {
   validateEvidenceLinkPipelineIds,
   validateEvidenceLinkPipelineRecords,
   validateEvidenceLinkForAuditRoomEvent,
+  validateOutcomeLaneItemForCustomerFollowUp,
   validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
+  validateOutputReviewDecisionForCustomerFollowUp,
+  validateOutputReviewForCustomerFollowUp,
   validateOutputReviewDecisionForRepairQueue,
   validateOutputReviewForRepairQueue,
   neroaOneAuditRoomLane,
   neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
+  neroaOneCustomerFollowUpLane,
   neroaOneEvidenceLinkingLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
@@ -125,6 +145,7 @@ const moduleSources = [
   "../lib/neroa-one/code-execution-worker.ts",
   "../lib/neroa-one/codex-output-box.ts",
   "../lib/neroa-one/output-review.ts",
+  "../lib/neroa-one/customer-follow-up.ts",
   "../lib/neroa-one/repair-queue.ts",
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
@@ -298,6 +319,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const outputReviewSource = moduleSources.find((source) =>
     source.includes("neroaOneOutputReviewRecordSchema")
   );
+  const customerFollowUpSource = moduleSources.find((source) =>
+    source.includes("neroaOneCustomerFollowUpItemSchema")
+  );
   const repairQueueSource = moduleSources.find((source) =>
     source.includes("neroaOneRepairQueueItemSchema")
   );
@@ -317,6 +341,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(codeExecutionWorkerSource);
   assert.ok(codexOutputBoxSource);
   assert.ok(outputReviewSource);
+  assert.ok(customerFollowUpSource);
   assert.ok(repairQueueSource);
   assert.ok(qcStationSource);
   assert.ok(evidenceLinkingSource);
@@ -391,6 +416,24 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
+  assert.doesNotMatch(customerFollowUpSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    customerFollowUpSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(customerFollowUpSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
+  assert.doesNotMatch(
+    customerFollowUpSource,
+    /createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createRepairQueueItemFromOutputReview|createQueuedQcStationJobFromApprovedOutputReview|createDraftEvidenceLinkFromPipelineRecords|createAuditRoomEventFromEvidenceLink/i
+  );
+  assert.doesNotMatch(
+    customerFollowUpSource,
+    /saveOutputReview|getOutputReviewsByOutputId|saveRepairQueueItem|getRepairQueueItemById|savePromptRoomItem|saveWorkerRun/i
+  );
+  assert.match(
+    customerFollowUpSource,
+    /interface\s+NeroaOneCustomerFollowUpStorageAdapter/
+  );
   assert.doesNotMatch(repairQueueSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     repairQueueSource,
@@ -639,6 +682,80 @@ test("Output review decisions and explicit destinations stay typed and backend-o
     "command_center_follow_up"
   ]);
   assert.deepEqual(getAllowedOutputReviewNextDestinations("archive_complete"), ["archive_only"]);
+});
+
+test("Customer Follow-Up lane stays typed, backend-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_CUSTOMER_FOLLOW_UP_SOURCE_TYPES], [
+    "needs_customer_answer",
+    "blocked_missing_information",
+    "customer_followup"
+  ]);
+  assert.deepEqual([...NEROA_ONE_CUSTOMER_FOLLOW_UP_ITEM_STATUSES], [
+    "draft",
+    "ready_for_customer",
+    "waiting_for_customer",
+    "answered",
+    "canceled",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual([...NEROA_ONE_CUSTOMER_FOLLOW_UP_TYPES], [
+    "clarification_question",
+    "missing_information",
+    "customer_decision_needed",
+    "scope_confirmation",
+    "output_review_followup",
+    "blocked_work_notice",
+    "other"
+  ]);
+  assert.deepEqual([...NEROA_ONE_CUSTOMER_FOLLOW_UP_ALLOWED_RESPONSE_TYPES], [
+    "free_text",
+    "yes_no",
+    "approve_reject",
+    "select_one",
+    "upload_required",
+    "none"
+  ]);
+  assert.deepEqual(getCustomerFollowUpSourceTypes(), [
+    "needs_customer_answer",
+    "blocked_missing_information",
+    "customer_followup"
+  ]);
+  assert.deepEqual(getCustomerFollowUpItemStatuses(), [
+    "draft",
+    "ready_for_customer",
+    "waiting_for_customer",
+    "answered",
+    "canceled",
+    "archived",
+    "failed"
+  ]);
+  assert.deepEqual(getCustomerFollowUpTypes(), [
+    "clarification_question",
+    "missing_information",
+    "customer_decision_needed",
+    "scope_confirmation",
+    "output_review_followup",
+    "blocked_work_notice",
+    "other"
+  ]);
+  assert.deepEqual(getCustomerFollowUpAllowedResponseTypes(), [
+    "free_text",
+    "yes_no",
+    "approve_reject",
+    "select_one",
+    "upload_required",
+    "none"
+  ]);
+  assert.equal(neroaOneCustomerFollowUpLane.backendOnly, true);
+  assert.equal(neroaOneCustomerFollowUpLane.extractionReady, true);
+  assert.equal(neroaOneCustomerFollowUpLane.independentlyReplaceable, true);
+  assert.equal(neroaOneCustomerFollowUpLane.sideEffectLight, true);
+  assert.equal(neroaOneCustomerFollowUpLane.uiDecoupled, true);
+  assert.equal(neroaOneCustomerFollowUpLane.exposesCustomerSafeProjectionOnly, true);
+  assert.equal(neroaOneCustomerFollowUpLane.storesFollowUpItemsNow, false);
+  assert.equal(neroaOneCustomerFollowUpLane.routesCommandCenterNow, false);
+  assert.equal(neroaOneCustomerFollowUpLane.writesPersistenceNow, false);
 });
 
 test("Repair Queue lane stays typed, backend-only, and extraction-ready", () => {
@@ -2099,6 +2216,344 @@ test("Output review rejects every non-pending output status for fresh review cre
       new RegExp(`status ${outputStatus}`, "i")
     );
   }
+});
+
+test("Customer Follow-Up accepts only customer-resolution outcome lanes and output review follow-up decisions", async () => {
+  const needsCustomerAnswerItem = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-follow-up-1",
+    analyzerOutcome: "needs_customer_answer",
+    normalizedRequest: "confirm whether the staged release should include analytics",
+    riskLevel: "moderate",
+    readinessBlockers: ["Should the staged release include analytics support?"],
+    customerFacingSummary: "A customer clarification is needed before this request can proceed.",
+    internalSummary:
+      "Analyzer needs a customer clarification before deterministic routing can continue.",
+    createdAt: "2026-05-01T15:30:00.000Z",
+    source: {
+      requestSource: "command_center",
+      analyzerSource: "mock_fallback",
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  };
+  const missingInformationItem = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-follow-up-2",
+    analyzerOutcome: "blocked_missing_information",
+    normalizedRequest: "provide the launch asset bundle details",
+    riskLevel: "moderate",
+    readinessBlockers: ["Please provide the missing launch asset details."],
+    customerFacingSummary: "More information is needed before this request can proceed.",
+    internalSummary:
+      "Analyzer blocked the request because the launch asset details are missing.",
+    createdAt: "2026-05-01T15:31:00.000Z",
+    source: {
+      requestSource: "system",
+      analyzerSource: "mock_fallback",
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  };
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-customer-follow-up-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-customer-follow-up-1",
+      title: "Prepare follow-up boundary",
+      request: "Prepare the customer follow-up contract for output review decisions.",
+      normalizedRequest: "prepare the customer follow-up contract for output review decisions."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep customer follow-up backend-only and extraction-ready."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-customer-follow-up-1",
+    createdAt: "2026-05-01T15:32:00.000Z"
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "customer_followup",
+    createdAt: "2026-05-01T15:33:00.000Z"
+  });
+  const needsAnswerValidation = validateOutcomeLaneItemForCustomerFollowUp({
+    item: needsCustomerAnswerItem
+  });
+  const missingInfoValidation = validateOutcomeLaneItemForCustomerFollowUp({
+    item: missingInformationItem
+  });
+  const reviewDecisionValidation = validateOutputReviewDecisionForCustomerFollowUp({
+    decision: "customer_followup"
+  });
+  const reviewValidation = validateOutputReviewForCustomerFollowUp({
+    review
+  });
+  const needsAnswerFollowUp = createCustomerFollowUpItemFromOutcomeLaneItem({
+    item: needsCustomerAnswerItem,
+    createdAt: "2026-05-01T15:34:00.000Z",
+    updatedAt: "2026-05-01T15:35:00.000Z"
+  });
+  const missingInfoFollowUp = createCustomerFollowUpItemFromOutcomeLaneItem({
+    item: missingInformationItem,
+    status: "waiting_for_customer",
+    createdAt: "2026-05-01T15:36:00.000Z"
+  });
+  const reviewFollowUp = createCustomerFollowUpItemFromOutputReview({
+    review,
+    status: "ready_for_customer",
+    createdAt: "2026-05-01T15:37:00.000Z"
+  });
+  const outcomeSet = createCustomerFollowUpItemsFromOutcomeLaneItems({
+    items: [needsCustomerAnswerItem, missingInformationItem],
+    status: "draft",
+    createdAt: "2026-05-01T15:38:00.000Z"
+  });
+  const reviewSet = createCustomerFollowUpItemsFromOutputReviews({
+    reviews: [review],
+    status: "waiting_for_customer",
+    createdAt: "2026-05-01T15:39:00.000Z"
+  });
+
+  assert.equal(needsAnswerValidation.allowed, true);
+  assert.equal(missingInfoValidation.allowed, true);
+  assert.equal(reviewDecisionValidation.allowed, true);
+  assert.equal(reviewValidation.allowed, true);
+  assert.equal(
+    canCreateCustomerFollowUpItemFromOutcomeLaneItem({ item: needsCustomerAnswerItem }),
+    true
+  );
+  assert.equal(
+    canCreateCustomerFollowUpItemFromOutcomeLaneItem({ item: missingInformationItem }),
+    true
+  );
+  assert.equal(canCreateCustomerFollowUpItemFromOutputReview({ review }), true);
+  assert.equal(needsAnswerFollowUp.sourceLaneId, "needs_customer_answer");
+  assert.equal(needsAnswerFollowUp.sourceType, "needs_customer_answer");
+  assert.equal(needsAnswerFollowUp.followUpType, "clarification_question");
+  assert.equal(needsAnswerFollowUp.allowedResponseType, "free_text");
+  assert.equal(needsAnswerFollowUp.status, "ready_for_customer");
+  assert.equal(missingInfoFollowUp.sourceLaneId, "blocked_missing_information");
+  assert.equal(missingInfoFollowUp.sourceType, "blocked_missing_information");
+  assert.equal(missingInfoFollowUp.followUpType, "missing_information");
+  assert.equal(missingInfoFollowUp.status, "waiting_for_customer");
+  assert.equal(reviewFollowUp.sourceLaneId, "output_review");
+  assert.equal(reviewFollowUp.sourceType, "customer_followup");
+  assert.equal(reviewFollowUp.sourceId, review.reviewId);
+  assert.equal(reviewFollowUp.followUpType, "output_review_followup");
+  assert.equal(
+    reviewFollowUp.futureCustomerFollowUpServiceTarget.deploymentProvider,
+    "digitalocean"
+  );
+  assert.equal(reviewFollowUp.futureCustomerFollowUpServiceTarget.readyForDispatch, false);
+  assert.equal(outcomeSet.length, 2);
+  assert.deepEqual(
+    outcomeSet.map((item) => item.sourceType),
+    ["needs_customer_answer", "blocked_missing_information"]
+  );
+  assert.equal(reviewSet.length, 1);
+  assert.equal(reviewSet[0].sourceType, "customer_followup");
+});
+
+test("Customer Follow-Up rejects non-follow-up outcome lanes and non-follow-up output review decisions", async () => {
+  const rejectedOutcomeItems = [
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-follow-up-reject-ready",
+      analyzerOutcome: "ready_to_build",
+      normalizedRequest: "prepare the approved implementation packet",
+      riskLevel: "low",
+      readinessBlockers: [],
+      customerFacingSummary: "This request is approved for backend preparation.",
+      internalSummary: "Execution packaging may begin.",
+      createdAt: "2026-05-01T15:40:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_customer_follow_up_test"
+      }
+    },
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-follow-up-reject-roadmap",
+      analyzerOutcome: "roadmap_revision_required",
+      normalizedRequest: "re-sequence the roadmap before build",
+      riskLevel: "high",
+      readinessBlockers: [],
+      customerFacingSummary: "Planning review is required before this request can proceed.",
+      internalSummary: "Roadmap review is required before execution can continue.",
+      createdAt: "2026-05-01T15:41:00.000Z",
+      source: {
+        requestSource: "build_room",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_customer_follow_up_test"
+      }
+    },
+    {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-follow-up-reject-scope",
+      analyzerOutcome: "rejected_outside_scope",
+      normalizedRequest: "add an out-of-scope platform",
+      riskLevel: "low",
+      readinessBlockers: [],
+      customerFacingSummary: "This request is outside the approved scope.",
+      internalSummary: "Scope guard rejected the request.",
+      createdAt: "2026-05-01T15:42:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_customer_follow_up_test"
+      }
+    }
+  ];
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-customer-follow-up-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-customer-follow-up-2",
+      title: "Prepare follow-up rejection boundary",
+      request: "Prepare the customer follow-up rejection contract for output review decisions.",
+      normalizedRequest:
+        "prepare the customer follow-up rejection contract for output review decisions."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep customer follow-up boundary isolated."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-customer-follow-up-2",
+    createdAt: "2026-05-01T15:43:00.000Z"
+  });
+
+  for (const item of rejectedOutcomeItems) {
+    const validation = validateOutcomeLaneItemForCustomerFollowUp({
+      item
+    });
+
+    assert.equal(validation.allowed, false);
+    assert.equal(canCreateCustomerFollowUpItemFromOutcomeLaneItem({ item }), false);
+    assert.match(validation.reason, /allowed source types/i);
+    assert.throws(
+      () =>
+        createCustomerFollowUpItemFromOutcomeLaneItem({
+          item
+        }),
+      /cannot create a customer follow-up item/i
+    );
+  }
+
+  for (const decision of NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+    (value) => value !== "customer_followup"
+  )) {
+    const decisionValidation = validateOutputReviewDecisionForCustomerFollowUp({
+      decision
+    });
+    const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+      output,
+      decision,
+      createdAt: "2026-05-01T15:44:00.000Z"
+    });
+    const reviewValidation = validateOutputReviewForCustomerFollowUp({
+      review
+    });
+
+    assert.equal(decisionValidation.allowed, false);
+    assert.equal(reviewValidation.allowed, false);
+    assert.equal(canCreateCustomerFollowUpItemFromOutputReview({ review }), false);
+    assert.match(decisionValidation.reason, /allowed source types/i);
+    assert.match(reviewValidation.reason, new RegExp(`decision ${decision}`, "i"));
+    assert.throws(
+      () =>
+        createCustomerFollowUpItemFromOutputReview({
+          review
+        }),
+      /cannot create a customer follow-up item/i
+    );
+  }
+});
+
+test("Customer Follow-Up customer-safe projection strips internal execution details", () => {
+  const unsafeText = createCustomerSafeFollowUpText(
+    "Review internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts; check browser.runtime, audit-only notes, selectedEngine codex_cli, and C:\\secret\\notes.md."
+  );
+  const item = createCustomerFollowUpItemFromOutcomeLaneItem({
+    item: {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: "task-follow-up-safe-1",
+      analyzerOutcome: "needs_customer_answer",
+      normalizedRequest: "confirm the release plan",
+      riskLevel: "moderate",
+      readinessBlockers: ["Please confirm the release plan."],
+      customerFacingSummary: "A customer answer is needed before work can continue.",
+      internalSummary:
+        "internalPromptDraft promptText selectedEngine codex_cli browser.runtime C:\\secret\\build.ts raw worker instructions",
+      createdAt: "2026-05-01T15:45:00.000Z",
+      source: {
+        requestSource: "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "neroa_one_customer_follow_up_test"
+      }
+    },
+    customerQuestion:
+      "Use internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts before the customer answers.",
+    customerSafeContext:
+      "Review selectedEngine codex_cli, audit-only notes, browser.runtime, and C:\\secret\\build.ts before answering.",
+    createdAt: "2026-05-01T15:46:00.000Z"
+  });
+  const customerView = getCustomerSafeCustomerFollowUpItemView({
+    item
+  });
+
+  assert.doesNotMatch(
+    unsafeText,
+    /internalPromptDraft|promptText|raw worker instructions|selectedEngine|browser\.runtime|audit-only|codex_cli|customer-follow-up\.ts|C:\\secret/i
+  );
+  assert.match(unsafeText, /customer follow-up details are available|internal detail|review/i);
+  assert.doesNotMatch(
+    item.customerQuestion,
+    /internalPromptDraft|promptText|raw worker instructions|customer-follow-up\.ts/i
+  );
+  assert.doesNotMatch(
+    item.customerSafeContext,
+    /selectedEngine|browser\.runtime|audit-only|codex_cli|C:\\secret/i
+  );
+  assert.equal(customerView.followUpItemId, item.followUpItemId);
+  assert.equal(customerView.sourceId, item.sourceId);
+  assert.equal(customerView.allowedResponseType, item.allowedResponseType);
+  assert.equal(customerView.customerQuestion, item.customerQuestion);
+  assert.equal(customerView.customerSafeContext, item.customerSafeContext);
+  assert.equal("internalReason" in customerView, false);
+  assert.equal("futureCustomerFollowUpServiceTarget" in customerView, false);
 });
 
 test("Repair Queue accepts only needs_repair and rerun_required output review decisions", async () => {

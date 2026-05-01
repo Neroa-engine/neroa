@@ -13,6 +13,7 @@ export * from "./prompt-room.ts";
 export * from "./code-execution-worker.ts";
 export * from "./codex-output-box.ts";
 export * from "./output-review.ts";
+export * from "./customer-follow-up.ts";
 export * from "./repair-queue.ts";
 export * from "./qc-station.ts";
 export * from "./evidence-linking.ts";
