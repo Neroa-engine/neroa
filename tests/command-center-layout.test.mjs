@@ -39,7 +39,7 @@ test("Customer tasks render as compact expandable live rows instead of oversized
   assert.match(smartSurfaceSource, /<summary className="flex min-h-\[52px\] cursor-pointer/);
   assert.match(smartSurfaceSource, /View/);
   assert.match(smartSurfaceSource, /formatTaskTimestamp\(task\)/);
-  assert.match(smartSurfaceSource, /reviewStatusLabel\(task\.status\)/);
+  assert.match(smartSurfaceSource, /reviewStatusLabel\(task\)/);
   assert.match(smartSurfaceSource, /reviewStatusClasses\(/);
   assert.doesNotMatch(
     smartSurfaceSource,
@@ -48,10 +48,14 @@ test("Customer tasks render as compact expandable live rows instead of oversized
 });
 
 test("Every live task row shows a compact review status chip", () => {
-  assert.match(smartSurfaceSource, /function reviewStatusLabel\(status: CommandCenterTaskStatus\)/);
+  assert.match(smartSurfaceSource, /function reviewStatusLabel\(task: CommandCenterWorkflowTaskCard\)/);
   assert.match(smartSurfaceSource, /return "Reviewing";/);
-  assert.match(smartSurfaceSource, /return "Needs review";/);
-  assert.match(smartSurfaceSource, /return "Reviewed";/);
+  assert.match(smartSurfaceSource, /formatCommandCenterRoadmapReviewOutcomeLabel/);
+  assert.match(smartSurfaceSource, /approved_for_roadmap/);
+  assert.match(smartSurfaceSource, /needs_clarification/);
+  assert.match(smartSurfaceSource, /roadmap_revision_needed/);
+  assert.match(smartSurfaceSource, /decision_needed/);
+  assert.match(smartSurfaceSource, /out_of_scope/);
 });
 
 test("Command Center composer clears only after successful submit", () => {

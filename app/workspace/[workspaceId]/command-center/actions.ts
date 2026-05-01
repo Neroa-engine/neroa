@@ -1106,7 +1106,10 @@ export async function updateCommandCenterTask(formData: FormData) {
       intelligenceMetadata: buildCommandCenterTaskIntelligenceMetadata({
         request,
         requestType,
-        requestTypeSource
+        requestTypeSource,
+        workflowLane,
+        roadmapArea,
+        projectMetadata: parsed.metadata
       }),
       createdAt: now,
       updatedAt: now
@@ -1136,7 +1139,10 @@ export async function updateCommandCenterTask(formData: FormData) {
         buildCommandCenterTaskIntelligenceMetadata({
           request,
           requestType,
-          requestTypeSource
+          requestTypeSource,
+          workflowLane: existingTask.workflowLane ?? workflowLane,
+          roadmapArea,
+          projectMetadata: parsed.metadata
         }),
       roadmapDeviation: existingTask.roadmapDeviation ?? null,
       createdAt: existingTask.createdAt ?? now,

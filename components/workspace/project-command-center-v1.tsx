@@ -98,6 +98,7 @@ export function ProjectCommandCenterV1(props: ProjectCommandCenterV1Props) {
     sourceType: task.sourceType,
     workflowLane: task.workflowLane ?? null,
     requestType: task.intelligenceMetadata?.requestType ?? null,
+    reviewOutcome: task.intelligenceMetadata?.roadmapReviewOutcome ?? null,
     normalizedRequest: task.normalizedRequest ?? null,
     createdAt: task.createdAt,
     updatedAt: task.updatedAt,

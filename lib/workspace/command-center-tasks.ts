@@ -42,11 +42,24 @@ export type CommandCenterTaskRoutingHint =
   | "bug_regression_review"
   | "decision_support";
 
+export const COMMAND_CENTER_ROADMAP_REVIEW_OUTCOMES = [
+  "reviewing",
+  "approved_for_roadmap",
+  "needs_clarification",
+  "roadmap_revision_needed",
+  "decision_needed",
+  "out_of_scope"
+] as const;
+
+export type CommandCenterRoadmapReviewOutcome =
+  (typeof COMMAND_CENTER_ROADMAP_REVIEW_OUTCOMES)[number];
+
 export type CommandCenterTaskIntelligenceMetadata = {
   classifierVersion: "command_center_customer_request_v1";
   requestType: CommandCenterCustomerRequestType;
   requestTypeLabel: string;
   requestTypeSource: CommandCenterTaskRequestTypeSource;
+  roadmapReviewOutcome: CommandCenterRoadmapReviewOutcome;
   routingHint: CommandCenterTaskRoutingHint;
   planningCandidate: boolean;
   bugCandidate: boolean;
@@ -158,6 +171,9 @@ const taskRequestTypeSources: CommandCenterTaskRequestTypeSource[] = [
 ];
 
 const workflowLanes: CommandCenterWorkflowLane[] = [...COMMAND_CENTER_WORKFLOW_LANES];
+const roadmapReviewOutcomes: CommandCenterRoadmapReviewOutcome[] = [
+  ...COMMAND_CENTER_ROADMAP_REVIEW_OUTCOMES
+];
 
 const taskRoutingHints: CommandCenterTaskRoutingHint[] = [
   "direct_execution_candidate",
@@ -218,6 +234,18 @@ const requestTypeLabels: Record<CommandCenterCustomerRequestType, string> = {
   change_direction: "Change direction",
   problem_bug: "Problem / bug",
   question_decision: "Question / decision"
+};
+
+const roadmapReviewOutcomeLabels: Record<
+  CommandCenterRoadmapReviewOutcome,
+  string
+> = {
+  reviewing: "Reviewing",
+  approved_for_roadmap: "Approved for roadmap",
+  needs_clarification: "Needs clarification",
+  roadmap_revision_needed: "Roadmap revision needed",
+  decision_needed: "Decision needed",
+  out_of_scope: "Out of scope"
 };
 
 const roadmapDeviationStatusLabels: Record<
@@ -309,6 +337,14 @@ function normalizeCommandCenterTaskRoutingHint(
     : null;
 }
 
+function normalizeCommandCenterRoadmapReviewOutcome(
+  value: unknown
+): CommandCenterRoadmapReviewOutcome | null {
+  return roadmapReviewOutcomes.includes(value as CommandCenterRoadmapReviewOutcome)
+    ? (value as CommandCenterRoadmapReviewOutcome)
+    : null;
+}
+
 function normalizeCommandCenterTaskStrategyReviewKind(
   value: unknown
 ): CommandCenterTaskStrategyReviewKind | null {
@@ -384,6 +420,9 @@ function normalizeCommandCenterTaskIntelligenceMetadata(
   const requestType = normalizeCommandCenterCustomerRequestType(record.requestType);
   const requestTypeLabel = asNonEmptyString(record.requestTypeLabel);
   const requestTypeSource = normalizeCommandCenterTaskRequestTypeSource(record.requestTypeSource);
+  const roadmapReviewOutcome = normalizeCommandCenterRoadmapReviewOutcome(
+    record.roadmapReviewOutcome
+  );
   const routingHint = normalizeCommandCenterTaskRoutingHint(record.routingHint);
   const classifierVersion =
     record.classifierVersion === "command_center_customer_request_v1"
@@ -398,6 +437,7 @@ function normalizeCommandCenterTaskIntelligenceMetadata(
     !requestType ||
     !requestTypeLabel ||
     !requestTypeSource ||
+    !roadmapReviewOutcome ||
     !routingHint ||
     !classifierVersion ||
     planningCandidate === null ||
@@ -413,6 +453,7 @@ function normalizeCommandCenterTaskIntelligenceMetadata(
     requestType,
     requestTypeLabel,
     requestTypeSource,
+    roadmapReviewOutcome,
     routingHint,
     planningCandidate,
     bugCandidate,
@@ -518,10 +559,169 @@ export function formatCommandCenterCustomerRequestTypeLabel(
   return requestTypeLabels[value];
 }
 
+export function formatCommandCenterRoadmapReviewOutcomeLabel(
+  value: CommandCenterRoadmapReviewOutcome
+) {
+  return roadmapReviewOutcomeLabels[value];
+}
+
+type CommandCenterRoadmapReviewProjectMetadata = {
+  strategyState?: {
+    revisionRecords?: unknown[];
+  } | null;
+  governanceState?: {
+    roadmapRevisionRecords?: unknown[];
+  } | null;
+  buildSession?: {
+    scope?: {
+      summary?: string | null;
+      projectDefinitionSummary?: string | null;
+      mvpSummary?: string | null;
+      businessGoal?: string | null;
+      problem?: string | null;
+      targetUsers?: string | null;
+      audience?: string | null;
+      frameworkLabel?: string | null;
+      firstBuild?: string[];
+      keyFeatures?: string[];
+      keyModules?: string[];
+      coreFeatures?: string[];
+      integrationNeeds?: string[];
+    } | null;
+  } | null;
+  saasIntake?: {
+    projectSummary?: string | null;
+    answers?: {
+      customer?: string | null;
+      problem?: string | null;
+    } | null;
+  } | null;
+  mobileAppIntake?: {
+    projectSummary?: string | null;
+    answers?: {
+      audience?: string | null;
+      proofOutcome?: string | null;
+    } | null;
+  } | null;
+} | null;
+
+function countItems(value: unknown[] | undefined | null) {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function hasProjectScopeContext(
+  projectMetadata: CommandCenterRoadmapReviewProjectMetadata | undefined
+) {
+  return Boolean(
+    normalizeRequestText(projectMetadata?.buildSession?.scope?.summary) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.projectDefinitionSummary) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.mvpSummary) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.businessGoal) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.problem) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.targetUsers) ||
+      normalizeRequestText(projectMetadata?.buildSession?.scope?.audience) ||
+      normalizeRequestText(projectMetadata?.saasIntake?.projectSummary) ||
+      normalizeRequestText(projectMetadata?.saasIntake?.answers?.customer) ||
+      normalizeRequestText(projectMetadata?.saasIntake?.answers?.problem) ||
+      normalizeRequestText(projectMetadata?.mobileAppIntake?.projectSummary) ||
+      normalizeRequestText(projectMetadata?.mobileAppIntake?.answers?.audience) ||
+      normalizeRequestText(projectMetadata?.mobileAppIntake?.answers?.proofOutcome)
+  );
+}
+
+function textLooksAmbiguous(normalizedRequest: string) {
+  return (
+    normalizedRequest.length < 24 ||
+    includesAny(normalizedRequest, [
+      "something",
+      "anything",
+      "stuff",
+      "that thing",
+      "make it better",
+      "improve this",
+      "fix this",
+      "update this",
+      "help with this"
+    ])
+  );
+}
+
+function textLooksOutOfScope(normalizedRequest: string) {
+  return includesAny(normalizedRequest, [
+    "brand new project",
+    "new project from scratch",
+    "separate product",
+    "separate app",
+    "start over",
+    "rebuild everything",
+    "replace the whole product",
+    "switch to a different product"
+  ]);
+}
+
+export function resolveCommandCenterRoadmapReviewOutcome(args: {
+  request: string | null | undefined;
+  requestType: CommandCenterCustomerRequestType;
+  workflowLane?: CommandCenterWorkflowLane | null;
+  roadmapArea?: string | null;
+  projectMetadata?: CommandCenterRoadmapReviewProjectMetadata;
+}): CommandCenterRoadmapReviewOutcome {
+  const normalizedRequest = normalizeRequestText(args.request);
+  const normalizedRoadmapArea = normalizeRequestText(args.roadmapArea);
+  const hasScopeContext = hasProjectScopeContext(args.projectMetadata);
+  const roadmapRevisionCount = countItems(
+    args.projectMetadata?.governanceState?.roadmapRevisionRecords
+  );
+  const strategyRevisionCount = countItems(
+    args.projectMetadata?.strategyState?.revisionRecords
+  );
+
+  if (!normalizedRequest) {
+    return "reviewing";
+  }
+
+  if (args.requestType === "question_decision" || args.workflowLane === "decisions") {
+    return "decision_needed";
+  }
+
+  if (textLooksOutOfScope(normalizedRequest)) {
+    return "out_of_scope";
+  }
+
+  if (args.requestType === "change_direction" || args.workflowLane === "roadmap_updates") {
+    return "roadmap_revision_needed";
+  }
+
+  if (
+    textLooksAmbiguous(normalizedRequest) &&
+    (!hasScopeContext || !normalizedRoadmapArea || normalizedRoadmapArea === "general coordination")
+  ) {
+    return "needs_clarification";
+  }
+
+  if (
+    hasScopeContext &&
+    normalizedRoadmapArea &&
+    normalizedRoadmapArea !== "general coordination" &&
+    (args.requestType === "new_request" ||
+      args.requestType === "revision" ||
+      args.requestType === "problem_bug" ||
+      roadmapRevisionCount > 0 ||
+      strategyRevisionCount > 0)
+  ) {
+    return "approved_for_roadmap";
+  }
+
+  return "reviewing";
+}
+
 export function buildCommandCenterTaskIntelligenceMetadata(args: {
   request: string | null | undefined;
   requestType?: CommandCenterCustomerRequestType | null;
   requestTypeSource?: CommandCenterTaskRequestTypeSource;
+  workflowLane?: CommandCenterWorkflowLane | null;
+  roadmapArea?: string | null;
+  projectMetadata?: CommandCenterRoadmapReviewProjectMetadata;
 }): CommandCenterTaskIntelligenceMetadata {
   const normalizedRequest = normalizeRequestText(args.request);
   const requestType = args.requestType ?? inferCommandCenterCustomerRequestType(normalizedRequest);
@@ -539,6 +739,13 @@ export function buildCommandCenterTaskIntelligenceMetadata(args: {
     requestType,
     requestTypeLabel: formatCommandCenterCustomerRequestTypeLabel(requestType),
     requestTypeSource: args.requestTypeSource ?? "inferred",
+    roadmapReviewOutcome: resolveCommandCenterRoadmapReviewOutcome({
+      request: normalizedRequest,
+      requestType,
+      workflowLane: args.workflowLane ?? null,
+      roadmapArea: args.roadmapArea ?? null,
+      projectMetadata: args.projectMetadata ?? null
+    }),
     routingHint,
     planningCandidate:
       requestType === "change_direction" ||

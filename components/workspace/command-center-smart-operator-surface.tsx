@@ -3,9 +3,11 @@
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import {
+  formatCommandCenterRoadmapReviewOutcomeLabel,
   formatCommandCenterCustomerRequestTypeLabel,
   inferCommandCenterCustomerRequestType,
   type CommandCenterCustomerRequestType,
+  type CommandCenterRoadmapReviewOutcome,
   type CommandCenterTaskSourceType,
   type CommandCenterTaskStatus,
   type CommandCenterWorkflowLane
@@ -37,6 +39,7 @@ export type CommandCenterWorkflowTaskCard = {
   sourceType: CommandCenterTaskSourceType;
   workflowLane?: CommandCenterWorkflowLane | null;
   requestType?: CommandCenterCustomerRequestType | null;
+  reviewOutcome?: CommandCenterRoadmapReviewOutcome | null;
   normalizedRequest?: string | null;
   createdAt?: string | null;
   updatedAt?: string | null;
@@ -166,7 +169,13 @@ function taskStatusClasses(status: CommandCenterTaskStatus) {
   return "border-slate-200 bg-white/82 text-slate-500";
 }
 
-function reviewStatusLabel(status: CommandCenterTaskStatus) {
+function reviewStatusLabel(task: CommandCenterWorkflowTaskCard) {
+  if (task.reviewOutcome) {
+    return formatCommandCenterRoadmapReviewOutcomeLabel(task.reviewOutcome);
+  }
+
+  const status = task.status;
+
   if (status === "completed") {
     return "Reviewed";
   }
@@ -178,7 +187,27 @@ function reviewStatusLabel(status: CommandCenterTaskStatus) {
   return "Reviewing";
 }
 
-function reviewStatusClasses(status: CommandCenterTaskStatus) {
+function reviewStatusClasses(task: CommandCenterWorkflowTaskCard) {
+  if (task.reviewOutcome === "approved_for_roadmap") {
+    return "border-emerald-300/30 bg-emerald-400/10 text-emerald-200";
+  }
+
+  if (
+    task.reviewOutcome === "needs_clarification" ||
+    task.reviewOutcome === "decision_needed"
+  ) {
+    return "border-amber-300/30 bg-amber-400/10 text-amber-200";
+  }
+
+  if (
+    task.reviewOutcome === "roadmap_revision_needed" ||
+    task.reviewOutcome === "out_of_scope"
+  ) {
+    return "border-rose-300/30 bg-rose-400/10 text-rose-200";
+  }
+
+  const status = task.status;
+
   if (status === "completed") {
     return "border-emerald-300/30 bg-emerald-400/10 text-emerald-200";
   }
@@ -576,10 +605,10 @@ export function CommandCenterSmartOperatorSurface({
                           <div className="hidden shrink-0 items-center gap-2 lg:flex">
                             <span
                               className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${reviewStatusClasses(
-                                task.status
+                                task
                               )}`}
                             >
-                              {reviewStatusLabel(task.status)}
+                              {reviewStatusLabel(task)}
                             </span>
                             <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
                               {taskCategoryLabel(taskTab)}
@@ -610,10 +639,10 @@ export function CommandCenterSmartOperatorSurface({
                           <div className="flex flex-wrap items-center gap-2 lg:hidden">
                             <span
                               className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${reviewStatusClasses(
-                                task.status
+                                task
                               )}`}
                             >
-                              {reviewStatusLabel(task.status)}
+                              {reviewStatusLabel(task)}
                             </span>
                             <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
                               {taskCategoryLabel(taskTab)}
