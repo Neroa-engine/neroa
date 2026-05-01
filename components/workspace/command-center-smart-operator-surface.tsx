@@ -243,6 +243,10 @@ function reviewLaneGuidance(task: CommandCenterWorkflowTaskCard) {
   return "Reviewing roadmap fit.";
 }
 
+function shouldShowRevisionReviewPrompt(task: CommandCenterWorkflowTaskCard) {
+  return task.reviewOutcome === "roadmap_revision_needed";
+}
+
 function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
   return WORKFLOW_CONFIG[tab].sourceType;
 }
@@ -686,6 +690,38 @@ export function CommandCenterSmartOperatorSurface({
                             </span>
                           </div>
                           <div className="mt-3 space-y-3">
+                            {shouldShowRevisionReviewPrompt(task) ? (
+                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
+                                  Revision Review
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                  This request appears to change the approved roadmap or build
+                                  direction. Please confirm before changing direction.
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled
+                                    aria-disabled="true"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                  >
+                                    Confirm Revision
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled
+                                    aria-disabled="true"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                  >
+                                    Keep Current Roadmap
+                                  </button>
+                                  <span className="self-center text-[11px] text-slate-400">
+                                    Not yet wired
+                                  </span>
+                                </div>
+                              </div>
+                            ) : null}
                             <p className="text-sm leading-6 text-slate-300">{task.request}</p>
                             <div className="flex items-center justify-between gap-3">
                               <span

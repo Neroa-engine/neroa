@@ -77,6 +77,24 @@ test("Review outcomes show compact lane guidance in the task row summary", () =>
   assert.match(smartSurfaceSource, /Reviewing roadmap fit\./);
 });
 
+test("Roadmap revision-needed tasks show a compact revision review prompt when expanded", () => {
+  assert.match(smartSurfaceSource, /function shouldShowRevisionReviewPrompt\(task: CommandCenterWorkflowTaskCard\)/);
+  assert.match(smartSurfaceSource, /Revision Review/);
+  assert.match(
+    smartSurfaceSource,
+    /This request appears to change the approved roadmap or build\s+direction\./
+  );
+  assert.match(
+    smartSurfaceSource,
+    /Please confirm before changing direction\./
+  );
+  assert.match(smartSurfaceSource, /Confirm Revision/);
+  assert.match(smartSurfaceSource, /Keep Current Roadmap/);
+  assert.match(smartSurfaceSource, /Not yet wired/);
+  assert.match(smartSurfaceSource, /type="button"/);
+  assert.match(smartSurfaceSource, /disabled/);
+});
+
 test("Command Center composer clears only after successful submit", () => {
   assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
   assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);
