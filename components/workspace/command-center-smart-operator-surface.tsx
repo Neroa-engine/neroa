@@ -251,6 +251,14 @@ function shouldShowExecutionReviewPrompt(task: CommandCenterWorkflowTaskCard) {
   return task.reviewOutcome === "approved_for_roadmap";
 }
 
+function shouldShowDecisionReviewPrompt(task: CommandCenterWorkflowTaskCard) {
+  return task.reviewOutcome === "decision_needed";
+}
+
+function shouldShowClarificationPrompt(task: CommandCenterWorkflowTaskCard) {
+  return task.reviewOutcome === "needs_clarification";
+}
+
 function sourceTypeForTab(tab: CommandCenterWorkflowTabId): CommandCenterTaskSourceType {
   return WORKFLOW_CONFIG[tab].sourceType;
 }
@@ -751,6 +759,52 @@ export function CommandCenterSmartOperatorSurface({
                                     className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Hold Task
+                                  </button>
+                                  <span className="self-center text-[11px] text-slate-400">
+                                    Not yet wired
+                                  </span>
+                                </div>
+                              </div>
+                            ) : null}
+                            {shouldShowDecisionReviewPrompt(task) ? (
+                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
+                                  Decision Review
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                  Neroa needs an answer before moving this task forward.
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled
+                                    aria-disabled="true"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                  >
+                                    Add Answer
+                                  </button>
+                                  <span className="self-center text-[11px] text-slate-400">
+                                    Not yet wired
+                                  </span>
+                                </div>
+                              </div>
+                            ) : null}
+                            {shouldShowClarificationPrompt(task) ? (
+                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
+                                  Clarification Needed
+                                </p>
+                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                  Neroa needs an answer before moving this task forward.
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled
+                                    aria-disabled="true"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                  >
+                                    Add Answer
                                   </button>
                                   <span className="self-center text-[11px] text-slate-400">
                                     Not yet wired

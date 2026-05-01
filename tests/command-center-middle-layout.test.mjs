@@ -59,6 +59,12 @@ test("Customer queue keeps the live row list and empty state behavior", () => {
   assert.match(smartSurfaceSource, /reviewLaneGuidance\(task\)/);
   assert.match(smartSurfaceSource, /shouldShowRevisionReviewPrompt\(task\)/);
   assert.match(smartSurfaceSource, /shouldShowExecutionReviewPrompt\(task\)/);
+  assert.match(smartSurfaceSource, /shouldShowDecisionReviewPrompt\(task\)/);
+  assert.match(smartSurfaceSource, /shouldShowClarificationPrompt\(task\)/);
+  assert.match(smartSurfaceSource, /Decision Review/);
+  assert.match(smartSurfaceSource, /Clarification Needed/);
+  assert.match(smartSurfaceSource, /Neroa needs an answer before moving this task forward\./);
+  assert.match(smartSurfaceSource, /Add Answer/);
 });
 
 test("Composer stays populated on failure paths and prevents repeat submits while pending", () => {

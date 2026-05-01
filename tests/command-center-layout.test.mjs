@@ -113,6 +113,27 @@ test("Approved roadmap tasks show a compact execution review prompt when expande
   assert.match(smartSurfaceSource, /disabled/);
 });
 
+test("Decision-needed and clarification tasks show compact answer prompts when expanded", () => {
+  assert.match(
+    smartSurfaceSource,
+    /function shouldShowDecisionReviewPrompt\(task: CommandCenterWorkflowTaskCard\)/
+  );
+  assert.match(
+    smartSurfaceSource,
+    /function shouldShowClarificationPrompt\(task: CommandCenterWorkflowTaskCard\)/
+  );
+  assert.match(smartSurfaceSource, /Decision Review/);
+  assert.match(smartSurfaceSource, /Clarification Needed/);
+  assert.match(
+    smartSurfaceSource,
+    /Neroa needs an answer before moving this task forward\./
+  );
+  assert.match(smartSurfaceSource, /Add Answer/);
+  assert.match(smartSurfaceSource, /Not yet wired/);
+  assert.match(smartSurfaceSource, /type="button"/);
+  assert.match(smartSurfaceSource, /disabled/);
+});
+
 test("Command Center composer clears only after successful submit", () => {
   assert.match(smartSurfaceSource, /async function handleCreateTask\(formData: FormData\)/);
   assert.match(smartSurfaceSource, /await createTaskAction\(formData\);[\s\S]*setRequestValue\(""\)/);
