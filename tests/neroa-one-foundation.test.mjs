@@ -385,6 +385,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     outputReviewSource,
     /from\s+["']\.\/qc-station\.ts["']|createQueuedQcStationJobFromApprovedOutputReview|createQueuedQcStationJobsFromApprovedOutputReview/i
   );
+  assert.doesNotMatch(
+    outputReviewSource,
+    /repairPriority|futureRepairServiceTarget|ready_for_prompt_room|ready_for_worker_rerun/i
+  );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
   assert.doesNotMatch(repairQueueSource, /codex-relay|worker-trigger/i);
@@ -396,6 +400,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(
     repairQueueSource,
     /createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|savePromptRoomItem|saveWorkerRun/i
+  );
+  assert.doesNotMatch(
+    repairQueueSource,
+    /saveOutputReview|getOutputReviewsByOutputId|createPlaceholderOutputReviewDecisionFromOutputItem|createPlaceholderOutputReviewDecisionsFromOutputItems/i
   );
   assert.match(repairQueueSource, /interface\s+NeroaOneRepairQueueStorageAdapter/);
   assert.doesNotMatch(qcStationSource, /codex-relay|worker-trigger/i);
@@ -1958,7 +1966,7 @@ test("Output review can create safe placeholder review decisions from output box
   assert.equal(review.projectId, "project-alpha");
   assert.equal(review.taskId, "task-output-review-1");
   assert.equal(review.decision, "needs_repair");
-  assert.equal(review.repairPriority, "medium");
+  assert.equal("repairPriority" in review, false);
   assert.match(review.reasoningSummary, /deterministic repair handling only/i);
   assert.equal(
     review.customerVisibleSummary,
@@ -2031,7 +2039,7 @@ test("Output review destination validation is explicit and review rejects archiv
   assert.match(archivedValidation.reason, /archived/i);
   assert.equal(reviews.length, 1);
   assert.equal(reviews[0].decision, "archive_complete");
-  assert.equal(reviews[0].repairPriority, null);
+  assert.equal("repairPriority" in reviews[0], false);
 });
 
 test("Output review rejects every non-pending output status for fresh review creation", async () => {
@@ -2189,6 +2197,74 @@ test("Repair Queue accepts only needs_repair and rerun_required output review de
     itemSet.map((item) => item.sourceDecision),
     ["needs_repair", "rerun_required"]
   );
+});
+
+test("Repair Queue rejects every non-repair output review decision and keeps Output Review decision-only", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-repair-queue-1b",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-repair-queue-1b",
+      title: "Validate repair queue boundary",
+      request: "Validate that only repair review decisions can enter the repair queue.",
+      normalizedRequest:
+        "validate that only repair review decisions can enter the repair queue."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_repair_queue_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep review decisions separate from repair queue items."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-repair-1b",
+    createdAt: "2026-05-01T15:20:00.000Z"
+  });
+
+  const rejectedDecisions = NEROA_ONE_OUTPUT_REVIEW_DECISIONS.filter(
+    (decision) =>
+      !NEROA_ONE_REPAIR_QUEUE_SOURCE_DECISIONS.includes(decision)
+  );
+
+  for (const decision of rejectedDecisions) {
+    const decisionValidation = validateOutputReviewDecisionForRepairQueue({
+      decision
+    });
+    const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+      output,
+      decision,
+      createdAt: "2026-05-01T15:21:00.000Z"
+    });
+    const reviewValidation = validateOutputReviewForRepairQueue({
+      review
+    });
+
+    assert.equal(decisionValidation.allowed, false);
+    assert.equal(decisionValidation.decision, decision);
+    assert.equal(reviewValidation.allowed, false);
+    assert.equal(canCreateRepairQueueItemFromOutputReview({ review }), false);
+    assert.equal("repairPriority" in review, false);
+    assert.match(reviewValidation.reason, new RegExp(`decision ${decision}`, "i"));
+    assert.throws(
+      () =>
+        createRepairQueueItemFromOutputReview({
+          review,
+          createdAt: "2026-05-01T15:22:00.000Z"
+        }),
+      /cannot create a repair queue item/i
+    );
+  }
 });
 
 test("Repair Queue customer-safe summary strips internal execution details", async () => {

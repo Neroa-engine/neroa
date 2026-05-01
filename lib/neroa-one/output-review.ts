@@ -19,13 +19,6 @@ export const NEROA_ONE_OUTPUT_REVIEW_DECISIONS = [
   "archive_complete"
 ] as const;
 
-export const NEROA_ONE_OUTPUT_REVIEW_REPAIR_PRIORITIES = [
-  "low",
-  "medium",
-  "high",
-  "urgent"
-] as const;
-
 export const NEROA_ONE_OUTPUT_REVIEW_NEXT_DESTINATIONS = [
   "qc_station",
   "repair_lane",
@@ -40,18 +33,12 @@ export const NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES = [
 ] as const;
 
 export const neroaOneOutputReviewDecisionSchema = z.enum(NEROA_ONE_OUTPUT_REVIEW_DECISIONS);
-export const neroaOneOutputReviewRepairPrioritySchema = z.enum(
-  NEROA_ONE_OUTPUT_REVIEW_REPAIR_PRIORITIES
-);
 export const neroaOneOutputReviewNextDestinationSchema = z.enum(
   NEROA_ONE_OUTPUT_REVIEW_NEXT_DESTINATIONS
 );
 
 export type NeroaOneOutputReviewDecision = z.infer<
   typeof neroaOneOutputReviewDecisionSchema
->;
-export type NeroaOneOutputReviewRepairPriority = z.infer<
-  typeof neroaOneOutputReviewRepairPrioritySchema
 >;
 export type NeroaOneOutputReviewNextDestination = z.infer<
   typeof neroaOneOutputReviewNextDestinationSchema
@@ -80,7 +67,6 @@ export const neroaOneOutputReviewRecordSchema = z
     taskId: trimmedStringSchema,
     decision: neroaOneOutputReviewDecisionSchema,
     reasoningSummary: trimmedStringSchema,
-    repairPriority: neroaOneOutputReviewRepairPrioritySchema.nullable(),
     customerVisibleSummary: trimmedStringSchema,
     internalNotes: stringListSchema.default([]),
     createdAt: trimmedStringSchema
@@ -165,6 +151,7 @@ export const neroaOneOutputReviewLane = neroaOneOutputReviewLaneDefinitionSchema
     "Defines the backend-only Neroa One review contract for Codex outputs before QC, repair, rerun, escalation, or archival routing.",
   internalOnlyNotes: [
     "This lane defines typed review decisions only and must not perform real AI review, queue release, or UI behavior changes.",
+    "This lane must not own repair queue status, repair priority, repair type, or future repair-service routing.",
     "This lane must remain extraction-ready so a future review service can own review persistence and routing without changing the contract."
   ],
   eligibleFreshReviewOutputStatuses: ["pending_review"],
@@ -275,24 +262,6 @@ function buildCustomerVisibleSummary(decision: NeroaOneOutputReviewDecision) {
   }
 }
 
-function resolveRepairPriority(
-  decision: NeroaOneOutputReviewDecision,
-  repairPriority: NeroaOneOutputReviewRepairPriority | null | undefined
-) {
-  if (repairPriority) {
-    return neroaOneOutputReviewRepairPrioritySchema.parse(repairPriority);
-  }
-
-  switch (decision) {
-    case "needs_repair":
-      return "medium";
-    case "rerun_required":
-      return "high";
-    default:
-      return null;
-  }
-}
-
 function buildInternalNotes(args: {
   output: NeroaOneCodexOutputRecord;
   decision: NeroaOneOutputReviewDecision;
@@ -398,7 +367,6 @@ export function createPlaceholderOutputReviewDecisionFromOutputItem(args: {
   output: NeroaOneCodexOutputRecord;
   decision: NeroaOneOutputReviewDecision;
   reasoningSummary?: string | null;
-  repairPriority?: NeroaOneOutputReviewRepairPriority | null;
   customerVisibleSummary?: string | null;
   internalNotes?: readonly string[] | null;
   createdAt?: string | null;
@@ -429,7 +397,6 @@ export function createPlaceholderOutputReviewDecisionFromOutputItem(args: {
     decision,
     reasoningSummary:
       normalizeText(args.reasoningSummary) || buildReasoningSummary(output, decision),
-    repairPriority: resolveRepairPriority(decision, args.repairPriority),
     customerVisibleSummary:
       normalizeText(args.customerVisibleSummary) || buildCustomerVisibleSummary(decision),
     internalNotes: buildInternalNotes({

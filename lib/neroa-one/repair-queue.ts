@@ -288,6 +288,7 @@ export const neroaOneRepairQueueLane = neroaOneRepairQueueLaneDefinitionSchema.p
     "Defines the backend-only Neroa One repair queue contract for repair and rerun work emitted by Output Review before later approved Prompt Room or worker rerun routing.",
   internalOnlyNotes: [
     "This lane is modular-monolith infrastructure only for now and must remain typed, backend-only, side-effect-light, UI-decoupled, and independently replaceable.",
+    "This lane creates repair and rerun queue items only and must not create or mutate Output Review records.",
     "Customer-safe repair projections must never expose internal prompt text, raw worker instructions, protected file details, model routing, worker secrets, legacy extension runtime details, or audit-only notes."
   ],
   futureRepairServiceTarget: {
@@ -393,25 +394,13 @@ function resolveRepairType(
 
 function resolveRepairPriority(args: {
   decision: NeroaOneRepairQueueSourceDecision;
-  review: NeroaOneOutputReviewRecord;
   priority?: NeroaOneRepairQueuePriority | null;
 }): NeroaOneRepairQueuePriority {
   if (args.priority) {
     return neroaOneRepairQueuePrioritySchema.parse(args.priority);
   }
 
-  switch (args.review.repairPriority) {
-    case "low":
-      return "low";
-    case "medium":
-      return "normal";
-    case "high":
-      return "high";
-    case "urgent":
-      return "critical";
-    default:
-      return args.decision === "rerun_required" ? "high" : "normal";
-  }
+  return args.decision === "rerun_required" ? "high" : "normal";
 }
 
 function getDefaultRepairSummary(
@@ -629,7 +618,6 @@ export function createRepairQueueItemFromOutputReview(args: {
     repairType,
     priority: resolveRepairPriority({
       decision: sourceDecision,
-      review,
       priority: args.priority
     }),
     status,
