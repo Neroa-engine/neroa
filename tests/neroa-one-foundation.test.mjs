@@ -5,6 +5,9 @@ import {
   analyzeTaskWithNeroaOne,
   assertNeroaOneOutcomeQueueItemAllowedInLane,
   attachArtifactPointersToEvidenceLink,
+  createAdminOversightSummaryFromAuditEvents,
+  createAuditRoomEventFromEvidenceLink,
+  createAuditRoomEventFromLaneAndEvidenceIds,
   buildBuildRoomHandoffPackage,
   buildBuildRoomCustomerTaskHandoffPackage,
   buildNeroaOneTaskAnalysisRequest,
@@ -31,8 +34,12 @@ import {
   createNeroaOneResponse,
   createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket,
   evaluateNeroaOneDecisionGate,
+  getAuditRoomEventTypes,
+  getAuditRoomRecommendedActions,
+  getAuditRoomSeverityLevels,
   getCodeExecutionWorkerEngines,
   getCodeExecutionWorkerRunStatuses,
+  getCustomerSafeAuditEventView,
   getCustomerSafeEvidenceSummary,
   getEligibleCodexOutputStatusesForFreshReview,
   getEvidenceArtifactPointerTypes,
@@ -48,6 +55,9 @@ import {
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
   NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES,
   NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES,
+  NEROA_ONE_AUDIT_ROOM_EVENT_TYPES,
+  NEROA_ONE_AUDIT_ROOM_RECOMMENDED_ACTIONS,
+  NEROA_ONE_AUDIT_ROOM_SEVERITY_LEVELS,
   NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES,
   NEROA_ONE_EVIDENCE_LINK_STATUSES,
   NEROA_ONE_OUTPUT_REVIEW_DECISIONS,
@@ -69,6 +79,7 @@ import {
   validateEvidenceLinkPipelineRecords,
   validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
+  neroaOneAuditRoomLane,
   neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
@@ -99,6 +110,7 @@ const moduleSources = [
   "../lib/neroa-one/output-review.ts",
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
+  "../lib/neroa-one/audit-room.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -202,6 +214,35 @@ async function buildEvidenceLinkFixturePipeline() {
   };
 }
 
+async function buildAuditRoomFixture() {
+  const { entry, executionPacket, promptRoomItem, workerRun, output, review, qcJob } =
+    await buildEvidenceLinkFixturePipeline();
+  const evidenceLink = createDraftEvidenceLinkFromPipelineRecords({
+    outcomeItem: entry.item,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob,
+    evidenceId: "evidence-bundle-audit-1",
+    reportId: "qc-report-audit-1",
+    createdAt: "2026-05-01T14:11:00.000Z",
+    updatedAt: "2026-05-01T14:11:00.000Z"
+  });
+
+  return {
+    entry,
+    executionPacket,
+    promptRoomItem,
+    workerRun,
+    output,
+    review,
+    qcJob,
+    evidenceLink
+  };
+}
+
 test("Neroa One foundation does not import or call model providers", () => {
   for (const source of moduleSources) {
     assert.doesNotMatch(source, /from\s+["']openai["']/i);
@@ -245,6 +286,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const evidenceLinkingSource = moduleSources.find((source) =>
     source.includes("neroaOneEvidenceLinkRecordSchema")
   );
+  const auditRoomSource = moduleSources.find((source) =>
+    source.includes("neroaOneAuditRoomEventSchema")
+  );
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
@@ -254,6 +298,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(outputReviewSource);
   assert.ok(qcStationSource);
   assert.ok(evidenceLinkingSource);
+  assert.ok(auditRoomSource);
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -357,6 +402,22 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     evidenceLinkingSource,
     /interface\s+NeroaOneEvidenceLinkingStorageAdapter/
   );
+  assert.doesNotMatch(auditRoomSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    auditRoomSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    auditRoomSource,
+    /legacy browser extension|Live View message channels|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
+  );
+  assert.doesNotMatch(auditRoomSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
+  assert.doesNotMatch(
+    auditRoomSource,
+    /createQueuedQcStationJobFromApprovedOutputReview|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|getPromptRoomCustomerSafeStatus/i
+  );
+  assert.match(auditRoomSource, /interface\s+NeroaOneAuditRoomStorageAdapter/);
+  assert.match(auditRoomSource, /interface\s+NeroaOneAdminOversightSummaryAdapter/);
 });
 
 test("Customer message can be classified deterministically", () => {
@@ -611,6 +672,193 @@ test("Evidence Linking lane stays typed, backend-only, and extraction-ready", ()
   assert.deepEqual(
     getEvidenceArtifactPointerTypes(),
     [...NEROA_ONE_EVIDENCE_ARTIFACT_POINTER_TYPES]
+  );
+});
+
+test("Audit Room lane stays typed, backend-only, internal-only, and extraction-ready", () => {
+  assert.deepEqual([...NEROA_ONE_AUDIT_ROOM_EVENT_TYPES], [
+    "lane_transition",
+    "policy_violation",
+    "stuck_item",
+    "retry_loop",
+    "qc_failure",
+    "worker_failure",
+    "cost_waste",
+    "customer_blocker",
+    "strategy_escalation",
+    "evidence_ready",
+    "system_health"
+  ]);
+  assert.deepEqual([...NEROA_ONE_AUDIT_ROOM_SEVERITY_LEVELS], ["info", "warning", "critical"]);
+  assert.deepEqual([...NEROA_ONE_AUDIT_ROOM_RECOMMENDED_ACTIONS], [
+    "observe",
+    "notify_admin",
+    "create_repair_task",
+    "request_customer_answer",
+    "escalate_strategy",
+    "pause_execution",
+    "archive"
+  ]);
+  assert.equal(neroaOneAuditRoomLane.backendOnly, true);
+  assert.equal(neroaOneAuditRoomLane.internalOnly, true);
+  assert.equal(neroaOneAuditRoomLane.extractionReady, true);
+  assert.equal(neroaOneAuditRoomLane.independentlyReplaceable, true);
+  assert.equal(neroaOneAuditRoomLane.watchesAllNeroaOneLanes, true);
+  assert.equal(neroaOneAuditRoomLane.ownsBackgroundGovernanceSignalsOnly, true);
+  assert.equal(neroaOneAuditRoomLane.ownsCustomerFacingUiNow, false);
+  assert.equal(neroaOneAuditRoomLane.ownsExecutionControlNow, false);
+  assert.equal(neroaOneAuditRoomLane.ownsQcRuntimeNow, false);
+  assert.equal(neroaOneAuditRoomLane.callsAiNow, false);
+  assert.equal(neroaOneAuditRoomLane.storesAuditEventsNow, false);
+  assert.equal(neroaOneAuditRoomLane.writesPersistenceNow, false);
+  assert.equal(neroaOneAuditRoomLane.exposesCustomerSafeProjectionOnly, true);
+  assert.deepEqual(getAuditRoomEventTypes(), [...NEROA_ONE_AUDIT_ROOM_EVENT_TYPES]);
+  assert.deepEqual(
+    getAuditRoomSeverityLevels(),
+    [...NEROA_ONE_AUDIT_ROOM_SEVERITY_LEVELS]
+  );
+  assert.deepEqual(
+    getAuditRoomRecommendedActions(),
+    [...NEROA_ONE_AUDIT_ROOM_RECOMMENDED_ACTIONS]
+  );
+});
+
+test("Audit Room can create typed events from lane and evidence identifiers", async () => {
+  const { evidenceLink } = await buildAuditRoomFixture();
+  const event = createAuditRoomEventFromLaneAndEvidenceIds({
+    workspaceId: evidenceLink.workspaceId,
+    projectId: evidenceLink.projectId,
+    taskId: evidenceLink.taskId,
+    sourceLaneId: "qc_station",
+    relatedIds: {
+      executionPacketId: evidenceLink.executionPacketId,
+      promptRoomItemId: evidenceLink.promptRoomItemId,
+      workerRunId: evidenceLink.workerRunId,
+      outputId: evidenceLink.outputId,
+      reviewId: evidenceLink.reviewId,
+      qcJobId: evidenceLink.qcJobId,
+      evidenceLinkId: evidenceLink.evidenceLinkId,
+      evidenceId: evidenceLink.evidenceId,
+      reportId: evidenceLink.reportId
+    },
+    eventType: "qc_failure",
+    severity: "warning",
+    internalSummary:
+      "Audit Room observed a QC failure signal tied to the linked evidence chain.",
+    customerSafeSummary:
+      "Internal quality monitoring flagged a failure and recommends create_repair_task.",
+    createdAt: "2026-05-01T14:12:00.000Z"
+  });
+
+  assert.match(event.auditEventId, /:audit:qc_station:qc_failure:/i);
+  assert.equal(event.sourceLaneId, "qc_station");
+  assert.equal(event.eventType, "qc_failure");
+  assert.equal(event.severity, "warning");
+  assert.equal(event.recommendedAction, "create_repair_task");
+  assert.equal(event.relatedIds.evidenceLinkId, evidenceLink.evidenceLinkId);
+  assert.equal(event.relatedIds.qcJobId, evidenceLink.qcJobId);
+});
+
+test("Audit Room can create evidence-ready events and admin summaries from evidence links", async () => {
+  const { evidenceLink } = await buildAuditRoomFixture();
+  const evidenceReadyEvent = createAuditRoomEventFromEvidenceLink({
+    link: evidenceLink,
+    createdAt: "2026-05-01T14:13:00.000Z"
+  });
+  const retryEvent = createAuditRoomEventFromLaneAndEvidenceIds({
+    workspaceId: evidenceLink.workspaceId,
+    projectId: evidenceLink.projectId,
+    taskId: evidenceLink.taskId,
+    sourceLaneId: "code_execution_worker",
+    relatedIds: {
+      workerRunId: evidenceLink.workerRunId,
+      evidenceLinkId: evidenceLink.evidenceLinkId
+    },
+    eventType: "retry_loop",
+    severity: "warning",
+    internalSummary: "Audit observed repeated worker retry behavior on this task.",
+    createdAt: "2026-05-01T14:13:30.000Z"
+  });
+  const criticalEvent = createAuditRoomEventFromLaneAndEvidenceIds({
+    workspaceId: evidenceLink.workspaceId,
+    projectId: evidenceLink.projectId,
+    taskId: evidenceLink.taskId,
+    sourceLaneId: "code_execution_worker",
+    relatedIds: {
+      workerRunId: evidenceLink.workerRunId,
+      evidenceLinkId: evidenceLink.evidenceLinkId
+    },
+    eventType: "worker_failure",
+    severity: "critical",
+    internalSummary: "Audit observed a worker failure requiring execution pause.",
+    createdAt: "2026-05-01T14:14:00.000Z"
+  });
+  const summary = createAdminOversightSummaryFromAuditEvents({
+    workspaceId: evidenceLink.workspaceId,
+    projectId: evidenceLink.projectId,
+    taskId: evidenceLink.taskId,
+    events: [evidenceReadyEvent, retryEvent, criticalEvent],
+    updatedAt: "2026-05-01T14:14:00.000Z"
+  });
+
+  assert.equal(evidenceReadyEvent.sourceLaneId, "evidence_linking");
+  assert.equal(evidenceReadyEvent.eventType, "evidence_ready");
+  assert.equal(evidenceReadyEvent.relatedIds.evidenceLinkId, evidenceLink.evidenceLinkId);
+  assert.equal(summary.openWarnings, 1);
+  assert.equal(summary.criticalAlerts, 1);
+  assert.equal(summary.retryLoopCount, 1);
+  assert.equal(summary.workerFailureCount, 1);
+  assert.equal(summary.estimatedWasteRisk, "high");
+  assert.equal(summary.recommendedAdminAction, "pause_execution");
+});
+
+test("Audit Room customer-safe projection strips internal execution and audit-only details", async () => {
+  const { evidenceLink } = await buildAuditRoomFixture();
+  const event = createAuditRoomEventFromLaneAndEvidenceIds({
+    workspaceId: evidenceLink.workspaceId,
+    projectId: evidenceLink.projectId,
+    taskId: evidenceLink.taskId,
+    sourceLaneId: "evidence_linking",
+    relatedIds: {
+      evidenceLinkId: evidenceLink.evidenceLinkId,
+      workerRunId: evidenceLink.workerRunId,
+      qcJobId: evidenceLink.qcJobId
+    },
+    eventType: "evidence_ready",
+    severity: "info",
+    internalSummary:
+      "Internal audit-only notes captured worker and prompt boundary context for evidence readiness.",
+    customerSafeSummary: "Internal evidence packaging is ready for the next administrative step.",
+    createdAt: "2026-05-01T14:15:00.000Z"
+  });
+  const customerSafeView = getCustomerSafeAuditEventView({
+    event
+  });
+  const customerSafeJson = JSON.stringify(customerSafeView);
+
+  assert.equal(customerSafeView.eventType, "evidence_ready");
+  assert.equal(customerSafeView.sourceLaneId, "evidence_linking");
+  assert.doesNotMatch(customerSafeJson, /internalSummary|relatedIds|internal audit-only notes/i);
+  assert.doesNotMatch(customerSafeJson, /promptText|raw worker instructions?|protectedAreas/i);
+  assert.doesNotMatch(customerSafeJson, /model routing|selectedEngine|worker secret/i);
+  assert.doesNotMatch(
+    customerSafeJson,
+    /legacy browser extension|Live View|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
+  );
+  assert.throws(
+    () =>
+      createAuditRoomEventFromLaneAndEvidenceIds({
+        workspaceId: evidenceLink.workspaceId,
+        projectId: evidenceLink.projectId,
+        taskId: evidenceLink.taskId,
+        sourceLaneId: "audit_room",
+        eventType: "policy_violation",
+        severity: "critical",
+        internalSummary: "Audit policy violation contains internal details.",
+        customerSafeSummary: "promptText and worker secret leaked here",
+        createdAt: "2026-05-01T14:16:00.000Z"
+      }),
+    /Customer-safe audit summaries must not expose internal execution, worker, runtime, or audit-only details/i
   );
 });
 

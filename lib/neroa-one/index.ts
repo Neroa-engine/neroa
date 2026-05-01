@@ -15,6 +15,7 @@ export * from "./codex-output-box.ts";
 export * from "./output-review.ts";
 export * from "./qc-station.ts";
 export * from "./evidence-linking.ts";
+export * from "./audit-room.ts";
 
 import { buildBuildRoomHandoffPackage } from "./build-room-handoff.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";
