@@ -83,6 +83,7 @@ export const neroaOneCodexExecutionPacketLaneDefinitionSchema = z
     sourceLaneId: neroaOneCodexExecutionPacketSourceLaneSchema,
     backendOnly: z.literal(true),
     extractionReady: z.literal(true),
+    selectsRuntimeWorkerInfrastructureNow: z.literal(false),
     callsCodexNow: z.literal(false),
     ownsUiNow: z.literal(false),
     writesPersistenceNow: z.literal(false),
@@ -111,6 +112,17 @@ export const DEFAULT_NEROA_ONE_CODEX_EXECUTION_PROTECTED_AREAS = [
   "worker_trigger_behavior",
   "execution_queue_behavior",
   "ai_model_calls"
+] as const;
+
+const DEFAULT_NEROA_ONE_CODEX_EXECUTION_PACKET_QUEUE_NAME =
+  "neroa-one.codex-execution-packets";
+const CODE_EXECUTION_WORKER_INFRASTRUCTURE_MARKERS = [
+  "code-execution-worker",
+  "codex_cli",
+  "codex_cloud",
+  "claude_code",
+  "manual_operator",
+  "future_engine"
 ] as const;
 
 function normalizeText(value: string | null | undefined) {
@@ -179,17 +191,34 @@ function buildPromptDraft(): NeroaOneCodexExecutionPromptDraft {
   });
 }
 
+function queueNameSelectsRuntimeWorkerInfrastructure(queueName: string) {
+  const normalizedQueueName = normalizeText(queueName).toLowerCase();
+
+  return CODE_EXECUTION_WORKER_INFRASTRUCTURE_MARKERS.some((marker) =>
+    normalizedQueueName.includes(marker.toLowerCase())
+  );
+}
+
 function buildFutureDispatchTarget(
   override: Partial<NeroaOneCodexExecutionFutureDispatchTarget> | null | undefined
 ): NeroaOneCodexExecutionFutureDispatchTarget {
+  const queueName =
+    normalizeText(override?.queueName) || DEFAULT_NEROA_ONE_CODEX_EXECUTION_PACKET_QUEUE_NAME;
+
+  if (queueNameSelectsRuntimeWorkerInfrastructure(queueName)) {
+    throw new Error(
+      `Execution packet draft queue ${queueName} cannot select code execution worker infrastructure.`
+    );
+  }
+
   return neroaOneCodexExecutionFutureDispatchTargetSchema.parse({
     owner: "future_digitalocean_codex_dispatch_service",
-    queueName: normalizeText(override?.queueName) || "neroa-one.codex-execution-packets",
+    queueName,
     dispatchMode: "deferred",
     readyForDispatch: false,
     notes: pickStringListOrFallback(override?.notes, [
       "Future DigitalOcean dispatch may consume this packet after explicit release wiring is approved.",
-      "Current lane is contract-only and does not perform dispatch, storage, queue release, or Codex calls."
+      "Current lane is contract-only and does not perform dispatch, storage, queue release, Codex calls, or runtime worker selection."
     ])
   });
 }
@@ -200,6 +229,7 @@ export const neroaOneCodexExecutionPacketLane =
     sourceLaneId: "ready_to_build",
     backendOnly: true,
     extractionReady: true,
+    selectsRuntimeWorkerInfrastructureNow: false,
     callsCodexNow: false,
     ownsUiNow: false,
     writesPersistenceNow: false,
@@ -207,7 +237,7 @@ export const neroaOneCodexExecutionPacketLane =
       "Creates extraction-ready draft execution packets from approved ready_to_build work.",
     internalOnlyNotes: [
       "This lane is backend-only and must remain detached from UI panels and customer-facing behavior.",
-      "This lane produces a typed draft contract only and must not call Codex, generate real prompts, or store packet records."
+      "This lane produces a typed draft contract only and must not select worker infrastructure, call Codex, generate real prompts, or store packet records."
     ],
     futureDispatchTarget: buildFutureDispatchTarget(null)
   });

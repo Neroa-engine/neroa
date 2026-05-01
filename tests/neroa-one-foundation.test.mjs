@@ -158,11 +158,19 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     codexPacketSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
+  assert.doesNotMatch(
+    codexPacketSource,
+    /selectedEngine|futureDigitalOceanWorkerTarget|future_code_execution_worker/i
+  );
   assert.doesNotMatch(codeExecutionWorkerSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(codeExecutionWorkerSource, /from\s+["']\.\/build-room-handoff\.ts["']/i);
   assert.doesNotMatch(
     codeExecutionWorkerSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    codeExecutionWorkerSource,
+    /getNeroaOneOutcomeLaneIdsEligibleForCodexExecution|validateReadyToBuildLaneItemForCodexExecutionPacket/i
   );
   assert.doesNotMatch(codeExecutionWorkerSource, /fetch\(|DigitalOcean\(/i);
   assert.match(
@@ -291,6 +299,8 @@ test("Code execution worker lane stays typed, backend-only, and engine-agnostic"
   ]);
   assert.equal(neroaOneCodeExecutionWorkerLane.backendOnly, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.extractionReady, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.createsRunsOnlyFromValidExecutionPackets, true);
+  assert.equal(neroaOneCodeExecutionWorkerLane.selectsExecutionEngineAtWorkerLane, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.engineAgnostic, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.independentlyReplaceable, true);
   assert.equal(neroaOneCodeExecutionWorkerLane.treatsBuildRoomAsViewportOnly, true);
@@ -300,6 +310,16 @@ test("Code execution worker lane stays typed, backend-only, and engine-agnostic"
   assert.deepEqual(
     getCodeExecutionWorkerRunStatuses(),
     [...NEROA_ONE_CODE_EXECUTION_WORKER_RUN_STATUSES]
+  );
+});
+
+test("Codex execution packet lane stays draft-only and does not select runtime worker infrastructure", () => {
+  assert.equal(neroaOneCodexExecutionPacketLane.backendOnly, true);
+  assert.equal(neroaOneCodexExecutionPacketLane.extractionReady, true);
+  assert.equal(neroaOneCodexExecutionPacketLane.selectsRuntimeWorkerInfrastructureNow, false);
+  assert.equal(
+    neroaOneCodexExecutionPacketLane.futureDispatchTarget.queueName,
+    "neroa-one.codex-execution-packets"
   );
 });
 
@@ -547,6 +567,41 @@ test("Ready to build queue items can become safe draft Codex execution packets",
   assert.equal(packet.futureDispatchTarget.readyForDispatch, false);
 });
 
+test("Execution packet drafting rejects worker infrastructure queue selection", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-codex-packet-boundary-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-codex-packet-boundary-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_codex_packet_boundary_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+
+  assert.throws(
+    () =>
+      createDraftCodexExecutionPacketFromQueueEntry({
+        entry,
+        futureDispatchTarget: {
+          queueName: "neroa-one.code-execution-worker.codex_cli"
+        }
+      }),
+    /cannot select code execution worker infrastructure/i
+  );
+});
+
 test("Valid execution packets can become queued DigitalOcean worker lane runs", async () => {
   const request = buildNeroaOneTaskAnalysisRequest({
     requestId: "req-worker-lane-1",
@@ -620,6 +675,49 @@ test("Valid execution packets can become queued DigitalOcean worker lane runs", 
     workerRun.futureDigitalOceanWorkerTarget.queueName,
     "neroa-one.code-execution-worker.claude_code"
   );
+});
+
+test("Worker lane remains explicit and engine-agnostic across all supported engines", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-worker-lane-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-worker-lane-2",
+      title: "Prepare execution worker contract",
+      request: "Prepare the approved execution worker contract for backend execution.",
+      normalizedRequest: "prepare the approved execution worker contract for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_worker_lane_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry
+  });
+
+  for (const selectedEngine of getCodeExecutionWorkerEngines()) {
+    const workerRun = createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+      executionPacket: packet,
+      selectedEngine,
+      createdAt: "2026-05-01T12:25:00.000Z"
+    });
+
+    assert.equal(workerRun.selectedEngine, selectedEngine);
+    assert.equal(workerRun.status, "queued");
+    assert.match(workerRun.workerRunId, new RegExp(`:worker:${selectedEngine}:`, "i"));
+    assert.equal(
+      workerRun.futureDigitalOceanWorkerTarget.queueName,
+      `neroa-one.code-execution-worker.${selectedEngine}`
+    );
+  }
 });
 
 test("Codex output box can create a pending review item from a draft execution packet", async () => {
@@ -1215,6 +1313,57 @@ test("Malformed execution packets cannot create queued worker lane runs", () => 
         executionPacket: malformedPacket
       }),
     /taskId/i
+  );
+});
+
+test("Worker lane rejects execution packets that leak worker infrastructure selection", () => {
+  const leakedBoundaryPacket = {
+    executionPacketId: "workspace-alpha:project-alpha:task-leak:codex-execution-packet-draft",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-leak",
+    sourceLaneId: "ready_to_build",
+    normalizedRequest: "prepare the approved implementation packet for backend execution.",
+    executionTaskType: "implementation",
+    protectedAreas: ["ui_layout"],
+    acceptanceCriteria: [],
+    testCommands: [],
+    riskLevel: "low",
+    requiresQc: false,
+    requiresCustomerCheckpoint: false,
+    promptDraft: {
+      status: "placeholder_only",
+      promptText: "PROMPT_GENERATION_DEFERRED",
+      notes: ["Prompt generation is intentionally deferred."]
+    },
+    createdAt: "2026-05-01T12:22:00.000Z",
+    futureDispatchTarget: {
+      owner: "future_digitalocean_codex_dispatch_service",
+      queueName: "neroa-one.code-execution-worker.manual_operator",
+      dispatchMode: "deferred",
+      readyForDispatch: false,
+      notes: ["Packet boundary should not pick worker infrastructure."]
+    }
+  };
+  const validation = validateCodexExecutionPacketForCodeExecutionWorkerRun({
+    executionPacket: leakedBoundaryPacket
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /leaked runtime worker infrastructure selection/i);
+  assert.equal(
+    canCreateCodeExecutionWorkerRunFromCodexExecutionPacket({
+      executionPacket: leakedBoundaryPacket
+    }),
+    false
+  );
+  assert.throws(
+    () =>
+      createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket({
+        executionPacket: leakedBoundaryPacket,
+        selectedEngine: "manual_operator"
+      }),
+    /leaked runtime worker infrastructure selection/i
   );
 });
 

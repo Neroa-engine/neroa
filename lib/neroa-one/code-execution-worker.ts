@@ -7,6 +7,8 @@ import {
 
 const trimmedStringSchema = z.string().trim().min(1);
 const stringListSchema = z.array(trimmedStringSchema);
+const CODE_EXECUTION_WORKER_INFRASTRUCTURE_QUEUE_PATTERN =
+  /code-execution-worker|codex_cli|codex_cloud|claude_code|manual_operator|future_engine/i;
 
 export const NEROA_ONE_CODE_EXECUTION_WORKER_ENGINES = [
   "codex_cli",
@@ -111,6 +113,8 @@ export const neroaOneCodeExecutionWorkerLaneDefinitionSchema = z
     upstreamLaneId: z.literal("codex_execution_packet_draft"),
     backendOnly: z.literal(true),
     extractionReady: z.literal(true),
+    createsRunsOnlyFromValidExecutionPackets: z.literal(true),
+    selectsExecutionEngineAtWorkerLane: z.literal(true),
     engineAgnostic: z.literal(true),
     independentlyReplaceable: z.literal(true),
     treatsBuildRoomAsViewportOnly: z.literal(true),
@@ -172,6 +176,8 @@ export const neroaOneCodeExecutionWorkerLane =
     upstreamLaneId: "codex_execution_packet_draft",
     backendOnly: true,
     extractionReady: true,
+    createsRunsOnlyFromValidExecutionPackets: true,
+    selectsExecutionEngineAtWorkerLane: true,
     engineAgnostic: true,
     independentlyReplaceable: true,
     treatsBuildRoomAsViewportOnly: true,
@@ -227,6 +233,12 @@ function buildRejectedPacketValidationResult(
       normalizeText(reason) ||
       "Execution packet is not eligible to create a code execution worker run."
   };
+}
+
+function packetDraftLeaksWorkerInfrastructureSelection(executionPacket: NeroaOneCodexExecutionPacket) {
+  return CODE_EXECUTION_WORKER_INFRASTRUCTURE_QUEUE_PATTERN.test(
+    executionPacket.futureDispatchTarget.queueName
+  );
 }
 
 function buildPromptPayloadFromExecutionPacket(
@@ -304,6 +316,12 @@ export function validateCodexExecutionPacketForCodeExecutionWorkerRun(args: {
   if (executionPacket.sourceLaneId !== neroaOneCodexExecutionPacketLane.sourceLaneId) {
     return buildRejectedPacketValidationResult(
       `Execution packet source lane ${executionPacket.sourceLaneId} does not match the required ${neroaOneCodexExecutionPacketLane.sourceLaneId} source lane.`
+    );
+  }
+
+  if (packetDraftLeaksWorkerInfrastructureSelection(executionPacket)) {
+    return buildRejectedPacketValidationResult(
+      `Execution packet ${executionPacket.executionPacketId} leaked runtime worker infrastructure selection into the packet draft boundary.`
     );
   }
 
