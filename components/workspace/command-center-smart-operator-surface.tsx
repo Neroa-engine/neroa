@@ -701,22 +701,22 @@ export function CommandCenterSmartOperatorSurface({
                               {formatTaskTimestamp(task)}
                             </span>
                           </div>
-                          <div className="mt-3 space-y-3">
+                          <div className="mt-2 space-y-2">
                             {shouldShowRevisionReviewPrompt(task) ? (
-                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                              <div className="rounded-[14px] border border-amber-300/25 bg-amber-400/10 px-3 py-2.5">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
                                   Revision Review
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                <p className="mt-1.5 text-sm leading-5 text-amber-50">
                                   This request appears to change the approved roadmap or build
                                   direction. Please confirm before changing direction.
                                 </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
+                                <div className="mt-2 flex flex-wrap gap-1.5">
                                   <button
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Confirm Revision
                                   </button>
@@ -724,7 +724,7 @@ export function CommandCenterSmartOperatorSurface({
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Keep Current Roadmap
                                   </button>
@@ -735,20 +735,20 @@ export function CommandCenterSmartOperatorSurface({
                               </div>
                             ) : null}
                             {shouldShowExecutionReviewPrompt(task) ? (
-                              <div className="rounded-[16px] border border-emerald-300/25 bg-emerald-400/10 px-4 py-3">
+                              <div className="rounded-[14px] border border-emerald-300/25 bg-emerald-400/10 px-3 py-2.5">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-emerald-200">
                                   Prompt Review Queue
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-emerald-50">
+                                <p className="mt-1.5 text-sm leading-5 text-emerald-50">
                                   This task fits the current roadmap and will be prepared for
                                   the internal prompt/build queue.
                                 </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
+                                <div className="mt-2 flex flex-wrap gap-1.5">
                                   <button
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Prepare Queue Entry
                                   </button>
@@ -756,7 +756,7 @@ export function CommandCenterSmartOperatorSurface({
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Pause Queue Prep
                                   </button>
@@ -767,19 +767,19 @@ export function CommandCenterSmartOperatorSurface({
                               </div>
                             ) : null}
                             {shouldShowDecisionReviewPrompt(task) ? (
-                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                              <div className="rounded-[14px] border border-amber-300/25 bg-amber-400/10 px-3 py-2.5">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
                                   Decision Review
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                <p className="mt-1.5 text-sm leading-5 text-amber-50">
                                   Neroa needs an answer before moving this task forward.
                                 </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
+                                <div className="mt-2 flex flex-wrap gap-1.5">
                                   <button
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Add Answer
                                   </button>
@@ -790,19 +790,19 @@ export function CommandCenterSmartOperatorSurface({
                               </div>
                             ) : null}
                             {shouldShowClarificationPrompt(task) ? (
-                              <div className="rounded-[16px] border border-amber-300/25 bg-amber-400/10 px-4 py-3">
+                              <div className="rounded-[14px] border border-amber-300/25 bg-amber-400/10 px-3 py-2.5">
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-amber-200">
                                   Clarification Needed
                                 </p>
-                                <p className="mt-2 text-sm leading-6 text-amber-50">
+                                <p className="mt-1.5 text-sm leading-5 text-amber-50">
                                   Neroa needs an answer before moving this task forward.
                                 </p>
-                                <div className="mt-3 flex flex-wrap gap-2">
+                                <div className="mt-2 flex flex-wrap gap-1.5">
                                   <button
                                     type="button"
                                     disabled
                                     aria-disabled="true"
-                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
+                                    className="rounded-full border border-white/12 bg-white/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300 opacity-70"
                                   >
                                     Add Answer
                                   </button>

@@ -119,6 +119,15 @@ test("Approved roadmap tasks show a compact prompt review queue prompt when expa
   assert.match(smartSurfaceSource, /disabled/);
 });
 
+test("Expanded review prompts use tighter spacing and padding", () => {
+  assert.match(smartSurfaceSource, /mt-2 space-y-2/);
+  assert.match(smartSurfaceSource, /rounded-\[14px\] border border-amber-300\/25 bg-amber-400\/10 px-3 py-2\.5/);
+  assert.match(smartSurfaceSource, /rounded-\[14px\] border border-emerald-300\/25 bg-emerald-400\/10 px-3 py-2\.5/);
+  assert.match(smartSurfaceSource, /mt-1\.5 text-sm leading-5/);
+  assert.match(smartSurfaceSource, /mt-2 flex flex-wrap gap-1\.5/);
+  assert.match(smartSurfaceSource, /px-3 py-1\.5 text-\[10px\]/);
+});
+
 test("Decision-needed and clarification tasks show compact answer prompts when expanded", () => {
   assert.match(
     smartSurfaceSource,
