@@ -1,0 +1,371 @@
+import { z } from "zod";
+import {
+  buildRoomRiskLevelSchema,
+  buildRoomTaskTypeSchema,
+  type BuildRoomRiskLevel,
+  type BuildRoomTaskType
+} from "../build-room/contracts.ts";
+import {
+  getNeroaOneOutcomeLaneDefinition,
+  validateNeroaOneOutcomeQueueItemForLane
+} from "./outcome-lanes.ts";
+import {
+  neroaOneOutcomeQueueEntrySchema,
+  neroaOneOutcomeQueueItemSchema,
+  type NeroaOneOutcomeQueueEntry,
+  type NeroaOneOutcomeQueueItem
+} from "./outcome-queues.ts";
+
+const trimmedStringSchema = z.string().trim().min(1);
+const stringListSchema = z.array(trimmedStringSchema);
+
+export const neroaOneCodexExecutionPacketSourceLaneSchema = z.literal("ready_to_build");
+export type NeroaOneCodexExecutionPacketSourceLane = z.infer<
+  typeof neroaOneCodexExecutionPacketSourceLaneSchema
+>;
+
+export const neroaOneCodexExecutionPromptDraftSchema = z
+  .object({
+    status: z.literal("placeholder_only"),
+    promptText: z.literal("PROMPT_GENERATION_DEFERRED"),
+    notes: stringListSchema.min(1)
+  })
+  .strict();
+
+export type NeroaOneCodexExecutionPromptDraft = z.infer<
+  typeof neroaOneCodexExecutionPromptDraftSchema
+>;
+
+export const neroaOneCodexExecutionFutureDispatchTargetSchema = z
+  .object({
+    owner: z.literal("future_digitalocean_codex_dispatch_service"),
+    queueName: trimmedStringSchema,
+    dispatchMode: z.literal("deferred"),
+    readyForDispatch: z.literal(false),
+    notes: stringListSchema.min(1)
+  })
+  .strict();
+
+export type NeroaOneCodexExecutionFutureDispatchTarget = z.infer<
+  typeof neroaOneCodexExecutionFutureDispatchTargetSchema
+>;
+
+export const neroaOneCodexExecutionPacketSchema = z
+  .object({
+    executionPacketId: trimmedStringSchema,
+    workspaceId: trimmedStringSchema,
+    projectId: trimmedStringSchema,
+    taskId: trimmedStringSchema,
+    sourceLaneId: neroaOneCodexExecutionPacketSourceLaneSchema,
+    normalizedRequest: trimmedStringSchema,
+    executionTaskType: buildRoomTaskTypeSchema,
+    protectedAreas: stringListSchema,
+    acceptanceCriteria: stringListSchema,
+    testCommands: stringListSchema,
+    riskLevel: buildRoomRiskLevelSchema,
+    requiresQc: z.boolean(),
+    requiresCustomerCheckpoint: z.boolean(),
+    promptDraft: neroaOneCodexExecutionPromptDraftSchema,
+    createdAt: trimmedStringSchema,
+    futureDispatchTarget: neroaOneCodexExecutionFutureDispatchTargetSchema
+  })
+  .strict();
+
+export type NeroaOneCodexExecutionPacket = z.infer<
+  typeof neroaOneCodexExecutionPacketSchema
+>;
+
+export const neroaOneCodexExecutionPacketLaneDefinitionSchema = z
+  .object({
+    laneId: z.literal("codex_execution_packet_draft"),
+    sourceLaneId: neroaOneCodexExecutionPacketSourceLaneSchema,
+    backendOnly: z.literal(true),
+    extractionReady: z.literal(true),
+    callsCodexNow: z.literal(false),
+    ownsUiNow: z.literal(false),
+    writesPersistenceNow: z.literal(false),
+    displayPurposeInternal: trimmedStringSchema,
+    internalOnlyNotes: stringListSchema.min(1),
+    futureDispatchTarget: neroaOneCodexExecutionFutureDispatchTargetSchema
+  })
+  .strict();
+
+export type NeroaOneCodexExecutionPacketLaneDefinition = z.infer<
+  typeof neroaOneCodexExecutionPacketLaneDefinitionSchema
+>;
+
+export const DEFAULT_NEROA_ONE_CODEX_EXECUTION_PROTECTED_AREAS = [
+  "ui_layout",
+  "customer_facing_copy",
+  "command_center_panels",
+  "build_room_panels",
+  "strategy_room_behavior",
+  "library_behavior",
+  "browser_qc_runtime",
+  "persistence_schema",
+  "task_status_logic",
+  "review_outcome_logic",
+  "codex_relay_behavior",
+  "worker_trigger_behavior",
+  "execution_queue_behavior",
+  "ai_model_calls"
+] as const;
+
+function normalizeText(value: string | null | undefined) {
+  return typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+}
+
+function normalizeStringList(values: readonly string[] | null | undefined) {
+  return Array.from(
+    new Set(
+      (values ?? [])
+        .map((value) => normalizeText(value))
+        .filter((value): value is string => Boolean(value))
+    )
+  );
+}
+
+function pickStringListOrFallback(
+  values: readonly string[] | null | undefined,
+  fallback: readonly string[]
+) {
+  const normalized = normalizeStringList(values);
+  return normalized.length > 0 ? normalized : [...fallback];
+}
+
+function inferExecutionTaskType(normalizedRequest: string): BuildRoomTaskType {
+  const text = normalizeText(normalizedRequest).toLowerCase();
+
+  if (
+    /(qa|quality assurance|test|verify|validation|review evidence|acceptance)/.test(text)
+  ) {
+    return "qa";
+  }
+
+  if (/(bug|fix|broken|regression|repair|patch)/.test(text)) {
+    return "bug_fix";
+  }
+
+  if (/(research|investigate|analyze|analysis|discovery)/.test(text)) {
+    return "research";
+  }
+
+  if (/(ops|operations|deploy|release|runbook|handoff)/.test(text)) {
+    return "operations";
+  }
+
+  return "implementation";
+}
+
+function buildExecutionPacketId(item: NeroaOneOutcomeQueueItem) {
+  return [
+    item.workspaceId,
+    item.projectId,
+    item.taskId,
+    "codex-execution-packet-draft"
+  ].join(":");
+}
+
+function buildPromptDraft(): NeroaOneCodexExecutionPromptDraft {
+  return neroaOneCodexExecutionPromptDraftSchema.parse({
+    status: "placeholder_only",
+    promptText: "PROMPT_GENERATION_DEFERRED",
+    notes: [
+      "Prompt generation is intentionally deferred until a future approved dispatch template exists.",
+      "This draft packet must not call Codex or synthesize a real prompt body in the current backend lane."
+    ]
+  });
+}
+
+function buildFutureDispatchTarget(
+  override: Partial<NeroaOneCodexExecutionFutureDispatchTarget> | null | undefined
+): NeroaOneCodexExecutionFutureDispatchTarget {
+  return neroaOneCodexExecutionFutureDispatchTargetSchema.parse({
+    owner: "future_digitalocean_codex_dispatch_service",
+    queueName: normalizeText(override?.queueName) || "neroa-one.codex-execution-packets",
+    dispatchMode: "deferred",
+    readyForDispatch: false,
+    notes: pickStringListOrFallback(override?.notes, [
+      "Future DigitalOcean dispatch may consume this packet after explicit release wiring is approved.",
+      "Current lane is contract-only and does not perform dispatch, storage, queue release, or Codex calls."
+    ])
+  });
+}
+
+export const neroaOneCodexExecutionPacketLane =
+  neroaOneCodexExecutionPacketLaneDefinitionSchema.parse({
+    laneId: "codex_execution_packet_draft",
+    sourceLaneId: "ready_to_build",
+    backendOnly: true,
+    extractionReady: true,
+    callsCodexNow: false,
+    ownsUiNow: false,
+    writesPersistenceNow: false,
+    displayPurposeInternal:
+      "Creates extraction-ready draft execution packets from approved ready_to_build work.",
+    internalOnlyNotes: [
+      "This lane is backend-only and must remain detached from UI panels and customer-facing behavior.",
+      "This lane produces a typed draft contract only and must not call Codex, generate real prompts, or store packet records."
+    ],
+    futureDispatchTarget: buildFutureDispatchTarget(null)
+  });
+
+export type NeroaOneCodexExecutionPacketEligibilityResult =
+  | {
+      allowed: true;
+      sourceLane: ReturnType<typeof getNeroaOneOutcomeLaneDefinition>;
+      packetLane: NeroaOneCodexExecutionPacketLaneDefinition;
+    }
+  | {
+      allowed: false;
+      sourceLane: ReturnType<typeof getNeroaOneOutcomeLaneDefinition>;
+      packetLane: NeroaOneCodexExecutionPacketLaneDefinition;
+      reason: string;
+    };
+
+function buildRejectedEligibilityResult(reason: string): NeroaOneCodexExecutionPacketEligibilityResult {
+  return {
+    allowed: false,
+    sourceLane: getNeroaOneOutcomeLaneDefinition("ready_to_build"),
+    packetLane: neroaOneCodexExecutionPacketLane,
+    reason: normalizeText(reason) || "Lane item is not eligible for Codex execution packet drafting."
+  };
+}
+
+export function validateReadyToBuildLaneItemForCodexExecutionPacket(args: {
+  item: NeroaOneOutcomeQueueItem;
+}): NeroaOneCodexExecutionPacketEligibilityResult {
+  const item = neroaOneOutcomeQueueItemSchema.parse(args.item);
+  const sourceLane = getNeroaOneOutcomeLaneDefinition("ready_to_build");
+  const sourceLaneValidation = validateNeroaOneOutcomeQueueItemForLane({
+    laneId: "ready_to_build",
+    item
+  });
+
+  if (!sourceLaneValidation.allowed) {
+    return buildRejectedEligibilityResult(sourceLaneValidation.reason);
+  }
+
+  if (!sourceLane.canEnterCodexExecution) {
+    return buildRejectedEligibilityResult(
+      `Lane ${sourceLane.laneId} is not marked as execution-eligible.`
+    );
+  }
+
+  return {
+    allowed: true,
+    sourceLane,
+    packetLane: neroaOneCodexExecutionPacketLane
+  };
+}
+
+export function validateReadyToBuildQueueEntryForCodexExecutionPacket(args: {
+  entry: NeroaOneOutcomeQueueEntry;
+}): NeroaOneCodexExecutionPacketEligibilityResult {
+  const entry = neroaOneOutcomeQueueEntrySchema.parse(args.entry);
+
+  if (entry.queue !== "ready_to_build") {
+    return buildRejectedEligibilityResult(
+      `Queue entry ${entry.queue} cannot create a Codex execution packet draft.`
+    );
+  }
+
+  return validateReadyToBuildLaneItemForCodexExecutionPacket({
+    item: entry.item
+  });
+}
+
+export function canCreateCodexExecutionPacketFromReadyToBuildLaneItem(args: {
+  item: NeroaOneOutcomeQueueItem;
+}) {
+  return validateReadyToBuildLaneItemForCodexExecutionPacket(args).allowed;
+}
+
+export function assertReadyToBuildLaneItemCanCreateCodexExecutionPacket(args: {
+  item: NeroaOneOutcomeQueueItem;
+}) {
+  const validation = validateReadyToBuildLaneItemForCodexExecutionPacket(args);
+
+  if (!validation.allowed) {
+    throw new Error(validation.reason);
+  }
+
+  return validation;
+}
+
+export function createDraftCodexExecutionPacket(args: {
+  item: NeroaOneOutcomeQueueItem;
+  executionTaskType?: BuildRoomTaskType | null;
+  protectedAreas?: readonly string[] | null;
+  acceptanceCriteria?: readonly string[] | null;
+  testCommands?: readonly string[] | null;
+  riskLevel?: BuildRoomRiskLevel | null;
+  requiresQc?: boolean | null;
+  requiresCustomerCheckpoint?: boolean | null;
+  createdAt?: string | null;
+  futureDispatchTarget?: Partial<NeroaOneCodexExecutionFutureDispatchTarget> | null;
+}): NeroaOneCodexExecutionPacket {
+  const item = neroaOneOutcomeQueueItemSchema.parse(args.item);
+  assertReadyToBuildLaneItemCanCreateCodexExecutionPacket({
+    item
+  });
+  const executionTaskType =
+    args.executionTaskType ?? inferExecutionTaskType(item.normalizedRequest);
+  const riskLevel = args.riskLevel ?? item.riskLevel;
+
+  return neroaOneCodexExecutionPacketSchema.parse({
+    executionPacketId: buildExecutionPacketId(item),
+    workspaceId: item.workspaceId,
+    projectId: item.projectId,
+    taskId: item.taskId,
+    sourceLaneId: "ready_to_build",
+    normalizedRequest: item.normalizedRequest,
+    executionTaskType,
+    protectedAreas: pickStringListOrFallback(
+      args.protectedAreas,
+      DEFAULT_NEROA_ONE_CODEX_EXECUTION_PROTECTED_AREAS
+    ),
+    acceptanceCriteria: normalizeStringList(args.acceptanceCriteria),
+    testCommands: normalizeStringList(args.testCommands),
+    riskLevel,
+    requiresQc: args.requiresQc ?? (executionTaskType === "qa" || riskLevel === "high"),
+    requiresCustomerCheckpoint: args.requiresCustomerCheckpoint ?? false,
+    promptDraft: buildPromptDraft(),
+    createdAt: normalizeText(args.createdAt) || item.createdAt,
+    futureDispatchTarget: buildFutureDispatchTarget(args.futureDispatchTarget)
+  });
+}
+
+export function createDraftCodexExecutionPacketFromQueueEntry(args: {
+  entry: NeroaOneOutcomeQueueEntry;
+  executionTaskType?: BuildRoomTaskType | null;
+  protectedAreas?: readonly string[] | null;
+  acceptanceCriteria?: readonly string[] | null;
+  testCommands?: readonly string[] | null;
+  riskLevel?: BuildRoomRiskLevel | null;
+  requiresQc?: boolean | null;
+  requiresCustomerCheckpoint?: boolean | null;
+  createdAt?: string | null;
+  futureDispatchTarget?: Partial<NeroaOneCodexExecutionFutureDispatchTarget> | null;
+}) {
+  const validation = validateReadyToBuildQueueEntryForCodexExecutionPacket({
+    entry: args.entry
+  });
+
+  if (!validation.allowed) {
+    throw new Error(validation.reason);
+  }
+
+  return createDraftCodexExecutionPacket({
+    item: args.entry.item,
+    executionTaskType: args.executionTaskType,
+    protectedAreas: args.protectedAreas,
+    acceptanceCriteria: args.acceptanceCriteria,
+    testCommands: args.testCommands,
+    riskLevel: args.riskLevel,
+    requiresQc: args.requiresQc,
+    requiresCustomerCheckpoint: args.requiresCustomerCheckpoint,
+    createdAt: args.createdAt,
+    futureDispatchTarget: args.futureDispatchTarget
+  });
+}

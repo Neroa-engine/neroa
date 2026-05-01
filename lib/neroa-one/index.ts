@@ -8,6 +8,7 @@ export * from "./build-room-handoff.ts";
 export * from "./cost-policy.ts";
 export * from "./outcome-queues.ts";
 export * from "./outcome-lanes.ts";
+export * from "./codex-execution-packet.ts";
 
 import { buildBuildRoomHandoffPackage } from "./build-room-handoff.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";

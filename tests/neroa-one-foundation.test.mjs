@@ -9,14 +9,19 @@ import {
   buildNeroaOneTaskAnalysisRequest,
   buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
+  canCreateCodexExecutionPacketFromReadyToBuildLaneItem,
   classifyCustomerIntent,
   commandCenterLanes,
+  createDraftCodexExecutionPacket,
+  createDraftCodexExecutionPacketFromQueueEntry,
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
+  neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
   resolveNeroaOneCostPolicy,
+  validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane
 } from "../lib/neroa-one/index.ts";
 
@@ -29,6 +34,7 @@ const moduleSources = [
   "../lib/neroa-one/cost-policy.ts",
   "../lib/neroa-one/outcome-queues.ts",
   "../lib/neroa-one/outcome-lanes.ts",
+  "../lib/neroa-one/codex-execution-packet.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -220,6 +226,108 @@ test("Lane validation rejects queue items routed to the wrong hardened lane", as
   assert.equal(entry.queue, "roadmap_revision_required");
   assert.equal(validation.allowed, false);
   assert.match(validation.reason, /does not match lane ready_to_build/i);
+});
+
+test("Ready to build queue items can become safe draft Codex execution packets", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-codex-packet-1",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-codex-packet-1",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_codex_packet_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the module backend-only and extraction-ready."],
+    testCommands: [".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"]
+  });
+
+  assert.equal(entry.queue, "ready_to_build");
+  assert.equal(
+    validateReadyToBuildLaneItemForCodexExecutionPacket({ item: entry.item }).allowed,
+    true
+  );
+  assert.equal(
+    canCreateCodexExecutionPacketFromReadyToBuildLaneItem({ item: entry.item }),
+    true
+  );
+  assert.equal(neroaOneCodexExecutionPacketLane.backendOnly, true);
+  assert.equal(neroaOneCodexExecutionPacketLane.callsCodexNow, false);
+  assert.equal(packet.executionPacketId, "workspace-alpha:project-alpha:task-codex-packet-1:codex-execution-packet-draft");
+  assert.equal(packet.sourceLaneId, "ready_to_build");
+  assert.equal(packet.workspaceId, "workspace-alpha");
+  assert.equal(packet.projectId, "project-alpha");
+  assert.equal(packet.taskId, "task-codex-packet-1");
+  assert.equal(packet.executionTaskType, "implementation");
+  assert.equal(packet.riskLevel, "low");
+  assert.equal(packet.requiresQc, false);
+  assert.equal(packet.requiresCustomerCheckpoint, false);
+  assert.deepEqual(packet.acceptanceCriteria, [
+    "Keep the module backend-only and extraction-ready."
+  ]);
+  assert.deepEqual(packet.testCommands, [
+    ".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"
+  ]);
+  assert.equal(packet.promptDraft.status, "placeholder_only");
+  assert.equal(packet.promptDraft.promptText, "PROMPT_GENERATION_DEFERRED");
+  assert.ok(packet.protectedAreas.includes("ui_layout"));
+  assert.ok(packet.protectedAreas.includes("persistence_schema"));
+  assert.equal(packet.futureDispatchTarget.owner, "future_digitalocean_codex_dispatch_service");
+  assert.equal(packet.futureDispatchTarget.dispatchMode, "deferred");
+  assert.equal(packet.futureDispatchTarget.readyForDispatch, false);
+});
+
+test("Non-ready_to_build items cannot create Codex execution packet drafts", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-codex-packet-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-codex-packet-2",
+      title: "Roadmap shift request",
+      request: "Please change the roadmap phase order before build starts.",
+      normalizedRequest: "please change the roadmap phase order before build starts.",
+      requestType: "change_direction"
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_codex_packet_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const validation = validateReadyToBuildLaneItemForCodexExecutionPacket({
+    item: entry.item
+  });
+
+  assert.equal(entry.queue, "roadmap_revision_required");
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /does not match lane ready_to_build/i);
+  assert.throws(
+    () =>
+      createDraftCodexExecutionPacket({
+        item: entry.item
+      }),
+    /does not match lane ready_to_build/i
+  );
 });
 
 test("Build Room handoff preserves original customer intent", () => {
