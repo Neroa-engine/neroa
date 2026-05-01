@@ -183,10 +183,17 @@ export const neroaOneEvidenceLinkingLaneDefinitionSchema = z
     extractionReady: z.literal(true),
     independentlyReplaceable: z.literal(true),
     linksExecutionTraceOnly: z.literal(true),
+    referencesQcJobsWithoutOwningQcNow: z.literal(true),
+    createsQcJobsNow: z.literal(false),
+    mutatesQcJobsNow: z.literal(false),
+    runsQcJobsNow: z.literal(false),
+    cancelsQcJobsNow: z.literal(false),
+    completesQcJobsNow: z.literal(false),
     ownsExecutionNow: z.literal(false),
     ownsReviewNow: z.literal(false),
     ownsQcNow: z.literal(false),
     ownsCustomerUiNow: z.literal(false),
+    dependsOnLegacyBrowserRuntimeNow: z.literal(false),
     storesEvidenceNow: z.literal(false),
     writesPersistenceNow: z.literal(false),
     exposesCustomerSafeProjectionOnly: z.literal(true),
@@ -254,6 +261,22 @@ export type NeroaOneEvidenceLinkPipelineRecordValidationResult =
       reason: string;
     };
 
+export type NeroaOneEvidenceLinkQcJobReferenceValidationResult =
+  | {
+      allowed: true;
+      evidenceLane: NeroaOneEvidenceLinkingLaneDefinition;
+      qcLane: typeof neroaOneQcStationLane;
+      qcJob: NeroaOneQcStationJobRecord;
+      reviewId: string;
+      outputId: string;
+    }
+  | {
+      allowed: false;
+      evidenceLane: NeroaOneEvidenceLinkingLaneDefinition;
+      qcLane: typeof neroaOneQcStationLane;
+      reason: string;
+    };
+
 export const neroaOneCustomerSafeEvidenceArtifactPointerSummarySchema = z
   .object({
     artifactPointerId: trimmedStringSchema,
@@ -308,10 +331,17 @@ export const neroaOneEvidenceLinkingLane = neroaOneEvidenceLinkingLaneDefinition
   extractionReady: true,
   independentlyReplaceable: true,
   linksExecutionTraceOnly: true,
+  referencesQcJobsWithoutOwningQcNow: true,
+  createsQcJobsNow: false,
+  mutatesQcJobsNow: false,
+  runsQcJobsNow: false,
+  cancelsQcJobsNow: false,
+  completesQcJobsNow: false,
   ownsExecutionNow: false,
   ownsReviewNow: false,
   ownsQcNow: false,
   ownsCustomerUiNow: false,
+  dependsOnLegacyBrowserRuntimeNow: false,
   storesEvidenceNow: false,
   writesPersistenceNow: false,
   exposesCustomerSafeProjectionOnly: true,
@@ -391,6 +421,19 @@ function buildRejectedRecordValidationResult(
   };
 }
 
+function buildRejectedQcJobReferenceValidationResult(
+  reason: string
+): NeroaOneEvidenceLinkQcJobReferenceValidationResult {
+  return {
+    allowed: false,
+    evidenceLane: neroaOneEvidenceLinkingLane,
+    qcLane: neroaOneQcStationLane,
+    reason:
+      normalizeText(reason) ||
+      "QC job reference is not valid for the Neroa One evidence-link boundary."
+  };
+}
+
 function buildFutureEvidenceServiceTarget(
   override: Partial<NeroaOneFutureEvidenceServiceTarget> | null | undefined
 ): NeroaOneFutureEvidenceServiceTarget {
@@ -428,6 +471,10 @@ function buildArtifactPointerId(args: {
   artifactId: string;
 }) {
   return `${args.evidenceLinkId}:artifact:${args.pointerType}:${args.artifactId}`;
+}
+
+function qcJobIdMatchesReviewId(qcJobId: string, reviewId: string) {
+  return normalizeText(qcJobId).startsWith(`${normalizeText(reviewId)}:qc:`);
 }
 
 function isCustomerSafePointerType(
@@ -530,6 +577,16 @@ export function validateEvidenceLinkPipelineIds(args: {
     );
   }
 
+  if (
+    pipelineIds.qcJobId &&
+    pipelineIds.reviewId &&
+    !qcJobIdMatchesReviewId(pipelineIds.qcJobId, pipelineIds.reviewId)
+  ) {
+    return buildRejectedPipelineValidationResult(
+      "Evidence link qcJobId must match the linked reviewId-generated QC job identifier."
+    );
+  }
+
   if (pipelineIds.customerResultId && !pipelineIds.evidenceId) {
     return buildRejectedPipelineValidationResult(
       "Evidence link customerResultId cannot be attached before evidenceId is present."
@@ -540,6 +597,70 @@ export function validateEvidenceLinkPipelineIds(args: {
     allowed: true,
     evidenceLane: neroaOneEvidenceLinkingLane,
     pipelineIds
+  };
+}
+
+export function validateQcStationJobReferenceForEvidenceLink(args: {
+  qcJob: NeroaOneQcStationJobRecord;
+  reviewId: string;
+  outputId: string;
+  workspaceId: string;
+  projectId: string;
+  taskId: string;
+}): NeroaOneEvidenceLinkQcJobReferenceValidationResult {
+  const qcJobResult = neroaOneQcStationJobRecordSchema.safeParse(args.qcJob);
+
+  if (!qcJobResult.success) {
+    const [issue] = qcJobResult.error.issues;
+    const issuePath = issue?.path?.length ? issue.path.join(".") : "qcJob";
+
+    return buildRejectedQcJobReferenceValidationResult(
+      `QC job is invalid for evidence linking at ${issuePath}.`
+    );
+  }
+
+  const qcJob = qcJobResult.data;
+  const reviewId = normalizeText(args.reviewId);
+  const outputId = normalizeText(args.outputId);
+  const workspaceId = normalizeText(args.workspaceId);
+  const projectId = normalizeText(args.projectId);
+  const taskId = normalizeText(args.taskId);
+
+  if (qcJob.reviewId !== reviewId) {
+    return buildRejectedQcJobReferenceValidationResult(
+      `QC job ${qcJob.qcJobId} does not reference reviewId ${reviewId}.`
+    );
+  }
+
+  if (qcJob.outputId !== outputId) {
+    return buildRejectedQcJobReferenceValidationResult(
+      `QC job ${qcJob.qcJobId} does not reference outputId ${outputId}.`
+    );
+  }
+
+  if (
+    qcJob.workspaceId !== workspaceId ||
+    qcJob.projectId !== projectId ||
+    qcJob.taskId !== taskId
+  ) {
+    return buildRejectedQcJobReferenceValidationResult(
+      "QC job does not reference the same workspace, project, and task identifiers as the evidence-link pipeline."
+    );
+  }
+
+  if (!qcJobIdMatchesReviewId(qcJob.qcJobId, reviewId)) {
+    return buildRejectedQcJobReferenceValidationResult(
+      "QC job identifier does not match the linked reviewId-generated QC job format."
+    );
+  }
+
+  return {
+    allowed: true,
+    evidenceLane: neroaOneEvidenceLinkingLane,
+    qcLane: neroaOneQcStationLane,
+    qcJob,
+    reviewId,
+    outputId
   };
 }
 
@@ -738,10 +859,17 @@ export function validateEvidenceLinkPipelineRecords(args: {
       return buildRejectedRecordValidationResult(qcReviewValidation.reason);
     }
 
-    if (qcJob.reviewId !== review.reviewId || qcJob.outputId !== review.outputId) {
-      return buildRejectedRecordValidationResult(
-        "QC job does not reference the linked output review and output record."
-      );
+    const qcJobReferenceValidation = validateQcStationJobReferenceForEvidenceLink({
+      qcJob,
+      reviewId: review.reviewId,
+      outputId: review.outputId,
+      workspaceId: executionPacket.workspaceId,
+      projectId: executionPacket.projectId,
+      taskId: executionPacket.taskId
+    });
+
+    if (!qcJobReferenceValidation.allowed) {
+      return buildRejectedRecordValidationResult(qcJobReferenceValidation.reason);
     }
   }
 

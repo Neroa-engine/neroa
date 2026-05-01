@@ -67,6 +67,7 @@ import {
   validateCodexExecutionPacketForPromptRoom,
   validateEvidenceLinkPipelineIds,
   validateEvidenceLinkPipelineRecords,
+  validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
   neroaOneCodeExecutionWorkerLane,
   neroaOneCodexOutputBoxLane,
@@ -333,11 +334,19 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     qcStationSource,
     /createPlaceholderOutputReviewDecisionFromOutputItem|createPlaceholderOutputReviewDecisionsFromOutputItems/i
   );
+  assert.doesNotMatch(
+    qcStationSource,
+    /getCustomerSafeEvidenceSummary|createDraftEvidenceLinkFromPipelineIds|createDraftEvidenceLinkFromPipelineRecords/i
+  );
   assert.match(qcStationSource, /interface\s+NeroaOneQcStationStorageAdapter/);
   assert.doesNotMatch(evidenceLinkingSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     evidenceLinkingSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    evidenceLinkingSource,
+    /legacy browser extension|Live View message channels|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
   );
   assert.doesNotMatch(evidenceLinkingSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
   assert.doesNotMatch(
@@ -539,6 +548,8 @@ test("QC Station lane stays typed, backend-only, and DigitalOcean-ready", () => 
   ]);
   assert.equal(neroaOneQcStationLane.backendOnly, true);
   assert.equal(neroaOneQcStationLane.extractionReady, true);
+  assert.equal(neroaOneQcStationLane.ownsFutureQcJobContractsOnly, true);
+  assert.equal(neroaOneQcStationLane.createsCustomerSafeEvidenceSummariesNow, false);
   assert.equal(neroaOneQcStationLane.dependsOnLegacyBrowserExtension, false);
   assert.equal(neroaOneQcStationLane.dispatchesRealQcJobsNow, false);
   assert.equal(neroaOneQcStationLane.writesPersistenceNow, false);
@@ -582,10 +593,17 @@ test("Evidence Linking lane stays typed, backend-only, and extraction-ready", ()
   assert.equal(neroaOneEvidenceLinkingLane.extractionReady, true);
   assert.equal(neroaOneEvidenceLinkingLane.independentlyReplaceable, true);
   assert.equal(neroaOneEvidenceLinkingLane.linksExecutionTraceOnly, true);
+  assert.equal(neroaOneEvidenceLinkingLane.referencesQcJobsWithoutOwningQcNow, true);
+  assert.equal(neroaOneEvidenceLinkingLane.createsQcJobsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.mutatesQcJobsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.runsQcJobsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.cancelsQcJobsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.completesQcJobsNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsExecutionNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsReviewNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsQcNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsCustomerUiNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.dependsOnLegacyBrowserRuntimeNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.storesEvidenceNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.writesPersistenceNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.exposesCustomerSafeProjectionOnly, true);
@@ -660,6 +678,25 @@ test("Valid pipeline records can create a draft evidence link and attach typed a
   assert.equal(linkedEvidence.artifactPointers.length, 2);
 });
 
+test("A valid QC job can be referenced by Evidence Linking without Evidence Linking owning QC behavior", async () => {
+  const { executionPacket, output, review, qcJob } = await buildEvidenceLinkFixturePipeline();
+  const validation = validateQcStationJobReferenceForEvidenceLink({
+    qcJob,
+    reviewId: review.reviewId,
+    outputId: output.outputId,
+    workspaceId: executionPacket.workspaceId,
+    projectId: executionPacket.projectId,
+    taskId: executionPacket.taskId
+  });
+
+  assert.equal(validation.allowed, true);
+  assert.equal(validation.qcJob.qcJobId, qcJob.qcJobId);
+  assert.equal(validation.reviewId, review.reviewId);
+  assert.equal(validation.outputId, output.outputId);
+  assert.equal(validation.qcLane.laneId, "qc_station");
+  assert.equal(validation.evidenceLane.laneId, "evidence_linking");
+});
+
 test("Malformed or incomplete pipeline identifiers are rejected for evidence linking", () => {
   const malformedPipelineIds = {
     workspaceId: "workspace-alpha",
@@ -691,6 +728,50 @@ test("Malformed or incomplete pipeline identifiers are rejected for evidence lin
         pipelineIds: malformedPipelineIds
       }),
     /reviewId cannot be attached before outputId/i
+  );
+});
+
+test("Malformed QC job references are rejected from Evidence Linking", async () => {
+  const { executionPacket, promptRoomItem, workerRun, output, review, qcJob } =
+    await buildEvidenceLinkFixturePipeline();
+  const malformedQcJob = {
+    ...qcJob,
+    qcJobId: `wrong-review:qc:${qcJob.jobType}:20260501T140500000Z`,
+    taskId: "task-evidence-link-other"
+  };
+  const validation = validateQcStationJobReferenceForEvidenceLink({
+    qcJob: malformedQcJob,
+    reviewId: review.reviewId,
+    outputId: output.outputId,
+    workspaceId: executionPacket.workspaceId,
+    projectId: executionPacket.projectId,
+    taskId: executionPacket.taskId
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /workspace, project, and task identifiers|reviewId-generated QC job format/i);
+  assert.equal(
+    validateEvidenceLinkPipelineIds({
+      pipelineIds: {
+        workspaceId: executionPacket.workspaceId,
+        projectId: executionPacket.projectId,
+        taskId: executionPacket.taskId,
+        analyzerOutcome: "ready_to_build",
+        outcomeLaneId: "ready_to_build",
+        executionPacketId: executionPacket.executionPacketId,
+        promptRoomItemId: promptRoomItem.promptRoomItemId,
+        workerRunId: workerRun.workerRunId,
+        outputId: output.outputId,
+        reviewId: review.reviewId,
+        qcJobId: "wrong-review:qc:qc_report_generation:20260501T140500000Z",
+        evidenceId: null,
+        recordingId: null,
+        screenshotIds: [],
+        reportId: null,
+        customerResultId: null
+      }
+    }).allowed,
+    false
   );
 });
 
@@ -746,6 +827,10 @@ test("Evidence Linking customer-safe summary strips internal prompt, worker, and
   assert.doesNotMatch(summaryJson, /internalPromptDraft|promptText|protectedAreas/i);
   assert.doesNotMatch(summaryJson, /raw_worker_output|selectedEngine|futureDigitalOceanWorkerTarget/i);
   assert.doesNotMatch(summaryJson, /secret|model routing|instruction/i);
+  assert.doesNotMatch(
+    summaryJson,
+    /legacy browser extension|Live View|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
+  );
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
