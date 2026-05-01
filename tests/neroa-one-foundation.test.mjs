@@ -77,6 +77,7 @@ import {
   validateCodexExecutionPacketForPromptRoom,
   validateEvidenceLinkPipelineIds,
   validateEvidenceLinkPipelineRecords,
+  validateEvidenceLinkForAuditRoomEvent,
   validateQcStationJobReferenceForEvidenceLink,
   validateOutputReviewNextDestination,
   neroaOneAuditRoomLane,
@@ -398,6 +399,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     evidenceLinkingSource,
     /getPromptRoomCustomerSafeStatus|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createQueuedQcStationJobFromApprovedOutputReview/i
   );
+  assert.doesNotMatch(
+    evidenceLinkingSource,
+    /createAuditRoomEventFromEvidenceLink|createAdminOversightSummaryFromAuditEvents|validateEvidenceLinkForAuditRoomEvent|getAuditRoomRecommendedActions|getAuditRoomSeverityLevels/i
+  );
   assert.match(
     evidenceLinkingSource,
     /interface\s+NeroaOneEvidenceLinkingStorageAdapter/
@@ -415,6 +420,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(
     auditRoomSource,
     /createQueuedQcStationJobFromApprovedOutputReview|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|getPromptRoomCustomerSafeStatus/i
+  );
+  assert.doesNotMatch(
+    auditRoomSource,
+    /attachArtifactPointerToEvidenceLink|attachArtifactPointersToEvidenceLink|createDraftEvidenceLinkFromPipelineIds|createDraftEvidenceLinkFromPipelineRecords/i
   );
   assert.match(auditRoomSource, /interface\s+NeroaOneAuditRoomStorageAdapter/);
   assert.match(auditRoomSource, /interface\s+NeroaOneAdminOversightSummaryAdapter/);
@@ -653,6 +662,7 @@ test("Evidence Linking lane stays typed, backend-only, and extraction-ready", ()
   assert.equal(neroaOneEvidenceLinkingLane.backendOnly, true);
   assert.equal(neroaOneEvidenceLinkingLane.extractionReady, true);
   assert.equal(neroaOneEvidenceLinkingLane.independentlyReplaceable, true);
+  assert.equal(neroaOneEvidenceLinkingLane.observerSafe, true);
   assert.equal(neroaOneEvidenceLinkingLane.linksExecutionTraceOnly, true);
   assert.equal(neroaOneEvidenceLinkingLane.referencesQcJobsWithoutOwningQcNow, true);
   assert.equal(neroaOneEvidenceLinkingLane.createsQcJobsNow, false);
@@ -660,6 +670,13 @@ test("Evidence Linking lane stays typed, backend-only, and extraction-ready", ()
   assert.equal(neroaOneEvidenceLinkingLane.runsQcJobsNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.cancelsQcJobsNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.completesQcJobsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.createsAuditEventsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.classifiesAuditSeverityNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.recommendsAdminActionNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.detectsStuckWorkNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.detectsRetryLoopsNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.detectsCostWasteNow, false);
+  assert.equal(neroaOneEvidenceLinkingLane.detectsPolicyViolationsNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsExecutionNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsReviewNow, false);
   assert.equal(neroaOneEvidenceLinkingLane.ownsQcNow, false);
@@ -703,8 +720,14 @@ test("Audit Room lane stays typed, backend-only, internal-only, and extraction-r
   assert.equal(neroaOneAuditRoomLane.internalOnly, true);
   assert.equal(neroaOneAuditRoomLane.extractionReady, true);
   assert.equal(neroaOneAuditRoomLane.independentlyReplaceable, true);
+  assert.equal(neroaOneAuditRoomLane.observerSafe, true);
   assert.equal(neroaOneAuditRoomLane.watchesAllNeroaOneLanes, true);
   assert.equal(neroaOneAuditRoomLane.ownsBackgroundGovernanceSignalsOnly, true);
+  assert.equal(neroaOneAuditRoomLane.createsEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.mutatesEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.archivesEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.failsEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.storesEvidenceLinksNow, false);
   assert.equal(neroaOneAuditRoomLane.ownsCustomerFacingUiNow, false);
   assert.equal(neroaOneAuditRoomLane.ownsExecutionControlNow, false);
   assert.equal(neroaOneAuditRoomLane.ownsQcRuntimeNow, false);
@@ -761,6 +784,9 @@ test("Audit Room can create typed events from lane and evidence identifiers", as
 
 test("Audit Room can create evidence-ready events and admin summaries from evidence links", async () => {
   const { evidenceLink } = await buildAuditRoomFixture();
+  const evidenceValidation = validateEvidenceLinkForAuditRoomEvent({
+    link: evidenceLink
+  });
   const evidenceReadyEvent = createAuditRoomEventFromEvidenceLink({
     link: evidenceLink,
     createdAt: "2026-05-01T14:13:00.000Z"
@@ -801,6 +827,8 @@ test("Audit Room can create evidence-ready events and admin summaries from evide
     updatedAt: "2026-05-01T14:14:00.000Z"
   });
 
+  assert.equal(evidenceValidation.allowed, true);
+  assert.equal(evidenceValidation.evidenceLaneId, "evidence_linking");
   assert.equal(evidenceReadyEvent.sourceLaneId, "evidence_linking");
   assert.equal(evidenceReadyEvent.eventType, "evidence_ready");
   assert.equal(evidenceReadyEvent.relatedIds.evidenceLinkId, evidenceLink.evidenceLinkId);
@@ -810,6 +838,49 @@ test("Audit Room can create evidence-ready events and admin summaries from evide
   assert.equal(summary.workerFailureCount, 1);
   assert.equal(summary.estimatedWasteRisk, "high");
   assert.equal(summary.recommendedAdminAction, "pause_execution");
+});
+
+test("Malformed or incomplete evidence links are rejected from Audit Room event creation", async () => {
+  const { evidenceLink } = await buildAuditRoomFixture();
+  const malformedEvidenceLink = {
+    ...evidenceLink,
+    taskId: "",
+    evidenceLinkId: ""
+  };
+  const validation = validateEvidenceLinkForAuditRoomEvent({
+    link: malformedEvidenceLink
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /invalid for Audit Room event creation at/i);
+  assert.throws(
+    () =>
+      createAuditRoomEventFromEvidenceLink({
+        link: malformedEvidenceLink,
+        createdAt: "2026-05-01T14:14:30.000Z"
+      }),
+    /Evidence link is invalid for Audit Room event creation/i
+  );
+});
+
+test("Audit Room remains observer-only and does not own evidence lifecycle behavior", async () => {
+  const { evidenceLink } = await buildAuditRoomFixture();
+  const event = createAuditRoomEventFromEvidenceLink({
+    link: evidenceLink,
+    eventType: "system_health",
+    severity: "warning",
+    createdAt: "2026-05-01T14:15:00.000Z"
+  });
+
+  assert.equal(neroaOneAuditRoomLane.createsEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.mutatesEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.archivesEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.failsEvidenceLinksNow, false);
+  assert.equal(neroaOneAuditRoomLane.storesEvidenceLinksNow, false);
+  assert.equal(event.relatedIds.evidenceLinkId, evidenceLink.evidenceLinkId);
+  assert.equal(evidenceLink.status, "evidence_ready");
+  assert.equal(event.eventType, "system_health");
+  assert.equal(event.recommendedAction, "observe");
 });
 
 test("Audit Room customer-safe projection strips internal execution and audit-only details", async () => {

@@ -211,8 +211,14 @@ export const neroaOneAuditRoomLaneDefinitionSchema = z
     internalOnly: z.literal(true),
     extractionReady: z.literal(true),
     independentlyReplaceable: z.literal(true),
+    observerSafe: z.literal(true),
     watchesAllNeroaOneLanes: z.literal(true),
     ownsBackgroundGovernanceSignalsOnly: z.literal(true),
+    createsEvidenceLinksNow: z.literal(false),
+    mutatesEvidenceLinksNow: z.literal(false),
+    archivesEvidenceLinksNow: z.literal(false),
+    failsEvidenceLinksNow: z.literal(false),
+    storesEvidenceLinksNow: z.literal(false),
     ownsCustomerFacingUiNow: z.literal(false),
     ownsExecutionControlNow: z.literal(false),
     ownsQcRuntimeNow: z.literal(false),
@@ -263,6 +269,20 @@ export type NeroaOneAuditRoomLaneDefinition = z.infer<
   typeof neroaOneAuditRoomLaneDefinitionSchema
 >;
 
+export type NeroaOneAuditRoomEvidenceLinkValidationResult =
+  | {
+      allowed: true;
+      auditLane: NeroaOneAuditRoomLaneDefinition;
+      evidenceLaneId: "evidence_linking";
+      link: NeroaOneEvidenceLinkRecord;
+    }
+  | {
+      allowed: false;
+      auditLane: NeroaOneAuditRoomLaneDefinition;
+      evidenceLaneId: "evidence_linking";
+      reason: string;
+    };
+
 export interface NeroaOneAuditRoomStorageAdapter {
   saveAuditEvent(event: NeroaOneAuditRoomEvent): Promise<void>;
   listAuditEventsByTaskId(taskId: string): Promise<NeroaOneAuditRoomEvent[]>;
@@ -280,8 +300,14 @@ export const neroaOneAuditRoomLane = neroaOneAuditRoomLaneDefinitionSchema.parse
   internalOnly: true,
   extractionReady: true,
   independentlyReplaceable: true,
+  observerSafe: true,
   watchesAllNeroaOneLanes: true,
   ownsBackgroundGovernanceSignalsOnly: true,
+  createsEvidenceLinksNow: false,
+  mutatesEvidenceLinksNow: false,
+  archivesEvidenceLinksNow: false,
+  failsEvidenceLinksNow: false,
+  storesEvidenceLinksNow: false,
   ownsCustomerFacingUiNow: false,
   ownsExecutionControlNow: false,
   ownsQcRuntimeNow: false,
@@ -357,6 +383,19 @@ function assertCustomerSafeAuditSummary(summary: string) {
   return summary;
 }
 
+function buildRejectedEvidenceLinkValidationResult(
+  reason: string
+): NeroaOneAuditRoomEvidenceLinkValidationResult {
+  return {
+    allowed: false,
+    auditLane: neroaOneAuditRoomLane,
+    evidenceLaneId: "evidence_linking",
+    reason:
+      normalizeText(reason) ||
+      "Evidence link is not valid for Audit Room event creation."
+  };
+}
+
 function buildFutureAuditServiceTarget(
   override: Partial<NeroaOneFutureAuditServiceTarget> | null | undefined
 ): NeroaOneFutureAuditServiceTarget {
@@ -406,6 +445,36 @@ function buildAuditEventId(args: {
 }) {
   const timestampPart = normalizeText(args.createdAt).replace(/[^0-9TZ]/g, "");
   return `${args.taskId}:audit:${args.sourceLaneId}:${args.eventType}:${timestampPart}`;
+}
+
+export function validateEvidenceLinkForAuditRoomEvent(args: {
+  link: NeroaOneEvidenceLinkRecord;
+}): NeroaOneAuditRoomEvidenceLinkValidationResult {
+  const linkResult = neroaOneEvidenceLinkRecordSchema.safeParse(args.link);
+
+  if (!linkResult.success) {
+    const [issue] = linkResult.error.issues;
+    const issuePath = issue?.path?.length ? issue.path.join(".") : "link";
+
+    return buildRejectedEvidenceLinkValidationResult(
+      `Evidence link is invalid for Audit Room event creation at ${issuePath}.`
+    );
+  }
+
+  const link = linkResult.data;
+
+  if (!link.evidenceLinkId || !link.workspaceId || !link.projectId || !link.taskId) {
+    return buildRejectedEvidenceLinkValidationResult(
+      "Evidence link is missing the required identity fields for Audit Room event creation."
+    );
+  }
+
+  return {
+    allowed: true,
+    auditLane: neroaOneAuditRoomLane,
+    evidenceLaneId: "evidence_linking",
+    link
+  };
 }
 
 function getDefaultRecommendedAction(
@@ -588,7 +657,15 @@ export function createAuditRoomEventFromEvidenceLink(args: {
   createdAt?: string | null;
   futureAuditServiceTarget?: Partial<NeroaOneFutureAuditServiceTarget> | null;
 }): NeroaOneAuditRoomEvent {
-  const link = neroaOneEvidenceLinkRecordSchema.parse(args.link);
+  const evidenceValidation = validateEvidenceLinkForAuditRoomEvent({
+    link: args.link
+  });
+
+  if (!evidenceValidation.allowed) {
+    throw new Error(evidenceValidation.reason);
+  }
+
+  const link = evidenceValidation.link;
   const eventType = neroaOneAuditRoomEventTypeSchema.parse(
     args.eventType ?? (link.status === "evidence_ready" ? "evidence_ready" : "system_health")
   );
