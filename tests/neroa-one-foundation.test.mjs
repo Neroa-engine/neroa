@@ -21,6 +21,7 @@ import {
   evaluateNeroaOneDecisionGate,
   getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   NEROA_ONE_CODEX_OUTPUT_BOX_STATUSES,
+  validateCodexExecutionPacketForOutputBox,
   neroaOneCodexOutputBoxLane,
   neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
@@ -117,6 +118,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     codexOutputBoxSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
+  assert.doesNotMatch(codexOutputBoxSource, /createDraftCodexExecutionPacket/i);
   assert.match(codexOutputBoxSource, /interface\s+NeroaOneCodexOutputBoxStorageAdapter/);
 });
 
@@ -412,6 +414,104 @@ test("Codex output box can create a pending review item from a draft execution p
   assert.equal(output.artifacts[0].artifactType, "patch");
   assert.equal(output.createdAt, "2026-05-01T12:00:00.000Z");
   assert.equal(output.receivedAt, "2026-05-01T12:01:00.000Z");
+});
+
+test("Codex output box validates valid execution packets and safely defaults optional output fields", async () => {
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-codex-output-2",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-codex-output-2",
+      title: "Prepare implementation packet",
+      request: "Prepare the approved implementation packet for backend execution.",
+      normalizedRequest: "prepare the approved implementation packet for backend execution."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_codex_output_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the module backend-only and extraction-ready."]
+  });
+  const validation = validateCodexExecutionPacketForOutputBox({
+    executionPacket: packet
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-456",
+    summary: "   ",
+    filesChanged: [" lib/neroa-one/codex-output-box.ts ", "lib/neroa-one/codex-output-box.ts"],
+    testsRun: ["  ", ".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"],
+    rawOutput: "   ",
+    createdAt: "2026-05-01T12:02:00.000Z"
+  });
+
+  assert.equal(validation.allowed, true);
+  assert.equal(validation.packetLane.laneId, "codex_execution_packet_draft");
+  assert.equal(validation.outputLane.laneId, "codex_output_box");
+  assert.equal(output.outputStatus, "pending_review");
+  assert.equal(
+    output.summary,
+    "Codex output received into the backend review box and is pending Neroa One review."
+  );
+  assert.deepEqual(output.filesChanged, ["lib/neroa-one/codex-output-box.ts"]);
+  assert.deepEqual(output.testsRun, [".\\node_modules\\.bin\\tsc.cmd --noEmit --pretty false"]);
+  assert.match(output.rawOutput, /CODEX_OUTPUT_NOT_WIRED/);
+  assert.equal(output.createdAt, "2026-05-01T12:02:00.000Z");
+  assert.equal(output.receivedAt, "2026-05-01T12:02:00.000Z");
+});
+
+test("Codex output box rejects malformed or incomplete execution packet data", () => {
+  const malformedPacket = {
+    executionPacketId: "workspace-alpha:project-alpha:task-bad:codex-execution-packet-draft",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    sourceLaneId: "ready_to_build",
+    normalizedRequest: "prepare the approved implementation packet for backend execution.",
+    executionTaskType: "implementation",
+    protectedAreas: ["ui_layout"],
+    acceptanceCriteria: [],
+    testCommands: [],
+    riskLevel: "low",
+    requiresQc: false,
+    requiresCustomerCheckpoint: false,
+    promptDraft: {
+      status: "placeholder_only",
+      promptText: "PROMPT_GENERATION_DEFERRED",
+      notes: ["Prompt generation is intentionally deferred."]
+    },
+    createdAt: "2026-05-01T12:03:00.000Z",
+    futureDispatchTarget: {
+      owner: "future_digitalocean_codex_dispatch_service",
+      queueName: "neroa-one.codex-execution-packets",
+      dispatchMode: "deferred",
+      readyForDispatch: false,
+      notes: ["Current lane is contract-only."]
+    }
+  };
+  const validation = validateCodexExecutionPacketForOutputBox({
+    executionPacket: malformedPacket
+  });
+
+  assert.equal(validation.allowed, false);
+  assert.match(validation.reason, /taskId/i);
+  assert.throws(
+    () =>
+      createPendingReviewCodexOutputItem({
+        executionPacket: malformedPacket,
+        codexRunId: "codex-run-bad"
+      }),
+    /taskId/i
+  );
 });
 
 test("Non-ready_to_build items cannot create Codex execution packet drafts", async () => {

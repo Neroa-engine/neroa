@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {
+  neroaOneCodexExecutionPacketLane,
   neroaOneCodexExecutionPacketSchema,
   type NeroaOneCodexExecutionPacket
 } from "./codex-execution-packet.ts";
@@ -83,6 +84,20 @@ export type NeroaOneCodexOutputBoxLaneDefinition = z.infer<
   typeof neroaOneCodexOutputBoxLaneDefinitionSchema
 >;
 
+export type NeroaOneCodexOutputBoxPacketValidationResult =
+  | {
+      allowed: true;
+      packetLane: typeof neroaOneCodexExecutionPacketLane;
+      outputLane: NeroaOneCodexOutputBoxLaneDefinition;
+      executionPacket: NeroaOneCodexExecutionPacket;
+    }
+  | {
+      allowed: false;
+      packetLane: typeof neroaOneCodexExecutionPacketLane;
+      outputLane: NeroaOneCodexOutputBoxLaneDefinition;
+      reason: string;
+    };
+
 export interface NeroaOneCodexOutputBoxStorageAdapter {
   saveOutputRecord(record: NeroaOneCodexOutputRecord): Promise<void>;
   getOutputRecordById(outputId: string): Promise<NeroaOneCodexOutputRecord | null>;
@@ -146,6 +161,56 @@ function buildPlaceholderRawOutput(args: {
   ].join("\n");
 }
 
+function buildRejectedPacketValidationResult(
+  reason: string
+): NeroaOneCodexOutputBoxPacketValidationResult {
+  return {
+    allowed: false,
+    packetLane: neroaOneCodexExecutionPacketLane,
+    outputLane: neroaOneCodexOutputBoxLane,
+    reason:
+      normalizeText(reason) ||
+      "Execution packet is not eligible to create a Codex output box record."
+  };
+}
+
+export function validateCodexExecutionPacketForOutputBox(args: {
+  executionPacket: NeroaOneCodexExecutionPacket;
+}): NeroaOneCodexOutputBoxPacketValidationResult {
+  if (neroaOneCodexOutputBoxLane.upstreamLaneId !== neroaOneCodexExecutionPacketLane.laneId) {
+    throw new Error(
+      "Codex output box lane must reference the Codex execution packet lane as its only upstream boundary."
+    );
+  }
+
+  const executionPacketResult = neroaOneCodexExecutionPacketSchema.safeParse(args.executionPacket);
+
+  if (!executionPacketResult.success) {
+    const [issue] = executionPacketResult.error.issues;
+    const issuePath =
+      issue?.path && issue.path.length > 0 ? issue.path.join(".") : "executionPacket";
+
+    return buildRejectedPacketValidationResult(
+      `Execution packet is invalid for the Codex output box boundary at ${issuePath}.`
+    );
+  }
+
+  const executionPacket = executionPacketResult.data;
+
+  if (executionPacket.sourceLaneId !== neroaOneCodexExecutionPacketLane.sourceLaneId) {
+    return buildRejectedPacketValidationResult(
+      `Execution packet source lane ${executionPacket.sourceLaneId} does not match the required ${neroaOneCodexExecutionPacketLane.sourceLaneId} source lane.`
+    );
+  }
+
+  return {
+    allowed: true,
+    packetLane: neroaOneCodexExecutionPacketLane,
+    outputLane: neroaOneCodexOutputBoxLane,
+    executionPacket
+  };
+}
+
 export function createPendingReviewCodexOutputItem(args: {
   executionPacket: NeroaOneCodexExecutionPacket;
   codexRunId: string;
@@ -157,7 +222,15 @@ export function createPendingReviewCodexOutputItem(args: {
   createdAt?: string | null;
   receivedAt?: string | null;
 }): NeroaOneCodexOutputRecord {
-  const executionPacket = neroaOneCodexExecutionPacketSchema.parse(args.executionPacket);
+  const packetValidation = validateCodexExecutionPacketForOutputBox({
+    executionPacket: args.executionPacket
+  });
+
+  if (!packetValidation.allowed) {
+    throw new Error(packetValidation.reason);
+  }
+
+  const executionPacket = packetValidation.executionPacket;
   const codexRunId = normalizeText(args.codexRunId);
   const receivedAt =
     normalizeText(args.receivedAt) || normalizeText(args.createdAt) || executionPacket.createdAt;
