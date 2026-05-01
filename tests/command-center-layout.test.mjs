@@ -6,6 +6,10 @@ const commandCenterSource = readFileSync(
   new URL("../components/workspace/project-command-center-v1.tsx", import.meta.url),
   "utf8"
 );
+const smartSurfaceSource = readFileSync(
+  new URL("../components/workspace/command-center-smart-operator-surface.tsx", import.meta.url),
+  "utf8"
+);
 
 test("Command Center keeps the top operator surface ahead of the lower task flow", () => {
   const headerIndex = commandCenterSource.indexOf("Send requests, revisions, decisions, and review notes from one place.");
@@ -28,6 +32,22 @@ test("Command Center keeps one shared workflow surface and a lower customer task
   assert.match(commandCenterSource, /Send requests, revisions, decisions, and review notes from one place\./);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterPromptRunnerPanelView/);
   assert.doesNotMatch(commandCenterSource, /<CommandCenterTaskQueuePanelView/);
+});
+
+test("Customer tasks render as compact expandable live rows instead of oversized cards", () => {
+  assert.match(smartSurfaceSource, /<details/);
+  assert.match(smartSurfaceSource, /<summary className="flex min-h-\[52px\] cursor-pointer/);
+  assert.match(smartSurfaceSource, /View/);
+  assert.match(smartSurfaceSource, /formatTaskTimestamp\(task\)/);
+  assert.doesNotMatch(
+    smartSurfaceSource,
+    /<article[\s\S]*<p className="mt-2 text-sm leading-6 text-slate-600">\{task\.request\}<\/p>/
+  );
+});
+
+test("Command Center task list does not reintroduce placeholder sample blocks", () => {
+  assert.doesNotMatch(smartSurfaceSource, /Start homepage/i);
+  assert.doesNotMatch(smartSurfaceSource, /sample task/i);
 });
 
 test("Command Center no longer hides the main operator structure behind restoration regressions", () => {

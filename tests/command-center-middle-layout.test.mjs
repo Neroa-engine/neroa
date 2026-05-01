@@ -6,6 +6,10 @@ const commandCenterSource = readFileSync(
   new URL("../components/workspace/project-command-center-v1.tsx", import.meta.url),
   "utf8"
 );
+const smartSurfaceSource = readFileSync(
+  new URL("../components/workspace/command-center-smart-operator-surface.tsx", import.meta.url),
+  "utf8"
+);
 
 test("Main flow keeps one shared workflow surface above the customer task queue", () => {
   const headerIndex = commandCenterSource.indexOf("Command Center");
@@ -39,4 +43,12 @@ test("Customer workflow language replaces the old operator and prompt framing", 
   assert.match(commandCenterSource, /liveCommandCenterTasks/);
   assert.doesNotMatch(commandCenterSource, /PromptRunner/);
   assert.doesNotMatch(commandCenterSource, /AnalyzerPanel/);
+});
+
+test("Customer queue keeps the live row list and empty state behavior", () => {
+  assert.match(smartSurfaceSource, /No customer tasks are in/);
+  assert.match(smartSurfaceSource, /tasks\.filter\(\(task\) => resolveTaskTab\(task\) === activeTab\)/);
+  assert.match(smartSurfaceSource, /bucketTasks\.map\(\(task\) =>/);
+  assert.match(smartSurfaceSource, /cursor-pointer/);
+  assert.match(smartSurfaceSource, /min-h-\[52px\]/);
 });

@@ -264,6 +264,27 @@ function compactMetricTone(value: number) {
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
+function formatTaskTimestamp(task: CommandCenterWorkflowTaskCard) {
+  const value = task.updatedAt ?? task.createdAt;
+
+  if (!value) {
+    return "Time unavailable";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Time unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(date);
+}
+
 export function CommandCenterSmartOperatorSurface({
   workspaceId,
   returnTo,
@@ -498,36 +519,75 @@ export function CommandCenterSmartOperatorSurface({
                     const taskTab = resolveTaskTab(task);
 
                     return (
-                      <article
+                      <details
                         key={task.id}
-                        className="rounded-[22px] border border-slate-200 bg-slate-50/90 px-4 py-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)]"
+                        className="group rounded-[18px] border border-white/10 bg-[#10192b]/88 shadow-[0_18px_40px_rgba(2,8,23,0.22)] transition hover:border-cyan-400/30 hover:bg-[#122038]"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-3">
+                        <summary className="flex min-h-[52px] cursor-pointer list-none items-center gap-3 px-4 py-3 text-left marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50">
                           <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex min-w-0 items-center gap-3">
+                              <p className="truncate text-sm font-semibold text-white">
+                                {task.title}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+                            <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
+                              {taskCategoryLabel(taskTab)}
+                            </span>
+                            <span
+                              className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${taskStatusClasses(
+                                task.status
+                              )}`}
+                            >
+                              {taskStatusLabel(task.status)}
+                            </span>
+                          </div>
+                          <div className="hidden shrink-0 text-right md:block">
+                            <p className="text-[11px] font-medium text-slate-400">
+                              {formatTaskTimestamp(task)}
+                            </p>
+                          </div>
+                          <div className="flex shrink-0 items-center gap-2 text-cyan-200">
+                            <span className="text-[11px] font-semibold uppercase tracking-[0.16em]">
+                              View
+                            </span>
+                            <span className="text-lg leading-none transition group-open:rotate-90">
+                              &rsaquo;
+                            </span>
+                          </div>
+                        </summary>
+                        <div className="border-t border-white/8 px-4 py-3">
+                          <div className="flex flex-wrap items-center gap-2 lg:hidden">
+                            <span className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-200">
+                              {taskCategoryLabel(taskTab)}
+                            </span>
+                            <span
+                              className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${taskStatusClasses(
+                                task.status
+                              )}`}
+                            >
+                              {taskStatusLabel(task.status)}
+                            </span>
+                            <span className="text-[11px] font-medium text-slate-400">
+                              {formatTaskTimestamp(task)}
+                            </span>
+                          </div>
+                          <div className="mt-3 space-y-3">
+                            <p className="text-sm leading-6 text-slate-300">{task.request}</p>
+                            <div className="flex items-center justify-between gap-3">
                               <span
-                                className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] ${taskStatusClasses(
-                                  task.status
-                                )}`}
+                                className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-300"
                               >
-                                {taskStatusLabel(task.status)}
+                                {task.bucketLabel}
                               </span>
-                              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                                {taskCategoryLabel(taskTab)}
+                              <span className="text-[11px] font-medium text-slate-400">
+                                {task.updatedAt ? "Updated" : "Created"} {formatTaskTimestamp(task)}
                               </span>
                             </div>
-                            <p className="mt-3 text-base font-semibold text-slate-950">
-                              {task.title}
-                            </p>
-                            <p className="mt-2 text-sm leading-6 text-slate-600">{task.request}</p>
-                            {task.updatedAt || task.createdAt ? (
-                              <p className="mt-3 text-xs leading-5 text-slate-400">
-                                Updated {task.updatedAt ?? task.createdAt}
-                              </p>
-                            ) : null}
                           </div>
                         </div>
-                      </article>
+                      </details>
                     );
                   })}
                 </div>
