@@ -292,6 +292,19 @@ export function isAllowedNeroaOneLaneInputSource(
   return getNeroaOneOutcomeLaneDefinition(laneId).allowedInputSources.includes(inputSource);
 }
 
+export function canNeroaOneOutcomeLaneEnterCodexExecution(
+  laneId: NeroaOneOutcomeLaneId | NeroaOneAnalyzerOutcome
+) {
+  const lane = getNeroaOneOutcomeLaneDefinition(laneId);
+  return lane.canEnterCodexExecution && lane.allowedNextDestinations.includes("codex_execution_room");
+}
+
+export function getNeroaOneOutcomeLaneIdsEligibleForCodexExecution() {
+  return (Object.keys(neroaOneOutcomeLanes) as NeroaOneOutcomeLaneId[]).filter((laneId) =>
+    canNeroaOneOutcomeLaneEnterCodexExecution(laneId)
+  );
+}
+
 export function validateNeroaOneOutcomeQueueItemForLane(args: {
   laneId: NeroaOneOutcomeLaneId;
   item: NeroaOneOutcomeQueueItem;

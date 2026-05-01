@@ -6,6 +6,8 @@ import {
   type BuildRoomTaskType
 } from "../build-room/contracts.ts";
 import {
+  canNeroaOneOutcomeLaneEnterCodexExecution,
+  getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   getNeroaOneOutcomeLaneDefinition,
   validateNeroaOneOutcomeQueueItemForLane
 } from "./outcome-lanes.ts";
@@ -232,13 +234,26 @@ function buildRejectedEligibilityResult(reason: string): NeroaOneCodexExecutionP
   };
 }
 
+function getRequiredCodexExecutionSourceLaneId(): NeroaOneCodexExecutionPacketSourceLane {
+  const eligibleLaneIds = getNeroaOneOutcomeLaneIdsEligibleForCodexExecution();
+
+  if (eligibleLaneIds.length !== 1 || eligibleLaneIds[0] !== "ready_to_build") {
+    throw new Error(
+      "Outcome lane definitions must expose exactly one Codex execution-eligible lane: ready_to_build."
+    );
+  }
+
+  return eligibleLaneIds[0];
+}
+
 export function validateReadyToBuildLaneItemForCodexExecutionPacket(args: {
   item: NeroaOneOutcomeQueueItem;
 }): NeroaOneCodexExecutionPacketEligibilityResult {
   const item = neroaOneOutcomeQueueItemSchema.parse(args.item);
-  const sourceLane = getNeroaOneOutcomeLaneDefinition("ready_to_build");
+  const requiredSourceLaneId = getRequiredCodexExecutionSourceLaneId();
+  const sourceLane = getNeroaOneOutcomeLaneDefinition(requiredSourceLaneId);
   const sourceLaneValidation = validateNeroaOneOutcomeQueueItemForLane({
-    laneId: "ready_to_build",
+    laneId: requiredSourceLaneId,
     item
   });
 
@@ -246,7 +261,7 @@ export function validateReadyToBuildLaneItemForCodexExecutionPacket(args: {
     return buildRejectedEligibilityResult(sourceLaneValidation.reason);
   }
 
-  if (!sourceLane.canEnterCodexExecution) {
+  if (!canNeroaOneOutcomeLaneEnterCodexExecution(sourceLane.laneId)) {
     return buildRejectedEligibilityResult(
       `Lane ${sourceLane.laneId} is not marked as execution-eligible.`
     );
@@ -263,8 +278,9 @@ export function validateReadyToBuildQueueEntryForCodexExecutionPacket(args: {
   entry: NeroaOneOutcomeQueueEntry;
 }): NeroaOneCodexExecutionPacketEligibilityResult {
   const entry = neroaOneOutcomeQueueEntrySchema.parse(args.entry);
+  const requiredSourceLaneId = getRequiredCodexExecutionSourceLaneId();
 
-  if (entry.queue !== "ready_to_build") {
+  if (entry.queue !== requiredSourceLaneId) {
     return buildRejectedEligibilityResult(
       `Queue entry ${entry.queue} cannot create a Codex execution packet draft.`
     );
@@ -318,7 +334,7 @@ export function createDraftCodexExecutionPacket(args: {
     workspaceId: item.workspaceId,
     projectId: item.projectId,
     taskId: item.taskId,
-    sourceLaneId: "ready_to_build",
+    sourceLaneId: getRequiredCodexExecutionSourceLaneId(),
     normalizedRequest: item.normalizedRequest,
     executionTaskType,
     protectedAreas: pickStringListOrFallback(

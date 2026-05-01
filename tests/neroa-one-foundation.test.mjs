@@ -10,6 +10,7 @@ import {
   buildBuildRoomTaskHandoffPackage,
   buildSpaceContext,
   canCreateCodexExecutionPacketFromReadyToBuildLaneItem,
+  canNeroaOneOutcomeLaneEnterCodexExecution,
   classifyCustomerIntent,
   commandCenterLanes,
   createDraftCodexExecutionPacket,
@@ -17,6 +18,7 @@ import {
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   evaluateNeroaOneDecisionGate,
+  getNeroaOneOutcomeLaneIdsEligibleForCodexExecution,
   neroaOneCodexExecutionPacketLane,
   neroaOneOutcomeLanes,
   neroaOneOutcomeQueues,
@@ -82,6 +84,28 @@ test("Neroa One foundation does not import or call model providers", () => {
   assert.equal(response.costPolicy.aiAllowedNow, false);
 });
 
+test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled", () => {
+  const outcomeLaneSource = moduleSources.find((source) =>
+    source.includes("neroaOneOutcomeLaneOwnerSchema")
+  );
+  const codexPacketSource = moduleSources.find((source) =>
+    source.includes("neroaOneCodexExecutionPacketSchema")
+  );
+
+  assert.ok(outcomeLaneSource);
+  assert.ok(codexPacketSource);
+  assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    outcomeLaneSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(codexPacketSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    codexPacketSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
+  );
+});
+
 test("Customer message can be classified deterministically", () => {
   const intent = classifyCustomerIntent({
     text: "Please revise the roadmap and adjust the milestone order."
@@ -119,6 +143,15 @@ test("Five hardened backend outcome lanes are represented", () => {
     "blocked_missing_information",
     "rejected_outside_scope"
   ]);
+});
+
+test("Outcome lanes are the only source of Codex execution eligibility", () => {
+  assert.deepEqual(getNeroaOneOutcomeLaneIdsEligibleForCodexExecution(), ["ready_to_build"]);
+  assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("ready_to_build"), true);
+  assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("needs_customer_answer"), false);
+  assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("roadmap_revision_required"), false);
+  assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("blocked_missing_information"), false);
+  assert.equal(canNeroaOneOutcomeLaneEnterCodexExecution("rejected_outside_scope"), false);
 });
 
 test("Analyzer output can be converted into a queue-ready backend item", async () => {
@@ -328,6 +361,49 @@ test("Non-ready_to_build items cannot create Codex execution packet drafts", asy
       }),
     /does not match lane ready_to_build/i
   );
+});
+
+test("Every non-ready outcome lane is explicitly blocked from Codex execution packet creation", () => {
+  const blockedLanes = Object.keys(neroaOneOutcomeLanes).filter(
+    (laneId) => laneId !== "ready_to_build"
+  );
+
+  for (const laneId of blockedLanes) {
+    const item = {
+      workspaceId: "workspace-alpha",
+      projectId: "project-alpha",
+      taskId: `task-${laneId}`,
+      analyzerOutcome: laneId,
+      normalizedRequest: `request for ${laneId}`,
+      riskLevel: laneId === "roadmap_revision_required" ? "high" : "low",
+      readinessBlockers: [],
+      customerFacingSummary: `summary for ${laneId}`,
+      internalSummary: `internal summary for ${laneId}`,
+      createdAt: "2026-05-01T00:00:00.000Z",
+      source: {
+        requestSource:
+          laneId === "roadmap_revision_required" || laneId === "rejected_outside_scope"
+            ? "build_room"
+            : "command_center",
+        analyzerSource: "mock_fallback",
+        caller: "boundary-test"
+      }
+    };
+    const validation = validateReadyToBuildLaneItemForCodexExecutionPacket({
+      item
+    });
+
+    assert.equal(validation.allowed, false);
+    assert.match(validation.reason, /ready_to_build/i);
+    assert.equal(canCreateCodexExecutionPacketFromReadyToBuildLaneItem({ item }), false);
+    assert.throws(
+      () =>
+        createDraftCodexExecutionPacket({
+          item
+        }),
+      /ready_to_build/i
+    );
+  }
 });
 
 test("Build Room handoff preserves original customer intent", () => {
