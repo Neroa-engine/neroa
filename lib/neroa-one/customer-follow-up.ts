@@ -32,6 +32,8 @@ const CUSTOMER_FOLLOW_UP_UNSAFE_CONTENT_PATTERN = new RegExp(
     "futureDigitalOceanWorkerTarget",
     "futurePromptServiceTarget",
     "futureRepairServiceTarget",
+    "futureCustomerFollowUpServiceTarget",
+    "futureAuditServiceTarget",
     ['legacy', 'browser', 'extension'].join("\\s+"),
     ['side-panel', 'runtime', 'messaging'].join("\\s+"),
     ['chrome', 'storage'].join("\\."),
@@ -364,6 +366,8 @@ export const neroaOneCustomerFollowUpLane =
     internalOnlyNotes: [
       "This lane is modular-monolith infrastructure only for now and must remain typed, backend-only, side-effect-light, UI-decoupled, and independently replaceable.",
       "This lane must not wire Command Center, Strategy Room, Build Room, persistence, or execution behavior.",
+      "This lane must not classify analyzer outcomes or create or mutate Output Review records.",
+      "This lane must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions.",
       "Customer-safe follow-up items must never expose internal prompt text, raw worker instructions, protected file details, model routing, worker secrets, legacy extension runtime details, audit-only notes, or file-path leakage."
     ],
     futureCustomerFollowUpServiceTarget: {

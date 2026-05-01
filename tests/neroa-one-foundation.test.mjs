@@ -351,6 +351,10 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
     outcomeLaneSource,
     /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|supabase)[^"']*["']/i
   );
+  assert.doesNotMatch(
+    outcomeLaneSource,
+    /ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview/i
+  );
   assert.doesNotMatch(codexPacketSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     codexPacketSource,
@@ -412,7 +416,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.doesNotMatch(
     outputReviewSource,
-    /repairPriority|futureRepairServiceTarget|ready_for_prompt_room|ready_for_worker_rerun/i
+    /repairPriority|futureRepairServiceTarget|ready_for_prompt_room|ready_for_worker_rerun|ready_for_customer|waiting_for_customer|allowedResponseType|futureCustomerFollowUpServiceTarget|createCustomerFollowUpItemFromOutcomeLaneItem|createCustomerFollowUpItemFromOutputReview/i
   );
   assert.doesNotMatch(outputReviewSource, /saveOutputRecord|getOutputRecordById/i);
   assert.match(outputReviewSource, /interface\s+NeroaOneOutputReviewStorageAdapter/);
@@ -424,7 +428,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.doesNotMatch(customerFollowUpSource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
   assert.doesNotMatch(
     customerFollowUpSource,
-    /createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createRepairQueueItemFromOutputReview|createQueuedQcStationJobFromApprovedOutputReview|createDraftEvidenceLinkFromPipelineRecords|createAuditRoomEventFromEvidenceLink/i
+    /analyzeTaskWithNeroaOne|createNeroaOneOutcomeQueueEntry|createDraftCodexExecutionPacket|buildBuildRoomHandoffPackage|buildBuildRoomTaskHandoffPackage|buildBuildRoomCustomerTaskHandoffPackage|createDraftPromptRoomItemFromCodexExecutionPacket|createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket|createRepairQueueItemFromOutputReview|createQueuedQcStationJobFromApprovedOutputReview|createDraftEvidenceLinkFromPipelineRecords|createDraftEvidenceLinkFromPipelineIds|createAuditRoomEventFromEvidenceLink|createAuditRoomEventFromLaneAndEvidenceIds|createAdminOversightSummaryFromAuditEvents/i
   );
   assert.doesNotMatch(
     customerFollowUpSource,
@@ -756,6 +760,14 @@ test("Customer Follow-Up lane stays typed, backend-only, and extraction-ready", 
   assert.equal(neroaOneCustomerFollowUpLane.storesFollowUpItemsNow, false);
   assert.equal(neroaOneCustomerFollowUpLane.routesCommandCenterNow, false);
   assert.equal(neroaOneCustomerFollowUpLane.writesPersistenceNow, false);
+  assert.match(
+    neroaOneCustomerFollowUpLane.internalOnlyNotes.join(" "),
+    /must not classify analyzer outcomes/i
+  );
+  assert.match(
+    neroaOneCustomerFollowUpLane.internalOnlyNotes.join(" "),
+    /must not create execution packets, Prompt Room items, worker runs, QC jobs, evidence links, audit events, repair items, or strategy revisions/i
+  );
 });
 
 test("Repair Queue lane stays typed, backend-only, and extraction-ready", () => {
@@ -2503,7 +2515,7 @@ test("Customer Follow-Up rejects non-follow-up outcome lanes and non-follow-up o
 
 test("Customer Follow-Up customer-safe projection strips internal execution details", () => {
   const unsafeText = createCustomerSafeFollowUpText(
-    "Review internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts; check browser.runtime, audit-only notes, selectedEngine codex_cli, and C:\\secret\\notes.md."
+    "Review internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts; check browser.runtime, audit-only notes, selectedEngine codex_cli, futureCustomerFollowUpServiceTarget, futureAuditServiceTarget, and C:\\secret\\notes.md."
   );
   const item = createCustomerFollowUpItemFromOutcomeLaneItem({
     item: {
@@ -2525,9 +2537,9 @@ test("Customer Follow-Up customer-safe projection strips internal execution deta
       }
     },
     customerQuestion:
-      "Use internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts before the customer answers.",
+      "Use internalPromptDraft promptText and raw worker instructions in lib/neroa-one/customer-follow-up.ts before the customer answers. futureCustomerFollowUpServiceTarget.",
     customerSafeContext:
-      "Review selectedEngine codex_cli, audit-only notes, browser.runtime, and C:\\secret\\build.ts before answering.",
+      "Review selectedEngine codex_cli, audit-only notes, browser.runtime, futureAuditServiceTarget, and C:\\secret\\build.ts before answering.",
     createdAt: "2026-05-01T15:46:00.000Z"
   });
   const customerView = getCustomerSafeCustomerFollowUpItemView({
@@ -2536,16 +2548,16 @@ test("Customer Follow-Up customer-safe projection strips internal execution deta
 
   assert.doesNotMatch(
     unsafeText,
-    /internalPromptDraft|promptText|raw worker instructions|selectedEngine|browser\.runtime|audit-only|codex_cli|customer-follow-up\.ts|C:\\secret/i
+    /internalPromptDraft|promptText|raw worker instructions|selectedEngine|browser\.runtime|audit-only|codex_cli|futureCustomerFollowUpServiceTarget|futureAuditServiceTarget|customer-follow-up\.ts|C:\\secret/i
   );
   assert.match(unsafeText, /customer follow-up details are available|internal detail|review/i);
   assert.doesNotMatch(
     item.customerQuestion,
-    /internalPromptDraft|promptText|raw worker instructions|customer-follow-up\.ts/i
+    /internalPromptDraft|promptText|raw worker instructions|futureCustomerFollowUpServiceTarget|customer-follow-up\.ts/i
   );
   assert.doesNotMatch(
     item.customerSafeContext,
-    /selectedEngine|browser\.runtime|audit-only|codex_cli|C:\\secret/i
+    /selectedEngine|browser\.runtime|audit-only|codex_cli|futureAuditServiceTarget|C:\\secret/i
   );
   assert.equal(customerView.followUpItemId, item.followUpItemId);
   assert.equal(customerView.sourceId, item.sourceId);
@@ -2554,6 +2566,95 @@ test("Customer Follow-Up customer-safe projection strips internal execution deta
   assert.equal(customerView.customerSafeContext, item.customerSafeContext);
   assert.equal("internalReason" in customerView, false);
   assert.equal("futureCustomerFollowUpServiceTarget" in customerView, false);
+});
+
+test("Customer Follow-Up remains follow-up-only and does not own analyzer, review, execution, repair, evidence, audit, strategy, or UI behavior", async () => {
+  const needsCustomerAnswerItem = {
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    taskId: "task-follow-up-boundary-1",
+    analyzerOutcome: "needs_customer_answer",
+    normalizedRequest: "confirm the supported launch regions",
+    riskLevel: "moderate",
+    readinessBlockers: ["Please confirm the supported launch regions."],
+    customerFacingSummary: "A customer answer is needed before work can continue.",
+    internalSummary: "Analyzer is waiting for customer clarification on launch regions.",
+    createdAt: "2026-05-01T15:47:00.000Z",
+    source: {
+      requestSource: "command_center",
+      analyzerSource: "mock_fallback",
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  };
+  const request = buildNeroaOneTaskAnalysisRequest({
+    requestId: "req-customer-follow-up-3",
+    workspaceId: "workspace-alpha",
+    projectId: "project-alpha",
+    task: {
+      taskId: "task-customer-follow-up-3",
+      title: "Prepare follow-up-only boundary",
+      request: "Prepare the follow-up-only customer boundary for output review decisions.",
+      normalizedRequest:
+        "prepare the follow-up-only customer boundary for output review decisions."
+    },
+    spaceContext: buildFixtureSpaceContext(),
+    compatibility: {
+      preserveCurrentBehavior: true,
+      caller: "neroa_one_customer_follow_up_test"
+    }
+  });
+  const response = await analyzeTaskWithNeroaOne(request);
+  const entry = createNeroaOneOutcomeQueueEntry({
+    request,
+    response
+  });
+  const packet = createDraftCodexExecutionPacketFromQueueEntry({
+    entry,
+    acceptanceCriteria: ["Keep the customer follow-up lane follow-up-only."]
+  });
+  const output = createPendingReviewCodexOutputItem({
+    executionPacket: packet,
+    codexRunId: "codex-run-customer-follow-up-3",
+    createdAt: "2026-05-01T15:48:00.000Z"
+  });
+  const review = createPlaceholderOutputReviewDecisionFromOutputItem({
+    output,
+    decision: "customer_followup",
+    createdAt: "2026-05-01T15:49:00.000Z"
+  });
+  const outcomeFollowUp = createCustomerFollowUpItemFromOutcomeLaneItem({
+    item: needsCustomerAnswerItem,
+    status: "ready_for_customer",
+    allowedResponseType: "yes_no",
+    createdAt: "2026-05-01T15:50:00.000Z"
+  });
+  const reviewFollowUp = createCustomerFollowUpItemFromOutputReview({
+    review,
+    status: "waiting_for_customer",
+    allowedResponseType: "approve_reject",
+    createdAt: "2026-05-01T15:51:00.000Z"
+  });
+
+  assert.equal(needsCustomerAnswerItem.analyzerOutcome, "needs_customer_answer");
+  assert.equal("status" in needsCustomerAnswerItem, false);
+  assert.equal("allowedResponseType" in needsCustomerAnswerItem, false);
+  assert.equal("futureCustomerFollowUpServiceTarget" in needsCustomerAnswerItem, false);
+  assert.equal(review.decision, "customer_followup");
+  assert.equal("status" in review, false);
+  assert.equal("allowedResponseType" in review, false);
+  assert.equal("futureCustomerFollowUpServiceTarget" in review, false);
+  assert.equal(outcomeFollowUp.sourceType, "needs_customer_answer");
+  assert.equal(outcomeFollowUp.status, "ready_for_customer");
+  assert.equal(outcomeFollowUp.allowedResponseType, "yes_no");
+  assert.equal(reviewFollowUp.sourceType, "customer_followup");
+  assert.equal(reviewFollowUp.status, "waiting_for_customer");
+  assert.equal(reviewFollowUp.allowedResponseType, "approve_reject");
+  assert.equal("decision" in outcomeFollowUp, false);
+  assert.equal("analyzerOutcome" in outcomeFollowUp, false);
+  assert.equal("executionPacketId" in outcomeFollowUp, false);
+  assert.equal("repairItemId" in outcomeFollowUp, false);
+  assert.equal("evidenceId" in outcomeFollowUp, false);
+  assert.equal("auditEventId" in outcomeFollowUp, false);
 });
 
 test("Repair Queue accepts only needs_repair and rerun_required output review decisions", async () => {

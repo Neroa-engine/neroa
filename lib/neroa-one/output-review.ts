@@ -152,6 +152,7 @@ export const neroaOneOutputReviewLane = neroaOneOutputReviewLaneDefinitionSchema
   internalOnlyNotes: [
     "This lane defines typed review decisions only and must not perform real AI review, queue release, or UI behavior changes.",
     "This lane must not own repair queue status, repair priority, repair type, or future repair-service routing.",
+    "This lane must not own customer follow-up statuses, response types, or future customer-follow-up service routing.",
     "This lane must remain extraction-ready so a future review service can own review persistence and routing without changing the contract."
   ],
   eligibleFreshReviewOutputStatuses: ["pending_review"],

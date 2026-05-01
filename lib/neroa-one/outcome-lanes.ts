@@ -142,6 +142,7 @@ export const neroaOneOutcomeLanes = {
     customerVisibility: "customer_safe_question_required",
     internalOnlyNotes: [
       "Only customer-safe follow-up summaries should leave this lane.",
+      "Lane classifies analyzer outcomes only and must not own customer follow-up statuses, response types, or future customer-follow-up service routing.",
       "Lane should be extractable into a customer-resolution service without changing queue item shape."
     ],
     owner: "neroa_one_customer_resolution_router",
@@ -200,6 +201,7 @@ export const neroaOneOutcomeLanes = {
     customerVisibility: "customer_safe_question_required",
     internalOnlyNotes: [
       "Lane should only expose customer-safe blockers and never internal analyzer implementation details.",
+      "Lane classifies analyzer outcomes only and must not own customer follow-up statuses, response types, or future customer-follow-up service routing.",
       "Future extraction may split clarification planning into its own bounded service."
     ],
     owner: "neroa_one_customer_resolution_router",
