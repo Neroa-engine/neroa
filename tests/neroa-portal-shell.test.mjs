@@ -30,6 +30,15 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
 
+test("/neroa front door stays minimal and clean", () => {
+  assert.match(frontDoorSource, /"Account Portal"/);
+  assert.match(frontDoorSource, /"Project Portal"/);
+  assert.match(frontDoorSource, /Public front door shell only\./);
+  assert.doesNotMatch(frontDoorSource, /Open Strategy Room/);
+  assert.doesNotMatch(frontDoorSource, /Pricing/);
+  assert.doesNotMatch(frontDoorSource, /Auth entry/);
+});
+
 test("Account Portal placeholder sections are present", () => {
   assert.match(accountPortalSource, /"Projects"/);
   assert.match(accountPortalSource, /"Billing \/ Usage"/);
@@ -47,6 +56,17 @@ test("Project Portal placeholder sections are present", () => {
   assert.match(projectPortalSource, /"Approvals \/ Decisions"/);
 });
 
+test("clean portal shell does not introduce UI UX Library or Design Library surfaces", () => {
+  for (const source of cleanPortalSources) {
+    assert.doesNotMatch(source, /UI\/UX Library/);
+    assert.doesNotMatch(source, /Design Library/);
+    assert.doesNotMatch(source, /visual editor/i);
+    assert.doesNotMatch(source, /design mode/i);
+    assert.doesNotMatch(source, /colorway/i);
+    assert.doesNotMatch(source, /component-library/i);
+  }
+});
+
 test("clean portal shell does not import legacy room or runtime surfaces", () => {
   for (const source of cleanPortalSources) {
     assert.doesNotMatch(source, /@\/components\/workspace\//);
@@ -55,17 +75,44 @@ test("clean portal shell does not import legacy room or runtime surfaces", () =>
     assert.doesNotMatch(source, /@\/lib\/ai\//);
     assert.doesNotMatch(source, /@\/lib\/build-room\//);
     assert.doesNotMatch(source, /@\/lib\/live-view\//);
+    assert.doesNotMatch(source, /command-center\/actions/);
+    assert.doesNotMatch(source, /strategy-room\/actions/);
+    assert.doesNotMatch(source, /build-room\/service/);
+    assert.doesNotMatch(source, /build-room\/contracts/);
     assert.doesNotMatch(source, /codex-relay/);
     assert.doesNotMatch(source, /worker-trigger/);
     assert.doesNotMatch(source, /browser-runtime-bridge/);
+    assert.doesNotMatch(source, /qc-library-bridge/);
+    assert.doesNotMatch(source, /extension runtime/i);
+    assert.doesNotMatch(source, /recording runtime/i);
     assert.doesNotMatch(source, /build-room-control-room/);
+  }
+});
+
+test("clean portal shell does not import legacy marketing auth or routing surfaces", () => {
+  for (const source of cleanPortalSources) {
+    assert.doesNotMatch(source, /FrontDoorHomeHero/);
+    assert.doesNotMatch(source, /MarketingInfoShell/);
+    assert.doesNotMatch(source, /public-launch/);
+    assert.doesNotMatch(source, /requireUser/);
+    assert.doesNotMatch(source, /getOptionalUser/);
+    assert.doesNotMatch(source, /redirect\(/);
+  }
+});
+
+test("clean portal shell does not import Neroa One runtime wiring", () => {
+  for (const source of cleanPortalSources) {
+    assert.doesNotMatch(source, /@\/lib\/neroa-one\//);
+    assert.doesNotMatch(source, /analyzeTaskWithNeroaOne/);
+    assert.doesNotMatch(source, /commandCenterLanes/);
+    assert.doesNotMatch(source, /createNeroaOneOutcomeQueueEntry/);
+    assert.doesNotMatch(source, /createDraftCodexExecutionPacket/);
+    assert.doesNotMatch(source, /createQueuedCodeExecutionWorkerRun/);
   }
 });
 
 test("clean portal shell stays UI-only and avoids runtime or schema behavior", () => {
   for (const source of cleanPortalSources) {
-    assert.doesNotMatch(source, /createDraftCodexExecutionPacket/);
-    assert.doesNotMatch(source, /createQueuedCodeExecutionWorkerRun/);
     assert.doesNotMatch(source, /createDraftPromptRoomItem/);
     assert.doesNotMatch(source, /submitCodex/);
     assert.doesNotMatch(source, /fetch\(/);
@@ -73,5 +120,8 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
     assert.doesNotMatch(source, /supabase/i);
     assert.doesNotMatch(source, /redis/i);
     assert.doesNotMatch(source, /bullmq/i);
+    assert.doesNotMatch(source, /digitalocean/i);
+    assert.doesNotMatch(source, /queue adapter/i);
+    assert.doesNotMatch(source, /storage adapter/i);
   }
 });
