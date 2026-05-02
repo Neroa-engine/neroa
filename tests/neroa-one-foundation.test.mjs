@@ -105,8 +105,6 @@ import {
   NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
   NEROA_ONE_PROMPT_ROOM_CUSTOMER_SAFE_STATUSES,
   NEROA_ONE_PROMPT_ROOM_STATUSES,
-  NEROA_ONE_QUEUE_ITEM_STATUSES,
-  NEROA_ONE_QUEUE_PRIORITY_LEVELS,
   NEROA_ONE_REPAIR_QUEUE_ITEM_STATUSES,
   NEROA_ONE_REPAIR_QUEUE_PRIORITIES,
   NEROA_ONE_REPAIR_QUEUE_SOURCE_DECISIONS,
@@ -633,9 +631,13 @@ test("Storage adapter contracts stay backend-only, schema-neutral, and implement
   const storageAdaptersSource = moduleSources.find((source) =>
     source.includes("interface NeroaOneStorageTraceContext")
   );
+  const queueAdaptersSource = moduleSources.find((source) =>
+    source.includes("interface NeroaOneQueueTraceContext")
+  );
   const indexSource = moduleSources.at(-1);
 
   assert.ok(storageAdaptersSource);
+  assert.ok(queueAdaptersSource);
   assert.ok(indexSource);
   assert.match(indexSource, /export \* from "\.\/storage-adapters\.ts";/);
   assert.doesNotMatch(
@@ -676,6 +678,9 @@ test("Storage adapter contracts stay backend-only, schema-neutral, and implement
   assert.match(storageAdaptersSource, /updateStatus\(/);
   assert.match(storageAdaptersSource, /archive\(/);
   assert.match(storageAdaptersSource, /markFailed\(/);
+  assert.doesNotMatch(storageAdaptersSource, /from\s+["']\.\/queue-adapters\.ts["']/i);
+  assert.doesNotMatch(storageAdaptersSource, /\bNeroaOneQueue[A-Z]\w+/);
+  assert.doesNotMatch(queueAdaptersSource, /from\s+["']\.\/storage-adapters\.ts["']/i);
 });
 
 test("Queue adapter contracts are exported, lane-typed, and implementation-free", () => {
@@ -687,16 +692,14 @@ test("Queue adapter contracts are exported, lane-typed, and implementation-free"
   assert.ok(queueAdaptersSource);
   assert.ok(indexSource);
   assert.match(indexSource, /export \* from "\.\/queue-adapters\.ts";/);
-  assert.deepEqual(NEROA_ONE_QUEUE_ITEM_STATUSES, [
-    "pending",
-    "queued",
-    "running",
-    "completed",
-    "failed",
-    "canceled",
-    "dead_lettered"
-  ]);
-  assert.deepEqual(NEROA_ONE_QUEUE_PRIORITY_LEVELS, ["low", "normal", "high", "critical"]);
+  assert.match(
+    queueAdaptersSource,
+    /export type NeroaOneQueueItemStatus =[\s\S]*"pending"[\s\S]*"queued"[\s\S]*"running"[\s\S]*"completed"[\s\S]*"failed"[\s\S]*"canceled"[\s\S]*"dead_lettered"/
+  );
+  assert.match(
+    queueAdaptersSource,
+    /export type NeroaOneQueuePriority = "low" \| "normal" \| "high" \| "critical";/
+  );
   assert.match(queueAdaptersSource, /interface\s+NeroaOneQueueAdapterContract/);
   assert.match(queueAdaptersSource, /interface\s+NeroaOneOutcomeLaneQueueAdapterContract/);
   assert.match(queueAdaptersSource, /interface\s+NeroaOneCodexExecutionPacketQueueAdapterContract/);
@@ -763,10 +766,16 @@ test("Queue adapter contracts are exported, lane-typed, and implementation-free"
     queueAdaptersSource,
     /openai|anthropic|from\s+["'][^"']*\/ai\/[^"']*["']/i
   );
+  assert.doesNotMatch(queueAdaptersSource, /from\s+["']\.\/storage-adapters\.ts["']/i);
+  assert.doesNotMatch(queueAdaptersSource, /\bNeroaOneStorage[A-Z]\w+/);
+  assert.doesNotMatch(queueAdaptersSource, /queueName|topicName|workerUrl|callbackUrl|webhookRoute|redisUrl/i);
+  assert.doesNotMatch(queueAdaptersSource, /\bthrow\b|throws|throw new Error/i);
   assert.doesNotMatch(
     queueAdaptersSource,
     /\bfetch\(|\bnew\s+[A-Z]\w+|\bclass\s+\w+|\bimplements\b|function\s+\w+/i
   );
+  assert.doesNotMatch(queueAdaptersSource, /export\s+const\s+/);
+  assert.match(queueAdaptersSource, /^import type/m);
 });
 
 test("Lane modules stay free of shared storage and queue adapter implementation responsibility", () => {

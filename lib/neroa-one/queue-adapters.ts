@@ -2,43 +2,28 @@ import type {
   NeroaOneAdminOversightSummary,
   NeroaOneAuditRoomEvent
 } from "./audit-room.ts";
-import type {
-  NeroaOneCodeExecutionWorkerRun
-} from "./code-execution-worker.ts";
+import type { NeroaOneCodeExecutionWorkerRun } from "./code-execution-worker.ts";
 import type { NeroaOneCodexExecutionPacket } from "./codex-execution-packet.ts";
 import type { NeroaOneCodexOutputRecord } from "./codex-output-box.ts";
-import type {
-  NeroaOneCustomerFollowUpItem
-} from "./customer-follow-up.ts";
+import type { NeroaOneCustomerFollowUpItem } from "./customer-follow-up.ts";
 import type { NeroaOneEvidenceLinkRecord } from "./evidence-linking.ts";
 import type { NeroaOneOutcomeQueueEntry } from "./outcome-queues.ts";
 import type { NeroaOneOutputReviewRecord } from "./output-review.ts";
 import type { NeroaOnePromptRoomItem } from "./prompt-room.ts";
 import type { NeroaOneQcStationJobRecord } from "./qc-station.ts";
 import type { NeroaOneRepairQueueItem } from "./repair-queue.ts";
-import type {
-  NeroaOneStrategyEscalationItem
-} from "./strategy-escalation.ts";
+import type { NeroaOneStrategyEscalationItem } from "./strategy-escalation.ts";
 
-export const NEROA_ONE_QUEUE_ITEM_STATUSES = [
-  "pending",
-  "queued",
-  "running",
-  "completed",
-  "failed",
-  "canceled",
-  "dead_lettered"
-] as const;
+export type NeroaOneQueueItemStatus =
+  | "pending"
+  | "queued"
+  | "running"
+  | "completed"
+  | "failed"
+  | "canceled"
+  | "dead_lettered";
 
-export const NEROA_ONE_QUEUE_PRIORITY_LEVELS = [
-  "low",
-  "normal",
-  "high",
-  "critical"
-] as const;
-
-export type NeroaOneQueueItemStatus = (typeof NEROA_ONE_QUEUE_ITEM_STATUSES)[number];
-export type NeroaOneQueuePriority = (typeof NEROA_ONE_QUEUE_PRIORITY_LEVELS)[number];
+export type NeroaOneQueuePriority = "low" | "normal" | "high" | "critical";
 
 export interface NeroaOneQueueAdapterError {
   code: string;
