@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
+const rootLandingSource = readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8");
 const frontDoorSource = readFileSync(new URL("../app/neroa/page.tsx", import.meta.url), "utf8");
 const frontDoorSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-front-door-surface.tsx", import.meta.url),
@@ -57,6 +58,8 @@ function countOccurrences(source, pattern) {
 }
 
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
+  assert.match(rootLandingSource, /export default function LandingPage/);
+  assert.match(rootLandingSource, /NeroaFrontDoorSurface/);
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
   assert.match(frontDoorSource, /NeroaFrontDoorSurface/);
   assert.match(frontDoorSurfaceSource, /export function NeroaFrontDoorSurface/);
@@ -80,6 +83,29 @@ test("/neroa front door stays inside the clean neroa portal namespace", () => {
   assert.doesNotMatch(frontDoorSource, /@\/components\/workspace\//);
   assert.doesNotMatch(frontDoorSource, /@\/lib\/auth\//);
   assert.doesNotMatch(frontDoorSource, /@\/lib\/billing\//);
+});
+
+test("root landing route reuses the clean Neroa front door instead of legacy front-door modules", () => {
+  assert.match(rootLandingSource, /@\/components\/neroa-portal\/neroa-front-door-surface/);
+  assert.doesNotMatch(rootLandingSource, /@\/components\/front-door\/front-door-home-hero/);
+  assert.doesNotMatch(rootLandingSource, /@\/components\/front-door\/neroa-chat-card/);
+  assert.doesNotMatch(rootLandingSource, /@\/components\/marketing\//);
+  assert.doesNotMatch(rootLandingSource, /MarketingInfoShell/);
+  assert.doesNotMatch(rootLandingSource, /JsonLdScript/);
+  assert.doesNotMatch(rootLandingSource, /getOptionalUser/);
+  assert.doesNotMatch(rootLandingSource, /publicLaunchEntryPath/);
+  assert.doesNotMatch(rootLandingSource, /Open Strategy Room/);
+});
+
+test("root landing route metadata reflects the clean Neroa front door", () => {
+  assert.match(rootLandingSource, /Neroa \| Project Front Door/);
+  assert.match(
+    rootLandingSource,
+    /Neroa turns an idea into a structured project roadmap, scope, decisions, next steps, and a clean project workspace before execution begins\./
+  );
+  assert.doesNotMatch(rootLandingSource, /guided product build/i);
+  assert.doesNotMatch(rootLandingSource, /Strategy Room first product building/i);
+  assert.doesNotMatch(rootLandingSource, /Guided from idea to approval/i);
 });
 
 test("/neroa front door includes the clean conversational landing structure", () => {
@@ -121,6 +147,14 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/managed"/);
 });
 
+test("root landing inherits the clean Neroa conversational front door content", () => {
+  assert.match(rootLandingSource, /NeroaFrontDoorSurface/);
+  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What\\u2019s your name\?/);
+  assert.match(frontDoorSurfaceSource, /My name is Tom\./);
+  assert.match(frontDoorSurfaceSource, /Let\\u2019s begin your project/);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/auth"/);
+});
+
 test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
   assert.match(frontDoorSurfaceSource, /no live authentication, billing runtime, or project execution wiring is implied\./i);
   assert.match(
@@ -155,6 +189,16 @@ test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
   assert.doesNotMatch(frontDoorSurfaceSource, /<table/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /onSubmit=/);
   assert.doesNotMatch(frontDoorSurfaceSource, /<input/i);
+});
+
+test("root landing no longer carries the old public front-door strings", () => {
+  assert.doesNotMatch(rootLandingSource, /Share the idea/i);
+  assert.doesNotMatch(rootLandingSource, /We'?ll build the path/i);
+  assert.doesNotMatch(rootLandingSource, /Open Strategy Room/i);
+  assert.doesNotMatch(rootLandingSource, /Start with a guided planning conversation/i);
+  assert.doesNotMatch(rootLandingSource, /Planning Chat/i);
+  assert.doesNotMatch(rootLandingSource, /Start the conversation/i);
+  assert.doesNotMatch(rootLandingSource, /Click here to start the conversation/i);
 });
 
 test("clean portal navigation links the three clean neroa routes only", () => {
@@ -403,7 +447,7 @@ test("clean portal shell does not import legacy room or runtime surfaces", () =>
 });
 
 test("clean portal shell does not import legacy marketing auth or routing surfaces", () => {
-  for (const source of cleanPortalSources) {
+  for (const source of [rootLandingSource, ...cleanPortalSources]) {
     assert.doesNotMatch(source, /FrontDoorHomeHero/);
     assert.doesNotMatch(source, /NeroaChatCard/);
     assert.doesNotMatch(source, /MarketingInfoShell/);
@@ -443,7 +487,7 @@ test("clean auth surface does not import auth runtime session or guard modules",
 });
 
 test("clean portal shell does not import Neroa One runtime wiring", () => {
-  for (const source of cleanPortalSources) {
+  for (const source of [rootLandingSource, ...cleanPortalSources]) {
     assert.doesNotMatch(source, /@\/lib\/neroa-one\//);
     assert.doesNotMatch(source, /analyzeTaskWithNeroaOne/);
     assert.doesNotMatch(source, /commandCenterLanes/);
@@ -454,7 +498,7 @@ test("clean portal shell does not import Neroa One runtime wiring", () => {
 });
 
 test("clean portal shell stays UI-only and avoids runtime or schema behavior", () => {
-  for (const source of cleanPortalSources) {
+  for (const source of [rootLandingSource, ...cleanPortalSources]) {
     assert.doesNotMatch(source, /createDraftPromptRoomItem/);
     assert.doesNotMatch(source, /submitCodex/);
     assert.doesNotMatch(source, /fetch\(/);
