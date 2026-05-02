@@ -4,52 +4,50 @@ const conversationMoments = [
   {
     speaker: "Neroa",
     tone: "assistant",
-    line: "Hi, I\u2019m Neroa. What\u2019s your name?",
-    detail:
-      "A calm front-door prompt that opens the project conversation without pretending live chat is already active."
+    line: "Hi, I\u2019m Neroa. What should we build?",
+    detail: "Start with the outcome you want, and shape it into a real software project."
   },
   {
     speaker: "Visitor",
     tone: "visitor",
-    line: "My name is Tom.",
-    detail: "A simple example response that shows how the entry flow begins."
+    line: "I want to build a SaaS platform for my business.",
+    detail: "A clear goal gives Neroa the context to shape roadmap, scope, and direction."
   },
   {
     speaker: "Neroa",
     tone: "assistant",
     line:
-      "Neroa turns an idea into a structured project roadmap, scope, decisions, next steps, and a clean project workspace before execution begins.",
-    detail:
-      "The front door stays project-first, with guardrails and control in place before execution begins."
+      "Great. I\u2019ll help turn that into a structured roadmap, define scope, surface key decisions, and prepare a clean project workspace before execution begins.",
+    detail: "Build with guardrails, approvals, evidence, and direction from the start."
   }
 ] as const;
 
 const signalPoints = [
-  "Structured roadmap",
+  "Roadmap",
   "Scope",
   "Decisions",
-  "Next steps",
-  "Clean workspace"
+  "Approvals",
+  "Evidence"
 ] as const;
 
 const previewPanels = [
   {
-    eyebrow: "Project Preview",
-    title: "Idea to roadmap",
+    eyebrow: "Roadmap-first",
+    title: "Structured before it is built",
     body:
-      "Neroa turns an idea into a structured project roadmap, scope, decisions, next steps, and a clean project workspace before execution begins."
+      "Neroa turns your idea into a roadmap, scope, decisions, and a clear project path before execution begins."
   },
   {
-    eyebrow: "Control Layer",
+    eyebrow: "Scope-aware",
+    title: "Plan with direction, not drift",
+    body:
+      "Start with a structured plan, not a vague prompt, so the project stays intentional, reviewable, and calm from the beginning."
+  },
+  {
+    eyebrow: "Controlled execution",
     title: "Guardrails stay close",
     body:
-      "Pricing and execution options follow after Neroa understands the project scope, so the first movement stays intentional, reviewable, and calm."
-  },
-  {
-    eyebrow: "Surface Status",
-    title: "Placeholder-only front door",
-    body:
-      "No forms, fake connected states, or live submission paths are active here, and no live authentication, billing runtime, or project execution wiring is implied."
+      "Neroa helps organize approvals, evidence, and key decisions before build work moves forward."
   }
 ] as const;
 
@@ -70,12 +68,12 @@ export function NeroaFrontDoorSurface() {
               Neroa
             </p>
             <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
-              Project Front Door
+              Structured SaaS planning
             </p>
           </div>
 
           <div className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-            Wordmark-first
+            SaaS done right
           </div>
         </header>
 
@@ -85,19 +83,19 @@ export function NeroaFrontDoorSurface() {
             <div className="relative flex h-full flex-col gap-10">
               <div className="space-y-6">
                 <p className="max-w-2xl text-xs font-semibold uppercase tracking-[0.32em] text-slate-500">
-                  Dark luxury Strategy Room + Command Center direction
+                  A better way to plan and build software
                 </p>
                 <h1 className="max-w-4xl font-serif text-4xl leading-[1.02] text-slate-50 sm:text-5xl lg:text-[4.6rem]">
-                  {"Hi, I\u2019m Neroa. What\u2019s your name?"}
+                  SaaS done right.
                 </h1>
                 <div className="max-w-3xl space-y-4 text-[1.02rem] leading-8 text-slate-300">
                   <p>
-                    Neroa turns an idea into a structured project roadmap, scope, decisions, next
-                    steps, and a clean project workspace before execution begins.
+                    Start with a structured plan, not a vague prompt. Tell Neroa what you want to
+                    build. We\u2019ll shape it into a real project.
                   </p>
                   <p className="text-sm text-slate-400">
-                    Soft silver system text, subtle teal signal accents, spacious premium styling,
-                    and a calm futuristic tone define this front door.
+                    Neroa turns your idea into a roadmap, scope, decisions, and a clear project
+                    path before execution begins.
                   </p>
                 </div>
               </div>
@@ -133,11 +131,11 @@ export function NeroaFrontDoorSurface() {
               <div className="flex flex-col gap-5 rounded-[2rem] border border-white/8 bg-[linear-gradient(135deg,rgba(255,255,255,0.04)_0%,rgba(45,212,191,0.04)_100%)] px-6 py-6 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-2">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
-                    Next Step
+                    Guided project setup
                   </p>
                   <p className="max-w-2xl text-sm leading-7 text-slate-300">
-                    Use the clean Neroa front door to preview the conversation style and continue
-                    into the placeholder auth route without introducing live runtime behavior yet.
+                    Bring the idea, the product shape, or the problem you want solved. Neroa helps
+                    turn it into a roadmap-first plan with clear scope and decisions.
                   </p>
                 </div>
 
@@ -145,7 +143,7 @@ export function NeroaFrontDoorSurface() {
                   href="/neroa/auth"
                   className="inline-flex items-center justify-center rounded-full border border-teal-300/30 bg-teal-300/10 px-7 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
                 >
-                  {"Let\u2019s begin your project"}
+                  Start your project
                 </Link>
               </div>
             </div>
@@ -156,13 +154,13 @@ export function NeroaFrontDoorSurface() {
             <div className="relative space-y-6">
               <div className="space-y-3">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
-                  Refined Project Preview
+                  Structured SaaS building
                 </p>
                 <h2 className="font-serif text-3xl leading-tight text-slate-50">
-                  Charcoal command canvas, soft silver framing, and quiet confidence.
+                  Roadmap-first planning with calm control from day one.
                 </h2>
                 <p className="text-sm leading-8 text-slate-300">
-                  This page moves users toward starting a project, not choosing an execution model.
+                  Not just open-ended AI chat. Not a vague plan. Not uncontrolled coding.
                 </p>
               </div>
 
@@ -186,7 +184,7 @@ export function NeroaFrontDoorSurface() {
               <div className="rounded-[1.9rem] border border-white/8 bg-black/20 p-6">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
-                    What Neroa Organizes
+                    What Neroa Shapes
                   </p>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Spacious premium styling
@@ -203,9 +201,9 @@ export function NeroaFrontDoorSurface() {
                   ))}
                 </div>
                 <div className="mt-5 space-y-3 text-sm leading-7 text-slate-300">
-                  <p>Pricing and execution options follow after Neroa understands the project scope.</p>
-                  <p>No forms, fake connected states, or live submission paths are active here.</p>
-                  <p>Front-door preview only. No live authentication, billing runtime, or project execution wiring is implied.</p>
+                  <p>Build with guardrails, approvals, evidence, and direction from the start.</p>
+                  <p>A better way to plan and build software begins with a project that is clear, scoped, and reviewable.</p>
+                  <p>Neroa is designed for guided project setup before execution begins.</p>
                 </div>
               </div>
             </div>
