@@ -29,6 +29,10 @@ const authPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-auth-surface.tsx", import.meta.url),
   "utf8"
 );
+const northStarAccentSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-north-star-accent.tsx", import.meta.url),
+  "utf8"
+);
 const portalNavigationSource = readFileSync(
   new URL("../components/neroa-portal/neroa-portal-navigation.tsx", import.meta.url),
   "utf8"
@@ -47,6 +51,7 @@ const cleanPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  northStarAccentSource,
   portalNavigationSource,
   portalShellSource
 ];
@@ -59,6 +64,7 @@ const uiOnlyPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  northStarAccentSource,
   portalNavigationSource,
   portalShellSource
 ];
@@ -84,6 +90,7 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(authPortalSource, /export default function NeroaAuthPage/);
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSurfaceSource, /export function NeroaAuthSurface/);
+  assert.match(northStarAccentSource, /export function NeroaNorthStarAccent/);
   assert.match(portalNavigationSource, /export function NeroaPortalNavigation/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
@@ -265,11 +272,12 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /shadow-\[0_30px_120px/);
   assert.match(frontDoorSurfaceSource, /rounded-\[2rem\]/);
   assert.doesNotMatch(frontDoorSurfaceSource, /right-\[24%\] top-\[12%\] text-teal-100\/90/);
-  assert.equal(countOccurrences(frontDoorSurfaceSource, /data-testid="front-door-floating-north-star"/g), 1);
-  assert.match(frontDoorSurfaceSource, /pointer-events-none absolute right-\[18rem\] top-\[7rem\] z-10 hidden text-teal-100\/82 lg:block/);
-  assert.doesNotMatch(frontDoorSurfaceSource, /pointer-events-none absolute left-\[/);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /testId="front-door-floating-north-star"/g), 1);
+  assert.match(frontDoorSurfaceSource, /NeroaNorthStarAccent/);
+  assert.match(frontDoorSurfaceSource, /className="right-\[26rem\] top-\[7rem\]"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /left-\[8%\] top-\[18%\] hidden text-teal-100\/82 lg:block/);
-  assert.match(frontDoorSurfaceSource, /drop-shadow-\[0_0_20px_rgba\(148,255,236,0\.38\)\]/);
+  assert.match(northStarAccentSource, /pointer-events-none absolute z-10 hidden text-teal-100\/82 lg:block/);
+  assert.match(northStarAccentSource, /drop-shadow-\[0_0_20px_rgba\(148,255,236,0\.38\)\]/);
   assert.match(frontDoorSurfaceSource, /h-\[27rem\]/);
   assert.match(frontDoorSurfaceSource, /sm:h-\[29rem\]/);
   assert.match(frontDoorSurfaceSource, /lg:h-\[30rem\]/);
@@ -329,6 +337,7 @@ test("clean auth route exports and renders the Neroa auth page UI", () => {
   assert.match(authPortalSurfaceSource, /Password/);
   assert.match(authPortalSurfaceSource, /Confirm Password/);
   assert.match(authPortalSurfaceSource, /Forgot password\?/);
+  assert.match(authPortalSurfaceSource, /NeroaNorthStarAccent/);
 });
 
 test("clean auth surface includes local form controls and removes placeholder copy", () => {
@@ -352,6 +361,7 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /type="submit"/);
   assert.match(authPortalSurfaceSource, /href="#"/);
   assert.match(authPortalSurfaceSource, /TODO: connect this to a clean forgot-password route/);
+  assert.match(authPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(authPortalSurfaceSource, /Home/);
   assert.match(authPortalSurfaceSource, /Pricing/);
   assert.match(authPortalSurfaceSource, /Start Your Project/);
@@ -387,6 +397,8 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
 
 test("Account Portal placeholder sections are present", () => {
   assert.match(accountPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(accountPortalSurfaceSource, /NeroaNorthStarAccent/);
+  assert.match(accountPortalSurfaceSource, /className="right-\[14rem\] top-\[6\.5rem\] text-teal-300\/70"/);
   assert.match(accountPortalSurfaceSource, /currentPath="\/neroa\/account"/);
   assert.match(accountPortalSurfaceSource, /"Projects"/);
   assert.match(accountPortalSurfaceSource, /"Billing \/ Usage"/);
@@ -442,6 +454,8 @@ test("Account Portal does not imply live saving or connected integration state",
 
 test("Project Portal placeholder sections are present", () => {
   assert.match(projectPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(projectPortalSurfaceSource, /NeroaNorthStarAccent/);
+  assert.match(projectPortalSurfaceSource, /className="right-\[15rem\] top-\[7rem\]"/);
   assert.match(projectPortalSurfaceSource, /currentPath="\/neroa\/project"/);
   assert.match(projectPortalSurfaceSource, /tone="dark"/);
   assert.match(projectPortalSurfaceSource, /title:\s*"Strategy Room"/);

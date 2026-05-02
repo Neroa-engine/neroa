@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
+import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
 const accountSections = [
   {
@@ -49,7 +50,11 @@ const integrationProviders = [
 
 export function NeroaAccountPortalSurface() {
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#f6f1e8_0%,#fbf8f2_50%,#fffdf8_100%)] px-6 py-10 text-stone-900">
+    <main className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#f6f1e8_0%,#fbf8f2_50%,#fffdf8_100%)] px-6 py-10 text-stone-900">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute right-[8%] top-[3%] h-[20rem] w-[20rem] bg-[radial-gradient(circle_at_50%_28%,rgba(115,227,209,0.14),transparent_12%),radial-gradient(ellipse_at_50%_52%,rgba(45,212,191,0.08),transparent_58%)] blur-xl" />
+        <NeroaNorthStarAccent className="right-[14rem] top-[6.5rem] text-teal-300/70" />
+      </div>
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
         <NeroaPortalNavigation currentPath="/neroa/account" />
 

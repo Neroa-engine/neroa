@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
 function NorthStarIcon({
   className = ""
@@ -90,6 +91,7 @@ export function NeroaAuthSurface() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(196,255,239,0.14),transparent_10%),radial-gradient(circle_at_73%_22%,rgba(255,255,255,0.06),transparent_18%)]" />
         <div className="absolute right-[4%] top-[3%] h-[42rem] w-[34rem] bg-[radial-gradient(circle_at_50%_10%,rgba(173,255,237,0.28),transparent_10%),radial-gradient(ellipse_at_50%_38%,rgba(51,191,164,0.16),transparent_52%)] blur-xl" />
         <div className="absolute right-[11%] top-[6%] h-[72vh] w-[20rem] bg-[linear-gradient(180deg,rgba(134,255,232,0)_0%,rgba(134,255,232,0.14)_16%,rgba(72,239,200,0.24)_42%,rgba(36,191,156,0.12)_78%,rgba(36,191,156,0)_100%)] [clip-path:polygon(49%_0%,59%_0%,67%_100%,33%_100%)] blur-[12px]" />
+        <NeroaNorthStarAccent className="right-[18rem] top-[7rem]" />
         <div className="absolute bottom-[11rem] left-[-4%] right-[-4%] h-[16rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.12),transparent_60%)]" />
       </div>
 

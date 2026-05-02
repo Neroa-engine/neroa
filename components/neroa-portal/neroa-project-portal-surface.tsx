@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
+import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
 const projectSections = [
   {
@@ -61,7 +62,11 @@ const luxuryPillars = [
 
 export function NeroaProjectPortalSurface() {
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#1f252d_0%,#11161d_42%,#090c10_100%)] px-6 py-10 text-slate-100">
+    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1f252d_0%,#11161d_42%,#090c10_100%)] px-6 py-10 text-slate-100">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute right-[7%] top-[4%] h-[24rem] w-[24rem] bg-[radial-gradient(circle_at_50%_24%,rgba(173,255,237,0.16),transparent_12%),radial-gradient(ellipse_at_50%_48%,rgba(51,191,164,0.10),transparent_56%)] blur-xl" />
+        <NeroaNorthStarAccent className="right-[15rem] top-[7rem]" />
+      </div>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
         <NeroaPortalNavigation currentPath="/neroa/project" tone="dark" />
 
