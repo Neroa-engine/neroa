@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { motion, useReducedMotion } from "framer-motion";
 import AgentAvatar from "@/components/ai/AgentAvatar";
 import { AGENTS, type AgentId } from "@/lib/ai/agents";
@@ -72,13 +71,9 @@ export default function NaruaCore({
       <div className="relative flex flex-col gap-8">
         <div className="flex items-center justify-between gap-4">
           <div className="inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/78 px-4 py-2 text-sm text-slate-700">
-            <Image
-              src="/logo/neroa.png"
-              alt="Neroa"
-              width={84}
-              height={33}
-              className="h-6 w-auto object-contain"
-            />
+            <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-900">
+              Neroa
+            </span>
             Neroa Core
           </div>
 

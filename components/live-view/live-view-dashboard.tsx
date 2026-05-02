@@ -514,11 +514,9 @@ export function LiveViewDashboard({
           <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
             <div className="max-w-3xl">
               <div className="flex items-center gap-3">
-                <img
-                  src="/logo/neroa.png"
-                  alt="Neroa Live View"
-                  className="h-10 w-auto"
-                />
+                <span className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
+                  Neroa
+                </span>
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-700">
                     Neroa Live View

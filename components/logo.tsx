@@ -1,5 +1,3 @@
-const APPROVED_LOGO_SRC = "/logo/neroa.png";
-
 type LogoProps = {
   variant?: "default" | "prominent";
   tone?: "light" | "dark";
@@ -36,17 +34,12 @@ export function Logo({
           : "neroa-logo-default-landing"
       : "";
   const toneClassName = darkTone ? "neroa-logo-dark" : "neroa-logo-light";
-  const imageClassName = `neroa-logo-mark block w-auto shrink-0 select-none ${sizeClassName} ${scaleClassName} ${toneClassName} ${className}`.trim();
+  const wordmarkClassName =
+    `neroa-logo-mark inline-flex shrink-0 select-none items-center font-semibold uppercase tracking-[0.22em] ${sizeClassName} ${scaleClassName} ${toneClassName} ${className}`.trim();
 
   return (
-    <img
-      src={APPROVED_LOGO_SRC}
-      alt=""
-      aria-hidden="true"
-      draggable={false}
-      decoding="async"
-      loading="eager"
-      className={imageClassName}
-    />
+    <span aria-hidden="true" className={wordmarkClassName}>
+      Neroa
+    </span>
   );
 }
