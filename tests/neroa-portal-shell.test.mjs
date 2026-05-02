@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const frontDoorSource = readFileSync(new URL("../app/neroa/page.tsx", import.meta.url), "utf8");
+const frontDoorSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-front-door-surface.tsx", import.meta.url),
+  "utf8"
+);
 const accountPortalSource = readFileSync(
   new URL("../app/neroa/account/page.tsx", import.meta.url),
   "utf8"
@@ -35,6 +39,7 @@ const portalShellSource = readFileSync(
 
 const cleanPortalSources = [
   frontDoorSource,
+  frontDoorSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
   projectPortalSource,
@@ -49,6 +54,8 @@ const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
 
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
+  assert.match(frontDoorSource, /NeroaFrontDoorSurface/);
+  assert.match(frontDoorSurfaceSource, /export function NeroaFrontDoorSurface/);
   assert.match(accountPortalSource, /export default function NeroaAccountPortalPage/);
   assert.match(accountPortalSource, /NeroaAccountPortalSurface/);
   assert.match(accountPortalSurfaceSource, /export function NeroaAccountPortalSurface/);
@@ -62,15 +69,69 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
 
-test("/neroa front door stays minimal and clean", () => {
-  assert.match(frontDoorSource, /NeroaPortalNavigation/);
-  assert.match(frontDoorSource, /currentPath="\/neroa"/);
-  assert.match(frontDoorSource, /"Account Portal"/);
-  assert.match(frontDoorSource, /"Project Portal"/);
-  assert.match(frontDoorSource, /Public front door shell only\./);
-  assert.doesNotMatch(frontDoorSource, /Open Strategy Room/);
-  assert.doesNotMatch(frontDoorSource, /Pricing/);
-  assert.doesNotMatch(frontDoorSource, /Auth entry/);
+test("/neroa front door stays inside the clean neroa portal namespace", () => {
+  assert.match(frontDoorSource, /@\/components\/neroa-portal\/neroa-front-door-surface/);
+  assert.doesNotMatch(frontDoorSource, /@\/components\/marketing\//);
+  assert.doesNotMatch(frontDoorSource, /@\/components\/front-door\//);
+  assert.doesNotMatch(frontDoorSource, /@\/components\/workspace\//);
+  assert.doesNotMatch(frontDoorSource, /@\/lib\/auth\//);
+  assert.doesNotMatch(frontDoorSource, /@\/lib\/billing\//);
+});
+
+test("/neroa front door includes the clean landing structure and four-step flow", () => {
+  assert.match(frontDoorSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(frontDoorSurfaceSource, /currentPath="\/neroa"/);
+  assert.match(frontDoorSurfaceSource, /tone="dark"/);
+  assert.match(frontDoorSurfaceSource, /Start with the product you want to build\./);
+  assert.match(frontDoorSurfaceSource, /Project Start Flow/);
+  assert.match(frontDoorSurfaceSource, /Tell us what you want to build\./);
+  assert.match(frontDoorSurfaceSource, /Neroa turns it into a structured project plan\./);
+  assert.match(frontDoorSurfaceSource, /Review the roadmap, scope, and next steps\./);
+  assert.match(frontDoorSurfaceSource, /Move into your project workspace\./);
+  assert.match(frontDoorSurfaceSource, /What Neroa Does/);
+  assert.match(frontDoorSurfaceSource, /How Projects Move/);
+  assert.match(frontDoorSurfaceSource, /Governance And Control/);
+  assert.match(frontDoorSurfaceSource, /Next Step/);
+});
+
+test("/neroa front door uses Neroa wordmark-first branding without logo assets or naming drift", () => {
+  assert.match(frontDoorSurfaceSource, />\s*Neroa\s*</);
+  assert.doesNotMatch(frontDoorSurfaceSource, /<img/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /<Image/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\/logo\//);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\.(svg|png|jpe?g|webp)/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, />\s*N\s*</);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bNerowa\b/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bNaroa\b/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bNarowa\b/);
+});
+
+test("/neroa front door CTAs point only to clean /neroa routes", () => {
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/auth"/);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/account"/);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/project"/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /href="\/auth"/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /href="\/pricing"/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /href="\/diy"/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /href="\/managed"/);
+});
+
+test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
+  assert.match(
+    frontDoorSurfaceSource,
+    /do not imply live authentication, pricing checkout, billing runtime, or project[\s\S]*execution wiring yet\./
+  );
+  assert.match(frontDoorSurfaceSource, /Pricing and execution options follow after Neroa understands the project scope\./);
+  assert.match(frontDoorSurfaceSource, /No forms, fake connected states, or live submission paths are active here\./);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bDIY\b/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bManaged\b/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /self-guided/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /done-for-you/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Unlimited AI/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Autonomous execution is live/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Build your full MVP today/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /<form/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /<table/i);
 });
 
 test("clean portal navigation links the three clean neroa routes only", () => {
@@ -82,6 +143,15 @@ test("clean portal navigation links the three clean neroa routes only", () => {
   assert.match(portalNavigationSource, /label:\s*"Account Portal"/);
   assert.match(portalNavigationSource, /label:\s*"Project Portal"/);
   assert.match(portalNavigationSource, /label:\s*"Auth Surface"/);
+});
+
+test("/neroa front door reflects the locked dark luxury visual direction", () => {
+  assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient/);
+  assert.match(frontDoorSurfaceSource, /text-teal-/);
+  assert.match(frontDoorSurfaceSource, /shadow-\[0_45px_140px/);
+  assert.match(frontDoorSurfaceSource, /wordmark-first/);
+  assert.match(frontDoorSurfaceSource, /spacious/);
+  assert.match(frontDoorSurfaceSource, /intentionally quiet/);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {
@@ -297,6 +367,7 @@ test("clean portal shell does not import legacy room or runtime surfaces", () =>
 test("clean portal shell does not import legacy marketing auth or routing surfaces", () => {
   for (const source of cleanPortalSources) {
     assert.doesNotMatch(source, /FrontDoorHomeHero/);
+    assert.doesNotMatch(source, /NeroaChatCard/);
     assert.doesNotMatch(source, /MarketingInfoShell/);
     assert.doesNotMatch(source, /public-launch/);
     assert.doesNotMatch(source, /requireUser/);
