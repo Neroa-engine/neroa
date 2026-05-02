@@ -1,15 +1,55 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode
+} from "react";
 import Link from "next/link";
 
 const valuePills = [
-  "ROADMAP-FIRST PLANNING",
-  "SCOPE BEFORE EXECUTION",
-  "DECISIONS & APPROVALS",
-  "EVIDENCE & REVIEW",
-  "BUILD & EXECUTE"
+  "Roadmap-First Planning",
+  "Scope Before Execution",
+  "Decisions & Approvals",
+  "Evidence & Review",
+  "Build & Execute"
 ] as const;
+
+const neroaExplanation =
+  "Neroa helps you turn a software idea into a structured project before anyone starts building. Most AI builders and dev shops jump straight from a vague prompt into code, which often creates messy rebuilds, unclear scope, wasted credits, and features that do not connect. Neroa works differently. We help define the product, map the roadmap, clarify the scope, capture key decisions, organize approvals, and prepare the project for controlled execution. The goal is to make the build visible, structured, and reviewable before real work begins, so you know what is being built, why it matters, what comes next, and where the risks are before money and time are wasted.";
+
+function extractName(input: string) {
+  const match = input.match(
+    /\b(?:my name is|i am|i'm)\s+([a-z][a-z' -]{0,30})/i
+  );
+
+  if (!match) {
+    return "";
+  }
+
+  return match[1]
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function PillSeparator() {
+  return (
+    <span
+      aria-hidden="true"
+      className="hidden shrink-0 items-center justify-center text-teal-200/70 lg:flex"
+    >
+      <svg viewBox="0 0 20 20" className="h-3.5 w-3.5" aria-hidden="true">
+        <path
+          d="M10 2.5 11.8 8.2 17.5 10l-5.7 1.8L10 17.5l-1.8-5.7L2.5 10l5.7-1.8L10 2.5Z"
+          fill="currentColor"
+        />
+      </svg>
+    </span>
+  );
+}
 
 function ChatAvatar({
   children,
@@ -64,24 +104,127 @@ export function NeroaFrontDoorSurface({
 }: {
   isSignedIn?: boolean;
 }) {
-  const [draftName, setDraftName] = useState("");
-  const [submittedName, setSubmittedName] = useState("");
+  const [draftMessage, setDraftMessage] = useState("");
+  const [introMessage, setIntroMessage] = useState("");
+  const [capturedName, setCapturedName] = useState("");
+  const [conversationStep, setConversationStep] = useState<
+    "intro" | "awaiting-name" | "complete"
+  >("intro");
+  const [thumbHeight, setThumbHeight] = useState(56);
+  const [thumbOffset, setThumbOffset] = useState(0);
+  const conversationRef = useRef<HTMLDivElement>(null);
 
-  const trimmedName = submittedName.trim();
-  const hasStarted = trimmedName.length > 0;
   const nextProjectHref = isSignedIn ? "/neroa/project" : "/neroa/auth";
-  const ctaLabel = isSignedIn ? "Open Projects" : "Start Your Project";
+  const finalCtaLabel = "Let's Get Started";
+
+  const messages = [
+    {
+      key: "neroa-hello",
+      author: "Neroa",
+      timestamp: "10:21 AM",
+      body: "Hello.",
+      avatar: "AI",
+      variant: "nero" as const
+    },
+    ...(introMessage
+      ? [
+          {
+            key: "visitor-intro",
+            author: "Visitor",
+            timestamp: "10:21 AM",
+            body: introMessage,
+            avatar:
+              introMessage.trim().charAt(0).toUpperCase() || "V",
+            variant: "visitor" as const
+          },
+          {
+            key: "neroa-name",
+            author: "Neroa",
+            timestamp: "10:22 AM",
+            body: "Hi, I'm Neroa. What's your name?",
+            avatar: "AI",
+            variant: "nero" as const
+          }
+        ]
+      : []),
+    ...(capturedName
+      ? [
+          {
+            key: "visitor-name",
+            author: capturedName,
+            timestamp: "10:22 AM",
+            body: capturedName,
+            avatar: capturedName.charAt(0).toUpperCase(),
+            variant: "visitor" as const
+          },
+          {
+            key: "neroa-explainer",
+            author: "Neroa",
+            timestamp: "10:23 AM",
+            body: neroaExplanation,
+            avatar: "AI",
+            variant: "nero" as const
+          }
+        ]
+      : [])
+  ];
+
+  function syncScrollIndicator() {
+    const element = conversationRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    const visibleHeight = element.clientHeight;
+    const totalHeight = element.scrollHeight;
+    const maxScroll = Math.max(totalHeight - visibleHeight, 0);
+    const nextThumbHeight = totalHeight > 0
+      ? Math.max((visibleHeight / totalHeight) * visibleHeight, 42)
+      : 42;
+    const nextThumbOffset = maxScroll > 0
+      ? (element.scrollTop / maxScroll) * Math.max(visibleHeight - nextThumbHeight, 0)
+      : 0;
+
+    setThumbHeight(nextThumbHeight);
+    setThumbOffset(nextThumbOffset);
+  }
+
+  useEffect(() => {
+    const element = conversationRef.current;
+
+    if (!element) {
+      return;
+    }
+
+    element.scrollTop = element.scrollHeight;
+    syncScrollIndicator();
+  }, [conversationStep, introMessage, capturedName]);
+
+  useEffect(() => {
+    syncScrollIndicator();
+  }, []);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const nextName = draftName.trim();
-    if (!nextName) {
+    const nextMessage = draftMessage.trim();
+    if (!nextMessage) {
       return;
     }
 
-    setSubmittedName(nextName);
-    setDraftName("");
+    if (conversationStep === "intro") {
+      setIntroMessage(nextMessage);
+      setDraftMessage(extractName(nextMessage));
+      setConversationStep("awaiting-name");
+      return;
+    }
+
+    if (conversationStep === "awaiting-name") {
+      setCapturedName(nextMessage);
+      setDraftMessage("");
+      setConversationStep("complete");
+    }
   }
 
   return (
@@ -141,80 +284,86 @@ export function NeroaFrontDoorSurface({
             </p>
           </section>
 
-          <section className="relative rounded-[2rem] border border-white/14 bg-black/42 p-6 shadow-[0_28px_110px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:p-8 lg:p-9">
+          <section className="relative flex h-[39rem] flex-col rounded-[2rem] border border-white/14 bg-black/42 p-6 shadow-[0_28px_110px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:h-[41rem] sm:p-8 lg:h-[49rem] lg:p-9">
             <div
               aria-hidden="true"
-              className="scroll-rail pointer-events-none absolute inset-y-8 right-4 w-px rounded-full bg-white/8"
+              className="scroll-rail pointer-events-none absolute bottom-8 right-4 top-28 w-px rounded-full bg-white/8"
             />
             <div
-              className={[
-                "scroll-thumb pointer-events-none absolute right-[13px] w-[5px] rounded-full bg-gradient-to-b from-teal-200/85 via-teal-300/55 to-transparent shadow-[0_0_20px_rgba(45,212,191,0.28)] transition-all",
-                hasStarted ? "top-[34%] h-24" : "top-[18%] h-14"
-              ].join(" ")}
+              aria-hidden="true"
+              className="scroll-thumb pointer-events-none absolute right-[13px] w-[5px] rounded-full bg-gradient-to-b from-teal-200/85 via-teal-300/55 to-transparent shadow-[0_0_20px_rgba(45,212,191,0.28)] transition-all"
+              style={{
+                height: `${thumbHeight}px`,
+                top: `calc(7rem + ${thumbOffset}px)`
+              }}
             />
 
-            <div className="pr-8">
-              <div className="mb-7 border-b border-white/10 pb-5">
-                <h2 className="font-serif text-3xl tracking-tight text-white">Neroa</h2>
-                <p className="mt-2 text-sm leading-7 text-white/46">
-                  Plan the project first, then move into the next step with structure.
-                </p>
-              </div>
+            <div className="border-b border-white/10 pb-5 pr-8">
+              <h2 className="font-serif text-3xl tracking-tight text-white">Neroa</h2>
+              <p className="mt-2 text-sm leading-7 text-white/46">
+                Plan the project first, then move into the next step with structure.
+              </p>
+            </div>
 
-              <div className="space-y-5">
+            <div
+              ref={conversationRef}
+              onScroll={syncScrollIndicator}
+              className="min-h-0 flex-1 space-y-5 overflow-y-auto py-6 pr-8"
+              style={{
+                scrollbarWidth: "thin",
+                scrollbarColor: "rgba(94,234,212,0.45) transparent"
+              }}
+            >
+              {messages.map((message) => (
                 <MessageRow
-                  author="Neroa"
-                  timestamp="10:21 AM"
-                  body="Hi, I'm Neroa. What's your name?"
-                  avatar="AI"
+                  key={message.key}
+                  author={message.author}
+                  timestamp={message.timestamp}
+                  body={message.body}
+                  avatar={message.avatar}
+                  variant={message.variant}
                 />
+              ))}
+            </div>
 
-                {hasStarted ? (
-                  <>
-                    <MessageRow
-                      author={trimmedName}
-                      timestamp="10:22 AM"
-                      body={`My name is ${trimmedName}.`}
-                      avatar={trimmedName.charAt(0).toUpperCase()}
-                      variant="visitor"
-                    />
-
-                    <MessageRow
-                      author="Neroa"
-                      timestamp="10:22 AM"
-                      body={`Nice to meet you, ${trimmedName}. I'm here to help you plan, scope, and prepare your next project before execution begins. Let's begin.`}
-                      avatar="AI"
-                    />
-                  </>
-                ) : null}
-              </div>
-
-              {hasStarted ? (
-                <div className="mt-7 rounded-[1.4rem] border border-white/12 bg-white/[0.04] p-3">
+            <div className="border-t border-white/10 pt-5 pr-8">
+              {conversationStep === "complete" ? (
+                <div className="rounded-[1.4rem] border border-white/12 bg-white/[0.04] p-3">
                   <Link
                     href={nextProjectHref}
                     className="flex items-center justify-between rounded-[1.1rem] bg-teal-300 px-5 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
                   >
-                    <span>{ctaLabel}</span>
+                    <span>{finalCtaLabel}</span>
                     <span aria-hidden="true">→</span>
                   </Link>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit} className="mt-7 rounded-[1.4rem] border border-white/12 bg-white/[0.035] p-3">
+                <form
+                  onSubmit={handleSubmit}
+                  className="rounded-[1.4rem] border border-white/12 bg-white/[0.035] p-3"
+                >
                   <div className="flex items-center gap-3">
                     <input
                       type="text"
-                      value={draftName}
-                      onChange={(event) => setDraftName(event.target.value)}
-                      placeholder="Type your name"
-                      aria-label="What is your name?"
+                      value={draftMessage}
+                      onChange={(event) => setDraftMessage(event.target.value)}
+                      placeholder={
+                        conversationStep === "intro"
+                          ? "Say hello or introduce yourself"
+                          : "Tell Neroa your name"
+                      }
+                      aria-label={
+                        conversationStep === "intro"
+                          ? "Start the conversation"
+                          : "Tell Neroa your name"
+                      }
                       className="h-14 flex-1 bg-transparent px-4 text-base text-white outline-none placeholder:text-white/34"
                     />
                     <button
                       type="submit"
                       className="inline-flex h-14 items-center justify-center rounded-full bg-teal-300 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
                     >
-                      Let&apos;s Begin
+                      {conversationStep === "intro" ? "Continue" : "Share Name"}
                     </button>
                   </div>
                 </form>
@@ -224,13 +373,13 @@ export function NeroaFrontDoorSurface({
         </div>
 
         <section className="pb-10">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {valuePills.map((pill) => (
-              <div
-                key={pill}
-                className="flex min-h-12 w-full items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-4 py-3 text-center text-[0.72rem] font-semibold tracking-[0.18em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.05)]"
-              >
-                {pill}
+          <div className="flex flex-wrap items-center justify-center gap-y-3 lg:flex-nowrap lg:justify-between">
+            {valuePills.map((pill, index) => (
+              <div key={pill} className="flex items-center gap-3">
+                {index > 0 ? <PillSeparator /> : null}
+                <div className="flex min-h-11 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3.5 py-2.5 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.05)] sm:px-4">
+                  {pill}
+                </div>
               </div>
             ))}
           </div>
