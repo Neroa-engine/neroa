@@ -105,6 +105,8 @@ import {
   NEROA_ONE_OUTPUT_REVIEW_FRESH_REVIEW_ELIGIBLE_OUTPUT_STATUSES,
   NEROA_ONE_PROMPT_ROOM_CUSTOMER_SAFE_STATUSES,
   NEROA_ONE_PROMPT_ROOM_STATUSES,
+  NEROA_ONE_QUEUE_ITEM_STATUSES,
+  NEROA_ONE_QUEUE_PRIORITY_LEVELS,
   NEROA_ONE_REPAIR_QUEUE_ITEM_STATUSES,
   NEROA_ONE_REPAIR_QUEUE_PRIORITIES,
   NEROA_ONE_REPAIR_QUEUE_SOURCE_DECISIONS,
@@ -174,6 +176,7 @@ const moduleSources = [
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
   "../lib/neroa-one/audit-room.ts",
+  "../lib/neroa-one/queue-adapters.ts",
   "../lib/neroa-one/storage-adapters.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
@@ -675,11 +678,103 @@ test("Storage adapter contracts stay backend-only, schema-neutral, and implement
   assert.match(storageAdaptersSource, /markFailed\(/);
 });
 
-test("Lane modules stay free of shared storage adapter imports and storage implementation responsibility", () => {
-  const laneSources = moduleSources.slice(0, -2);
+test("Queue adapter contracts are exported, lane-typed, and implementation-free", () => {
+  const queueAdaptersSource = moduleSources.find((source) =>
+    source.includes("interface NeroaOneQueueTraceContext")
+  );
+  const indexSource = moduleSources.at(-1);
+
+  assert.ok(queueAdaptersSource);
+  assert.ok(indexSource);
+  assert.match(indexSource, /export \* from "\.\/queue-adapters\.ts";/);
+  assert.deepEqual(NEROA_ONE_QUEUE_ITEM_STATUSES, [
+    "pending",
+    "queued",
+    "running",
+    "completed",
+    "failed",
+    "canceled",
+    "dead_lettered"
+  ]);
+  assert.deepEqual(NEROA_ONE_QUEUE_PRIORITY_LEVELS, ["low", "normal", "high", "critical"]);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneOutcomeLaneQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneCodexExecutionPacketQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOnePromptRoomQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneCodeExecutionWorkerQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneCodexOutputBoxQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneOutputReviewQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneRepairQueueQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneQcStationQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneEvidenceLinkingQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneAuditRoomQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneAdminOversightQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneCustomerFollowUpQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /interface\s+NeroaOneStrategyEscalationQueueAdapterContract/);
+  assert.match(queueAdaptersSource, /NeroaOneOutcomeQueueEntry/);
+  assert.match(queueAdaptersSource, /NeroaOneCodexExecutionPacket/);
+  assert.match(queueAdaptersSource, /NeroaOnePromptRoomItem/);
+  assert.match(queueAdaptersSource, /NeroaOneCodeExecutionWorkerRun/);
+  assert.match(queueAdaptersSource, /NeroaOneCodexOutputRecord/);
+  assert.match(queueAdaptersSource, /NeroaOneOutputReviewRecord/);
+  assert.match(queueAdaptersSource, /NeroaOneRepairQueueItem/);
+  assert.match(queueAdaptersSource, /NeroaOneQcStationJobRecord/);
+  assert.match(queueAdaptersSource, /NeroaOneEvidenceLinkRecord/);
+  assert.match(queueAdaptersSource, /NeroaOneAuditRoomEvent/);
+  assert.match(queueAdaptersSource, /NeroaOneAdminOversightSummary/);
+  assert.match(queueAdaptersSource, /NeroaOneCustomerFollowUpItem/);
+  assert.match(queueAdaptersSource, /NeroaOneStrategyEscalationItem/);
+  assert.match(
+    queueAdaptersSource,
+    /workspaceId[\s\S]*projectId[\s\S]*taskId[\s\S]*laneId[\s\S]*queueItemId[\s\S]*sourceLaneId[\s\S]*destinationLaneId[\s\S]*requestId[\s\S]*traceId/
+  );
+  assert.match(queueAdaptersSource, /enqueue\(/);
+  assert.match(queueAdaptersSource, /enqueueDelayed\(/);
+  assert.match(queueAdaptersSource, /getById\(/);
+  assert.match(queueAdaptersSource, /listByProject\(/);
+  assert.match(queueAdaptersSource, /listByWorkspace\(/);
+  assert.match(queueAdaptersSource, /listByTask\(/);
+  assert.match(queueAdaptersSource, /listByStatus\(/);
+  assert.match(queueAdaptersSource, /markRunning\(/);
+  assert.match(queueAdaptersSource, /markCompleted\(/);
+  assert.match(queueAdaptersSource, /markFailed\(/);
+  assert.match(queueAdaptersSource, /cancel\(/);
+  assert.match(queueAdaptersSource, /retry\(/);
+  assert.match(queueAdaptersSource, /deadLetter\(/);
+  assert.match(queueAdaptersSource, /appendObservation\(/);
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|admin|library|live-view|browser-extension|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /from\s+["'][^"']*(postgres|prisma|kysely|drizzle|sequelize|typeorm|mongodb|sqlite)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /from\s+["'][^"']*(redis|bull|bullmq|bee-queue|pg-boss|amqplib|sqs|rabbitmq|kafka|pubsub|minio|s3|digitalocean|supabase-js)[^"']*["']/i
+  );
+  assert.doesNotMatch(queueAdaptersSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /legacy browser extension|Live View|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
+  );
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /openai|anthropic|from\s+["'][^"']*\/ai\/[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    queueAdaptersSource,
+    /\bfetch\(|\bnew\s+[A-Z]\w+|\bclass\s+\w+|\bimplements\b|function\s+\w+/i
+  );
+});
+
+test("Lane modules stay free of shared storage and queue adapter implementation responsibility", () => {
+  const laneSources = moduleSources.slice(0, -3);
 
   for (const source of laneSources) {
     assert.doesNotMatch(source, /from\s+["']\.\/storage-adapters\.ts["']/i);
+    assert.doesNotMatch(source, /from\s+["']\.\/queue-adapters\.ts["']/i);
     assert.doesNotMatch(
       source,
       /\b(?:supabase|postgres|prisma|kysely|drizzle|sequelize|typeorm|mongodb|sqlite|redis|bullmq|bee-queue|pg-boss|amqplib|sqs|rabbitmq|kafka|minio|s3)\b|digitalocean spaces/i
@@ -687,6 +782,10 @@ test("Lane modules stay free of shared storage adapter imports and storage imple
     assert.doesNotMatch(
       source,
       /tableName|schemaName|bucketName|insert into|update set|delete from|create table/i
+    );
+    assert.doesNotMatch(
+      source,
+      /interface\s+NeroaOne\w+QueueAdapterContract|enqueueDelayed\(|deadLetter\(|appendObservation\(/i
     );
   }
 });
