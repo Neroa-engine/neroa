@@ -224,11 +224,11 @@ export function NeroaFrontDoorSurface({
         </div>
 
         <section className="pb-10">
-          <div className="flex flex-wrap gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
             {valuePills.map((pill) => (
               <div
                 key={pill}
-                className="inline-flex min-h-12 items-center rounded-full border border-white/14 bg-white/[0.035] px-5 py-3 text-[0.72rem] font-semibold tracking-[0.18em] text-white/76 shadow-[0_0_24px_rgba(45,212,191,0.05)]"
+                className="flex min-h-12 w-full items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-4 py-3 text-center text-[0.72rem] font-semibold tracking-[0.18em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.05)]"
               >
                 {pill}
               </div>
