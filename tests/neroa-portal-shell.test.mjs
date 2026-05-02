@@ -27,6 +27,7 @@ const cleanPortalSources = [
   projectPortalSource,
   portalShellSource
 ];
+const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
 
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
@@ -54,6 +55,26 @@ test("Account Portal placeholder sections are present", () => {
   assert.match(accountPortalSurfaceSource, /Integrations \/ Infrastructure/);
 });
 
+test("Account Portal remains account-level only and does not promote project portal sections as primary sections", () => {
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Strategy Room"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Command Center"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Project Room"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Evidence \/ Results"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Roadmap \/ Scope"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Approvals \/ Decisions"/);
+});
+
+test("Account Portal panels stay planning-only and not live runtime surfaces", () => {
+  assert.match(accountPortalSurfaceSource, /It is not the project execution home\./);
+  assert.match(accountPortalSurfaceSource, /does not connect to Stripe, payment state, credits, or invoice data yet\./);
+  assert.match(accountPortalSurfaceSource, /No auth runtime, profile saving, or settings persistence is connected in this pass\./);
+  assert.match(accountPortalSurfaceSource, /does not connect to team membership, invites, auth providers, or access enforcement yet\./);
+  assert.match(
+    accountPortalSurfaceSource,
+    /does not[\s\S]*create connections, fake connected states, or imply that provider runtime flows are[\s\S]*active\./
+  );
+});
+
 test("Account Portal integrations panel includes planned providers and migration worker guidance", () => {
   assert.match(accountPortalSurfaceSource, /"GitHub"/);
   assert.match(accountPortalSurfaceSource, /"Vercel"/);
@@ -69,6 +90,14 @@ test("Account Portal integrations panel includes planned providers and migration
     /Risky database, payment, and production changes require explicit customer or admin[\s\S]*approval before execution\./
   );
   assert.match(accountPortalSurfaceSource, /approved Supabase CLI or Postgres worker path/);
+});
+
+test("Account Portal does not imply live saving or connected integration state", () => {
+  assert.doesNotMatch(accountPortalSurfaceSource, /<form/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Connected\b/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Save Changes/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Sync Now/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Connect /);
 });
 
 test("Project Portal placeholder sections are present", () => {
@@ -95,6 +124,7 @@ test("clean portal shell does not import legacy room or runtime surfaces", () =>
   for (const source of cleanPortalSources) {
     assert.doesNotMatch(source, /@\/components\/workspace\//);
     assert.doesNotMatch(source, /@\/components\/account\//);
+    assert.doesNotMatch(source, /@\/components\/portal\//);
     assert.doesNotMatch(source, /@\/components\/live-view\//);
     assert.doesNotMatch(source, /@\/components\/marketing\//);
     assert.doesNotMatch(source, /@\/lib\/ai\//);
@@ -155,4 +185,22 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
     assert.doesNotMatch(source, /queue adapter/i);
     assert.doesNotMatch(source, /storage adapter/i);
   }
+});
+
+test("Account Portal route stays inside the clean neroa portal namespace", () => {
+  assert.match(accountPortalSource, /@\/components\/neroa-portal\/neroa-account-portal-surface/);
+  assert.doesNotMatch(accountPortalSource, /@\/components\/portal\//);
+  assert.doesNotMatch(accountPortalSource, /@\/components\/workspace\//);
+});
+
+test("Account Portal does not import old account billing auth or project runtime modules", () => {
+  for (const source of accountPortalSources) {
+    assert.doesNotMatch(source, /@\/components\/account\//);
+    assert.doesNotMatch(source, /@\/lib\/billing\//);
+    assert.doesNotMatch(source, /@\/lib\/auth\//);
+    assert.doesNotMatch(source, /@\/app\/workspace\//);
+    assert.doesNotMatch(source, /@\/lib\/workspace\//);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+  }
+  assert.match(accountPortalSurfaceSource, /"Stripe"/);
 });
