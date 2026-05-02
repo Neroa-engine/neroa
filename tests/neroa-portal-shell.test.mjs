@@ -132,10 +132,13 @@ test("Project Portal panels stay planning-only and not live runtime surfaces", (
   assert.match(projectPortalSurfaceSource, /not Live View, QC runtime, browser recording, or extension-driven runtime/);
   assert.match(projectPortalSurfaceSource, /not the live strategy runtime/);
   assert.match(projectPortalSurfaceSource, /not a live workflow engine/);
+  assert.match(projectPortalSurfaceSource, /Placeholder-only project shell/);
+  assert.match(projectPortalSurfaceSource, /Clean placeholder control surface/);
 });
 
 test("Project Portal uses Neroa wordmark-first branding without rename drift", () => {
   assert.match(projectPortalSurfaceSource, />\s*Neroa\s*</);
+  assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);
@@ -149,6 +152,8 @@ test("Project Portal reflects the locked dark luxury visual direction", () => {
   assert.match(projectPortalSurfaceSource, /subtle teal/i);
   assert.match(projectPortalSurfaceSource, /Premium, spacious, and calm/);
   assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
+  assert.match(projectPortalSurfaceSource, /text-teal-/);
+  assert.match(projectPortalSurfaceSource, /shadow-\[0_40px_120px/);
 });
 
 test("Project Portal does not imply live saving or connected runtime state", () => {
@@ -157,6 +162,9 @@ test("Project Portal does not imply live saving or connected runtime state", () 
   assert.doesNotMatch(projectPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Sync Now/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Connect /);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Start Build/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Run Now/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Launch QC/i);
 });
 
 test("clean portal shell does not introduce UI UX Library or Design Library surfaces", () => {
@@ -259,6 +267,7 @@ test("Project Portal route stays inside the clean neroa portal namespace", () =>
   assert.match(projectPortalSource, /@\/components\/neroa-portal\/neroa-project-portal-surface/);
   assert.doesNotMatch(projectPortalSource, /@\/components\/portal\//);
   assert.doesNotMatch(projectPortalSource, /@\/components\/workspace\//);
+  assert.doesNotMatch(projectPortalSource, /@\/components\/account\//);
 });
 
 test("Project Portal does not import old project workspace billing auth or runtime modules", () => {
@@ -272,5 +281,10 @@ test("Project Portal does not import old project workspace billing auth or runti
     assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*auth/i);
+    assert.doesNotMatch(source, /@\/components\/live-view\//);
+    assert.doesNotMatch(source, /@\/lib\/ai\//);
+    assert.doesNotMatch(source, /codex-relay/);
+    assert.doesNotMatch(source, /worker-trigger/);
+    assert.doesNotMatch(source, /browser-runtime-bridge/);
   }
 });
