@@ -69,7 +69,7 @@ function ChipDivider({
   return (
     <span
       aria-hidden="true"
-      className={["hidden items-center justify-center text-teal-200/72 lg:flex", className].join(" ")}
+      className={["hidden items-center justify-center px-4 text-teal-200/72 lg:flex", className].join(" ")}
     >
       <NorthStarIcon className="h-3.5 w-3.5" />
     </span>
@@ -79,7 +79,7 @@ function ChipDivider({
 const neroaExplanation = (
   <>
     Nice to meet you, <span className="text-white">{"{name}"}</span>. I&apos;m Neroa
-    {" — "}a structured software-building workspace that helps turn an idea into a
+    {" - "}a structured software-building workspace that helps turn an idea into a
     clear roadmap before execution begins. Instead of dropping you into an
     open-ended chat or rushing straight into code, I help define the product,
     organize scope, surface key decisions, prepare approvals, and keep the build
@@ -126,9 +126,6 @@ export function NeroaFrontDoorSurface({
         <div className="northstar-energy-beam northstar-energy-beam-primary absolute right-[15%] top-[5%] h-[76vh] w-[19rem] lg:w-[22rem]" />
         <div className="northstar-energy-beam northstar-energy-beam-secondary absolute right-[12%] top-[8%] h-[70vh] w-[15rem] lg:w-[18rem]" />
         <div className="northstar-energy-particles absolute right-[13%] top-[9%] h-[58vh] w-[22rem] lg:w-[26rem]" />
-        <div className="absolute right-[24%] top-[12%] text-teal-100/90">
-          <NorthStarIcon className="h-6 w-6 drop-shadow-[0_0_22px_rgba(148,255,236,0.52)]" />
-        </div>
         <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.14),transparent_58%)]" />
         <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.18)_34%,rgba(5,8,11,0.78)_76%,#04070a_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-[12rem] bg-[linear-gradient(180deg,rgba(4,7,10,0)_0%,rgba(4,7,10,0.72)_42%,#04070a_100%)]" />
@@ -164,10 +161,10 @@ export function NeroaFrontDoorSurface({
           <section className="max-w-4xl pt-4 lg:pt-10">
             <p className="text-sm uppercase tracking-[0.38em] text-teal-200/78">SaaS Done Right</p>
 
-            <h1 className="mt-6 font-serif text-[clamp(4.6rem,11vw,10.5rem)] leading-[0.86] tracking-[-0.08em] text-white">
+            <h1 className="mt-6 overflow-visible pb-3 font-serif text-[clamp(4.6rem,11vw,10.5rem)] leading-[0.94] tracking-[-0.06em] text-white">
               SaaS
               <br />
-              <span className="bg-gradient-to-r from-teal-200 via-teal-300 to-white bg-clip-text text-transparent">
+              <span className="inline-block pr-[0.08em] bg-gradient-to-r from-teal-200 via-teal-300 to-white bg-clip-text text-transparent">
                 done
               </span>{" "}
               right.
@@ -193,7 +190,7 @@ export function NeroaFrontDoorSurface({
             <div className="chat-scroll min-h-0 flex-1 space-y-6 overflow-y-auto py-5 pr-2">
               <ChatMessage
                 speaker="Neroa"
-                body="Hi, I’m Neroa. What’s your name?"
+                body="Hi, I'm Neroa. What's your name?"
               />
 
               {hasStarted ? (
@@ -208,7 +205,7 @@ export function NeroaFrontDoorSurface({
                     body={
                       <>
                         Nice to meet you, <span className="text-white">{finalName}</span>. I&apos;m Neroa
-                        {" — "}a structured software-building workspace that helps turn an idea
+                        {" - "}a structured software-building workspace that helps turn an idea
                         into a clear roadmap before execution begins. Instead of dropping
                         you into an open-ended chat or rushing straight into code, I help
                         define the product, organize scope, surface key decisions, prepare
@@ -218,7 +215,7 @@ export function NeroaFrontDoorSurface({
                       </>
                     }
                   />
-                  <ChatMessage speaker="Neroa" body="Let’s begin." />
+                  <ChatMessage speaker="Neroa" body="Let's begin." />
                 </>
               ) : null}
             </div>
@@ -231,7 +228,7 @@ export function NeroaFrontDoorSurface({
                     className="flex items-center justify-between rounded-[1rem] bg-teal-300 px-5 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
                   >
                     <span>Let&apos;s Begin</span>
-                    <span aria-hidden="true">→</span>
+                    <span aria-hidden="true">-&gt;</span>
                   </Link>
                 </div>
               ) : (
@@ -276,20 +273,20 @@ export function NeroaFrontDoorSurface({
             {valuePills.map((pill) => (
               <div
                 key={pill}
-                className="flex min-h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3.5 py-2 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)] sm:px-4"
+                className="flex min-h-9 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3 py-1.5 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)] sm:px-3.5"
               >
                 {pill}
               </div>
             ))}
           </div>
 
-          <div className="hidden w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-2 lg:grid">
+          <div className="hidden w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-5 lg:grid">
             {valuePills.map((pill, index) => (
               <div key={pill} className="contents">
                 {index > 0 ? (
                   <ChipDivider className="justify-self-center" />
                 ) : null}
-                <div className="mx-2 flex min-h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3 py-2 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
+                <div className="mx-1.5 flex min-h-9 w-full items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-2.5 py-1.5 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
                   {pill}
                 </div>
               </div>

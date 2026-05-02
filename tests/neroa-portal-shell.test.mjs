@@ -264,6 +264,7 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /text-teal-/);
   assert.match(frontDoorSurfaceSource, /shadow-\[0_30px_120px/);
   assert.match(frontDoorSurfaceSource, /rounded-\[2rem\]/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /right-\[24%\] top-\[12%\] text-teal-100\/90/);
   assert.match(frontDoorSurfaceSource, /h-\[27rem\]/);
   assert.match(frontDoorSurfaceSource, /sm:h-\[29rem\]/);
   assert.match(frontDoorSurfaceSource, /lg:h-\[30rem\]/);
@@ -276,8 +277,11 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.doesNotMatch(frontDoorSurfaceSource, /scroll-rail/);
   assert.doesNotMatch(frontDoorSurfaceSource, /scroll-thumb/);
   assert.match(frontDoorSurfaceSource, /ChipDivider/);
+  assert.match(frontDoorSurfaceSource, /px-4 text-teal-200\/72/);
   assert.match(frontDoorSurfaceSource, /grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)\]/);
+  assert.match(frontDoorSurfaceSource, /items-center px-5 lg:grid/);
   assert.match(frontDoorSurfaceSource, /justify-self-center/);
+  assert.match(frontDoorSurfaceSource, /min-h-9 w-full items-center justify-center/);
   assert.match(frontDoorSurfaceSource, /Scope Before Execution/);
   assert.match(frontDoorSurfaceSource, /Decisions & Approvals/);
   assert.match(frontDoorSurfaceSource, /Evidence & Review/);
