@@ -80,7 +80,9 @@ import {
   getRepairQueuePriorities,
   getRepairQueueSourceDecisions,
   getRepairQueueTypes,
+  getNeroaOneDigitalOceanCodeExecutionEngineIds,
   getNeroaOneDigitalOceanServiceTargetIds,
+  getNeroaOneDigitalOceanSharedBackboneIds,
   getNeroaOneDigitalOceanTopologyScalingTiers,
   getQcStationJobStatuses,
   getQcStationJobTypes,
@@ -158,13 +160,19 @@ import {
   neroaOneStrategyEscalationItemSchema,
   resolveNeroaOneCostPolicy,
   validateAuditAdminRemainsObserverGovernanceTarget,
+  validateBrowserAutomationFallbackGuardrails,
   validateBuildRoomIsNotExecutionHome,
   validateCodeExecutionWorkerTargetIsEngineAgnostic,
+  validateCommandCenterIsNotRoutingOrIntelligenceOwner,
+  validateDatabaseMigrationWorkerGuardrails,
   validateIntegrationOnboardingOutsideCoreExecutionSpine,
   validateNeroaOneDigitalOceanTopologyMap,
   validateNoHardcodedRuntimeInfrastructure,
   validateQcBrowserWorkBelongsToQcBrowserWorker,
+  validateSharedBackboneCoverage,
+  validateStrategyRoomIsNotIntelligenceOwner,
   validateTopologyServiceTargetsDoNotOwnUiBehavior,
+  validateWorkerOutputReceiverIsGeneric,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane,
   getCustomerSafeRepairQueueItemView
@@ -337,6 +345,12 @@ test("DigitalOcean topology contracts are exported and default maps can be creat
   assert.equal(typeof createTenDropletsDigitalOceanTopologyMap, "function");
   assert.equal(typeof createTwentyPlusDropletsDigitalOceanTopologyMap, "function");
   assert.equal(typeof validateNeroaOneDigitalOceanTopologyMap, "function");
+  assert.equal(typeof validateCommandCenterIsNotRoutingOrIntelligenceOwner, "function");
+  assert.equal(typeof validateStrategyRoomIsNotIntelligenceOwner, "function");
+  assert.equal(typeof validateWorkerOutputReceiverIsGeneric, "function");
+  assert.equal(typeof validateDatabaseMigrationWorkerGuardrails, "function");
+  assert.equal(typeof validateBrowserAutomationFallbackGuardrails, "function");
+  assert.equal(typeof validateSharedBackboneCoverage, "function");
 
   const modularMap = createDefaultModularMonolithDigitalOceanTopologyMap();
   const splitMap = createTwoToThreeDropletsDigitalOceanTopologyMap();
@@ -354,6 +368,21 @@ test("DigitalOcean topology contracts are exported and default maps can be creat
   assert.equal(tenMap.scalingTier, "ten_droplets");
   assert.equal(autoscaleMap.deploymentStage, "service_pools_autoscale");
   assert.equal(autoscaleMap.scalingTier, "twenty_plus_droplets");
+
+  for (const topologyMap of [modularMap, splitMap, fiveMap, tenMap, autoscaleMap]) {
+    assert.match(topologyMap.topologyMapId, /^neroa-one:/);
+    assert.equal(typeof topologyMap.version, "string");
+    assert.equal(typeof topologyMap.createdAt, "string");
+    assert.ok(Array.isArray(topologyMap.serviceTargets));
+    assert.ok(topologyMap.serviceTargets.length > 0);
+    assert.equal(typeof topologyMap.sharedBackbone, "object");
+    assert.deepEqual(
+      Object.keys(topologyMap.sharedBackbone).sort(),
+      [...getNeroaOneDigitalOceanSharedBackboneIds()].sort()
+    );
+    assert.equal(validateSharedBackboneCoverage(topologyMap).valid, true);
+    assert.equal(validateNeroaOneDigitalOceanTopologyMap(topologyMap).valid, true);
+  }
 });
 
 test("DigitalOcean topology includes all core and invisible onboarding service targets", () => {
@@ -410,6 +439,33 @@ test("DigitalOcean topology keeps Build Room out of the execution home contract"
   assert.match(workerTarget.notes.join(" "), /Build Room .* must not become the execution home/i);
 });
 
+test("DigitalOcean topology keeps Command Center and Strategy Room out of intelligence ownership", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const commandCenterValidation = validateCommandCenterIsNotRoutingOrIntelligenceOwner(topologyMap);
+  const strategyValidation = validateStrategyRoomIsNotIntelligenceOwner(topologyMap);
+  const appApiTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "app_api");
+  const neroaApiTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "neroa_one_api");
+  const analyzerTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "d_analyzer_service");
+  const strategyTarget = findNeroaOneDigitalOceanServiceTarget(
+    topologyMap,
+    "strategy_escalation_service"
+  );
+
+  assert.equal(commandCenterValidation.valid, true, commandCenterValidation.errors.join("\n"));
+  assert.equal(strategyValidation.valid, true, strategyValidation.errors.join("\n"));
+  assert.ok(appApiTarget);
+  assert.ok(neroaApiTarget);
+  assert.ok(analyzerTarget);
+  assert.ok(strategyTarget);
+  assert.match(appApiTarget.notes.join(" "), /Command Center is intake UI only/i);
+  assert.match(
+    neroaApiTarget.futureDigitalOceanTarget.notes.join(" "),
+    /Command Center is not the routing or intelligence owner/i
+  );
+  assert.match(analyzerTarget.notes.join(" "), /Strategy Room do not own classification or intelligence/i);
+  assert.match(strategyTarget.notes.join(" "), /not Strategy Room UI wiring/i);
+});
+
 test("DigitalOcean topology keeps the code execution worker engine agnostic", () => {
   const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
   const validation = validateCodeExecutionWorkerTargetIsEngineAgnostic(topologyMap);
@@ -419,6 +475,28 @@ test("DigitalOcean topology keeps the code execution worker engine agnostic", ()
   assert.ok(workerTarget);
   assert.match(workerTarget.notes.join(" "), /multiple engines/i);
   assert.match(workerTarget.futureDigitalOceanTarget.notes.join(" "), /engine-agnostic/i);
+  assert.deepEqual(getNeroaOneDigitalOceanCodeExecutionEngineIds(), [
+    "codex_cli",
+    "codex_cloud",
+    "claude_code",
+    "manual_operator",
+    "future_engine"
+  ]);
+  for (const engineId of getNeroaOneDigitalOceanCodeExecutionEngineIds()) {
+    assert.match(workerTarget.futureDigitalOceanTarget.notes.join(" "), new RegExp(engineId, "i"));
+  }
+});
+
+test("DigitalOcean topology keeps worker output receiver generic and not Codex-only", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateWorkerOutputReceiverIsGeneric(topologyMap);
+  const receiverTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "worker_output_receiver");
+
+  assert.equal(validation.valid, true, validation.errors.join("\n"));
+  assert.ok(receiverTarget);
+  assert.equal(receiverTarget.runtimeRole, "receiver");
+  assert.match(receiverTarget.notes.join(" "), /worker output is modeled generically/i);
+  assert.match(receiverTarget.notes.join(" "), /Output Box receiver boundary/i);
 });
 
 test("DigitalOcean topology keeps browser and QC work on qc_browser_worker, not the old browser runtime", () => {
@@ -429,6 +507,7 @@ test("DigitalOcean topology keeps browser and QC work on qc_browser_worker, not 
   assert.equal(validation.valid, true);
   assert.ok(qcTarget);
   assert.deepEqual(qcTarget.ownedLaneIds, ["qc_station"]);
+  assert.match(qcTarget.futureDigitalOceanTarget.notes.join(" "), /browser, screenshot, video, walkthrough, and QC report/i);
   assert.match(qcTarget.futureDigitalOceanTarget.notes.join(" "), /old browser-extension/i);
   assert.match(qcTarget.futureDigitalOceanTarget.notes.join(" "), /Live View/i);
 });
@@ -441,12 +520,15 @@ test("DigitalOcean topology keeps audit admin observer and governance oriented",
   assert.equal(validation.valid, true);
   assert.ok(auditTarget);
   assert.equal(auditTarget.runtimeRole, "observer");
-  assert.match(auditTarget.notes.join(" "), /observer|governance/i);
+  assert.match(auditTarget.futureDigitalOceanTarget.notes.join(" "), /observer and governance oriented/i);
+  assert.match(auditTarget.notes.join(" "), /Must not mutate execution ownership/i);
 });
 
 test("DigitalOcean topology keeps integration onboarding outside the core execution spine", () => {
   const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
   const validation = validateIntegrationOnboardingOutsideCoreExecutionSpine(topologyMap);
+  const migrationValidation = validateDatabaseMigrationWorkerGuardrails(topologyMap);
+  const fallbackValidation = validateBrowserAutomationFallbackGuardrails(topologyMap);
   const onboardingTarget = findNeroaOneDigitalOceanServiceTarget(
     topologyMap,
     "integration_onboarding_service"
@@ -461,6 +543,8 @@ test("DigitalOcean topology keeps integration onboarding outside the core execut
   );
 
   assert.equal(validation.valid, true);
+  assert.equal(migrationValidation.valid, true, migrationValidation.errors.join("\n"));
+  assert.equal(fallbackValidation.valid, true, fallbackValidation.errors.join("\n"));
   assert.ok(onboardingTarget);
   assert.ok(migrationTarget);
   assert.ok(fallbackTarget);
@@ -469,8 +553,10 @@ test("DigitalOcean topology keeps integration onboarding outside the core execut
   assert.match(onboardingTarget.futureDigitalOceanTarget.notes.join(" "), /Back Office/i);
   assert.match(onboardingTarget.futureDigitalOceanTarget.notes.join(" "), /official APIs, CLI, OAuth, and provider integrations first/i);
   assert.match(fallbackTarget.futureDigitalOceanTarget.notes.join(" "), /fallback and verification only/i);
+  assert.match(fallbackTarget.futureDigitalOceanTarget.notes.join(" "), /official APIs, CLI, OAuth/i);
   assert.match(migrationTarget.futureDigitalOceanTarget.notes.join(" "), /Supabase CLI or Postgres worker after authorization/i);
   assert.match(migrationTarget.futureDigitalOceanTarget.notes.join(" "), /customer or admin approval before execution/i);
+  assert.match(migrationTarget.futureDigitalOceanTarget.notes.join(" "), /manual dashboard SQL pasting/i);
 });
 
 test("DigitalOcean topology validates as deployment-map-only and implementation-free", () => {
@@ -478,9 +564,15 @@ test("DigitalOcean topology validates as deployment-map-only and implementation-
   const validation = validateNeroaOneDigitalOceanTopologyMap(topologyMap);
   const uiValidation = validateTopologyServiceTargetsDoNotOwnUiBehavior(topologyMap);
   const hardcodedValidation = validateNoHardcodedRuntimeInfrastructure(topologyMap);
+  const commandCenterValidation = validateCommandCenterIsNotRoutingOrIntelligenceOwner(topologyMap);
+  const strategyValidation = validateStrategyRoomIsNotIntelligenceOwner(topologyMap);
+  const receiverValidation = validateWorkerOutputReceiverIsGeneric(topologyMap);
 
   assert.equal(validation.valid, true, validation.errors.join("\n"));
   assert.equal(uiValidation.valid, true);
+  assert.equal(commandCenterValidation.valid, true, commandCenterValidation.errors.join("\n"));
+  assert.equal(strategyValidation.valid, true, strategyValidation.errors.join("\n"));
+  assert.equal(receiverValidation.valid, true, receiverValidation.errors.join("\n"));
   assert.equal(hardcodedValidation.valid, true, hardcodedValidation.errors.join("\n"));
 });
 
@@ -534,6 +626,13 @@ test("DigitalOcean topology module does not import Codex relay worker trigger ol
   assert.doesNotMatch(topologySource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
 });
 
+test("DigitalOcean topology module does not hardcode runtime URLs endpoints secrets droplet ids or callback routes", () => {
+  assert.doesNotMatch(topologySource, /https?:\/\//i);
+  assert.doesNotMatch(topologySource, /\b\d{1,3}(?:\.\d{1,3}){3}\b/);
+  assert.doesNotMatch(topologySource, /\b(?:callbackUrl|callbackRoute|webhookRoute|workerUrl|dropletId|apiKey)\s*:/i);
+  assert.doesNotMatch(topologySource, /["']\/api\/[^\s"'`]*(?:callback|webhook)["']/i);
+});
+
 test("DigitalOcean topology module remains deployment-map-only and implementation-free", () => {
   assert.doesNotMatch(
     topologySource,
@@ -542,6 +641,7 @@ test("DigitalOcean topology module remains deployment-map-only and implementatio
   assert.doesNotMatch(topologySource, /https?:\/\//i);
   assert.match(topologySource, /createDefaultModularMonolithDigitalOceanTopologyMap/);
   assert.match(topologySource, /validateNeroaOneDigitalOceanTopologyMap/);
+  assert.doesNotMatch(topologySource, /\b(?:deploy|provision|createDroplet|bindWebhook|dispatchRuntime|launchWorker)\s*\(/i);
 });
 
 test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled", () => {

@@ -116,6 +116,14 @@ export const NEROA_ONE_DIGITALOCEAN_STORAGE_ADAPTER_IDS = [
   "browser_automation_fallback_storage_adapter"
 ] as const;
 
+export const NEROA_ONE_DIGITALOCEAN_CODE_EXECUTION_ENGINE_IDS = [
+  "codex_cli",
+  "codex_cloud",
+  "claude_code",
+  "manual_operator",
+  "future_engine"
+] as const;
+
 export type NeroaOneDigitalOceanTopologyServiceKind =
   (typeof NEROA_ONE_DIGITALOCEAN_TOPOLOGY_SERVICE_KINDS)[number];
 export type NeroaOneDigitalOceanTopologyRuntimeRole =
@@ -132,6 +140,8 @@ export type NeroaOneDigitalOceanQueueAdapterId =
   (typeof NEROA_ONE_DIGITALOCEAN_QUEUE_ADAPTER_IDS)[number];
 export type NeroaOneDigitalOceanStorageAdapterId =
   (typeof NEROA_ONE_DIGITALOCEAN_STORAGE_ADAPTER_IDS)[number];
+export type NeroaOneDigitalOceanCodeExecutionEngineId =
+  (typeof NEROA_ONE_DIGITALOCEAN_CODE_EXECUTION_ENGINE_IDS)[number];
 
 export type NeroaOneDigitalOceanTopologyTargetIsolation =
   | "shared_process"
@@ -278,7 +288,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
     },
     notes: [
       "Owns request ingress and forwarding into the Neroa One backend boundary.",
-      "Does not treat Build Room, Command Center, Strategy Room, or Library as execution homes."
+      "Does not treat Build Room, Command Center, Strategy Room, or Library as execution homes.",
+      "Command Center is intake UI only in this topology and must not become the routing or intelligence owner."
     ]
   },
   {
@@ -305,7 +316,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
       ],
       notes: [
         "Acts as the backend-only API boundary for Neroa One request intake, classification handoff, and lane-oriented orchestration contracts.",
-        "Keeps lane logic decoupled from ingress concerns so later extraction stays independently replaceable."
+        "Keeps lane logic decoupled from ingress concerns so later extraction stays independently replaceable.",
+        "Command Center is not the routing or intelligence owner; it only submits into this backend boundary."
       ]
     },
     notes: [
@@ -336,7 +348,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
     },
     notes: [
       "Feeds analyzer decisions into the outcome lane service contract.",
-      "Keeps roadmap/control analysis detached from customer-facing rooms and runtime execution."
+      "Keeps roadmap/control analysis detached from customer-facing rooms and runtime execution.",
+      "Command Center and Strategy Room do not own classification or intelligence inside this topology contract."
     ]
   },
   {
@@ -432,7 +445,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
       ],
       notes: [
         "Owns the execution boundary for multiple code engines through one engine-agnostic worker target.",
-        "The worker target may later fan out to different engines without changing the topology contract."
+        "The worker target may later fan out to different engines without changing the topology contract.",
+        "Conceptual engines include codex_cli, codex_cloud, claude_code, manual_operator, and future_engine."
       ]
     },
     notes: [
@@ -469,6 +483,7 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
     },
     notes: [
       "Maps the existing Codex output box lane to a dedicated receiver-oriented service target.",
+      "Worker output is modeled generically here as an Output Box receiver boundary rather than an engine-specific runtime contract.",
       "Must not call relays, worker triggers, or runtime dispatch from this topology layer."
     ]
   },
@@ -685,6 +700,7 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
     },
     notes: [
       "Represents the service target for follow-up records and answer reconciliation later on.",
+      "Customer Follow-Up remains a future customer-safe response flow and not Command Center UI wiring.",
       "Does not own customer-visible panels, copy rendering, or form submission flows."
     ]
   },
@@ -718,7 +734,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
     },
     notes: [
       "Maps roadmap_revision_required and review-driven escalations to a dedicated target.",
-      "Does not own Strategy Room UI behavior or direct roadmap mutation."
+      "Strategy Escalation remains a future Strategy Room review flow and not Strategy Room UI wiring.",
+      "Does not own Strategy Room UI behavior, direct roadmap mutation, or intelligence ownership."
     ]
   },
   {
@@ -784,7 +801,8 @@ const BASE_SERVICE_TARGET_BLUEPRINTS: readonly ServiceTargetBlueprint[] = [
       ],
       notes: [
         "May generate SQL migration files, validate them, apply them through an approved Supabase CLI or Postgres worker after authorization, verify database, RLS, and function state, then link evidence and audit results later.",
-        "Risky database, payment, or production changes require customer or admin approval before execution."
+        "Risky database, payment, or production changes require customer or admin approval before execution.",
+        "The approved path is future SQL migration file generation, validation, and application through an approved worker path rather than manual dashboard SQL pasting."
       ]
     },
     notes: [
@@ -1037,6 +1055,14 @@ function collectTargetText(target: NeroaOneDigitalOceanTopologyServiceTarget) {
   ].join(" ");
 }
 
+function collectTargetNarrativeText(target: NeroaOneDigitalOceanTopologyServiceTarget) {
+  return [
+    target.futureDigitalOceanTarget.topologyTargetId,
+    target.futureDigitalOceanTarget.notes.join(" "),
+    target.notes.join(" ")
+  ].join(" ");
+}
+
 export function getNeroaOneDigitalOceanTopologyServiceTargetKinds() {
   return [...NEROA_ONE_DIGITALOCEAN_TOPOLOGY_SERVICE_KINDS];
 }
@@ -1055,6 +1081,10 @@ export function getNeroaOneDigitalOceanTopologyScalingTiers() {
 
 export function getNeroaOneDigitalOceanSharedBackboneIds() {
   return [...NEROA_ONE_DIGITALOCEAN_SHARED_BACKBONE_IDS];
+}
+
+export function getNeroaOneDigitalOceanCodeExecutionEngineIds() {
+  return [...NEROA_ONE_DIGITALOCEAN_CODE_EXECUTION_ENGINE_IDS];
 }
 
 export function getNeroaOneDigitalOceanServiceTargetIds() {
@@ -1151,8 +1181,11 @@ export function validateCodeExecutionWorkerTargetIsEngineAgnostic(
   topologyMap: NeroaOneDigitalOceanTopologyMap
 ): NeroaOneDigitalOceanTopologyValidationResult {
   const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "code_execution_worker");
-  const lowerText = collectTargetText(target).toLowerCase();
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
   const errors: string[] = [];
+  const requiredEngines = NEROA_ONE_DIGITALOCEAN_CODE_EXECUTION_ENGINE_IDS.filter(
+    (engineId) => !lowerText.includes(engineId)
+  );
 
   if (!lowerText.includes("engine-agnostic")) {
     errors.push("Code execution worker target must explicitly remain engine-agnostic.");
@@ -1160,6 +1193,12 @@ export function validateCodeExecutionWorkerTargetIsEngineAgnostic(
 
   if (!lowerText.includes("multiple code engines")) {
     errors.push("Code execution worker target must support multiple engines behind one worker boundary.");
+  }
+
+  if (requiredEngines.length > 0) {
+    errors.push(
+      `Code execution worker target must describe the conceptual engines ${requiredEngines.join(", ")}.`
+    );
   }
 
   return {
@@ -1172,14 +1211,14 @@ export function validateQcBrowserWorkBelongsToQcBrowserWorker(
   topologyMap: NeroaOneDigitalOceanTopologyMap
 ): NeroaOneDigitalOceanTopologyValidationResult {
   const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "qc_browser_worker");
-  const lowerText = collectTargetText(target).toLowerCase();
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
   const errors: string[] = [];
 
   if (!target.ownedLaneIds.includes("qc_station")) {
     errors.push("qc_browser_worker must own the qc_station lane boundary.");
   }
 
-  if (!lowerText.includes("old browser-extension") && !lowerText.includes("live view")) {
+  if (!lowerText.includes("old browser-extension") || !lowerText.includes("live view")) {
     errors.push("qc_browser_worker must explicitly stay detached from the old browser-extension or Live View runtime.");
   }
 
@@ -1193,7 +1232,7 @@ export function validateAuditAdminRemainsObserverGovernanceTarget(
   topologyMap: NeroaOneDigitalOceanTopologyMap
 ): NeroaOneDigitalOceanTopologyValidationResult {
   const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "audit_admin_service");
-  const lowerText = collectTargetText(target).toLowerCase();
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
   const errors: string[] = [];
 
   if (target.runtimeRole !== "observer") {
@@ -1214,7 +1253,7 @@ export function validateIntegrationOnboardingOutsideCoreExecutionSpine(
   topologyMap: NeroaOneDigitalOceanTopologyMap
 ): NeroaOneDigitalOceanTopologyValidationResult {
   const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "integration_onboarding_service");
-  const lowerText = collectTargetText(target).toLowerCase();
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
   const errors: string[] = [];
 
   if (target.futureDigitalOceanTarget.serviceGroup !== "back_office_platform_ops") {
@@ -1223,6 +1262,185 @@ export function validateIntegrationOnboardingOutsideCoreExecutionSpine(
 
   if (!lowerText.includes("outside the core neroa one execution spine")) {
     errors.push("integration_onboarding_service must stay outside the core Neroa One execution spine.");
+  }
+
+  if (!lowerText.includes("official apis, cli, oauth")) {
+    errors.push("integration_onboarding_service must prefer official APIs, CLI, and OAuth first.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateCommandCenterIsNotRoutingOrIntelligenceOwner(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const appApiTarget = findServiceTargetOrThrow(topologyMap.serviceTargets, "app_api");
+  const neroaApiTarget = findServiceTargetOrThrow(topologyMap.serviceTargets, "neroa_one_api");
+  const analyzerTarget = findServiceTargetOrThrow(topologyMap.serviceTargets, "d_analyzer_service");
+  const errors = topologyMap.serviceTargets.flatMap((target) => {
+    const lowerText = collectTargetNarrativeText(target).toLowerCase();
+
+    return /command center owns routing|command center owns intelligence|command center is the routing owner|command center is the intelligence owner/.test(
+      lowerText
+    )
+      ? [
+          `Service target ${target.serviceTargetId} must not treat Command Center as the routing or intelligence owner.`
+        ]
+      : [];
+  });
+  const combinedNarrative = [
+    collectTargetNarrativeText(appApiTarget),
+    collectTargetNarrativeText(neroaApiTarget),
+    collectTargetNarrativeText(analyzerTarget)
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (!combinedNarrative.includes("command center is intake ui only")) {
+    errors.push("Topology must state that Command Center remains intake UI only.");
+  }
+
+  if (!combinedNarrative.includes("command center is not the routing or intelligence owner")) {
+    errors.push("Topology must state that Command Center is not the routing or intelligence owner.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateStrategyRoomIsNotIntelligenceOwner(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const analyzerTarget = findServiceTargetOrThrow(topologyMap.serviceTargets, "d_analyzer_service");
+  const strategyTarget = findServiceTargetOrThrow(topologyMap.serviceTargets, "strategy_escalation_service");
+  const errors = topologyMap.serviceTargets.flatMap((target) => {
+    const lowerText = collectTargetNarrativeText(target).toLowerCase();
+
+    return /strategy room owns intelligence|strategy room is the intelligence owner/.test(lowerText)
+      ? [`Service target ${target.serviceTargetId} must not treat Strategy Room as the intelligence owner.`]
+      : [];
+  });
+  const combinedNarrative = [
+    collectTargetNarrativeText(analyzerTarget),
+    collectTargetNarrativeText(strategyTarget)
+  ]
+    .join(" ")
+    .toLowerCase();
+
+  if (!combinedNarrative.includes("strategy room do not own classification or intelligence")) {
+    errors.push("Topology must state that Strategy Room does not own classification or intelligence.");
+  }
+
+  if (!combinedNarrative.includes("not strategy room ui wiring")) {
+    errors.push("Topology must state that Strategy Escalation is not Strategy Room UI wiring.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateWorkerOutputReceiverIsGeneric(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "worker_output_receiver");
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
+  const errors: string[] = [];
+
+  if (!lowerText.includes("worker output is modeled generically")) {
+    errors.push("worker_output_receiver must be described as a generic worker output boundary.");
+  }
+
+  if (!lowerText.includes("output box receiver boundary")) {
+    errors.push("worker_output_receiver must preserve a generic Output Box receiver boundary.");
+  }
+
+  if (lowerText.includes("codex-only")) {
+    errors.push("worker_output_receiver must not be modeled as Codex-only.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateDatabaseMigrationWorkerGuardrails(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "database_migration_worker");
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
+  const errors: string[] = [];
+
+  if (!lowerText.includes("supabase cli") || !lowerText.includes("postgres worker")) {
+    errors.push("database_migration_worker must describe the approved Supabase CLI or Postgres worker path.");
+  }
+
+  if (!lowerText.includes("approval before execution")) {
+    errors.push("database_migration_worker must remain approval-gated for risky changes.");
+  }
+
+  if (!lowerText.includes("sql migration file")) {
+    errors.push("database_migration_worker must describe future SQL migration file generation and validation.");
+  }
+
+  if (!lowerText.includes("rather than manual dashboard sql pasting")) {
+    errors.push("database_migration_worker must reject manual dashboard SQL pasting as the planned path.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateBrowserAutomationFallbackGuardrails(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const target = findServiceTargetOrThrow(topologyMap.serviceTargets, "browser_automation_fallback_worker");
+  const lowerText = collectTargetNarrativeText(target).toLowerCase();
+  const errors: string[] = [];
+
+  if (target.runtimeRole !== "fallback_worker") {
+    errors.push("browser_automation_fallback_worker must keep the fallback_worker runtime role.");
+  }
+
+  if (!lowerText.includes("fallback and verification only")) {
+    errors.push("browser_automation_fallback_worker must remain fallback and verification only.");
+  }
+
+  if (!lowerText.includes("official apis, cli, oauth")) {
+    errors.push("browser_automation_fallback_worker must remain secondary to official APIs, CLI, and OAuth.");
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateSharedBackboneCoverage(
+  topologyMap: NeroaOneDigitalOceanTopologyMap
+): NeroaOneDigitalOceanTopologyValidationResult {
+  const errors: string[] = [];
+
+  for (const backboneId of NEROA_ONE_DIGITALOCEAN_SHARED_BACKBONE_IDS) {
+    const entry = topologyMap.sharedBackbone[backboneId];
+
+    if (!entry) {
+      errors.push(`Missing shared backbone entry ${backboneId}.`);
+      continue;
+    }
+
+    if (entry.backboneId !== backboneId) {
+      errors.push(`Shared backbone entry ${backboneId} must preserve its typed backboneId.`);
+    }
   }
 
   return {
@@ -1239,8 +1457,10 @@ export function validateNoHardcodedRuntimeInfrastructure(
     /\b\d{1,3}(?:\.\d{1,3}){3}\b/,
     /\b(?:token|secret|password|passwd|api[_-]?key)\s*[:=]/i,
     /\bdroplet(?:[-_ ]?id)?\s*[:=]\s*[^\s,]+/i,
-    /\/api\/[^\s"'`]*callback/i,
-    /\bdispatchMode\s*:\s*["']live["']/i
+    /\b(?:callbackUrl|callbackRoute|webhookRoute|workerUrl|dropletId|apiKey)\b/i,
+    /\/api\/[^\s"'`]*(?:callback|webhook)/i,
+    /\bdispatchMode\s*:\s*["']live["']/i,
+    /\bwebhook(?:Route|Url|Path)\b/i
   ];
 
   const errors = topologyMap.serviceTargets.flatMap((target) => {
@@ -1274,10 +1494,16 @@ export function validateNeroaOneDigitalOceanTopologyMap(
   const validators = [
     validateTopologyServiceTargetsDoNotOwnUiBehavior(topologyMap),
     validateBuildRoomIsNotExecutionHome(topologyMap),
+    validateCommandCenterIsNotRoutingOrIntelligenceOwner(topologyMap),
+    validateStrategyRoomIsNotIntelligenceOwner(topologyMap),
     validateCodeExecutionWorkerTargetIsEngineAgnostic(topologyMap),
+    validateWorkerOutputReceiverIsGeneric(topologyMap),
     validateQcBrowserWorkBelongsToQcBrowserWorker(topologyMap),
     validateAuditAdminRemainsObserverGovernanceTarget(topologyMap),
     validateIntegrationOnboardingOutsideCoreExecutionSpine(topologyMap),
+    validateDatabaseMigrationWorkerGuardrails(topologyMap),
+    validateBrowserAutomationFallbackGuardrails(topologyMap),
+    validateSharedBackboneCoverage(topologyMap),
     validateNoHardcodedRuntimeInfrastructure(topologyMap)
   ];
 
