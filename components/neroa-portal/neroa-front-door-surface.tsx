@@ -1,45 +1,41 @@
 import Link from "next/link";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 
-const flowSteps = [
+const conversationMoments = [
   {
-    step: "01",
-    title: "Tell us what you want to build.",
+    speaker: "Neroa",
+    tone: "assistant",
+    line: "Hi, I’m Neroa. What’s your name?",
     detail:
-      "Start with the product, workflow, or customer outcome you want Neroa to shape."
+      "A calm front-door prompt that opens the project conversation without pretending live chat is already active."
   },
   {
-    step: "02",
-    title: "Neroa turns it into a structured project plan.",
-    detail:
-      "The front door organizes the request into roadmap-ready scope, dependencies, and decision areas."
+    speaker: "Visitor",
+    tone: "visitor",
+    line: "My name is Tom.",
+    detail: "A simple example response that shows how the entry flow begins."
   },
   {
-    step: "03",
-    title: "Review the roadmap, scope, and next steps.",
+    speaker: "Neroa",
+    tone: "assistant",
+    line: "Tell me what you want to build, and I’ll help shape the path.",
     detail:
-      "See what matters before execution begins so the project stays calm, reviewable, and controlled."
-  },
-  {
-    step: "04",
-    title: "Move into your project workspace.",
-    detail:
-      "Continue into a clean workspace shaped around strategy, command, evidence, and approvals."
+      "From the first exchange, the goal is to move toward a structured roadmap, visible scope, and clear next steps."
   }
 ] as const;
 
 const capabilityCards = [
   {
     eyebrow: "What Neroa Does",
-    title: "Turns a starting idea into a structured project roadmap.",
+    title: "Turns an opening conversation into a structured project roadmap.",
     body:
-      "Start with the product you want to build. Neroa turns your idea into a structured project roadmap with scope, sequencing, and visible decision points."
+      "Neroa helps turn an idea into a structured project roadmap, clear scope, decision points, and the next steps that matter before execution begins."
   },
   {
     eyebrow: "How Projects Move",
-    title: "Keeps the next move legible before work expands.",
+    title: "Moves from conversation to project clarity without tool sprawl.",
     body:
-      "Review scope, decisions, and next steps before execution begins, then move forward with a project workspace designed for clarity instead of tool sprawl."
+      "After the first exchange, Neroa organizes roadmap direction, scope, decisions, and a clean workspace path so the project can move forward intentionally."
   },
   {
     eyebrow: "Governance And Control",
@@ -53,6 +49,14 @@ const governancePoints = [
   "Project-first entry before execution pressure",
   "Visible scope, checkpoints, and approvals",
   "Customer-safe movement instead of hidden operator mechanics"
+] as const;
+
+const explanationPoints = [
+  "Structured roadmap",
+  "Clear scope",
+  "Visible decisions",
+  "Next steps",
+  "Clean project workspace"
 ] as const;
 
 export function NeroaFrontDoorSurface() {
@@ -75,13 +79,62 @@ export function NeroaFrontDoorSurface() {
 
               <div className="space-y-5">
                 <h1 className="max-w-4xl font-serif text-4xl leading-tight text-slate-50 lg:text-6xl">
-                  Start with the product you want to build.
+                  Hi, I’m Neroa. What’s your name?
                 </h1>
                 <p className="max-w-3xl text-base leading-8 text-slate-300">
-                  Neroa turns your idea into a structured project roadmap. Review scope,
-                  decisions, and next steps before execution begins, then move into a clean
-                  project workspace designed around strategy, command, evidence, and approvals.
+                  Neroa helps turn an idea into a structured project roadmap, scope, decisions,
+                  next steps, and a clean project workspace before execution begins.
                 </p>
+              </div>
+
+              <div className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.26em] text-teal-200">
+                    Conversational Preview
+                  </p>
+                  <span className="rounded-full border border-slate-300/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">
+                    Preview Only
+                  </span>
+                </div>
+                <div className="mt-5 space-y-4">
+                  <article className="ml-0 max-w-2xl rounded-[1.4rem] border border-teal-300/15 bg-teal-300/10 px-5 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-100">
+                      Neroa
+                    </p>
+                    <p className="mt-2 text-base leading-8 text-slate-50">
+                      Hi, I’m Neroa. What’s your name?
+                    </p>
+                  </article>
+
+                  <article className="ml-auto max-w-xl rounded-[1.4rem] border border-white/10 bg-white/6 px-5 py-4 text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                      Visitor Example
+                    </p>
+                    <p className="mt-2 text-base leading-8 text-slate-100">My name is Tom.</p>
+                  </article>
+
+                  <article className="max-w-3xl rounded-[1.4rem] border border-white/8 bg-white/5 px-5 py-5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-100">
+                      What Happens Next
+                    </p>
+                    <p className="mt-3 text-sm leading-8 text-slate-300">
+                      Start with the product you want to build. Neroa turns that opening
+                      conversation into a structured roadmap, clearer scope, visible decisions, and
+                      the next steps that lead into a clean project workspace built around
+                      strategy, command, evidence, and approvals.
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {explanationPoints.map((point) => (
+                        <span
+                          key={point}
+                          className="rounded-full border border-white/8 bg-black/20 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-300"
+                        >
+                          {point}
+                        </span>
+                      ))}
+                    </div>
+                  </article>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -89,7 +142,7 @@ export function NeroaFrontDoorSurface() {
                   href="/neroa/auth"
                   className="rounded-full border border-teal-300/30 bg-teal-300/10 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
                 >
-                  Start your project
+                  Let’s begin your project
                 </Link>
                 <Link
                   href="/neroa/account"
@@ -114,21 +167,30 @@ export function NeroaFrontDoorSurface() {
 
             <aside className="rounded-[1.9rem] border border-teal-200/15 bg-[linear-gradient(180deg,rgba(148,163,184,0.12)_0%,rgba(20,184,166,0.07)_100%)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
               <p className="text-xs font-semibold uppercase tracking-[0.26em] text-teal-200">
-                Project Start Flow
+                Conversation Rhythm
               </p>
               <div className="mt-5 space-y-3">
-                {flowSteps.map((step) => (
+                {conversationMoments.map((moment, index) => (
                   <article
-                    key={step.step}
+                    key={moment.line}
                     className="rounded-[1.4rem] border border-white/8 bg-black/20 px-4 py-4"
                   >
                     <div className="flex items-start gap-4">
-                      <span className="mt-0.5 rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-100">
-                        {step.step}
+                      <span
+                        className={
+                          moment.tone === "assistant"
+                            ? "mt-0.5 rounded-full border border-teal-300/20 bg-teal-300/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-teal-100"
+                            : "mt-0.5 rounded-full border border-slate-300/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300"
+                        }
+                      >
+                        {String(index + 1).padStart(2, "0")}
                       </span>
                       <div className="space-y-2">
-                        <h2 className="font-serif text-xl text-slate-50">{step.title}</h2>
-                        <p className="text-sm leading-7 text-slate-300">{step.detail}</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                          {moment.speaker}
+                        </p>
+                        <h2 className="font-serif text-xl text-slate-50">{moment.line}</h2>
+                        <p className="text-sm leading-7 text-slate-300">{moment.detail}</p>
                       </div>
                     </div>
                   </article>
@@ -201,9 +263,9 @@ export function NeroaFrontDoorSurface() {
                   Move from idea to a clean project start.
                 </h2>
                 <p className="max-w-3xl text-sm leading-8 text-slate-300">
-                  Use the clean Neroa front door to begin the project conversation, preview the
-                  account and project shells, and keep future runtime work isolated until it is
-                  intentionally introduced.
+                  Use the clean Neroa front door to preview the conversation style, understand how
+                  Neroa frames scope before execution, and move toward the account and project
+                  shells without introducing live runtime behavior yet.
                 </p>
               </div>
             </div>
@@ -213,7 +275,7 @@ export function NeroaFrontDoorSurface() {
                 href="/neroa/auth"
                 className="rounded-full border border-teal-300/30 bg-teal-300/10 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
               >
-                Start your project
+                Let’s begin your project
               </Link>
               <Link
                 href="/neroa/account"

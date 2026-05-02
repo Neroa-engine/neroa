@@ -78,16 +78,18 @@ test("/neroa front door stays inside the clean neroa portal namespace", () => {
   assert.doesNotMatch(frontDoorSource, /@\/lib\/billing\//);
 });
 
-test("/neroa front door includes the clean landing structure and four-step flow", () => {
+test("/neroa front door includes the clean conversational landing structure", () => {
   assert.match(frontDoorSurfaceSource, /NeroaPortalNavigation/);
   assert.match(frontDoorSurfaceSource, /currentPath="\/neroa"/);
   assert.match(frontDoorSurfaceSource, /tone="dark"/);
-  assert.match(frontDoorSurfaceSource, /Start with the product you want to build\./);
-  assert.match(frontDoorSurfaceSource, /Project Start Flow/);
-  assert.match(frontDoorSurfaceSource, /Tell us what you want to build\./);
-  assert.match(frontDoorSurfaceSource, /Neroa turns it into a structured project plan\./);
-  assert.match(frontDoorSurfaceSource, /Review the roadmap, scope, and next steps\./);
-  assert.match(frontDoorSurfaceSource, /Move into your project workspace\./);
+  assert.match(frontDoorSurfaceSource, /Hi, I’m Neroa\. What’s your name\?/);
+  assert.match(frontDoorSurfaceSource, /My name is Tom\./);
+  assert.match(frontDoorSurfaceSource, /Conversational Preview/);
+  assert.match(frontDoorSurfaceSource, /Conversation Rhythm/);
+  assert.match(
+    frontDoorSurfaceSource,
+    /Neroa helps turn an idea into a structured project roadmap, scope, decisions,[\s\S]*next steps, and a clean project workspace before execution begins\./
+  );
   assert.match(frontDoorSurfaceSource, /What Neroa Does/);
   assert.match(frontDoorSurfaceSource, /How Projects Move/);
   assert.match(frontDoorSurfaceSource, /Governance And Control/);
@@ -110,6 +112,7 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/auth"/);
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/account"/);
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/project"/);
+  assert.match(frontDoorSurfaceSource, /Let’s begin your project/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/auth"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/diy"/);
@@ -120,6 +123,10 @@ test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
   assert.match(
     frontDoorSurfaceSource,
     /do not imply live authentication, pricing checkout, billing runtime, or project[\s\S]*execution wiring yet\./
+  );
+  assert.match(
+    frontDoorSurfaceSource,
+    /opens the project conversation without pretending live chat is already active\./
   );
   assert.match(frontDoorSurfaceSource, /Pricing and execution options follow after Neroa understands the project scope\./);
   assert.match(frontDoorSurfaceSource, /No forms, fake connected states, or live submission paths are active here\./);
@@ -132,6 +139,8 @@ test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
   assert.doesNotMatch(frontDoorSurfaceSource, /Build your full MVP today/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /<form/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /<table/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /onSubmit=/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /<input/i);
 });
 
 test("clean portal navigation links the three clean neroa routes only", () => {
