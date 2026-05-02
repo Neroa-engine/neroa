@@ -279,11 +279,9 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /ChipDivider/);
   assert.match(frontDoorSurfaceSource, /px-4 text-teal-200\/72/);
   assert.match(frontDoorSurfaceSource, /flex flex-wrap items-center justify-center gap-x-3 gap-y-3 lg:hidden/);
-  assert.match(frontDoorSurfaceSource, /hidden w-full items-center justify-center lg:flex/);
-  assert.match(frontDoorSurfaceSource, /className="mx-5"/);
-  assert.match(frontDoorSurfaceSource, /inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-white\/14 bg-white\/\[0\.035\] px-5 py-2/);
-  assert.doesNotMatch(frontDoorSurfaceSource, /grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)\]/);
-  assert.doesNotMatch(frontDoorSurfaceSource, /min-h-9 w-full items-center justify-center/);
+  assert.match(frontDoorSurfaceSource, /hidden w-full grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)\] items-center px-8 lg:grid/);
+  assert.match(frontDoorSurfaceSource, /justify-self-center px-5/);
+  assert.match(frontDoorSurfaceSource, /flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-full border border-white\/14 bg-white\/\[0\.035\] px-4 py-2/);
   assert.match(frontDoorSurfaceSource, /Scope Before Execution/);
   assert.match(frontDoorSurfaceSource, /Decisions & Approvals/);
   assert.match(frontDoorSurfaceSource, /Evidence & Review/);
