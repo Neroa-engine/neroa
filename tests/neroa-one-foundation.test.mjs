@@ -47,10 +47,16 @@ import {
   createDraftCodexExecutionPacket,
   createDraftCodexExecutionPacketFromQueueEntry,
   createDraftPromptRoomItemFromCodexExecutionPacket,
+  createDefaultModularMonolithDigitalOceanTopologyMap,
+  createFiveDropletsDigitalOceanTopologyMap,
   createNeroaOneOutcomeQueueEntry,
   createNeroaOneResponse,
   createQueuedCodeExecutionWorkerRunFromCodexExecutionPacket,
   evaluateNeroaOneDecisionGate,
+  createTenDropletsDigitalOceanTopologyMap,
+  createTwentyPlusDropletsDigitalOceanTopologyMap,
+  createTwoToThreeDropletsDigitalOceanTopologyMap,
+  findNeroaOneDigitalOceanServiceTarget,
   getAuditRoomEventTypes,
   getAuditRoomRecommendedActions,
   getAuditRoomSeverityLevels,
@@ -74,6 +80,8 @@ import {
   getRepairQueuePriorities,
   getRepairQueueSourceDecisions,
   getRepairQueueTypes,
+  getNeroaOneDigitalOceanServiceTargetIds,
+  getNeroaOneDigitalOceanTopologyScalingTiers,
   getQcStationJobStatuses,
   getQcStationJobTypes,
   getRejectedOutputReviewDecisionsForQcStation,
@@ -149,6 +157,14 @@ import {
   neroaOneStrategyEscalationLane,
   neroaOneStrategyEscalationItemSchema,
   resolveNeroaOneCostPolicy,
+  validateAuditAdminRemainsObserverGovernanceTarget,
+  validateBuildRoomIsNotExecutionHome,
+  validateCodeExecutionWorkerTargetIsEngineAgnostic,
+  validateIntegrationOnboardingOutsideCoreExecutionSpine,
+  validateNeroaOneDigitalOceanTopologyMap,
+  validateNoHardcodedRuntimeInfrastructure,
+  validateQcBrowserWorkBelongsToQcBrowserWorker,
+  validateTopologyServiceTargetsDoNotOwnUiBehavior,
   validateReadyToBuildLaneItemForCodexExecutionPacket,
   validateNeroaOneOutcomeQueueItemForLane,
   getCustomerSafeRepairQueueItemView
@@ -176,8 +192,14 @@ const moduleSources = [
   "../lib/neroa-one/audit-room.ts",
   "../lib/neroa-one/queue-adapters.ts",
   "../lib/neroa-one/storage-adapters.ts",
+  "../lib/neroa-one/digitalocean-topology.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
+
+const topologySource = readFileSync(
+  new URL("../lib/neroa-one/digitalocean-topology.ts", import.meta.url),
+  "utf8"
+);
 
 function buildFixtureSpaceContext(overrides = {}) {
   return buildSpaceContext({
@@ -308,6 +330,160 @@ async function buildAuditRoomFixture() {
   };
 }
 
+test("DigitalOcean topology contracts are exported and default maps can be created", () => {
+  assert.equal(typeof createDefaultModularMonolithDigitalOceanTopologyMap, "function");
+  assert.equal(typeof createTwoToThreeDropletsDigitalOceanTopologyMap, "function");
+  assert.equal(typeof createFiveDropletsDigitalOceanTopologyMap, "function");
+  assert.equal(typeof createTenDropletsDigitalOceanTopologyMap, "function");
+  assert.equal(typeof createTwentyPlusDropletsDigitalOceanTopologyMap, "function");
+  assert.equal(typeof validateNeroaOneDigitalOceanTopologyMap, "function");
+
+  const modularMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const splitMap = createTwoToThreeDropletsDigitalOceanTopologyMap();
+  const fiveMap = createFiveDropletsDigitalOceanTopologyMap();
+  const tenMap = createTenDropletsDigitalOceanTopologyMap();
+  const autoscaleMap = createTwentyPlusDropletsDigitalOceanTopologyMap();
+
+  assert.equal(modularMap.deploymentStage, "modular_monolith");
+  assert.equal(modularMap.scalingTier, "one_droplet");
+  assert.equal(splitMap.deploymentStage, "split_app_and_workers");
+  assert.equal(splitMap.scalingTier, "two_to_three_droplets");
+  assert.equal(fiveMap.deploymentStage, "dedicated_lane_services");
+  assert.equal(fiveMap.scalingTier, "five_droplets");
+  assert.equal(tenMap.deploymentStage, "horizontal_worker_pools");
+  assert.equal(tenMap.scalingTier, "ten_droplets");
+  assert.equal(autoscaleMap.deploymentStage, "service_pools_autoscale");
+  assert.equal(autoscaleMap.scalingTier, "twenty_plus_droplets");
+});
+
+test("DigitalOcean topology includes all core and invisible onboarding service targets", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const expectedCoreTargets = [
+    "app_api",
+    "neroa_one_api",
+    "d_analyzer_service",
+    "outcome_lane_service",
+    "prompt_service",
+    "code_execution_worker",
+    "worker_output_receiver",
+    "output_review_service",
+    "repair_queue_service",
+    "qc_browser_worker",
+    "evidence_service",
+    "audit_admin_service",
+    "customer_follow_up_service",
+    "strategy_escalation_service"
+  ];
+  const expectedInvisibleInfrastructureTargets = [
+    "integration_onboarding_service",
+    "database_migration_worker",
+    "health_check_worker",
+    "browser_automation_fallback_worker"
+  ];
+  const actualTargets = topologyMap.serviceTargets.map((target) => target.serviceTargetId);
+
+  assert.deepEqual(
+    [...getNeroaOneDigitalOceanServiceTargetIds()].sort(),
+    [...expectedCoreTargets, ...expectedInvisibleInfrastructureTargets].sort()
+  );
+  assert.deepEqual(actualTargets.slice().sort(), [...expectedCoreTargets, ...expectedInvisibleInfrastructureTargets].sort());
+});
+
+test("DigitalOcean topology represents scaling tiers from one droplet through twenty plus droplets", () => {
+  assert.deepEqual(getNeroaOneDigitalOceanTopologyScalingTiers(), [
+    "one_droplet",
+    "two_to_three_droplets",
+    "five_droplets",
+    "ten_droplets",
+    "twenty_plus_droplets"
+  ]);
+});
+
+test("DigitalOcean topology keeps Build Room out of the execution home contract", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateBuildRoomIsNotExecutionHome(topologyMap);
+  const workerTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "code_execution_worker");
+
+  assert.equal(validation.valid, true);
+  assert.ok(workerTarget);
+  assert.doesNotMatch(workerTarget.ownedLaneIds.join(" "), /build_room/i);
+  assert.match(workerTarget.notes.join(" "), /Build Room .* must not become the execution home/i);
+});
+
+test("DigitalOcean topology keeps the code execution worker engine agnostic", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateCodeExecutionWorkerTargetIsEngineAgnostic(topologyMap);
+  const workerTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "code_execution_worker");
+
+  assert.equal(validation.valid, true);
+  assert.ok(workerTarget);
+  assert.match(workerTarget.notes.join(" "), /multiple engines/i);
+  assert.match(workerTarget.futureDigitalOceanTarget.notes.join(" "), /engine-agnostic/i);
+});
+
+test("DigitalOcean topology keeps browser and QC work on qc_browser_worker, not the old browser runtime", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateQcBrowserWorkBelongsToQcBrowserWorker(topologyMap);
+  const qcTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "qc_browser_worker");
+
+  assert.equal(validation.valid, true);
+  assert.ok(qcTarget);
+  assert.deepEqual(qcTarget.ownedLaneIds, ["qc_station"]);
+  assert.match(qcTarget.futureDigitalOceanTarget.notes.join(" "), /old browser-extension/i);
+  assert.match(qcTarget.futureDigitalOceanTarget.notes.join(" "), /Live View/i);
+});
+
+test("DigitalOcean topology keeps audit admin observer and governance oriented", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateAuditAdminRemainsObserverGovernanceTarget(topologyMap);
+  const auditTarget = findNeroaOneDigitalOceanServiceTarget(topologyMap, "audit_admin_service");
+
+  assert.equal(validation.valid, true);
+  assert.ok(auditTarget);
+  assert.equal(auditTarget.runtimeRole, "observer");
+  assert.match(auditTarget.notes.join(" "), /observer|governance/i);
+});
+
+test("DigitalOcean topology keeps integration onboarding outside the core execution spine", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateIntegrationOnboardingOutsideCoreExecutionSpine(topologyMap);
+  const onboardingTarget = findNeroaOneDigitalOceanServiceTarget(
+    topologyMap,
+    "integration_onboarding_service"
+  );
+  const migrationTarget = findNeroaOneDigitalOceanServiceTarget(
+    topologyMap,
+    "database_migration_worker"
+  );
+  const fallbackTarget = findNeroaOneDigitalOceanServiceTarget(
+    topologyMap,
+    "browser_automation_fallback_worker"
+  );
+
+  assert.equal(validation.valid, true);
+  assert.ok(onboardingTarget);
+  assert.ok(migrationTarget);
+  assert.ok(fallbackTarget);
+  assert.equal(onboardingTarget.futureDigitalOceanTarget.serviceGroup, "back_office_platform_ops");
+  assert.match(onboardingTarget.futureDigitalOceanTarget.notes.join(" "), /outside the core Neroa One execution spine/i);
+  assert.match(onboardingTarget.futureDigitalOceanTarget.notes.join(" "), /Back Office/i);
+  assert.match(onboardingTarget.futureDigitalOceanTarget.notes.join(" "), /official APIs, CLI, OAuth, and provider integrations first/i);
+  assert.match(fallbackTarget.futureDigitalOceanTarget.notes.join(" "), /fallback and verification only/i);
+  assert.match(migrationTarget.futureDigitalOceanTarget.notes.join(" "), /Supabase CLI or Postgres worker after authorization/i);
+  assert.match(migrationTarget.futureDigitalOceanTarget.notes.join(" "), /customer or admin approval before execution/i);
+});
+
+test("DigitalOcean topology validates as deployment-map-only and implementation-free", () => {
+  const topologyMap = createDefaultModularMonolithDigitalOceanTopologyMap();
+  const validation = validateNeroaOneDigitalOceanTopologyMap(topologyMap);
+  const uiValidation = validateTopologyServiceTargetsDoNotOwnUiBehavior(topologyMap);
+  const hardcodedValidation = validateNoHardcodedRuntimeInfrastructure(topologyMap);
+
+  assert.equal(validation.valid, true, validation.errors.join("\n"));
+  assert.equal(uiValidation.valid, true);
+  assert.equal(hardcodedValidation.valid, true, hardcodedValidation.errors.join("\n"));
+});
+
 test("Neroa One foundation does not import or call model providers", () => {
   for (const source of moduleSources) {
     assert.doesNotMatch(source, /from\s+["']openai["']/i);
@@ -324,6 +500,48 @@ test("Neroa One foundation does not import or call model providers", () => {
 
   assert.equal(response.requiresModel, false);
   assert.equal(response.costPolicy.aiAllowedNow, false);
+});
+
+test("DigitalOcean topology module stays backend-only and import-free", () => {
+  assert.doesNotMatch(topologySource, /^\s*import\s/m);
+  assert.doesNotMatch(
+    topologySource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|library|live-view|browser-extension)[^"']*["']/i
+  );
+});
+
+test("DigitalOcean topology module does not import Supabase or database clients", () => {
+  assert.doesNotMatch(topologySource, /from\s+["'][^"']*supabase[^"']*["']/i);
+  assert.doesNotMatch(
+    topologySource,
+    /from\s+["'][^"']*(pg|postgres|drizzle|prisma|kysely)[^"']*["']|createClient/i
+  );
+});
+
+test("DigitalOcean topology module does not import Redis BullMQ queue providers or provider SDKs", () => {
+  assert.doesNotMatch(topologySource, /from\s+["'][^"']*(redis|bullmq|amqplib|bee-queue|kafka)[^"']*["']/i);
+  assert.doesNotMatch(topologySource, /\bRedis\b|\bBullMQ\b|\bamqplib\b|\bkafkajs\b/i);
+});
+
+test("DigitalOcean topology module does not import DigitalOcean or other provider SDKs", () => {
+  assert.doesNotMatch(topologySource, /from\s+["'][^"']*(digitalocean|@digitalocean|aws-sdk|@aws-sdk|@google-cloud|stripe)[^"']*["']/i);
+  assert.doesNotMatch(topologySource, /new\s+DigitalOcean|new\s+Stripe|createClient\(/i);
+});
+
+test("DigitalOcean topology module does not import Codex relay worker trigger old browser runtime or model calls", () => {
+  assert.doesNotMatch(topologySource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(topologySource, /from\s+["'][^"']*(live-view|browser-runtime|browser-extension)[^"']*["']/i);
+  assert.doesNotMatch(topologySource, /openai|anthropic|from\s+["'][^"']*ai[^"']*["']/i);
+});
+
+test("DigitalOcean topology module remains deployment-map-only and implementation-free", () => {
+  assert.doesNotMatch(
+    topologySource,
+    /\bfetch\s*\(|axios\.|process\.env|new\s+Worker|setInterval|setTimeout|queue\.add|dispatchJob|dispatchWorker|dispatchQueue/i
+  );
+  assert.doesNotMatch(topologySource, /https?:\/\//i);
+  assert.match(topologySource, /createDefaultModularMonolithDigitalOceanTopologyMap/);
+  assert.match(topologySource, /validateNeroaOneDigitalOceanTopologyMap/);
 });
 
 test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled", () => {
@@ -779,7 +997,7 @@ test("Queue adapter contracts are exported, lane-typed, and implementation-free"
 });
 
 test("Lane modules stay free of shared storage and queue adapter implementation responsibility", () => {
-  const laneSources = moduleSources.slice(0, -3);
+  const laneSources = moduleSources.slice(0, -4);
 
   for (const source of laneSources) {
     assert.doesNotMatch(source, /from\s+["']\.\/storage-adapters\.ts["']/i);

@@ -21,6 +21,7 @@ export * from "./evidence-linking.ts";
 export * from "./audit-room.ts";
 export * from "./storage-adapters.ts";
 export * from "./queue-adapters.ts";
+export * from "./digitalocean-topology.ts";
 
 import { buildBuildRoomHandoffPackage } from "./build-room-handoff.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";
