@@ -253,8 +253,11 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /text-teal-/);
   assert.match(frontDoorSurfaceSource, /shadow-\[0_28px_110px/);
   assert.match(frontDoorSurfaceSource, /rounded-\[2rem\]/);
-  assert.match(frontDoorSurfaceSource, /h-\[39rem\]/);
-  assert.match(frontDoorSurfaceSource, /lg:h-\[49rem\]/);
+  assert.match(frontDoorSurfaceSource, /self-start/);
+  assert.match(frontDoorSurfaceSource, /lg:mt-8/);
+  assert.match(frontDoorSurfaceSource, /h-\[31rem\]/);
+  assert.match(frontDoorSurfaceSource, /sm:h-\[33rem\]/);
+  assert.match(frontDoorSurfaceSource, /lg:h-\[37rem\]/);
   assert.match(frontDoorSurfaceSource, /overflow-y-auto/);
   assert.match(frontDoorSurfaceSource, /scroll-rail/);
   assert.match(frontDoorSurfaceSource, /scroll-thumb/);

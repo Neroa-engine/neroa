@@ -284,7 +284,7 @@ export function NeroaFrontDoorSurface({
             </p>
           </section>
 
-          <section className="relative flex h-[39rem] flex-col rounded-[2rem] border border-white/14 bg-black/42 p-6 shadow-[0_28px_110px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:h-[41rem] sm:p-8 lg:h-[49rem] lg:p-9">
+          <section className="relative self-start lg:mt-8 flex h-[31rem] flex-col rounded-[2rem] border border-white/14 bg-black/42 p-6 shadow-[0_28px_110px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:h-[33rem] sm:p-8 lg:h-[37rem] lg:p-9">
             <div
               aria-hidden="true"
               className="scroll-rail pointer-events-none absolute bottom-8 right-4 top-28 w-px rounded-full bg-white/8"
