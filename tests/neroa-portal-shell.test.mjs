@@ -306,41 +306,54 @@ test("navigation uses Neroa wordmark text only and no image logo paths", () => {
   assert.doesNotMatch(portalNavigationSource, />\s*N\s*</);
 });
 
-test("clean auth route exports and renders a placeholder-only auth surface", () => {
+test("clean auth route exports and renders the Neroa auth page UI", () => {
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSource, /@\/components\/neroa-portal\/neroa-auth-surface/);
   assert.doesNotMatch(authPortalSource, /@\/components\/portal\//);
   assert.doesNotMatch(authPortalSource, /@\/components\/workspace\//);
   assert.doesNotMatch(authPortalSource, /@\/components\/auth-form/);
-  assert.match(authPortalSurfaceSource, /NeroaPortalNavigation/);
-  assert.match(authPortalSurfaceSource, /currentPath="\/neroa\/auth"/);
-  assert.match(authPortalSurfaceSource, /"Sign in"/);
-  assert.match(authPortalSurfaceSource, /"Create account"/);
-  assert.match(authPortalSurfaceSource, /"Continue to Account Portal later"/);
-  assert.match(authPortalSurfaceSource, /"Continue to Project Portal later"/);
+  assert.match(authPortalSource, /Neroa \| Sign In/);
+  assert.match(authPortalSurfaceSource, /"use client"/);
+  assert.match(authPortalSurfaceSource, /Welcome to Neroa/);
+  assert.match(authPortalSurfaceSource, /Sign in or create an account to start your project\./);
+  assert.match(authPortalSurfaceSource, /Sign In/);
+  assert.match(authPortalSurfaceSource, /Create Account/);
+  assert.match(authPortalSurfaceSource, /Email/);
+  assert.match(authPortalSurfaceSource, /Password/);
+  assert.match(authPortalSurfaceSource, /Confirm Password/);
+  assert.match(authPortalSurfaceSource, /Forgot password\?/);
 });
 
-test("clean auth surface includes future routing notes and no live auth claims", () => {
-  assert.match(authPortalSurfaceSource, /Signed out users will start at \/neroa\/auth later\./);
-  assert.match(authPortalSurfaceSource, /Signed in users will route to \/neroa\/account later\./);
-  assert.match(authPortalSurfaceSource, /Users with an active project may continue to \/neroa\/project later\./);
-  assert.match(authPortalSurfaceSource, /No live login or signup submission is active in this pass\./);
-  assert.match(
-    authPortalSurfaceSource,
-    /Continue destinations are informational only and do not trigger redirect decisions\./
-  );
-  assert.match(authPortalSurfaceSource, /No route guards, session restoration, or redirect logic is active in this pass\./);
-  assert.match(authPortalSurfaceSource, /No credential field capture in this pass/);
-  assert.match(authPortalSurfaceSource, /No submission or redirect action in this pass/);
-  assert.doesNotMatch(authPortalSurfaceSource, /<form/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /<button/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /type=\s*["']submit["']/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /onSubmit=/);
-  assert.doesNotMatch(authPortalSurfaceSource, /Sign in now/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /Create account now/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /Continue with (Google|GitHub|Apple)/i);
+test("clean auth surface includes local form controls and removes placeholder copy", () => {
+  assert.match(authPortalSurfaceSource, /useState/);
+  assert.match(authPortalSurfaceSource, /showSignInPassword/);
+  assert.match(authPortalSurfaceSource, /showCreatePassword/);
+  assert.match(authPortalSurfaceSource, /type=\{showSignInPassword \? "text" : "password"\}/);
+  assert.match(authPortalSurfaceSource, /type=\{showCreatePassword \? "text" : "password"\}/);
+  assert.match(authPortalSurfaceSource, /aria-label=\{showSignInPassword \? "Hide password" : "Show password"\}/);
+  assert.match(authPortalSurfaceSource, /aria-label=\{showCreatePassword \? "Hide password" : "Show password"\}/);
+  assert.match(authPortalSurfaceSource, /onSubmit=\{handleSignInSubmit\}/);
+  assert.match(authPortalSurfaceSource, /onSubmit=\{handleCreateSubmit\}/);
+  assert.match(authPortalSurfaceSource, /type="submit"/);
+  assert.match(authPortalSurfaceSource, /href="#"/);
+  assert.match(authPortalSurfaceSource, /TODO: connect this to a clean forgot-password route/);
+  assert.match(authPortalSurfaceSource, /Home/);
+  assert.match(authPortalSurfaceSource, /Pricing/);
+  assert.match(authPortalSurfaceSource, /Start Your Project/);
+  assert.doesNotMatch(authPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.doesNotMatch(authPortalSurfaceSource, /placeholder-only/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /future routing notes/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /Continue to Account Portal later/);
+  assert.doesNotMatch(authPortalSurfaceSource, /Continue to Project Portal later/);
+  assert.doesNotMatch(authPortalSurfaceSource, /clean auth surface/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /surface status/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /control layer/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /project preview/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /runtime-free/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /No live login or signup submission is active in this pass\./);
+  assert.doesNotMatch(authPortalSurfaceSource, /No route guards, session restoration, or redirect logic is active in this pass\./);
+  assert.doesNotMatch(authPortalSurfaceSource, /Continue destinations are informational only and do not trigger redirect decisions\./);
   assert.doesNotMatch(authPortalSurfaceSource, /magic link/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /forgot password/i);
   assert.doesNotMatch(authPortalSurfaceSource, /\bConnected\b/);
 });
 
@@ -349,11 +362,12 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
   assert.doesNotMatch(authPortalSurfaceSource, /<img/i);
   assert.doesNotMatch(authPortalSurfaceSource, /<Image/i);
   assert.doesNotMatch(authPortalSurfaceSource, /\/logo\//);
-  assert.doesNotMatch(authPortalSurfaceSource, /\.(svg|png|jpe?g|webp)/i);
+  assert.match(authPortalSurfaceSource, /\/brand\/background\.png/);
   assert.doesNotMatch(authPortalSurfaceSource, />\s*N\s*</);
   assert.doesNotMatch(authPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(authPortalSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(authPortalSurfaceSource, /\bNarowa\b/);
+  assert.doesNotMatch(authPortalSurfaceSource, /\bNarua\b/);
 });
 
 test("Account Portal placeholder sections are present", () => {

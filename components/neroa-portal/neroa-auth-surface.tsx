@@ -1,152 +1,264 @@
-import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
+"use client";
 
-const authSections = [
-  {
-    title: "Sign in",
-    eyebrow: "Future Entry Path",
-    description:
-      "Placeholder surface for future sign-in routing once clean auth infrastructure is intentionally connected.",
-    detail:
-      "This area does not capture credentials, submit a login, open sessions, or connect to Supabase auth in this pass."
-  },
-  {
-    title: "Create account",
-    eyebrow: "Future Account Creation",
-    description:
-      "Placeholder surface for future account creation once the clean Neroa auth path is formally wired.",
-    detail:
-      "This area does not create users, store records, trigger onboarding runtime, or start provider auth in this pass."
-  },
-  {
-    title: "Continue to Account Portal later",
-    eyebrow: "Signed-In Destination",
-    description:
-      "Future routing destination for signed-in users after the clean auth entry path is connected.",
-    detail:
-      "Signed in users will route to /neroa/account later, but this note does not make a redirect decision and no session logic is active now."
-  },
-  {
-    title: "Continue to Project Portal later",
-    eyebrow: "Active Project Destination",
-    description:
-      "Future routing destination for users who already have an active project context.",
-    detail:
-      "Users with an active project may continue to /neroa/project later, but this note does not make an active-project decision and project runtime selection is not wired in this pass."
-  }
-] as const;
+import { useState, type FormEvent, type ReactNode } from "react";
+import Link from "next/link";
 
-const futureRoutingNotes = [
-  "Signed out users will start at /neroa/auth later.",
-  "Signed in users will route to /neroa/account later.",
-  "Users with an active project may continue to /neroa/project later."
-] as const;
+function NorthStarIcon({
+  className = ""
+}: {
+  className?: string;
+}) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <path
+        d="M10 1.8 11.8 8.2 18.2 10l-6.4 1.8L10 18.2l-1.8-6.4L1.8 10l6.4-1.8L10 1.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="10" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function AuthField({
+  label,
+  type = "text",
+  value,
+  onChange,
+  autoComplete,
+  trailingAction
+}: {
+  label: string;
+  type?: "text" | "email" | "password";
+  value: string;
+  onChange: (nextValue: string) => void;
+  autoComplete?: string;
+  trailingAction?: ReactNode;
+}) {
+  return (
+    <label className="block space-y-3">
+      <span className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-white/62">
+        {label}
+      </span>
+      <div className="flex items-center gap-3 rounded-[1.2rem] border border-white/12 bg-black/20 px-4 py-3 shadow-[0_0_28px_rgba(45,212,191,0.05)]">
+        <input
+          type={type}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          autoComplete={autoComplete}
+          className="h-8 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/28"
+        />
+        {trailingAction}
+      </div>
+    </label>
+  );
+}
 
 export function NeroaAuthSurface() {
+  const [mode, setMode] = useState<"signin" | "create">("signin");
+  const [signInEmail, setSignInEmail] = useState("");
+  const [signInPassword, setSignInPassword] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+
+  function handleSignInSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+  }
+
+  function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+  }
+
+  const passwordToggleClass =
+    "text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white";
+
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,#1f252d_0%,#11161d_42%,#090c10_100%)] px-6 py-10 text-slate-100">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
-        <NeroaPortalNavigation currentPath="/neroa/auth" tone="dark" />
-
-        <section className="overflow-hidden rounded-[2.2rem] border border-slate-500/30 bg-[linear-gradient(145deg,rgba(20,26,34,0.97)_0%,rgba(10,13,18,0.98)_100%)] shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
-          <div className="grid gap-8 border-b border-slate-200/10 px-8 py-9 lg:grid-cols-[1.7fr,1fr] lg:px-10">
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.34em] text-teal-300/85">
-                  Neroa
-                </p>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Auth Surface
-                </p>
-              </div>
-              <div className="space-y-4">
-                <h1 className="max-w-4xl font-serif text-4xl leading-tight text-slate-50 lg:text-5xl">
-                  Clean authentication surface for the next Neroa entry flow.
-                </h1>
-                <p className="max-w-3xl text-sm leading-8 text-slate-300 lg:text-base">
-                  This page prepares the clean Neroa auth experience with calm, premium routing
-                  placeholders only. It does not claim live sign-in, session, billing, or runtime
-                  access yet.
-                </p>
-              </div>
-            </div>
-
-            <aside className="rounded-[1.7rem] border border-teal-300/15 bg-[linear-gradient(180deg,rgba(165,243,252,0.10)_0%,rgba(255,255,255,0.04)_100%)] p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200">
-                Surface Status
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                Placeholder-only auth shell. No Supabase auth, session logic, redirects, route
-                guards, or account creation behavior is connected in this pass.
-              </p>
-              <div className="mt-5 space-y-3">
-                <div className="rounded-[1rem] border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                  Premium, spacious, and calm
-                </div>
-                <div className="rounded-[1rem] border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                  Charcoal base with soft silver framing
-                </div>
-                <div className="rounded-[1rem] border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-200">
-                  Subtle teal guidance instead of loud status colors
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          <div className="grid gap-4 px-8 py-8 lg:grid-cols-2 lg:px-10">
-            {authSections.map((section) => (
-              <article
-                key={section.title}
-                className="rounded-[1.7rem] border border-slate-200/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,rgba(148,163,184,0.04)_100%)] p-6 shadow-[0_22px_60px_rgba(0,0,0,0.22)]"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/80">
-                  {section.eyebrow}
-                </p>
-                <h2 className="mt-3 font-serif text-2xl text-slate-50">{section.title}</h2>
-                <p className="mt-4 text-sm leading-7 text-slate-300">{section.description}</p>
-                <p className="mt-4 rounded-[1.3rem] border border-slate-200/10 bg-black/20 px-4 py-4 text-sm leading-7 text-slate-300">
-                  {section.detail}
-                </p>
-                <div className="mt-4 grid gap-3">
-                  <div className="rounded-[1rem] border border-slate-300/15 bg-white/5 px-4 py-3 text-sm text-slate-400">
-                    No credential field capture in this pass
-                  </div>
-                  <div className="rounded-[1rem] border border-slate-300/15 bg-white/5 px-4 py-3 text-sm text-slate-400">
-                    No submission or redirect action in this pass
-                  </div>
-                </div>
-                <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  Clean auth placeholder
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
-          <article className="rounded-[2rem] border border-slate-400/20 bg-[linear-gradient(160deg,rgba(17,24,39,0.96)_0%,rgba(8,11,15,0.98)_100%)] px-8 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200">
-              Future Routing Notes
-            </p>
-            <div className="mt-4 space-y-4 text-sm leading-8 text-slate-300">
-              {futureRoutingNotes.map((note) => (
-                <p key={note}>{note}</p>
-              ))}
-            </div>
-          </article>
-
-          <article className="rounded-[2rem] border border-slate-300/15 bg-white/5 px-8 py-8 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">
-              Boundary Notes
-            </p>
-            <div className="mt-4 space-y-4 text-sm leading-7 text-slate-300">
-              <p>No live login or signup submission is active in this pass.</p>
-              <p>Continue destinations are informational only and do not trigger redirect decisions.</p>
-              <p>No route guards, session restoration, or redirect logic is active in this pass.</p>
-              <p>No billing, project runtime, or Neroa One runtime access is implied here.</p>
-            </div>
-          </article>
-        </section>
+    <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[#030508]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.72]"
+          style={{ backgroundImage: "url('/brand/background.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.28)_0%,rgba(4,7,10,0.44)_24%,rgba(3,6,8,0.74)_62%,rgba(3,6,8,0.96)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_76%_16%,rgba(196,255,239,0.14),transparent_10%),radial-gradient(circle_at_73%_22%,rgba(255,255,255,0.06),transparent_18%)]" />
+        <div className="absolute right-[4%] top-[3%] h-[42rem] w-[34rem] bg-[radial-gradient(circle_at_50%_10%,rgba(173,255,237,0.28),transparent_10%),radial-gradient(ellipse_at_50%_38%,rgba(51,191,164,0.16),transparent_52%)] blur-xl" />
+        <div className="absolute right-[11%] top-[6%] h-[72vh] w-[20rem] bg-[linear-gradient(180deg,rgba(134,255,232,0)_0%,rgba(134,255,232,0.14)_16%,rgba(72,239,200,0.24)_42%,rgba(36,191,156,0.12)_78%,rgba(36,191,156,0)_100%)] [clip-path:polygon(49%_0%,59%_0%,67%_100%,33%_100%)] blur-[12px]" />
+        <div className="absolute bottom-[11rem] left-[-4%] right-[-4%] h-[16rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.12),transparent_60%)]" />
       </div>
+
+      <section className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
+        <header className="flex items-center justify-between border-b border-white/10 pb-6">
+          <Link href="/" className="flex items-center gap-3 text-white">
+            <NorthStarIcon className="h-5 w-5 text-teal-200/86" />
+            <span className="font-serif text-[2.15rem] tracking-tight">Neroa</span>
+          </Link>
+
+          <nav className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex">
+            <Link href="/" className="transition hover:text-white">
+              Home
+            </Link>
+            <Link href="/neroa/pricing" className="transition hover:text-white">
+              Pricing
+            </Link>
+            <Link href="/neroa/auth" className="transition hover:text-white">
+              Sign In
+            </Link>
+            <Link
+              href="/neroa/auth"
+              className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
+            >
+              Start Your Project
+            </Link>
+          </nav>
+        </header>
+
+        <div className="flex flex-1 items-center justify-center py-12 lg:py-16">
+          <section className="w-full max-w-[34rem] rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-8">
+            <div className="space-y-4 border-b border-white/8 pb-6">
+              <div className="flex items-center gap-2 text-white">
+                <NorthStarIcon className="h-4 w-4 text-teal-200/84" />
+                <span className="font-serif text-[1.9rem] tracking-tight">Neroa</span>
+              </div>
+
+              <div className="space-y-3">
+                <h1 className="font-serif text-4xl text-white sm:text-[2.8rem]">
+                  Welcome to Neroa
+                </h1>
+                <p className="text-[1rem] leading-8 text-white/68">
+                  Sign in or create an account to start your project.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1.5">
+              <button
+                type="button"
+                onClick={() => setMode("signin")}
+                className={[
+                  "rounded-full px-5 py-2.5 text-[0.75rem] font-semibold uppercase tracking-[0.18em] transition",
+                  mode === "signin"
+                    ? "bg-teal-300 text-[#071113]"
+                    : "text-white/62 hover:text-white"
+                ].join(" ")}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("create")}
+                className={[
+                  "rounded-full px-5 py-2.5 text-[0.75rem] font-semibold uppercase tracking-[0.18em] transition",
+                  mode === "create"
+                    ? "bg-teal-300 text-[#071113]"
+                    : "text-white/62 hover:text-white"
+                ].join(" ")}
+              >
+                Create Account
+              </button>
+            </div>
+
+            {mode === "signin" ? (
+              <form onSubmit={handleSignInSubmit} className="mt-8 space-y-5">
+                <AuthField
+                  label="Email"
+                  type="email"
+                  value={signInEmail}
+                  onChange={setSignInEmail}
+                  autoComplete="email"
+                />
+                <AuthField
+                  label="Password"
+                  type={showSignInPassword ? "text" : "password"}
+                  value={signInPassword}
+                  onChange={setSignInPassword}
+                  autoComplete="current-password"
+                  trailingAction={
+                    <button
+                      type="button"
+                      onClick={() => setShowSignInPassword((current) => !current)}
+                      className={passwordToggleClass}
+                      aria-label={showSignInPassword ? "Hide password" : "Show password"}
+                    >
+                      {showSignInPassword ? "Hide" : "Show"}
+                    </button>
+                  }
+                />
+
+                <div className="flex items-center justify-between gap-4">
+                  {/* TODO: connect this to a clean forgot-password route when that flow is ready. */}
+                  <Link
+                    href="#"
+                    className="text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <button
+                  type="submit"
+                  className="flex h-14 w-full items-center justify-center rounded-[1.1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                >
+                  Sign In
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleCreateSubmit} className="mt-8 space-y-5">
+                <AuthField
+                  label="Name"
+                  value={createName}
+                  onChange={setCreateName}
+                  autoComplete="name"
+                />
+                <AuthField
+                  label="Email"
+                  type="email"
+                  value={createEmail}
+                  onChange={setCreateEmail}
+                  autoComplete="email"
+                />
+                <AuthField
+                  label="Password"
+                  type={showCreatePassword ? "text" : "password"}
+                  value={createPassword}
+                  onChange={setCreatePassword}
+                  autoComplete="new-password"
+                  trailingAction={
+                    <button
+                      type="button"
+                      onClick={() => setShowCreatePassword((current) => !current)}
+                      className={passwordToggleClass}
+                      aria-label={showCreatePassword ? "Hide password" : "Show password"}
+                    >
+                      {showCreatePassword ? "Hide" : "Show"}
+                    </button>
+                  }
+                />
+                <AuthField
+                  label="Confirm Password"
+                  type={showCreatePassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={setConfirmPassword}
+                  autoComplete="new-password"
+                />
+
+                <button
+                  type="submit"
+                  className="flex h-14 w-full items-center justify-center rounded-[1.1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                >
+                  Create Account
+                </button>
+              </form>
+            )}
+          </section>
+        </div>
+      </section>
     </main>
   );
 }
