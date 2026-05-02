@@ -7,6 +7,10 @@ const accountPortalSource = readFileSync(
   new URL("../app/neroa/account/page.tsx", import.meta.url),
   "utf8"
 );
+const accountPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-account-portal-surface.tsx", import.meta.url),
+  "utf8"
+);
 const projectPortalSource = readFileSync(
   new URL("../app/neroa/project/page.tsx", import.meta.url),
   "utf8"
@@ -19,6 +23,7 @@ const portalShellSource = readFileSync(
 const cleanPortalSources = [
   frontDoorSource,
   accountPortalSource,
+  accountPortalSurfaceSource,
   projectPortalSource,
   portalShellSource
 ];
@@ -26,6 +31,8 @@ const cleanPortalSources = [
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
   assert.match(accountPortalSource, /export default function NeroaAccountPortalPage/);
+  assert.match(accountPortalSource, /NeroaAccountPortalSurface/);
+  assert.match(accountPortalSurfaceSource, /export function NeroaAccountPortalSurface/);
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
@@ -40,11 +47,28 @@ test("/neroa front door stays minimal and clean", () => {
 });
 
 test("Account Portal placeholder sections are present", () => {
-  assert.match(accountPortalSource, /"Projects"/);
-  assert.match(accountPortalSource, /"Billing \/ Usage"/);
-  assert.match(accountPortalSource, /"Account Settings"/);
-  assert.match(accountPortalSource, /"Team \/ Access"/);
-  assert.match(accountPortalSource, /"Integrations \/ Infrastructure"/);
+  assert.match(accountPortalSurfaceSource, /"Projects"/);
+  assert.match(accountPortalSurfaceSource, /"Billing \/ Usage"/);
+  assert.match(accountPortalSurfaceSource, /"Account Settings"/);
+  assert.match(accountPortalSurfaceSource, /"Team \/ Access"/);
+  assert.match(accountPortalSurfaceSource, /Integrations \/ Infrastructure/);
+});
+
+test("Account Portal integrations panel includes planned providers and migration worker guidance", () => {
+  assert.match(accountPortalSurfaceSource, /"GitHub"/);
+  assert.match(accountPortalSurfaceSource, /"Vercel"/);
+  assert.match(accountPortalSurfaceSource, /"Supabase"/);
+  assert.match(accountPortalSurfaceSource, /"Stripe"/);
+  assert.match(accountPortalSurfaceSource, /"Resend"/);
+  assert.match(accountPortalSurfaceSource, /"OpenAI \/ Neroa AI credits"/);
+  assert.match(accountPortalSurfaceSource, /"DNS \/ domain setup later"/);
+  assert.match(accountPortalSurfaceSource, /"Database Migration Worker later"/);
+  assert.match(accountPortalSurfaceSource, /Browser automation is fallback and verification only/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Risky database, payment, and production changes require explicit customer or admin[\s\S]*approval before execution\./
+  );
+  assert.match(accountPortalSurfaceSource, /approved Supabase CLI or Postgres worker path/);
 });
 
 test("Project Portal placeholder sections are present", () => {
@@ -70,6 +94,7 @@ test("clean portal shell does not introduce UI UX Library or Design Library surf
 test("clean portal shell does not import legacy room or runtime surfaces", () => {
   for (const source of cleanPortalSources) {
     assert.doesNotMatch(source, /@\/components\/workspace\//);
+    assert.doesNotMatch(source, /@\/components\/account\//);
     assert.doesNotMatch(source, /@\/components\/live-view\//);
     assert.doesNotMatch(source, /@\/components\/marketing\//);
     assert.doesNotMatch(source, /@\/lib\/ai\//);
@@ -96,6 +121,9 @@ test("clean portal shell does not import legacy marketing auth or routing surfac
     assert.doesNotMatch(source, /public-launch/);
     assert.doesNotMatch(source, /requireUser/);
     assert.doesNotMatch(source, /getOptionalUser/);
+    assert.doesNotMatch(source, /@\/lib\/auth/);
+    assert.doesNotMatch(source, /@\/lib\/billing/);
+    assert.doesNotMatch(source, /@\/components\/site\/public-account-menu/);
     assert.doesNotMatch(source, /redirect\(/);
   }
 });
@@ -117,9 +145,12 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
     assert.doesNotMatch(source, /submitCodex/);
     assert.doesNotMatch(source, /fetch\(/);
     assert.doesNotMatch(source, /process\.env/);
-    assert.doesNotMatch(source, /supabase/i);
-    assert.doesNotMatch(source, /redis/i);
-    assert.doesNotMatch(source, /bullmq/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*auth/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*redis/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*bullmq/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*openai/i);
     assert.doesNotMatch(source, /digitalocean/i);
     assert.doesNotMatch(source, /queue adapter/i);
     assert.doesNotMatch(source, /storage adapter/i);
