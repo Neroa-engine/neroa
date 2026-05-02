@@ -4,41 +4,30 @@ const conversationMoments = [
   {
     speaker: "Neroa",
     tone: "assistant",
-    line: "Hi, I\u2019m Neroa. What should we build?",
+    line: "Hi, I\u2019m Neroa. What\u2019s your name?",
     detail: "Start with a structured plan, not a vague prompt."
   },
   {
     speaker: "Visitor",
     tone: "visitor",
-    line: "I want to build a SaaS platform for my business.",
-    detail: "A clear product goal gives Neroa the context to shape roadmap, scope, and approvals."
+    line: "My name is Tom.",
+    detail: "A clear introduction begins the planning conversation in a calm, structured way."
   },
   {
     speaker: "Neroa",
     tone: "assistant",
     line:
-      "Great. I\u2019ll help turn that into a structured roadmap, define scope, surface key decisions, and prepare a clean project workspace before execution begins.",
+      "Nice to meet you, Tom. I\u2019m here to help you plan, scope, and prepare your next project before execution begins. Let\u2019s begin.",
     detail: "Build with roadmap, scope, approvals, and evidence from the start."
   }
 ] as const;
 
-const valueSections = [
-  {
-    title: "Roadmap-first planning",
-    body: "Shape the work before it becomes code."
-  },
-  {
-    title: "Scope before execution",
-    body: "Keep the project bounded, reviewable, and intentional."
-  },
-  {
-    title: "Decisions and approvals",
-    body: "Move forward with visible approvals and next steps."
-  },
-  {
-    title: "Evidence and review",
-    body: "Keep progress tied to proof, feedback, and review."
-  }
+const valuePills = [
+  "Roadmap-first planning",
+  "Scope before execution",
+  "Decisions and approvals",
+  "Evidence and review",
+  "Build and execute"
 ] as const;
 
 export function NeroaFrontDoorSurface() {
@@ -68,13 +57,13 @@ export function NeroaFrontDoorSurface() {
                 Pricing
               </Link>
               <Link href="/neroa/auth" className="transition hover:text-slate-200">
-                Sign in
+                Sign In
               </Link>
               <Link
                 href="/neroa/auth"
                 className="inline-flex items-center justify-center rounded-full border border-teal-300/30 bg-teal-300/10 px-5 py-2.5 text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
               >
-                Start your project
+                Start Your Project
               </Link>
             </nav>
           </div>
@@ -85,7 +74,7 @@ export function NeroaFrontDoorSurface() {
         <section className="grid gap-8 xl:grid-cols-[0.92fr,1.08fr] xl:items-start">
           <div className="space-y-5 pt-2">
             <p className="text-[11px] font-semibold uppercase tracking-[0.34em] text-teal-200">
-              Public-facing project intake
+              SaaS Done Right
             </p>
             <h1 className="max-w-3xl font-serif text-5xl leading-[0.98] text-slate-50 sm:text-6xl xl:text-[5.2rem]">
               SaaS done right.
@@ -104,15 +93,12 @@ export function NeroaFrontDoorSurface() {
             <div className="relative space-y-5">
               <div className="flex items-center justify-between gap-3 border-b border-white/8 pb-4">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
-                    Public-facing chat intake box
+                  <p className="text-sm font-semibold uppercase tracking-[0.38em] text-slate-100">
+                    Neroa
                   </p>
                   <p className="mt-2 max-w-xl text-sm leading-7 text-slate-400">
-                    Tell Neroa what you want to build, and start from a clear project conversation.
+                    A calm public-facing sample conversation for structured project intake.
                   </p>
-                </div>
-                <div className="rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                  Guided intake
                 </div>
               </div>
 
@@ -152,24 +138,21 @@ export function NeroaFrontDoorSurface() {
                   href="/neroa/auth"
                   className="inline-flex items-center justify-center rounded-full border border-teal-300/30 bg-teal-300/10 px-7 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
                 >
-                  Start your project
+                  {"Let\u2019s Begin"}
                 </Link>
               </div>
             </div>
           </article>
         </section>
 
-        <section className="grid gap-4 lg:grid-cols-4">
-          {valueSections.map((section) => (
-            <article
-              key={section.title}
-              className="rounded-[1.7rem] border border-white/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-5 shadow-[0_24px_70px_rgba(0,0,0,0.22)]"
+        <section className="flex flex-wrap gap-3">
+          {valuePills.map((pill) => (
+            <span
+              key={pill}
+              className="inline-flex items-center rounded-full border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.02))] px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-200 shadow-[0_18px_40px_rgba(0,0,0,0.18)]"
             >
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-teal-200">
-                {section.title}
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-300">{section.body}</p>
-            </article>
+              {pill}
+            </span>
           ))}
         </section>
       </div>

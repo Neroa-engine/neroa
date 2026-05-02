@@ -110,15 +110,16 @@ test("root landing route metadata reflects the clean Neroa front door", () => {
 
 test("/neroa front door includes the clean conversational landing structure", () => {
   assert.match(frontDoorSurfaceSource, /SaaS done right\./);
-  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What should we build\?/);
-  assert.match(frontDoorSurfaceSource, /I want to build a SaaS platform for my business\./);
+  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What\\u2019s your name\?/);
+  assert.match(frontDoorSurfaceSource, /My name is Tom\./);
   assert.match(
     frontDoorSurfaceSource,
-    /Great\. I\\u2019ll help turn that into a structured roadmap, define scope, surface key decisions, and prepare a clean project workspace before execution begins\./
+    /Nice to meet you, Tom\. I\\u2019m here to help you plan, scope, and prepare your next project before execution begins\. Let\\u2019s begin\./
   );
   assert.match(frontDoorSurfaceSource, /Start with a structured plan, not a vague prompt\./);
-  assert.match(frontDoorSurfaceSource, /Public-facing chat intake box/);
-  assert.match(frontDoorSurfaceSource, /Guided intake/);
+  assert.match(frontDoorSurfaceSource, />\s*Neroa\s*</);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Public-facing chat intake box/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Guided intake/);
 });
 
 test("/neroa front door uses Neroa wordmark-first branding without logo assets or naming drift", () => {
@@ -138,7 +139,8 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/auth"/g), 3);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/account"/g), 0);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/project"/g), 0);
-  assert.match(frontDoorSurfaceSource, /Start your project/);
+  assert.match(frontDoorSurfaceSource, /Start Your Project/);
+  assert.match(frontDoorSurfaceSource, /Let\\u2019s Begin/);
   assert.doesNotMatch(frontDoorSurfaceSource, /Open Strategy Room/);
   assert.doesNotMatch(frontDoorSurfaceSource, /Start the conversation/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/auth"/);
@@ -149,18 +151,19 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
 
 test("root landing inherits the clean Neroa conversational front door content", () => {
   assert.match(rootLandingSource, /NeroaFrontDoorSurface/);
-  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What should we build\?/);
-  assert.match(frontDoorSurfaceSource, /I want to build a SaaS platform for my business\./);
-  assert.match(frontDoorSurfaceSource, /Start your project/);
+  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What\\u2019s your name\?/);
+  assert.match(frontDoorSurfaceSource, /My name is Tom\./);
+  assert.match(frontDoorSurfaceSource, /Let\\u2019s Begin/);
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/auth"/);
 });
 
 test("/neroa front door uses public-facing product language and avoids DIY Managed copy", () => {
   assert.match(frontDoorSurfaceSource, /SaaS done right\./);
-  assert.match(frontDoorSurfaceSource, /Public-facing project intake/i);
+  assert.match(frontDoorSurfaceSource, /SaaS Done Right/i);
   assert.match(frontDoorSurfaceSource, /SaaS done right/i);
   assert.match(frontDoorSurfaceSource, /Roadmap-first planning/i);
   assert.match(frontDoorSurfaceSource, /Build with roadmap, scope, approvals, and evidence from the start\./);
+  assert.match(frontDoorSurfaceSource, /Build and execute/);
   assert.doesNotMatch(frontDoorSurfaceSource, /Share the idea/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /We'?ll build the path/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Start with a guided planning conversation/i);
@@ -175,6 +178,9 @@ test("/neroa front door uses public-facing product language and avoids DIY Manag
   assert.doesNotMatch(frontDoorSurfaceSource, /Decisions Pending/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Scope Status/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Project Readiness/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Public-facing Project Intake/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Public-facing Chat Intake Box/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Guided Intake/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /No forms, fake connected states/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /This page moves users/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /not choosing an execution model/i);
@@ -222,9 +228,10 @@ test("clean portal navigation links the three clean neroa routes only", () => {
 test("/neroa front door reflects the locked dark luxury visual direction", () => {
   assert.match(frontDoorSurfaceSource, /bg-\[#05070b\]/);
   assert.match(frontDoorSurfaceSource, /SaaS done right\./);
-  assert.match(frontDoorSurfaceSource, /Public-facing project intake/i);
-  assert.match(frontDoorSurfaceSource, /Public-facing chat intake box/i);
+  assert.match(frontDoorSurfaceSource, /SaaS Done Right/i);
+  assert.match(frontDoorSurfaceSource, /What\\u2019s your name\?/);
   assert.match(frontDoorSurfaceSource, /Roadmap-first planning/i);
+  assert.match(frontDoorSurfaceSource, /Build and execute/i);
   assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient\(circle_at_18%_0%,rgba\(45,212,191,0\.10\)/);
   assert.match(frontDoorSurfaceSource, /bg-\[linear-gradient\(180deg,rgba\(10,13,18,0\.94\),rgba\(5,8,12,0\.98\)\)/);
   assert.match(frontDoorSurfaceSource, /h-px w-full bg-gradient-to-r from-white\/5 via-white\/20 to-white\/5/);
@@ -234,6 +241,7 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /Scope before execution/);
   assert.match(frontDoorSurfaceSource, /Decisions and approvals/);
   assert.match(frontDoorSurfaceSource, /Evidence and review/);
+  assert.match(frontDoorSurfaceSource, /rounded-full border border-white\/10 bg-\[linear-gradient/);
   assert.match(frontDoorSurfaceSource, /roadmap/i);
   assert.match(frontDoorSurfaceSource, /scope/i);
   assert.match(frontDoorSurfaceSource, /approvals/i);
