@@ -151,19 +151,23 @@ export function NeroaFrontDoorSurface({
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_74%_16%,rgba(244,235,214,0.14),transparent_8%),radial-gradient(circle_at_74%_18%,rgba(255,255,255,0.06),transparent_16%),linear-gradient(180deg,#05080b_0%,#04070a_52%,#030608_100%)]" />
-        <div className="absolute right-[8%] top-[6%] h-[28rem] w-[28rem] rounded-full border border-[#f8ecd6]/22 shadow-[0_0_110px_rgba(255,235,198,0.15),inset_0_0_50px_rgba(255,235,198,0.04)] lg:h-[34rem] lg:w-[34rem]" />
-        <div className="absolute right-[10%] top-[7%] h-[28rem] w-[28rem] rounded-full bg-[#04070a]/92 lg:h-[34rem] lg:w-[34rem]" />
-        <div className="absolute right-[26%] top-[12%] text-teal-100/90">
+        <div className="absolute inset-0 bg-[#030508]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.74]"
+          style={{ backgroundImage: "url('/brand/background.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.28)_0%,rgba(4,7,10,0.54)_28%,rgba(3,6,8,0.76)_68%,rgba(3,6,8,0.96)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_74%_17%,rgba(244,235,214,0.12),transparent_9%),radial-gradient(circle_at_76%_19%,rgba(255,255,255,0.04),transparent_18%)]" />
+        <div className="northstar-energy-field absolute right-[5%] top-[3%] h-[40rem] w-[34rem] lg:w-[38rem]" />
+        <div className="northstar-energy-beam absolute right-[18%] top-[7%] h-[72vh] w-[18rem] lg:w-[21rem]" />
+        <div className="northstar-energy-sparks absolute right-[16%] top-[10%] h-[56vh] w-[20rem] lg:w-[24rem]" />
+        <div className="absolute right-[24%] top-[12%] text-teal-100/90">
           <NorthStarIcon className="h-6 w-6 drop-shadow-[0_0_18px_rgba(148,255,236,0.45)]" />
         </div>
-        <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.09),transparent_54%)]" />
-        <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.38)_44%,rgba(5,8,11,0.82)_76%,#04070a_100%)]" />
-        <div className="absolute bottom-[7.2rem] left-[-6%] h-[10rem] w-[38%] rounded-[100%_100%_0_0/100%_100%_0_0] bg-[#081015]/82 blur-[1px]" />
-        <div className="absolute bottom-[7.1rem] left-[22%] h-[11rem] w-[34%] rounded-[100%_100%_0_0/100%_100%_0_0] bg-[#071015]/88" />
-        <div className="absolute bottom-[6.9rem] right-[13%] h-[12rem] w-[40%] rounded-[100%_100%_0_0/100%_100%_0_0] bg-[#071015]/92" />
+        <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.08),transparent_56%)]" />
+        <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.26)_38%,rgba(5,8,11,0.8)_76%,#04070a_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-[12rem] bg-[linear-gradient(180deg,rgba(4,7,10,0)_0%,rgba(4,7,10,0.72)_42%,#04070a_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.022)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.018)_1px,transparent_1px)] bg-[size:92px_92px] opacity-20" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.016)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:92px_92px] opacity-14" />
       </div>
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
@@ -329,6 +333,108 @@ export function NeroaFrontDoorSurface({
           </div>
         </section>
       </section>
+      <style jsx>{`
+        .northstar-energy-field {
+          background:
+            radial-gradient(circle at 52% 8%, rgba(184, 255, 240, 0.26), transparent 9%),
+            radial-gradient(circle at 50% 20%, rgba(88, 241, 209, 0.14), transparent 24%),
+            radial-gradient(ellipse at 50% 44%, rgba(24, 128, 120, 0.16), transparent 48%);
+          filter: blur(10px);
+          animation: northstarFieldPulse 10.5s ease-in-out infinite;
+        }
+
+        .northstar-energy-beam {
+          background:
+            linear-gradient(
+              180deg,
+              rgba(125, 255, 228, 0) 0%,
+              rgba(125, 255, 228, 0.08) 12%,
+              rgba(78, 238, 203, 0.26) 42%,
+              rgba(41, 183, 161, 0.1) 78%,
+              rgba(41, 183, 161, 0) 100%
+            );
+          clip-path: polygon(48% 0%, 56% 0%, 64% 100%, 36% 100%);
+          filter: blur(14px);
+          animation: northstarBeamShift 9s ease-in-out infinite;
+        }
+
+        .northstar-energy-sparks::before,
+        .northstar-energy-sparks::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-repeat: no-repeat;
+          mix-blend-mode: screen;
+        }
+
+        .northstar-energy-sparks::before {
+          background-image:
+            radial-gradient(circle, rgba(184, 255, 240, 0.34) 0 1.5px, transparent 2px),
+            radial-gradient(circle, rgba(112, 245, 214, 0.26) 0 1.2px, transparent 1.8px),
+            radial-gradient(circle, rgba(112, 245, 214, 0.18) 0 1px, transparent 1.5px);
+          background-size: 160px 160px, 220px 220px, 280px 280px;
+          background-position: 40% 8%, 62% 24%, 50% 42%;
+          animation: northstarSparkleDrift 14s linear infinite;
+          opacity: 0.68;
+        }
+
+        .northstar-energy-sparks::after {
+          background-image: linear-gradient(
+            180deg,
+            rgba(129, 255, 231, 0.12) 0%,
+            rgba(129, 255, 231, 0.02) 38%,
+            rgba(129, 255, 231, 0) 100%
+          );
+          filter: blur(18px);
+          animation: northstarBeamShift 12s ease-in-out infinite reverse;
+          opacity: 0.55;
+        }
+
+        @keyframes northstarFieldPulse {
+          0%,
+          100% {
+            opacity: 0.72;
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            opacity: 0.96;
+            transform: translateY(10px) scale(1.04);
+          }
+        }
+
+        @keyframes northstarBeamShift {
+          0%,
+          100% {
+            opacity: 0.44;
+            transform: translateY(0) scaleX(1);
+          }
+          50% {
+            opacity: 0.78;
+            transform: translateY(14px) scaleX(1.08);
+          }
+        }
+
+        @keyframes northstarSparkleDrift {
+          0% {
+            transform: translate3d(0, -8px, 0);
+          }
+          50% {
+            transform: translate3d(6px, 16px, 0);
+          }
+          100% {
+            transform: translate3d(-4px, 28px, 0);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .northstar-energy-field,
+          .northstar-energy-beam,
+          .northstar-energy-sparks::before,
+          .northstar-energy-sparks::after {
+            animation: none;
+          }
+        }
+      `}</style>
     </main>
   );
 }

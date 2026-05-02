@@ -148,7 +148,7 @@ test("/neroa front door uses Neroa wordmark-first branding without logo assets o
   assert.doesNotMatch(frontDoorSurfaceSource, /<img/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /<Image/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /\/logo\//);
-  assert.doesNotMatch(frontDoorSurfaceSource, /\.(svg|png|jpe?g|webp)/i);
+  assert.match(frontDoorSurfaceSource, /\/brand\/background\.png/);
   assert.doesNotMatch(frontDoorSurfaceSource, />\s*N\s*</);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bNaroa\b/);
@@ -245,10 +245,14 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /Roadmap-First Planning/);
   assert.match(frontDoorSurfaceSource, /Build & Execute/);
   assert.match(frontDoorSurfaceSource, /NorthStarIcon/);
-  assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient\(circle_at_74%_16%,rgba\(244,235,214,0\.14\)/);
-  assert.match(frontDoorSurfaceSource, /rounded-full border border-\[#f8ecd6\]\/22/);
-  assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient\(ellipse_at_center,rgba\(45,212,191,0\.09\)/);
-  assert.match(frontDoorSurfaceSource, /rounded-\[100%_100%_0_0\/100%_100%_0_0\]/);
+  assert.match(frontDoorSurfaceSource, /url\('\/brand\/background\.png'\)/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-field/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-beam/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-sparks/);
+  assert.match(frontDoorSurfaceSource, /northstarFieldPulse/);
+  assert.match(frontDoorSurfaceSource, /northstarBeamShift/);
+  assert.match(frontDoorSurfaceSource, /northstarSparkleDrift/);
+  assert.match(frontDoorSurfaceSource, /prefers-reduced-motion: reduce/);
   assert.match(frontDoorSurfaceSource, /border-b border-white\/10 pb-6/);
   assert.match(frontDoorSurfaceSource, /text-teal-/);
   assert.match(frontDoorSurfaceSource, /shadow-\[0_30px_120px/);
