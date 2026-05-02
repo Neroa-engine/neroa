@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 
 export const metadata: Metadata = {
   title: "Neroa Portal Shell",
@@ -26,6 +27,8 @@ export default function NeroaPortalFrontDoorPage() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#f0dfbf_0%,#f8f4ec_42%,#fffdf8_100%)] px-6 py-10 text-stone-900">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <NeroaPortalNavigation currentPath="/neroa" />
+
         <section className="overflow-hidden rounded-[2rem] border border-stone-300/70 bg-white/95 px-8 py-10 shadow-[0_30px_90px_rgba(120,94,46,0.12)] lg:px-10">
           <div className="grid gap-8 lg:grid-cols-[1.7fr,1fr]">
             <div className="space-y-4">

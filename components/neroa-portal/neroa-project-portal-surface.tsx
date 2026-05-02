@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 
 const projectSections = [
   {
@@ -62,6 +63,8 @@ export function NeroaProjectPortalSurface() {
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top,#1f252d_0%,#11161d_42%,#090c10_100%)] px-6 py-10 text-slate-100">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+        <NeroaPortalNavigation currentPath="/neroa/project" tone="dark" />
+
         <section className="overflow-hidden rounded-[2.2rem] border border-slate-500/30 bg-[linear-gradient(145deg,rgba(20,26,34,0.97)_0%,rgba(10,13,18,0.98)_100%)] shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
           <div className="grid gap-8 border-b border-slate-200/10 px-8 py-9 lg:grid-cols-[1.7fr,1fr] lg:px-10">
             <div className="space-y-5">

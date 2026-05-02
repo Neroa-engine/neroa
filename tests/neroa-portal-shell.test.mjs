@@ -19,6 +19,10 @@ const projectPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-project-portal-surface.tsx", import.meta.url),
   "utf8"
 );
+const portalNavigationSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-portal-navigation.tsx", import.meta.url),
+  "utf8"
+);
 const portalShellSource = readFileSync(
   new URL("../components/neroa-portal/neroa-clean-portal-shell.tsx", import.meta.url),
   "utf8"
@@ -30,6 +34,7 @@ const cleanPortalSources = [
   accountPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource,
+  portalNavigationSource,
   portalShellSource
 ];
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
@@ -43,10 +48,13 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
   assert.match(projectPortalSource, /NeroaProjectPortalSurface/);
   assert.match(projectPortalSurfaceSource, /export function NeroaProjectPortalSurface/);
+  assert.match(portalNavigationSource, /export function NeroaPortalNavigation/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
 
 test("/neroa front door stays minimal and clean", () => {
+  assert.match(frontDoorSource, /NeroaPortalNavigation/);
+  assert.match(frontDoorSource, /currentPath="\/neroa"/);
   assert.match(frontDoorSource, /"Account Portal"/);
   assert.match(frontDoorSource, /"Project Portal"/);
   assert.match(frontDoorSource, /Public front door shell only\./);
@@ -55,7 +63,26 @@ test("/neroa front door stays minimal and clean", () => {
   assert.doesNotMatch(frontDoorSource, /Auth entry/);
 });
 
+test("clean portal navigation links the three clean neroa routes only", () => {
+  assert.match(portalNavigationSource, /href:\s*"\/neroa"/);
+  assert.match(portalNavigationSource, /href:\s*"\/neroa\/account"/);
+  assert.match(portalNavigationSource, /href:\s*"\/neroa\/project"/);
+  assert.match(portalNavigationSource, /label:\s*"Front Door"/);
+  assert.match(portalNavigationSource, /label:\s*"Account Portal"/);
+  assert.match(portalNavigationSource, /label:\s*"Project Portal"/);
+});
+
+test("navigation uses Neroa wordmark text only and no image logo paths", () => {
+  assert.match(portalNavigationSource, />\s*Neroa\s*</);
+  assert.doesNotMatch(portalNavigationSource, /<img/i);
+  assert.doesNotMatch(portalNavigationSource, /<Image/i);
+  assert.doesNotMatch(portalNavigationSource, /\/logo\//);
+  assert.doesNotMatch(portalNavigationSource, />\s*N\s*</);
+});
+
 test("Account Portal placeholder sections are present", () => {
+  assert.match(accountPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(accountPortalSurfaceSource, /currentPath="\/neroa\/account"/);
   assert.match(accountPortalSurfaceSource, /"Projects"/);
   assert.match(accountPortalSurfaceSource, /"Billing \/ Usage"/);
   assert.match(accountPortalSurfaceSource, /"Account Settings"/);
@@ -109,6 +136,9 @@ test("Account Portal does not imply live saving or connected integration state",
 });
 
 test("Project Portal placeholder sections are present", () => {
+  assert.match(projectPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(projectPortalSurfaceSource, /currentPath="\/neroa\/project"/);
+  assert.match(projectPortalSurfaceSource, /tone="dark"/);
   assert.match(projectPortalSurfaceSource, /title:\s*"Strategy Room"/);
   assert.match(projectPortalSurfaceSource, /title:\s*"Command Center"/);
   assert.match(projectPortalSurfaceSource, /title:\s*"Project Room"/);

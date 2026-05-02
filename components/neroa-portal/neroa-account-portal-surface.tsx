@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 
 const accountSections = [
   {
@@ -50,6 +51,8 @@ export function NeroaAccountPortalSurface() {
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#f6f1e8_0%,#fbf8f2_50%,#fffdf8_100%)] px-6 py-10 text-stone-900">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <NeroaPortalNavigation currentPath="/neroa/account" />
+
         <section className="overflow-hidden rounded-[2rem] border border-stone-300/70 bg-white/95 shadow-[0_30px_90px_rgba(120,94,46,0.12)]">
           <div className="grid gap-6 border-b border-stone-200/80 px-8 py-8 lg:grid-cols-[1.8fr,1fr] lg:px-10">
             <div className="space-y-4">
