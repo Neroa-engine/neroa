@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode
-} from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 
 const valuePills = [
@@ -42,7 +36,7 @@ function ChatMessage({
   tone = "nero"
 }: {
   speaker: string;
-  body: string;
+  body: ReactNode;
   tone?: "nero" | "visitor";
 }) {
   return (
@@ -55,14 +49,14 @@ function ChatMessage({
       >
         {speaker}
       </div>
-      <p
+      <div
         className={[
           "max-w-[34rem] text-[1rem] leading-8",
           tone === "nero" ? "text-white/88" : "text-white/66"
         ].join(" ")}
       >
         {body}
-      </p>
+      </div>
     </div>
   );
 }
@@ -75,15 +69,24 @@ function ChipDivider({
   return (
     <span
       aria-hidden="true"
-      className={[
-        "hidden items-center justify-center text-teal-200/72 lg:flex",
-        className
-      ].join(" ")}
+      className={["hidden items-center justify-center text-teal-200/72 lg:flex", className].join(" ")}
     >
       <NorthStarIcon className="h-3.5 w-3.5" />
     </span>
   );
 }
+
+const neroaExplanation = (
+  <>
+    Nice to meet you, <span className="text-white">{"{name}"}</span>. I&apos;m Neroa
+    {" — "}a structured software-building workspace that helps turn an idea into a
+    clear roadmap before execution begins. Instead of dropping you into an
+    open-ended chat or rushing straight into code, I help define the product,
+    organize scope, surface key decisions, prepare approvals, and keep the build
+    tied to evidence and review. The goal is to help you plan, scope, and
+    prepare your next project the right way before work begins.
+  </>
+);
 
 export function NeroaFrontDoorSurface({
   isSignedIn = false
@@ -92,49 +95,10 @@ export function NeroaFrontDoorSurface({
 }) {
   const [draftName, setDraftName] = useState("");
   const [submittedName, setSubmittedName] = useState("");
-  const [thumbHeight, setThumbHeight] = useState(56);
-  const [thumbOffset, setThumbOffset] = useState(0);
-  const conversationRef = useRef<HTMLDivElement>(null);
 
   const nextProjectHref = isSignedIn ? "/neroa/project" : "/neroa/auth";
-  const hasStarted = submittedName.trim().length > 0;
   const finalName = submittedName.trim();
-
-  function syncScrollIndicator() {
-    const element = conversationRef.current;
-
-    if (!element) {
-      return;
-    }
-
-    const visibleHeight = element.clientHeight;
-    const totalHeight = element.scrollHeight;
-    const maxScroll = Math.max(totalHeight - visibleHeight, 0);
-    const nextHeight = totalHeight > 0
-      ? Math.max((visibleHeight / totalHeight) * visibleHeight, 42)
-      : 42;
-    const nextOffset = maxScroll > 0
-      ? (element.scrollTop / maxScroll) * Math.max(visibleHeight - nextHeight, 0)
-      : 0;
-
-    setThumbHeight(nextHeight);
-    setThumbOffset(nextOffset);
-  }
-
-  useEffect(() => {
-    const element = conversationRef.current;
-
-    if (!element) {
-      return;
-    }
-
-    element.scrollTop = element.scrollHeight;
-    syncScrollIndicator();
-  }, [submittedName]);
-
-  useEffect(() => {
-    syncScrollIndicator();
-  }, []);
+  const hasStarted = finalName.length > 0;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,21 +117,21 @@ export function NeroaFrontDoorSurface({
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[#030508]" />
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.74]"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.78]"
           style={{ backgroundImage: "url('/brand/background.png')" }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.28)_0%,rgba(4,7,10,0.54)_28%,rgba(3,6,8,0.76)_68%,rgba(3,6,8,0.96)_100%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_74%_17%,rgba(244,235,214,0.12),transparent_9%),radial-gradient(circle_at_76%_19%,rgba(255,255,255,0.04),transparent_18%)]" />
-        <div className="northstar-energy-field absolute right-[5%] top-[3%] h-[40rem] w-[34rem] lg:w-[38rem]" />
-        <div className="northstar-energy-beam absolute right-[18%] top-[7%] h-[72vh] w-[18rem] lg:w-[21rem]" />
-        <div className="northstar-energy-sparks absolute right-[16%] top-[10%] h-[56vh] w-[20rem] lg:w-[24rem]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.2)_0%,rgba(4,7,10,0.38)_22%,rgba(3,6,8,0.68)_62%,rgba(3,6,8,0.94)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_74%_17%,rgba(244,235,214,0.14),transparent_9%),radial-gradient(circle_at_76%_19%,rgba(255,255,255,0.05),transparent_18%)]" />
+        <div className="northstar-energy-core absolute right-[3%] top-[1%] h-[44rem] w-[36rem] lg:w-[42rem]" />
+        <div className="northstar-energy-beam northstar-energy-beam-primary absolute right-[15%] top-[5%] h-[76vh] w-[19rem] lg:w-[22rem]" />
+        <div className="northstar-energy-beam northstar-energy-beam-secondary absolute right-[12%] top-[8%] h-[70vh] w-[15rem] lg:w-[18rem]" />
+        <div className="northstar-energy-particles absolute right-[13%] top-[9%] h-[58vh] w-[22rem] lg:w-[26rem]" />
         <div className="absolute right-[24%] top-[12%] text-teal-100/90">
-          <NorthStarIcon className="h-6 w-6 drop-shadow-[0_0_18px_rgba(148,255,236,0.45)]" />
+          <NorthStarIcon className="h-6 w-6 drop-shadow-[0_0_22px_rgba(148,255,236,0.52)]" />
         </div>
-        <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.08),transparent_56%)]" />
-        <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.26)_38%,rgba(5,8,11,0.8)_76%,#04070a_100%)]" />
+        <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.14),transparent_58%)]" />
+        <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.18)_34%,rgba(5,8,11,0.78)_76%,#04070a_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-[12rem] bg-[linear-gradient(180deg,rgba(4,7,10,0)_0%,rgba(4,7,10,0.72)_42%,#04070a_100%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.016)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.014)_1px,transparent_1px)] bg-[size:92px_92px] opacity-14" />
       </div>
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
@@ -219,35 +183,14 @@ export function NeroaFrontDoorSurface({
           </section>
 
           <section className="relative mt-8 flex h-[27rem] flex-col self-start rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(6,10,13,0.9),rgba(7,11,15,0.78))] p-6 shadow-[0_30px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:h-[29rem] sm:p-8 lg:mt-10 lg:h-[30rem] lg:p-9">
-            <div
-              aria-hidden="true"
-              className="scroll-rail pointer-events-none absolute bottom-7 right-4 top-24 w-px rounded-full bg-white/8"
-            />
-            <div
-              aria-hidden="true"
-              className="scroll-thumb pointer-events-none absolute right-[13px] w-[5px] rounded-full bg-gradient-to-b from-teal-200/85 via-teal-300/55 to-transparent shadow-[0_0_20px_rgba(45,212,191,0.28)] transition-all"
-              style={{
-                height: `${thumbHeight}px`,
-                top: `calc(6rem + ${thumbOffset}px)`
-              }}
-            />
-
-            <div className="border-b border-white/8 pb-4 pr-8">
+            <div className="border-b border-white/8 pb-4">
               <div className="flex items-center gap-2 text-white">
                 <NorthStarIcon className="h-4 w-4 text-teal-200/84" />
                 <h2 className="font-serif text-[1.9rem] tracking-tight">Neroa</h2>
               </div>
             </div>
 
-            <div
-              ref={conversationRef}
-              onScroll={syncScrollIndicator}
-              className="min-h-0 flex-1 space-y-6 overflow-y-auto py-5 pr-8"
-              style={{
-                scrollbarWidth: "thin",
-                scrollbarColor: "rgba(94,234,212,0.45) transparent"
-              }}
-            >
+            <div className="chat-scroll min-h-0 flex-1 space-y-6 overflow-y-auto py-5 pr-2">
               <ChatMessage
                 speaker="Neroa"
                 body="Hi, I’m Neroa. What’s your name?"
@@ -262,13 +205,25 @@ export function NeroaFrontDoorSurface({
                   />
                   <ChatMessage
                     speaker="Neroa"
-                    body={`Nice to meet you, ${finalName}. I’m here to help you plan, scope, and prepare your next project before execution begins. Let’s begin.`}
+                    body={
+                      <>
+                        Nice to meet you, <span className="text-white">{finalName}</span>. I&apos;m Neroa
+                        {" — "}a structured software-building workspace that helps turn an idea
+                        into a clear roadmap before execution begins. Instead of dropping
+                        you into an open-ended chat or rushing straight into code, I help
+                        define the product, organize scope, surface key decisions, prepare
+                        approvals, and keep the build tied to evidence and review. The goal
+                        is to help you plan, scope, and prepare your next project the right
+                        way before work begins.
+                      </>
+                    }
                   />
+                  <ChatMessage speaker="Neroa" body="Let’s begin." />
                 </>
               ) : null}
             </div>
 
-            <div className="border-t border-white/8 pt-4 pr-8">
+            <div className="border-t border-white/8 pt-4">
               {hasStarted ? (
                 <div className="rounded-[1.35rem] border border-white/12 bg-white/[0.04] p-2.5">
                   <Link
@@ -317,15 +272,24 @@ export function NeroaFrontDoorSurface({
         </div>
 
         <section className="pb-10 pt-4">
-          <div className="flex flex-wrap items-center justify-center gap-y-3">
+          <div className="flex flex-wrap items-center justify-center gap-y-3 lg:hidden">
+            {valuePills.map((pill) => (
+              <div
+                key={pill}
+                className="flex min-h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3.5 py-2 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)] sm:px-4"
+              >
+                {pill}
+              </div>
+            ))}
+          </div>
+
+          <div className="hidden w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-2 lg:grid">
             {valuePills.map((pill, index) => (
-              <div key={pill} className="flex items-center justify-center">
+              <div key={pill} className="contents">
                 {index > 0 ? (
-                  <ChipDivider
-                    className={index === 3 ? "mx-4 lg:mx-5" : "mx-3 lg:mx-4"}
-                  />
+                  <ChipDivider className="justify-self-center" />
                 ) : null}
-                <div className="flex min-h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3.5 py-2 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.05)] sm:px-4">
+                <div className="mx-2 flex min-h-10 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3 py-2 text-center text-[0.68rem] font-semibold tracking-[0.16em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
                   {pill}
                 </div>
               </div>
@@ -334,32 +298,50 @@ export function NeroaFrontDoorSurface({
         </section>
       </section>
       <style jsx>{`
-        .northstar-energy-field {
+        .northstar-energy-core {
           background:
-            radial-gradient(circle at 52% 8%, rgba(184, 255, 240, 0.26), transparent 9%),
-            radial-gradient(circle at 50% 20%, rgba(88, 241, 209, 0.14), transparent 24%),
-            radial-gradient(ellipse at 50% 44%, rgba(24, 128, 120, 0.16), transparent 48%);
-          filter: blur(10px);
-          animation: northstarFieldPulse 10.5s ease-in-out infinite;
+            radial-gradient(circle at 48% 7%, rgba(184, 255, 240, 0.44), transparent 8%),
+            radial-gradient(circle at 50% 16%, rgba(101, 245, 216, 0.26), transparent 22%),
+            radial-gradient(ellipse at 50% 42%, rgba(41, 183, 161, 0.22), transparent 50%);
+          filter: blur(8px);
+          animation: northstarFieldPulse 8.5s ease-in-out infinite;
         }
 
         .northstar-energy-beam {
+          mix-blend-mode: screen;
+          filter: blur(10px);
+        }
+
+        .northstar-energy-beam-primary {
           background:
             linear-gradient(
               180deg,
-              rgba(125, 255, 228, 0) 0%,
-              rgba(125, 255, 228, 0.08) 12%,
-              rgba(78, 238, 203, 0.26) 42%,
-              rgba(41, 183, 161, 0.1) 78%,
-              rgba(41, 183, 161, 0) 100%
+              rgba(134, 255, 232, 0) 0%,
+              rgba(134, 255, 232, 0.18) 12%,
+              rgba(72, 239, 200, 0.4) 36%,
+              rgba(36, 191, 156, 0.22) 72%,
+              rgba(36, 191, 156, 0) 100%
             );
-          clip-path: polygon(48% 0%, 56% 0%, 64% 100%, 36% 100%);
-          filter: blur(14px);
-          animation: northstarBeamShift 9s ease-in-out infinite;
+          clip-path: polygon(49% 0%, 59% 0%, 67% 100%, 33% 100%);
+          animation: northstarBeamShift 6.6s ease-in-out infinite;
         }
 
-        .northstar-energy-sparks::before,
-        .northstar-energy-sparks::after {
+        .northstar-energy-beam-secondary {
+          background:
+            linear-gradient(
+              180deg,
+              rgba(113, 255, 226, 0) 0%,
+              rgba(113, 255, 226, 0.12) 10%,
+              rgba(67, 224, 193, 0.26) 38%,
+              rgba(34, 148, 131, 0.14) 76%,
+              rgba(34, 148, 131, 0) 100%
+            );
+          clip-path: polygon(46% 0%, 56% 0%, 62% 100%, 38% 100%);
+          animation: northstarBeamShiftSecondary 9.8s ease-in-out infinite;
+        }
+
+        .northstar-energy-particles::before,
+        .northstar-energy-particles::after {
           content: "";
           position: absolute;
           inset: 0;
@@ -367,27 +349,50 @@ export function NeroaFrontDoorSurface({
           mix-blend-mode: screen;
         }
 
-        .northstar-energy-sparks::before {
+        .northstar-energy-particles::before {
           background-image:
-            radial-gradient(circle, rgba(184, 255, 240, 0.34) 0 1.5px, transparent 2px),
-            radial-gradient(circle, rgba(112, 245, 214, 0.26) 0 1.2px, transparent 1.8px),
-            radial-gradient(circle, rgba(112, 245, 214, 0.18) 0 1px, transparent 1.5px);
+            radial-gradient(circle, rgba(184, 255, 240, 0.42) 0 1.6px, transparent 2.2px),
+            radial-gradient(circle, rgba(112, 245, 214, 0.32) 0 1.2px, transparent 1.8px),
+            radial-gradient(circle, rgba(76, 234, 199, 0.24) 0 1px, transparent 1.6px);
           background-size: 160px 160px, 220px 220px, 280px 280px;
-          background-position: 40% 8%, 62% 24%, 50% 42%;
-          animation: northstarSparkleDrift 14s linear infinite;
-          opacity: 0.68;
+          background-position: 40% 6%, 61% 22%, 49% 40%;
+          animation: northstarSparkleDrift 11.5s linear infinite;
+          opacity: 0.82;
         }
 
-        .northstar-energy-sparks::after {
-          background-image: linear-gradient(
+        .northstar-energy-particles::after {
+          background-image:
+            linear-gradient(
+              180deg,
+              rgba(129, 255, 231, 0.18) 0%,
+              rgba(129, 255, 231, 0.06) 34%,
+              rgba(129, 255, 231, 0) 100%
+            );
+          filter: blur(14px);
+          animation: northstarFieldPulse 7.8s ease-in-out infinite reverse;
+          opacity: 0.72;
+        }
+
+        .chat-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(94, 234, 212, 0.45) transparent;
+        }
+
+        .chat-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .chat-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .chat-scroll::-webkit-scrollbar-thumb {
+          border-radius: 999px;
+          background: linear-gradient(
             180deg,
-            rgba(129, 255, 231, 0.12) 0%,
-            rgba(129, 255, 231, 0.02) 38%,
-            rgba(129, 255, 231, 0) 100%
+            rgba(178, 255, 239, 0.84),
+            rgba(56, 202, 172, 0.46)
           );
-          filter: blur(18px);
-          animation: northstarBeamShift 12s ease-in-out infinite reverse;
-          opacity: 0.55;
         }
 
         @keyframes northstarFieldPulse {
@@ -397,40 +402,53 @@ export function NeroaFrontDoorSurface({
             transform: translateY(0) scale(1);
           }
           50% {
-            opacity: 0.96;
-            transform: translateY(10px) scale(1.04);
+            opacity: 1;
+            transform: translateY(10px) scale(1.06);
           }
         }
 
         @keyframes northstarBeamShift {
           0%,
           100% {
-            opacity: 0.44;
+            opacity: 0.52;
             transform: translateY(0) scaleX(1);
           }
           50% {
-            opacity: 0.78;
-            transform: translateY(14px) scaleX(1.08);
+            opacity: 0.92;
+            transform: translateY(18px) scaleX(1.12);
+          }
+        }
+
+        @keyframes northstarBeamShiftSecondary {
+          0%,
+          100% {
+            opacity: 0.36;
+            transform: translateY(0) scaleX(1);
+          }
+          50% {
+            opacity: 0.74;
+            transform: translateY(22px) scaleX(1.08);
           }
         }
 
         @keyframes northstarSparkleDrift {
           0% {
-            transform: translate3d(0, -8px, 0);
+            transform: translate3d(0, -10px, 0);
           }
           50% {
-            transform: translate3d(6px, 16px, 0);
+            transform: translate3d(5px, 18px, 0);
           }
           100% {
-            transform: translate3d(-4px, 28px, 0);
+            transform: translate3d(-5px, 34px, 0);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .northstar-energy-field,
-          .northstar-energy-beam,
-          .northstar-energy-sparks::before,
-          .northstar-energy-sparks::after {
+          .northstar-energy-core,
+          .northstar-energy-beam-primary,
+          .northstar-energy-beam-secondary,
+          .northstar-energy-particles::before,
+          .northstar-energy-particles::after {
             animation: none;
           }
         }

@@ -122,17 +122,20 @@ test("root landing route metadata reflects the clean Neroa front door", () => {
   assert.doesNotMatch(rootLandingSource, /Guided from idea to approval/i);
 });
 
-test("/neroa front door includes the restored public chat-first flow", () => {
+test("/neroa front door includes the polished chat-first flow", () => {
   assert.match(frontDoorSurfaceSource, /"use client"/);
   assert.match(frontDoorSurfaceSource, /useState/);
-  assert.match(frontDoorSurfaceSource, /useEffect/);
-  assert.match(frontDoorSurfaceSource, /useRef/);
-  assert.match(frontDoorSurfaceSource, /Hi, I(?:'|’)m Neroa\. What(?:'|’)s your name\?/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /useEffect/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /useRef/);
+  assert.match(frontDoorSurfaceSource, /Hi, I(?:'|â€™|’)m Neroa\. What(?:'|â€™|’)s your name\?/);
   assert.match(frontDoorSurfaceSource, /My name is \$\{finalName\}\./);
+  assert.match(frontDoorSurfaceSource, /structured software-building workspace/);
+  assert.match(frontDoorSurfaceSource, /open-ended chat or rushing straight into code/);
   assert.match(
     frontDoorSurfaceSource,
-    /Nice to meet you, \$\{finalName\}\. I(?:'|’)m here to help you plan, scope, and prepare your next project before execution begins\. Let(?:'|’)s begin\./
+    /prepare[\s\S]*approvals, and keep the build tied to evidence and review/,
   );
+  assert.match(frontDoorSurfaceSource, /Let(?:'|â€™|’)s begin\./);
   assert.match(frontDoorSurfaceSource, /Type your name\.\.\./);
   assert.match(frontDoorSurfaceSource, /aria-label="Submit your name"/);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
@@ -153,6 +156,7 @@ test("/neroa front door uses Neroa wordmark-first branding without logo assets o
   assert.doesNotMatch(frontDoorSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bNarowa\b/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /\bNarua\b/);
 });
 
 test("/neroa front door CTAs point only to clean /neroa routes", () => {
@@ -169,7 +173,7 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
 
 test("root landing inherits the clean Neroa conversational front door content", () => {
   assert.match(rootLandingSource, /NeroaFrontDoorSurface/);
-  assert.match(frontDoorSurfaceSource, /Hi, I(?:'|’)m Neroa\. What(?:'|’)s your name\?/);
+  assert.match(frontDoorSurfaceSource, /Hi, I(?:'|â€™|’)m Neroa\. What(?:'|â€™|’)s your name\?/);
   assert.match(frontDoorSurfaceSource, /My name is \$\{finalName\}\./);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
   assert.match(frontDoorSurfaceSource, /const nextProjectHref = isSignedIn \? "\/neroa\/project" : "\/neroa\/auth"/);
@@ -241,16 +245,19 @@ test("clean portal navigation links the three clean neroa routes only", () => {
 test("/neroa front door reflects the locked dark luxury visual direction", () => {
   assert.match(frontDoorSurfaceSource, /bg-\[#04070a\]/);
   assert.match(frontDoorSurfaceSource, /SaaS[\s\S]*right\./);
-  assert.match(frontDoorSurfaceSource, /What(?:'|’)s your name\?/);
+  assert.match(frontDoorSurfaceSource, /What(?:'|â€™|’)s your name\?/);
   assert.match(frontDoorSurfaceSource, /Roadmap-First Planning/);
   assert.match(frontDoorSurfaceSource, /Build & Execute/);
   assert.match(frontDoorSurfaceSource, /NorthStarIcon/);
   assert.match(frontDoorSurfaceSource, /url\('\/brand\/background\.png'\)/);
-  assert.match(frontDoorSurfaceSource, /northstar-energy-field/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-core/);
   assert.match(frontDoorSurfaceSource, /northstar-energy-beam/);
-  assert.match(frontDoorSurfaceSource, /northstar-energy-sparks/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-beam-primary/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-beam-secondary/);
+  assert.match(frontDoorSurfaceSource, /northstar-energy-particles/);
   assert.match(frontDoorSurfaceSource, /northstarFieldPulse/);
   assert.match(frontDoorSurfaceSource, /northstarBeamShift/);
+  assert.match(frontDoorSurfaceSource, /northstarBeamShiftSecondary/);
   assert.match(frontDoorSurfaceSource, /northstarSparkleDrift/);
   assert.match(frontDoorSurfaceSource, /prefers-reduced-motion: reduce/);
   assert.match(frontDoorSurfaceSource, /border-b border-white\/10 pb-6/);
@@ -263,14 +270,17 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /mt-8/);
   assert.match(frontDoorSurfaceSource, /lg:mt-10/);
   assert.match(frontDoorSurfaceSource, /overflow-y-auto/);
-  assert.match(frontDoorSurfaceSource, /scroll-rail/);
-  assert.match(frontDoorSurfaceSource, /scroll-thumb/);
+  assert.match(frontDoorSurfaceSource, /chat-scroll/);
+  assert.match(frontDoorSurfaceSource, /scrollbar-width: thin/);
+  assert.match(frontDoorSurfaceSource, /::-webkit-scrollbar/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /scroll-rail/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /scroll-thumb/);
   assert.match(frontDoorSurfaceSource, /ChipDivider/);
-  assert.match(frontDoorSurfaceSource, /flex flex-wrap items-center justify-center gap-y-3/);
+  assert.match(frontDoorSurfaceSource, /grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)\]/);
+  assert.match(frontDoorSurfaceSource, /justify-self-center/);
   assert.match(frontDoorSurfaceSource, /Scope Before Execution/);
   assert.match(frontDoorSurfaceSource, /Decisions & Approvals/);
   assert.match(frontDoorSurfaceSource, /Evidence & Review/);
-  assert.match(frontDoorSurfaceSource, /index === 3 \? "mx-4 lg:mx-5" : "mx-3 lg:mx-4"/);
   assert.match(frontDoorSurfaceSource, /rounded-full border border-teal-300\/45 bg-teal-300\/10/);
   assert.match(frontDoorSurfaceSource, /roadmap/i);
   assert.match(frontDoorSurfaceSource, /scope/i);
