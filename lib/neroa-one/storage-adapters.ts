@@ -34,7 +34,12 @@ import type {
 } from "./strategy-escalation.ts";
 
 export interface NeroaOneStorageTraceContext {
+  workspaceId?: string | null;
+  projectId?: string | null;
+  taskId?: string | null;
+  laneId?: string | null;
   requestId?: string | null;
+  traceId?: string | null;
   correlationId?: string | null;
   caller?: string | null;
   actorId?: string | null;
@@ -55,6 +60,7 @@ export interface NeroaOneStorageQueryScope {
   workspaceId?: string | null;
   projectId?: string | null;
   taskId?: string | null;
+  laneId?: string | null;
   sourceLaneId?: string | null;
 }
 
@@ -81,7 +87,7 @@ export interface NeroaOneStorageEventEnvelope<TEventType extends string = string
 export type NeroaOneStorageWriteResult<TRecord> =
   | {
       ok: true;
-      record: TRecord;
+      record: Readonly<TRecord>;
       error: null;
       traceContext?: NeroaOneStorageTraceContext | null;
       warnings?: readonly string[] | null;
@@ -98,7 +104,7 @@ export type NeroaOneStorageReadResult<TRecord> =
   | {
       ok: true;
       found: true;
-      record: TRecord;
+      record: Readonly<TRecord>;
       error: null;
       traceContext?: NeroaOneStorageTraceContext | null;
     }
@@ -120,7 +126,7 @@ export type NeroaOneStorageReadResult<TRecord> =
 export type NeroaOneStorageListResult<TRecord> =
   | {
       ok: true;
-      records: readonly TRecord[];
+      records: readonly Readonly<TRecord>[];
       totalCount: number | null;
       nextCursor: string | null;
       error: null;
@@ -152,7 +158,7 @@ export type NeroaOneStorageDeleteResult =
     };
 
 export interface NeroaOneStorageCreateArgs<TRecord> {
-  record: TRecord;
+  record: Readonly<TRecord>;
   scope?: NeroaOneStorageQueryScope | null;
   traceContext?: NeroaOneStorageTraceContext | null;
 }

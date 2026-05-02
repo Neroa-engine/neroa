@@ -573,6 +573,12 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.match(auditRoomSource, /interface\s+NeroaOneAuditRoomStorageAdapter/);
   assert.match(auditRoomSource, /interface\s+NeroaOneAdminOversightSummaryAdapter/);
   assert.match(storageAdaptersSource, /interface\s+NeroaOneStorageAdapterContract/);
+  assert.match(storageAdaptersSource, /workspaceId\?: string \| null;/);
+  assert.match(storageAdaptersSource, /projectId\?: string \| null;/);
+  assert.match(storageAdaptersSource, /taskId\?: string \| null;/);
+  assert.match(storageAdaptersSource, /laneId\?: string \| null;/);
+  assert.match(storageAdaptersSource, /requestId\?: string \| null;/);
+  assert.match(storageAdaptersSource, /traceId\?: string \| null;/);
   assert.match(storageAdaptersSource, /interface\s+NeroaOneOutcomeLaneStorageAdapterContract/);
   assert.match(
     storageAdaptersSource,
@@ -637,6 +643,10 @@ test("Storage adapter contracts stay backend-only, schema-neutral, and implement
     storageAdaptersSource,
     /from\s+["'][^"']*(postgres|prisma|kysely|drizzle|sequelize|typeorm|mongodb|sqlite)[^"']*["']/i
   );
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /from\s+["'][^"']*(redis|bull|bullmq|bee-queue|pg-boss|amqplib|sqs|rabbitmq|kafka|minio|s3|digitalocean|supabase-js)[^"']*["']/i
+  );
   assert.doesNotMatch(storageAdaptersSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     storageAdaptersSource,
@@ -647,14 +657,38 @@ test("Storage adapter contracts stay backend-only, schema-neutral, and implement
     /openai|anthropic|from\s+["'][^"']*\/ai\/[^"']*["']/i
   );
   assert.doesNotMatch(storageAdaptersSource, /from\s+["']zod["']/i);
-  assert.doesNotMatch(storageAdaptersSource, /\bfetch\(|\bnew\s+[A-Z]\w+|\bclass\s+\w+/);
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /\bfetch\(|\bnew\s+[A-Z]\w+|\bclass\s+\w+|\bimplements\b|=>\s*\{|function\s+\w+/i
+  );
   assert.doesNotMatch(storageAdaptersSource, /export\s+const\s+/);
-  assert.doesNotMatch(storageAdaptersSource, /\bparse\(|schema/i);
+  assert.doesNotMatch(storageAdaptersSource, /\bparse\(|schema|tableName|schemaName|bucketName|sql|insert into|update set|delete from|create table/i);
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /callback|webhook|onComplete|onSuccess|onFailure|enqueue|dequeue|publish|subscribe/i
+  );
   assert.match(storageAdaptersSource, /import type\s+\{/);
+  assert.match(storageAdaptersSource, /Readonly<TRecord>/);
   assert.match(storageAdaptersSource, /appendEvent\(/);
   assert.match(storageAdaptersSource, /updateStatus\(/);
   assert.match(storageAdaptersSource, /archive\(/);
   assert.match(storageAdaptersSource, /markFailed\(/);
+});
+
+test("Lane modules stay free of shared storage adapter imports and storage implementation responsibility", () => {
+  const laneSources = moduleSources.slice(0, -2);
+
+  for (const source of laneSources) {
+    assert.doesNotMatch(source, /from\s+["']\.\/storage-adapters\.ts["']/i);
+    assert.doesNotMatch(
+      source,
+      /\b(?:supabase|postgres|prisma|kysely|drizzle|sequelize|typeorm|mongodb|sqlite|redis|bullmq|bee-queue|pg-boss|amqplib|sqs|rabbitmq|kafka|minio|s3)\b|digitalocean spaces/i
+    );
+    assert.doesNotMatch(
+      source,
+      /tableName|schemaName|bucketName|insert into|update set|delete from|create table/i
+    );
+  }
 });
 
 test("Customer message can be classified deterministically", () => {
