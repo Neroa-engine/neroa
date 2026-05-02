@@ -83,20 +83,15 @@ test("/neroa front door stays inside the clean neroa portal namespace", () => {
 });
 
 test("/neroa front door includes the clean conversational landing structure", () => {
-  assert.match(frontDoorSurfaceSource, /NeroaPortalNavigation/);
-  assert.match(frontDoorSurfaceSource, /currentPath="\/neroa"/);
-  assert.match(frontDoorSurfaceSource, /tone="dark"/);
   assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What\\u2019s your name\?/);
   assert.match(frontDoorSurfaceSource, /My name is Tom\./);
-  assert.match(frontDoorSurfaceSource, /Conversational Preview/);
-  assert.match(frontDoorSurfaceSource, /Conversation Rhythm/);
+  assert.match(frontDoorSurfaceSource, /Project Front Door/);
+  assert.match(frontDoorSurfaceSource, /Refined Project Preview/);
   assert.match(
     frontDoorSurfaceSource,
-    /Neroa helps turn an idea into a structured project roadmap, scope, decisions,[\s\S]*next steps, and a clean project workspace before execution begins\./
+    /Neroa turns an idea into a structured project roadmap, scope, decisions,[\s\S]*next steps, and a clean project workspace before execution begins\./
   );
-  assert.match(frontDoorSurfaceSource, /Strategy Room Tone/);
-  assert.match(frontDoorSurfaceSource, /Command Center Calm/);
-  assert.match(frontDoorSurfaceSource, /Governance and Control/);
+  assert.match(frontDoorSurfaceSource, /What Neroa Organizes/);
   assert.match(frontDoorSurfaceSource, /Next Step/);
 });
 
@@ -119,6 +114,7 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/project"/g), 0);
   assert.match(frontDoorSurfaceSource, /Let\\u2019s begin your project/);
   assert.doesNotMatch(frontDoorSurfaceSource, /Open Strategy Room/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Start the conversation/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/auth"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/diy"/);
@@ -126,10 +122,7 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
 });
 
 test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
-  assert.match(
-    frontDoorSurfaceSource,
-    /do not imply live authentication, pricing checkout, billing runtime, or project[\s\S]*execution wiring yet\./
-  );
+  assert.match(frontDoorSurfaceSource, /no live authentication, billing runtime, or project execution wiring is implied\./i);
   assert.match(
     frontDoorSurfaceSource,
     /opens the project conversation without pretending live chat is already active\./
@@ -140,10 +133,12 @@ test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
   );
   assert.match(frontDoorSurfaceSource, /Pricing and execution options follow after Neroa understands the project scope\./);
   assert.match(frontDoorSurfaceSource, /No forms, fake connected states, or live submission paths are active here\./);
-  assert.match(
-    frontDoorSurfaceSource,
-    /No pricing table or execution model choice appears at the front door\./
-  );
+  assert.match(frontDoorSurfaceSource, /This page moves users toward starting a project, not choosing an execution model\./);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Share the idea/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /We'?ll build the path/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Start with a guided planning conversation/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Planning Chat/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Click here to start the conversation/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bDIY\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bManaged\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /self-guided/i);
@@ -176,22 +171,23 @@ test("clean portal navigation links the three clean neroa routes only", () => {
 test("/neroa front door reflects the locked dark luxury visual direction", () => {
   assert.match(frontDoorSurfaceSource, /bg-\[#05070b\]/);
   assert.match(frontDoorSurfaceSource, /dark luxury Strategy Room \+ Command Center direction/i);
+  assert.match(frontDoorSurfaceSource, /Charcoal command canvas, soft silver framing, and quiet confidence\./i);
   assert.match(
     frontDoorSurfaceSource,
-    /Charcoal command canvas,[\s\S]*soft silver system text,[\s\S]*subtle teal signal[\s\S]*accents/i
+    /Soft silver system text,[\s\S]*subtle teal signal accents,[\s\S]*spacious premium styling,[\s\S]*a calm futuristic tone/i
   );
-  assert.match(frontDoorSurfaceSource, /spacious premium spacing/i);
+  assert.match(frontDoorSurfaceSource, /spacious premium styling/i);
   assert.match(frontDoorSurfaceSource, /calm futuristic tone/i);
   assert.match(frontDoorSurfaceSource, /quiet confidence/i);
-  assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient\(circle_at_18%_0%,rgba\(45,212,191,0\.16\)/);
+  assert.match(frontDoorSurfaceSource, /bg-\[radial-gradient\(circle_at_16%_0%,rgba\(45,212,191,0\.16\)/);
   assert.match(frontDoorSurfaceSource, /text-teal-/);
-  assert.match(frontDoorSurfaceSource, /shadow-\[0_38px_120px/);
-  assert.match(frontDoorSurfaceSource, /wordmark-first/);
+  assert.match(frontDoorSurfaceSource, /shadow-\[0_42px_130px/);
+  assert.match(frontDoorSurfaceSource, /wordmark-first/i);
   assert.match(frontDoorSurfaceSource, /spacious/);
-  assert.match(frontDoorSurfaceSource, /intentionally quiet/);
+  assert.match(frontDoorSurfaceSource, /Project Front Door/);
   assert.match(frontDoorSurfaceSource, /guardrails and control/i);
   assert.match(frontDoorSurfaceSource, /intentional, reviewable, and calm/i);
-  assert.doesNotMatch(frontDoorSurfaceSource, /purple/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /NeroaPortalNavigation/);
   assert.doesNotMatch(frontDoorSurfaceSource, /violet/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /fuchsia/i);
 });
