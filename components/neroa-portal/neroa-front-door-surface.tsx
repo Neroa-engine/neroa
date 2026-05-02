@@ -269,24 +269,24 @@ export function NeroaFrontDoorSurface({
         </div>
 
         <section className="pb-10 pt-4">
-          <div className="flex flex-wrap items-center justify-center gap-y-3 lg:hidden">
-            {valuePills.map((pill) => (
-              <div
-                key={pill}
-                className="flex min-h-9 items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-3 py-1.5 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)] sm:px-3.5"
-              >
-                {pill}
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-3 lg:hidden">
+            {valuePills.map((pill, index) => (
+              <div key={pill} className="contents">
+                {index > 0 ? <ChipDivider className="flex px-3" /> : null}
+                <div className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-white/14 bg-white/[0.035] px-5 py-2 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
+                  {pill}
+                </div>
               </div>
             ))}
           </div>
 
-          <div className="hidden w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-5 lg:grid">
+          <div className="hidden w-full items-center justify-center lg:flex">
             {valuePills.map((pill, index) => (
-              <div key={pill} className="contents">
+              <div key={pill} className="flex items-center">
                 {index > 0 ? (
-                  <ChipDivider className="justify-self-center" />
+                  <ChipDivider className="mx-5" />
                 ) : null}
-                <div className="mx-1.5 flex min-h-9 w-full items-center justify-center rounded-full border border-white/14 bg-white/[0.035] px-2.5 py-1.5 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
+                <div className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-white/14 bg-white/[0.035] px-5 py-2 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
                   {pill}
                 </div>
               </div>
