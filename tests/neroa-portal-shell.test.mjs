@@ -21,12 +21,20 @@ const projectPortalSource = readFileSync(
   "utf8"
 );
 const authPortalSource = readFileSync(new URL("../app/neroa/auth/page.tsx", import.meta.url), "utf8");
+const pricingPortalSource = readFileSync(
+  new URL("../app/neroa/pricing/page.tsx", import.meta.url),
+  "utf8"
+);
 const projectPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-project-portal-surface.tsx", import.meta.url),
   "utf8"
 );
 const authPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-auth-surface.tsx", import.meta.url),
+  "utf8"
+);
+const pricingPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-pricing-surface.tsx", import.meta.url),
   "utf8"
 );
 const northStarAccentSource = readFileSync(
@@ -51,6 +59,8 @@ const cleanPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  pricingPortalSource,
+  pricingPortalSurfaceSource,
   northStarAccentSource,
   portalNavigationSource,
   portalShellSource
@@ -64,6 +74,8 @@ const uiOnlyPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  pricingPortalSource,
+  pricingPortalSurfaceSource,
   northStarAccentSource,
   portalNavigationSource,
   portalShellSource
@@ -87,9 +99,12 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
   assert.match(projectPortalSource, /NeroaProjectPortalSurface/);
   assert.match(projectPortalSurfaceSource, /export function NeroaProjectPortalSurface/);
-  assert.match(authPortalSource, /export default function NeroaAuthPage/);
+  assert.match(authPortalSource, /export default async function NeroaAuthPage/);
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSurfaceSource, /export function NeroaAuthSurface/);
+  assert.match(pricingPortalSource, /export default function NeroaPricingPage/);
+  assert.match(pricingPortalSource, /NeroaPricingSurface/);
+  assert.match(pricingPortalSurfaceSource, /export function NeroaPricingSurface/);
   assert.match(northStarAccentSource, /export function NeroaNorthStarAccent/);
   assert.match(portalNavigationSource, /export function NeroaPortalNavigation/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
@@ -167,8 +182,9 @@ test("/neroa front door uses Neroa wordmark-first branding without logo assets o
 });
 
 test("/neroa front door CTAs point only to clean /neroa routes", () => {
-  assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/auth"/g), 2);
-  assert.match(frontDoorSurfaceSource, /const nextProjectHref = isSignedIn \? "\/neroa\/project" : "\/neroa\/auth"/);
+  assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /href=\{startProjectHref\}/g), 2);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/pricing"/g), 1);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/account"/g), 0);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
@@ -183,7 +199,7 @@ test("root landing inherits the clean Neroa conversational front door content", 
   assert.match(frontDoorSurfaceSource, /Hi, I(?:'|â€™|’)m Neroa\. What(?:'|â€™|’)s your name\?/);
   assert.match(frontDoorSurfaceSource, /My name is \$\{finalName\}\./);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
-  assert.match(frontDoorSurfaceSource, /const nextProjectHref = isSignedIn \? "\/neroa\/project" : "\/neroa\/auth"/);
+  assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
 });
 
 test("/neroa front door uses public-facing product language and avoids DIY Managed copy", () => {
@@ -311,6 +327,53 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.doesNotMatch(frontDoorSurfaceSource, /fuchsia/i);
 });
 
+test("/neroa pricing route renders the clean pricing page and plan-selection handoff", () => {
+  assert.match(pricingPortalSource, /@\/components\/neroa-portal\/neroa-pricing-surface/);
+  assert.doesNotMatch(pricingPortalSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(pricingPortalSource, /@\/components\/marketing\//);
+  assert.match(pricingPortalSource, /Neroa \| Pricing/);
+  assert.match(pricingPortalSurfaceSource, /Governed Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /Choose the Neroa lane that fits your project\./);
+  assert.match(pricingPortalSurfaceSource, /DIY and Managed credits remain separate/);
+  assert.match(pricingPortalSurfaceSource, /Workspace hours stay separate from build credits/);
+  assert.match(pricingPortalSurfaceSource, /No live checkout or billing runtime is wired on this page/);
+  assert.match(pricingPortalSurfaceSource, /Free/);
+  assert.match(pricingPortalSurfaceSource, /\$0\/month/);
+  assert.match(pricingPortalSurfaceSource, /0-10 trial credits/);
+  assert.match(pricingPortalSurfaceSource, /Starter/);
+  assert.match(pricingPortalSurfaceSource, /\$49\.99\/month/);
+  assert.match(pricingPortalSurfaceSource, /200 DIY Build Credits/);
+  assert.match(
+    pricingPortalSurfaceSource,
+    /Starter is for shaping and progressing a bounded project, not promising a full MVP out of the box\./
+  );
+  assert.match(pricingPortalSurfaceSource, /Pro/);
+  assert.match(pricingPortalSurfaceSource, /\$179\/month/);
+  assert.match(pricingPortalSurfaceSource, /600 DIY Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /Business/);
+  assert.match(pricingPortalSurfaceSource, /\$499\/month/);
+  assert.match(pricingPortalSurfaceSource, /1,600 DIY Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /Managed Build/);
+  assert.match(pricingPortalSurfaceSource, /from \$750/);
+  assert.match(pricingPortalSurfaceSource, /500 managed credits \/ \$750/);
+  assert.match(pricingPortalSurfaceSource, /1,500 managed credits \/ \$2,250/);
+  assert.match(pricingPortalSurfaceSource, /3,000 managed credits \/ \$4,500/);
+  assert.match(pricingPortalSurfaceSource, /5,000 managed credits \/ \$7,500/);
+  assert.match(pricingPortalSurfaceSource, /200 \/ \$60/);
+  assert.match(pricingPortalSurfaceSource, /500 \/ \$150/);
+  assert.match(pricingPortalSurfaceSource, /1,000 \/ \$300/);
+  assert.match(pricingPortalSurfaceSource, /2,000 \/ \$600/);
+  assert.match(pricingPortalSurfaceSource, /10 \/ \$10/);
+  assert.match(pricingPortalSurfaceSource, /25 \/ \$20/);
+  assert.match(pricingPortalSurfaceSource, /50 \/ \$35/);
+  assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /from\s+["'][^"']*stripe/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /checkoutSession/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /unlimited ai/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /GPT-5\.5/i);
+});
+
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {
   assert.match(portalNavigationSource, />\s*Neroa\s*</);
   assert.doesNotMatch(portalNavigationSource, /<img/i);
@@ -361,10 +424,15 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /type="submit"/);
   assert.match(authPortalSurfaceSource, /href="#"/);
   assert.match(authPortalSurfaceSource, /TODO: connect this to a clean forgot-password route/);
+  assert.match(authPortalSurfaceSource, /selectedPlanLabels/);
+  assert.match(authPortalSurfaceSource, /Selected Plan:/);
+  assert.match(authPortalSurfaceSource, /free: "Free"/);
+  assert.match(authPortalSurfaceSource, /managed: "Managed Build"/);
   assert.match(authPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(authPortalSurfaceSource, /Home/);
   assert.match(authPortalSurfaceSource, /Pricing/);
   assert.match(authPortalSurfaceSource, /Start Your Project/);
+  assert.match(authPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.doesNotMatch(authPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.doesNotMatch(authPortalSurfaceSource, /placeholder-only/i);
   assert.doesNotMatch(authPortalSurfaceSource, /future routing notes/i);
@@ -576,6 +644,19 @@ test("landing wrappers only use optional auth lookup for post-chat routing", () 
   }
 
   assert.doesNotMatch(frontDoorSurfaceSource, /@\/lib\/auth/);
+});
+
+test("clean auth page accepts selected plan context without wiring billing runtime", () => {
+  assert.match(authPortalSource, /searchParams/);
+  assert.match(authPortalSource, /normalizeSelectedPlan/);
+  assert.match(authPortalSource, /case "free"/);
+  assert.match(authPortalSource, /case "starter"/);
+  assert.match(authPortalSource, /case "pro"/);
+  assert.match(authPortalSource, /case "business"/);
+  assert.match(authPortalSource, /case "managed"/);
+  assert.match(authPortalSource, /selectedPlan=\{selectedPlan\}/);
+  assert.doesNotMatch(authPortalSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(authPortalSource, /stripe/i);
 });
 
 test("clean auth surface does not import auth runtime session or guard modules", () => {

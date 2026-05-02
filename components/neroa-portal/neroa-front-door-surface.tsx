@@ -116,7 +116,7 @@ export function NeroaFrontDoorSurface({
   const [draftName, setDraftName] = useState("");
   const [submittedName, setSubmittedName] = useState("");
 
-  const nextProjectHref = isSignedIn ? "/neroa/project" : "/neroa/auth";
+  const startProjectHref = "/neroa/pricing";
   const finalName = submittedName.trim();
   const hasStarted = finalName.length > 0;
 
@@ -174,7 +174,7 @@ export function NeroaFrontDoorSurface({
               Sign In
             </Link>
             <Link
-              href="/neroa/auth"
+              href={startProjectHref}
               className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
             >
               Start Your Project
@@ -249,7 +249,7 @@ export function NeroaFrontDoorSurface({
               {hasStarted ? (
                 <div className="rounded-[1.35rem] border border-white/12 bg-white/[0.04] p-2.5">
                   <Link
-                    href={nextProjectHref}
+                    href={startProjectHref}
                     className="flex items-center justify-between rounded-[1rem] bg-teal-300 px-5 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
                   >
                     <span>Let&apos;s Begin</span>

@@ -57,7 +57,21 @@ function AuthField({
   );
 }
 
-export function NeroaAuthSurface() {
+const selectedPlanLabels = {
+  free: "Free",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
+  managed: "Managed Build"
+} as const;
+
+type NeroaAuthSurfaceProps = {
+  selectedPlan?: keyof typeof selectedPlanLabels | null;
+};
+
+export function NeroaAuthSurface({
+  selectedPlan = null
+}: NeroaAuthSurfaceProps) {
   const [mode, setMode] = useState<"signin" | "create">("signin");
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
@@ -78,6 +92,7 @@ export function NeroaAuthSurface() {
 
   const passwordToggleClass =
     "text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white";
+  const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
@@ -113,7 +128,7 @@ export function NeroaAuthSurface() {
               Sign In
             </Link>
             <Link
-              href="/neroa/auth"
+              href="/neroa/pricing"
               className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
             >
               Start Your Project
@@ -174,6 +189,12 @@ export function NeroaAuthSurface() {
                 <p className="text-[1rem] leading-8 text-white/68">
                   Sign in or create an account to start your project.
                 </p>
+                {selectedPlanLabel ? (
+                  <div className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-teal-100">
+                    <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/84" />
+                    Selected Plan: {selectedPlanLabel}
+                  </div>
+                ) : null}
               </div>
             </div>
 
