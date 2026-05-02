@@ -7,7 +7,7 @@ const authSections = [
     description:
       "Placeholder surface for future sign-in routing once clean auth infrastructure is intentionally connected.",
     detail:
-      "This area does not submit credentials, open sessions, or connect to Supabase auth in this pass."
+      "This area does not capture credentials, submit a login, open sessions, or connect to Supabase auth in this pass."
   },
   {
     title: "Create account",
@@ -15,7 +15,7 @@ const authSections = [
     description:
       "Placeholder surface for future account creation once the clean Neroa auth path is formally wired.",
     detail:
-      "This area does not create users, store records, or trigger onboarding runtime yet."
+      "This area does not create users, store records, trigger onboarding runtime, or start provider auth in this pass."
   },
   {
     title: "Continue to Account Portal later",
@@ -23,7 +23,7 @@ const authSections = [
     description:
       "Future routing destination for signed-in users after the clean auth entry path is connected.",
     detail:
-      "Signed in users will route to /neroa/account later, but no redirect or session logic is active now."
+      "Signed in users will route to /neroa/account later, but this note does not make a redirect decision and no session logic is active now."
   },
   {
     title: "Continue to Project Portal later",
@@ -31,7 +31,7 @@ const authSections = [
     description:
       "Future routing destination for users who already have an active project context.",
     detail:
-      "Users with an active project may continue to /neroa/project later, but project runtime selection is not wired in this pass."
+      "Users with an active project may continue to /neroa/project later, but this note does not make an active-project decision and project runtime selection is not wired in this pass."
   }
 ] as const;
 
@@ -108,10 +108,10 @@ export function NeroaAuthSurface() {
                 </p>
                 <div className="mt-4 grid gap-3">
                   <div className="rounded-[1rem] border border-slate-300/15 bg-white/5 px-4 py-3 text-sm text-slate-400">
-                    Placeholder field surface only
+                    No credential field capture in this pass
                   </div>
                   <div className="rounded-[1rem] border border-slate-300/15 bg-white/5 px-4 py-3 text-sm text-slate-400">
-                    Placeholder action surface only
+                    No submission or redirect action in this pass
                   </div>
                 </div>
                 <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -140,6 +140,7 @@ export function NeroaAuthSurface() {
             </p>
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-300">
               <p>No live login or signup submission is active in this pass.</p>
+              <p>Continue destinations are informational only and do not trigger redirect decisions.</p>
               <p>No route guards, session restoration, or redirect logic is active in this pass.</p>
               <p>No billing, project runtime, or Neroa One runtime access is implied here.</p>
             </div>

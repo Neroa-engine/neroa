@@ -94,6 +94,10 @@ test("navigation uses Neroa wordmark text only and no image logo paths", () => {
 
 test("clean auth route exports and renders a placeholder-only auth surface", () => {
   assert.match(authPortalSource, /NeroaAuthSurface/);
+  assert.match(authPortalSource, /@\/components\/neroa-portal\/neroa-auth-surface/);
+  assert.doesNotMatch(authPortalSource, /@\/components\/portal\//);
+  assert.doesNotMatch(authPortalSource, /@\/components\/workspace\//);
+  assert.doesNotMatch(authPortalSource, /@\/components\/auth-form/);
   assert.match(authPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(authPortalSurfaceSource, /currentPath="\/neroa\/auth"/);
   assert.match(authPortalSurfaceSource, /"Sign in"/);
@@ -107,10 +111,23 @@ test("clean auth surface includes future routing notes and no live auth claims",
   assert.match(authPortalSurfaceSource, /Signed in users will route to \/neroa\/account later\./);
   assert.match(authPortalSurfaceSource, /Users with an active project may continue to \/neroa\/project later\./);
   assert.match(authPortalSurfaceSource, /No live login or signup submission is active in this pass\./);
+  assert.match(
+    authPortalSurfaceSource,
+    /Continue destinations are informational only and do not trigger redirect decisions\./
+  );
   assert.match(authPortalSurfaceSource, /No route guards, session restoration, or redirect logic is active in this pass\./);
+  assert.match(authPortalSurfaceSource, /No credential field capture in this pass/);
+  assert.match(authPortalSurfaceSource, /No submission or redirect action in this pass/);
   assert.doesNotMatch(authPortalSurfaceSource, /<form/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /<button/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /type=\s*["']submit["']/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /onSubmit=/);
   assert.doesNotMatch(authPortalSurfaceSource, /Sign in now/i);
   assert.doesNotMatch(authPortalSurfaceSource, /Create account now/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /Continue with (Google|GitHub|Apple)/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /magic link/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /forgot password/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /\bConnected\b/);
 });
 
 test("clean auth surface uses Neroa wordmark text only without naming drift", () => {
@@ -118,6 +135,7 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
   assert.doesNotMatch(authPortalSurfaceSource, /<img/i);
   assert.doesNotMatch(authPortalSurfaceSource, /<Image/i);
   assert.doesNotMatch(authPortalSurfaceSource, /\/logo\//);
+  assert.doesNotMatch(authPortalSurfaceSource, /\.(svg|png|jpe?g|webp)/i);
   assert.doesNotMatch(authPortalSurfaceSource, />\s*N\s*</);
   assert.doesNotMatch(authPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(authPortalSurfaceSource, /\bNaroa\b/);
@@ -293,9 +311,22 @@ test("clean portal shell does not import legacy marketing auth or routing surfac
 test("clean auth surface does not import auth runtime session or guard modules", () => {
   for (const source of [authPortalSource, authPortalSurfaceSource]) {
     assert.doesNotMatch(source, /@\/lib\/auth/);
+    assert.doesNotMatch(source, /@\/lib\/supabase\//);
+    assert.doesNotMatch(source, /@\/lib\/portal\//);
+    assert.doesNotMatch(source, /@\/lib\/workspace\//);
+    assert.doesNotMatch(source, /@\/components\/auth-form/);
     assert.doesNotMatch(source, /@\/components\/auth\//);
+    assert.doesNotMatch(source, /@\/components\/portal\//);
+    assert.doesNotMatch(source, /@\/components\/workspace\//);
+    assert.doesNotMatch(source, /@\/components\/marketing\//);
+    assert.doesNotMatch(source, /@\/components\/command-center\//);
+    assert.doesNotMatch(source, /@\/components\/strategy-room\//);
+    assert.doesNotMatch(source, /@\/components\/build-room\//);
+    assert.doesNotMatch(source, /@\/components\/front-door\//);
     assert.doesNotMatch(source, /@\/app\/auth\//);
     assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*next-auth/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*session/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*guard/i);
     assert.doesNotMatch(source, /\bredirect\(/);
