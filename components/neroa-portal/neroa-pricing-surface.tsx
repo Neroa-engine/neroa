@@ -133,8 +133,8 @@ export function NeroaPricingSurface() {
           </nav>
         </header>
 
-        <section className="grid gap-14 py-14 lg:grid-cols-[minmax(0,1.08fr)_minmax(28rem,0.92fr)] lg:items-start lg:gap-20 lg:py-16">
-          <div className="max-w-4xl space-y-8 pt-4 lg:pt-8">
+        <section className="space-y-8 py-14 lg:py-16">
+          <div className="max-w-5xl space-y-8 pt-4 lg:pt-8">
             <div className="space-y-5">
               <p className="text-sm uppercase tracking-[0.34em] text-teal-200/78">
                 Governed Build Credits
@@ -165,56 +165,6 @@ export function NeroaPricingSurface() {
               ))}
             </div>
           </div>
-
-          <aside className="rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-8">
-            <div className="space-y-4 border-b border-white/8 pb-6">
-              <div className="flex items-center gap-2 text-white">
-                <NorthStarIcon className="h-4 w-4 text-teal-200/84" />
-                <span className="font-serif text-[1.9rem] tracking-tight">Neroa</span>
-              </div>
-              <h2 className="font-serif text-[2.35rem] leading-tight text-white">
-                Pricing with scope control, approvals, and governed usage.
-              </h2>
-              <p className="text-[0.98rem] leading-8 text-white/64">
-                Start with a plan, carry the plan context into auth, and keep the
-                project bounded before later account and project setup.
-              </p>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                  DIY Credit Top-Offs
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {diyTopOffs.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
-                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                  Workspace Hours
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {workspaceTopOffs.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </aside>
         </section>
 
         <section id="plans" className="space-y-6 pb-14">
@@ -234,44 +184,78 @@ export function NeroaPricingSurface() {
             </p>
           </div>
 
-          <div className="grid gap-5 xl:grid-cols-5">
+          <div className="grid gap-4 lg:grid-cols-5">
             {plans.map((plan) => (
               <article
                 key={plan.id}
-                className="flex h-full flex-col rounded-[1.9rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.88),rgba(6,9,13,0.72))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)]"
+                className="flex h-full min-h-[29rem] flex-col rounded-[1.55rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.88),rgba(6,9,13,0.72))] p-4 shadow-[0_24px_90px_rgba(0,0,0,0.32)] lg:p-4 xl:p-5"
               >
-                <div className="space-y-4">
+                <div className="space-y-3">
                   <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
                     {plan.eyebrow}
                   </p>
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-[2rem] text-white">{plan.name}</h3>
-                    <p className="text-[1.55rem] text-teal-100">{plan.price}</p>
+                  <div className="space-y-1.5">
+                    <h3 className="font-serif text-[1.65rem] leading-tight text-white">{plan.name}</h3>
+                    <p className="text-[1.2rem] text-teal-100">{plan.price}</p>
                   </div>
-                  <p className="text-sm leading-7 text-white/62">{plan.description}</p>
+                  <p className="text-[0.86rem] leading-6 text-white/62">{plan.description}</p>
                 </div>
 
-                <div className="mt-6 space-y-3">
+                <div className="mt-4 space-y-2.5">
                   {plan.highlights.map((item) => (
                     <div
                       key={item}
-                      className="rounded-[1.1rem] border border-white/10 bg-white/[0.035] px-4 py-3 text-sm leading-6 text-white/74"
+                      className="rounded-[0.95rem] border border-white/10 bg-white/[0.035] px-3.5 py-2.5 text-[0.8rem] leading-5 text-white/74"
                     >
                       {item}
                     </div>
                   ))}
                 </div>
 
-                <p className="mt-5 flex-1 text-sm leading-7 text-white/54">{plan.detail}</p>
+                <p className="mt-4 flex-1 text-[0.82rem] leading-6 text-white/54">{plan.detail}</p>
 
                 <Link
                   href={`/neroa/auth?plan=${plan.id}`}
-                  className="mt-6 inline-flex h-12 items-center justify-center rounded-full border border-teal-300/45 bg-teal-300/12 px-5 text-center text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-white transition hover:border-teal-200/70 hover:bg-teal-300/22"
+                  className="mt-4 inline-flex h-11 items-center justify-center rounded-full border border-teal-300/45 bg-teal-300/12 px-4 text-center text-[0.68rem] font-semibold uppercase tracking-[0.18em] text-white transition hover:border-teal-200/70 hover:bg-teal-300/22"
                 >
                   Select {plan.name}
                 </Link>
               </article>
             ))}
+          </div>
+
+          <div className="grid gap-4 pt-2 lg:grid-cols-2">
+            <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+                DIY Credit Top-Offs
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {diyTopOffs.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
+              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+                Workspace Hours
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {workspaceTopOffs.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </section>
