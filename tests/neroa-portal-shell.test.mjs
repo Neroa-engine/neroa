@@ -279,9 +279,12 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /ChipDivider/);
   assert.match(frontDoorSurfaceSource, /px-4 text-teal-200\/72/);
   assert.match(frontDoorSurfaceSource, /flex flex-wrap items-center justify-center gap-x-3 gap-y-3 lg:hidden/);
-  assert.match(frontDoorSurfaceSource, /hidden w-full grid-cols-\[minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)_auto_minmax\(0,1fr\)\] items-center px-8 lg:grid/);
-  assert.match(frontDoorSurfaceSource, /justify-self-center px-5/);
-  assert.match(frontDoorSurfaceSource, /flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-full border border-white\/14 bg-white\/\[0\.035\] px-4 py-2/);
+  assert.match(frontDoorSurfaceSource, /function ValueButton/);
+  assert.match(frontDoorSurfaceSource, /absolute bottom-8 left-8 right-8 hidden lg:block/);
+  assert.match(frontDoorSurfaceSource, /gridTemplateColumns: "1fr 48px 1fr 48px 1fr 48px 1fr 48px 1fr"/);
+  assert.match(frontDoorSurfaceSource, /columnGap: "0px"/);
+  assert.match(frontDoorSurfaceSource, /flex h-10 w-full items-center justify-center rounded-full border border-white\/70 bg-black\/20 px-3 text-center text-\[11px\] font-semibold uppercase tracking-\[0\.14em\] text-teal-200/);
+  assert.match(frontDoorSurfaceSource, /flex h-10 items-center justify-center text-white\/80/);
   assert.match(frontDoorSurfaceSource, /Scope Before Execution/);
   assert.match(frontDoorSurfaceSource, /Decisions & Approvals/);
   assert.match(frontDoorSurfaceSource, /Evidence & Review/);

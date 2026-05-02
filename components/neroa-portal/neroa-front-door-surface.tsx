@@ -76,6 +76,18 @@ function ChipDivider({
   );
 }
 
+function ValueButton({
+  children
+}: {
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex h-10 w-full items-center justify-center rounded-full border border-white/70 bg-black/20 px-3 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-200">
+      {children}
+    </div>
+  );
+}
+
 const neroaExplanation = (
   <>
     Nice to meet you, <span className="text-white">{"{name}"}</span>. I&apos;m Neroa
@@ -268,29 +280,42 @@ export function NeroaFrontDoorSurface({
           </section>
         </div>
 
-        <section className="pb-10 pt-4">
+        <section className="relative min-h-[5.5rem] pb-10 pt-4 lg:pb-0">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-3 lg:hidden">
             {valuePills.map((pill, index) => (
               <div key={pill} className="contents">
                 {index > 0 ? <ChipDivider className="flex px-3" /> : null}
-                <div className="inline-flex min-h-9 items-center justify-center whitespace-nowrap rounded-full border border-white/14 bg-white/[0.035] px-5 py-2 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
-                  {pill}
-                </div>
+                <ValueButton>{pill}</ValueButton>
               </div>
             ))}
           </div>
 
-          <div className="hidden w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)] items-center px-8 lg:grid">
-            {valuePills.map((pill, index) => (
-              <div key={pill} className="contents">
-                {index > 0 ? (
-                  <ChipDivider className="justify-self-center px-5" />
-                ) : null}
-                <div className="flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-full border border-white/14 bg-white/[0.035] px-4 py-2 text-center text-[0.64rem] font-semibold tracking-[0.15em] text-teal-200 shadow-[0_0_24px_rgba(45,212,191,0.08)]">
-                  {pill}
-                </div>
+          <div className="absolute bottom-8 left-8 right-8 hidden lg:block">
+            <div
+              className="grid w-full items-center"
+              style={{
+                gridTemplateColumns: "1fr 48px 1fr 48px 1fr 48px 1fr 48px 1fr",
+                columnGap: "0px"
+              }}
+            >
+              <ValueButton>Roadmap-First Planning</ValueButton>
+              <div className="flex h-10 items-center justify-center text-white/80">
+                <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
               </div>
-            ))}
+              <ValueButton>Scope Before Execution</ValueButton>
+              <div className="flex h-10 items-center justify-center text-white/80">
+                <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
+              </div>
+              <ValueButton>Decisions & Approvals</ValueButton>
+              <div className="flex h-10 items-center justify-center text-white/80">
+                <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
+              </div>
+              <ValueButton>Evidence & Review</ValueButton>
+              <div className="flex h-10 items-center justify-center text-white/80">
+                <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
+              </div>
+              <ValueButton>Build & Execute</ValueButton>
+            </div>
           </div>
         </section>
       </section>
