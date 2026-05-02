@@ -15,6 +15,10 @@ const projectPortalSource = readFileSync(
   new URL("../app/neroa/project/page.tsx", import.meta.url),
   "utf8"
 );
+const projectPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-project-portal-surface.tsx", import.meta.url),
+  "utf8"
+);
 const portalShellSource = readFileSync(
   new URL("../components/neroa-portal/neroa-clean-portal-shell.tsx", import.meta.url),
   "utf8"
@@ -25,9 +29,11 @@ const cleanPortalSources = [
   accountPortalSource,
   accountPortalSurfaceSource,
   projectPortalSource,
+  projectPortalSurfaceSource,
   portalShellSource
 ];
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
+const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
 
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
@@ -35,6 +41,8 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(accountPortalSource, /NeroaAccountPortalSurface/);
   assert.match(accountPortalSurfaceSource, /export function NeroaAccountPortalSurface/);
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
+  assert.match(projectPortalSource, /NeroaProjectPortalSurface/);
+  assert.match(projectPortalSurfaceSource, /export function NeroaProjectPortalSurface/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
 
@@ -101,12 +109,54 @@ test("Account Portal does not imply live saving or connected integration state",
 });
 
 test("Project Portal placeholder sections are present", () => {
-  assert.match(projectPortalSource, /"Strategy Room"/);
-  assert.match(projectPortalSource, /"Command Center"/);
-  assert.match(projectPortalSource, /"Project Room"/);
-  assert.match(projectPortalSource, /"Evidence \/ Results"/);
-  assert.match(projectPortalSource, /"Roadmap \/ Scope"/);
-  assert.match(projectPortalSource, /"Approvals \/ Decisions"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Strategy Room"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Command Center"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Project Room"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Evidence \/ Results"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Roadmap \/ Scope"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Approvals \/ Decisions"/);
+});
+
+test("Project Portal remains project-level only and does not promote account sections as primary sections", () => {
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Projects"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Billing \/ Usage"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Account Settings"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Team \/ Access"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Integrations \/ Infrastructure"/);
+});
+
+test("Project Portal panels stay planning-only and not live runtime surfaces", () => {
+  assert.match(projectPortalSurfaceSource, /not the intelligence owner yet/);
+  assert.match(projectPortalSurfaceSource, /not the routing owner/);
+  assert.match(projectPortalSurfaceSource, /not the execution home/);
+  assert.match(projectPortalSurfaceSource, /not Live View, QC runtime, browser recording, or extension-driven runtime/);
+  assert.match(projectPortalSurfaceSource, /not the live strategy runtime/);
+  assert.match(projectPortalSurfaceSource, /not a live workflow engine/);
+});
+
+test("Project Portal uses Neroa wordmark-first branding without rename drift", () => {
+  assert.match(projectPortalSurfaceSource, />\s*Neroa\s*</);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, />\s*N\s*</);
+});
+
+test("Project Portal reflects the locked dark luxury visual direction", () => {
+  assert.match(projectPortalSurfaceSource, /bg-\[radial-gradient/);
+  assert.match(projectPortalSurfaceSource, /charcoal/i);
+  assert.match(projectPortalSurfaceSource, /soft silver/i);
+  assert.match(projectPortalSurfaceSource, /subtle teal/i);
+  assert.match(projectPortalSurfaceSource, /Premium, spacious, and calm/);
+  assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
+});
+
+test("Project Portal does not imply live saving or connected runtime state", () => {
+  assert.doesNotMatch(projectPortalSurfaceSource, /<form/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Connected\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Save Changes/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Sync Now/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Connect /);
 });
 
 test("clean portal shell does not introduce UI UX Library or Design Library surfaces", () => {
@@ -203,4 +253,24 @@ test("Account Portal does not import old account billing auth or project runtime
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
   }
   assert.match(accountPortalSurfaceSource, /"Stripe"/);
+});
+
+test("Project Portal route stays inside the clean neroa portal namespace", () => {
+  assert.match(projectPortalSource, /@\/components\/neroa-portal\/neroa-project-portal-surface/);
+  assert.doesNotMatch(projectPortalSource, /@\/components\/portal\//);
+  assert.doesNotMatch(projectPortalSource, /@\/components\/workspace\//);
+});
+
+test("Project Portal does not import old project workspace billing auth or runtime modules", () => {
+  for (const source of projectPortalSources) {
+    assert.doesNotMatch(source, /@\/components\/workspace\//);
+    assert.doesNotMatch(source, /@\/components\/account\//);
+    assert.doesNotMatch(source, /@\/lib\/billing\//);
+    assert.doesNotMatch(source, /@\/lib\/auth\//);
+    assert.doesNotMatch(source, /@\/app\/workspace\//);
+    assert.doesNotMatch(source, /@\/lib\/workspace\//);
+    assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*auth/i);
+  }
 });
