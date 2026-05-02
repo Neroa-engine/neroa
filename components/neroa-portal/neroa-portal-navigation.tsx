@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 type NeroaPortalNavigationProps = {
-  readonly currentPath: "/neroa" | "/neroa/account" | "/neroa/project";
+  readonly currentPath: "/neroa" | "/neroa/account" | "/neroa/project" | "/neroa/auth";
   readonly tone?: "light" | "dark";
   readonly className?: string;
 };
@@ -18,6 +18,10 @@ const portalLinks = [
   {
     href: "/neroa/project",
     label: "Project Portal"
+  },
+  {
+    href: "/neroa/auth",
+    label: "Auth Surface"
   }
 ] as const;
 

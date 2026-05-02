@@ -15,8 +15,13 @@ const projectPortalSource = readFileSync(
   new URL("../app/neroa/project/page.tsx", import.meta.url),
   "utf8"
 );
+const authPortalSource = readFileSync(new URL("../app/neroa/auth/page.tsx", import.meta.url), "utf8");
 const projectPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-project-portal-surface.tsx", import.meta.url),
+  "utf8"
+);
+const authPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-auth-surface.tsx", import.meta.url),
   "utf8"
 );
 const portalNavigationSource = readFileSync(
@@ -34,6 +39,8 @@ const cleanPortalSources = [
   accountPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource,
+  authPortalSource,
+  authPortalSurfaceSource,
   portalNavigationSource,
   portalShellSource
 ];
@@ -48,6 +55,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
   assert.match(projectPortalSource, /NeroaProjectPortalSurface/);
   assert.match(projectPortalSurfaceSource, /export function NeroaProjectPortalSurface/);
+  assert.match(authPortalSource, /export default function NeroaAuthPage/);
+  assert.match(authPortalSource, /NeroaAuthSurface/);
+  assert.match(authPortalSurfaceSource, /export function NeroaAuthSurface/);
   assert.match(portalNavigationSource, /export function NeroaPortalNavigation/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
 });
@@ -67,9 +77,11 @@ test("clean portal navigation links the three clean neroa routes only", () => {
   assert.match(portalNavigationSource, /href:\s*"\/neroa"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/account"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/project"/);
+  assert.match(portalNavigationSource, /href:\s*"\/neroa\/auth"/);
   assert.match(portalNavigationSource, /label:\s*"Front Door"/);
   assert.match(portalNavigationSource, /label:\s*"Account Portal"/);
   assert.match(portalNavigationSource, /label:\s*"Project Portal"/);
+  assert.match(portalNavigationSource, /label:\s*"Auth Surface"/);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {
@@ -78,6 +90,38 @@ test("navigation uses Neroa wordmark text only and no image logo paths", () => {
   assert.doesNotMatch(portalNavigationSource, /<Image/i);
   assert.doesNotMatch(portalNavigationSource, /\/logo\//);
   assert.doesNotMatch(portalNavigationSource, />\s*N\s*</);
+});
+
+test("clean auth route exports and renders a placeholder-only auth surface", () => {
+  assert.match(authPortalSource, /NeroaAuthSurface/);
+  assert.match(authPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(authPortalSurfaceSource, /currentPath="\/neroa\/auth"/);
+  assert.match(authPortalSurfaceSource, /"Sign in"/);
+  assert.match(authPortalSurfaceSource, /"Create account"/);
+  assert.match(authPortalSurfaceSource, /"Continue to Account Portal later"/);
+  assert.match(authPortalSurfaceSource, /"Continue to Project Portal later"/);
+});
+
+test("clean auth surface includes future routing notes and no live auth claims", () => {
+  assert.match(authPortalSurfaceSource, /Signed out users will start at \/neroa\/auth later\./);
+  assert.match(authPortalSurfaceSource, /Signed in users will route to \/neroa\/account later\./);
+  assert.match(authPortalSurfaceSource, /Users with an active project may continue to \/neroa\/project later\./);
+  assert.match(authPortalSurfaceSource, /No live login or signup submission is active in this pass\./);
+  assert.match(authPortalSurfaceSource, /No route guards, session restoration, or redirect logic is active in this pass\./);
+  assert.doesNotMatch(authPortalSurfaceSource, /<form/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /Sign in now/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /Create account now/i);
+});
+
+test("clean auth surface uses Neroa wordmark text only without naming drift", () => {
+  assert.match(authPortalSurfaceSource, />\s*Neroa\s*</);
+  assert.doesNotMatch(authPortalSurfaceSource, /<img/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /<Image/i);
+  assert.doesNotMatch(authPortalSurfaceSource, /\/logo\//);
+  assert.doesNotMatch(authPortalSurfaceSource, />\s*N\s*</);
+  assert.doesNotMatch(authPortalSurfaceSource, /\bNerowa\b/);
+  assert.doesNotMatch(authPortalSurfaceSource, /\bNaroa\b/);
+  assert.doesNotMatch(authPortalSurfaceSource, /\bNarowa\b/);
 });
 
 test("Account Portal placeholder sections are present", () => {
@@ -246,6 +290,18 @@ test("clean portal shell does not import legacy marketing auth or routing surfac
   }
 });
 
+test("clean auth surface does not import auth runtime session or guard modules", () => {
+  for (const source of [authPortalSource, authPortalSurfaceSource]) {
+    assert.doesNotMatch(source, /@\/lib\/auth/);
+    assert.doesNotMatch(source, /@\/components\/auth\//);
+    assert.doesNotMatch(source, /@\/app\/auth\//);
+    assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*session/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*guard/i);
+    assert.doesNotMatch(source, /\bredirect\(/);
+  }
+});
+
 test("clean portal shell does not import Neroa One runtime wiring", () => {
   for (const source of cleanPortalSources) {
     assert.doesNotMatch(source, /@\/lib\/neroa-one\//);
@@ -265,7 +321,9 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
     assert.doesNotMatch(source, /process\.env/);
     assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
-    assert.doesNotMatch(source, /from\s+["'][^"']*auth/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/auth/i);
+    assert.doesNotMatch(source, /from\s+["']@\/components\/auth\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/app\/auth\//i);
     assert.doesNotMatch(source, /from\s+["'][^"']*redis/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*bullmq/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*openai/i);
