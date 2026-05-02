@@ -174,6 +174,7 @@ const moduleSources = [
   "../lib/neroa-one/qc-station.ts",
   "../lib/neroa-one/evidence-linking.ts",
   "../lib/neroa-one/audit-room.ts",
+  "../lib/neroa-one/storage-adapters.ts",
   "../lib/neroa-one/index.ts"
 ].map((specifier) => readFileSync(new URL(specifier, import.meta.url), "utf8"));
 
@@ -361,6 +362,9 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   const auditRoomSource = moduleSources.find((source) =>
     source.includes("neroaOneAuditRoomEventSchema")
   );
+  const storageAdaptersSource = moduleSources.find((source) =>
+    source.includes("interface NeroaOneStorageTraceContext")
+  );
 
   assert.ok(outcomeLaneSource);
   assert.ok(codexPacketSource);
@@ -374,6 +378,7 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   assert.ok(qcStationSource);
   assert.ok(evidenceLinkingSource);
   assert.ok(auditRoomSource);
+  assert.ok(storageAdaptersSource);
   assert.doesNotMatch(outcomeLaneSource, /codex-relay|worker-trigger/i);
   assert.doesNotMatch(
     outcomeLaneSource,
@@ -567,6 +572,89 @@ test("Outcome lane and Codex packet modules stay backend-only and UI-decoupled",
   );
   assert.match(auditRoomSource, /interface\s+NeroaOneAuditRoomStorageAdapter/);
   assert.match(auditRoomSource, /interface\s+NeroaOneAdminOversightSummaryAdapter/);
+  assert.match(storageAdaptersSource, /interface\s+NeroaOneStorageAdapterContract/);
+  assert.match(storageAdaptersSource, /interface\s+NeroaOneOutcomeLaneStorageAdapterContract/);
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneCodexExecutionPacketStorageAdapterContract/
+  );
+  assert.match(storageAdaptersSource, /interface\s+NeroaOnePromptRoomStorageAdapterContract/);
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneCodeExecutionWorkerStorageAdapterContract/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneCodexOutputBoxStorageAdapterContract/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneOutputReviewStorageAdapterContract/
+  );
+  assert.match(storageAdaptersSource, /interface\s+NeroaOneRepairQueueStorageAdapterContract/);
+  assert.match(storageAdaptersSource, /interface\s+NeroaOneQcStationStorageAdapterContract/);
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneEvidenceLinkingStorageAdapterContract/
+  );
+  assert.match(storageAdaptersSource, /interface\s+NeroaOneAuditRoomStorageAdapterContract/);
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneAdminOversightStorageAdapterContract/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneCustomerFollowUpStorageAdapterContract/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /interface\s+NeroaOneStrategyEscalationStorageAdapterContract/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /NeroaOneOutcomeQueueEntry|NeroaOneCodexExecutionPacket|NeroaOnePromptRoomItem|NeroaOneCodeExecutionWorkerRun|NeroaOneCodexOutputRecord|NeroaOneOutputReviewRecord|NeroaOneRepairQueueItem|NeroaOneQcStationJobRecord|NeroaOneEvidenceLinkRecord|NeroaOneAuditRoomEvent|NeroaOneAdminOversightSummary|NeroaOneCustomerFollowUpItem|NeroaOneStrategyEscalationItem/
+  );
+  assert.match(
+    storageAdaptersSource,
+    /export \* from "\.\/storage-adapters\.ts";|interface NeroaOneStorageTraceContext/
+  );
+});
+
+test("Storage adapter contracts stay backend-only, schema-neutral, and implementation-free", () => {
+  const storageAdaptersSource = moduleSources.find((source) =>
+    source.includes("interface NeroaOneStorageTraceContext")
+  );
+  const indexSource = moduleSources.at(-1);
+
+  assert.ok(storageAdaptersSource);
+  assert.ok(indexSource);
+  assert.match(indexSource, /export \* from "\.\/storage-adapters\.ts";/);
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /from\s+["'][^"']*(components\/|app\/workspace\/|command-center\/page|build-room\/page|strategy-room\/page|admin|library|live-view|browser-extension|supabase)[^"']*["']/i
+  );
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /from\s+["'][^"']*(postgres|prisma|kysely|drizzle|sequelize|typeorm|mongodb|sqlite)[^"']*["']/i
+  );
+  assert.doesNotMatch(storageAdaptersSource, /codex-relay|worker-trigger/i);
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /legacy browser extension|Live View|side-panel runtime messaging|chrome\.storage|browser\.runtime|activeTab/i
+  );
+  assert.doesNotMatch(
+    storageAdaptersSource,
+    /openai|anthropic|from\s+["'][^"']*\/ai\/[^"']*["']/i
+  );
+  assert.doesNotMatch(storageAdaptersSource, /from\s+["']zod["']/i);
+  assert.doesNotMatch(storageAdaptersSource, /\bfetch\(|\bnew\s+[A-Z]\w+|\bclass\s+\w+/);
+  assert.doesNotMatch(storageAdaptersSource, /export\s+const\s+/);
+  assert.doesNotMatch(storageAdaptersSource, /\bparse\(|schema/i);
+  assert.match(storageAdaptersSource, /import type\s+\{/);
+  assert.match(storageAdaptersSource, /appendEvent\(/);
+  assert.match(storageAdaptersSource, /updateStatus\(/);
+  assert.match(storageAdaptersSource, /archive\(/);
+  assert.match(storageAdaptersSource, /markFailed\(/);
 });
 
 test("Customer message can be classified deterministically", () => {

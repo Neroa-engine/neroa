@@ -19,6 +19,7 @@ export * from "./repair-queue.ts";
 export * from "./qc-station.ts";
 export * from "./evidence-linking.ts";
 export * from "./audit-room.ts";
+export * from "./storage-adapters.ts";
 
 import { buildBuildRoomHandoffPackage } from "./build-room-handoff.ts";
 import { classifyCustomerIntent } from "./classify-intent.ts";
