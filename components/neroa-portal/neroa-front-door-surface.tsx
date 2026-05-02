@@ -145,6 +145,9 @@ export function NeroaFrontDoorSurface({
         <div className="northstar-energy-beam northstar-energy-beam-primary absolute right-[15%] top-[5%] h-[76vh] w-[19rem] lg:w-[22rem]" />
         <div className="northstar-energy-beam northstar-energy-beam-secondary absolute right-[12%] top-[8%] h-[70vh] w-[15rem] lg:w-[18rem]" />
         <div className="northstar-energy-particles absolute right-[13%] top-[9%] h-[58vh] w-[22rem] lg:w-[26rem]" />
+        <div className="absolute left-[8%] top-[18%] hidden text-teal-100/82 lg:block">
+          <NorthStarIcon className="h-5 w-5 drop-shadow-[0_0_20px_rgba(148,255,236,0.38)]" />
+        </div>
         <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.14),transparent_58%)]" />
         <div className="absolute inset-x-0 bottom-[9.5rem] h-[14rem] bg-[linear-gradient(180deg,transparent_0%,rgba(17,25,31,0.18)_34%,rgba(5,8,11,0.78)_76%,#04070a_100%)]" />
         <div className="absolute inset-x-0 bottom-0 h-[12rem] bg-[linear-gradient(180deg,rgba(4,7,10,0)_0%,rgba(4,7,10,0.72)_42%,#04070a_100%)]" />
