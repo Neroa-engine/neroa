@@ -52,6 +52,10 @@ const cleanPortalSources = [
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
 const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
 
+function countOccurrences(source, pattern) {
+  return [...source.matchAll(pattern)].length;
+}
+
 test("clean Neroa portal shell exports renderable pages and shell primitives", () => {
   assert.match(frontDoorSource, /export default function NeroaPortalFrontDoorPage/);
   assert.match(frontDoorSource, /NeroaFrontDoorSurface/);
@@ -82,7 +86,7 @@ test("/neroa front door includes the clean conversational landing structure", ()
   assert.match(frontDoorSurfaceSource, /NeroaPortalNavigation/);
   assert.match(frontDoorSurfaceSource, /currentPath="\/neroa"/);
   assert.match(frontDoorSurfaceSource, /tone="dark"/);
-  assert.match(frontDoorSurfaceSource, /Hi, I’m Neroa\. What’s your name\?/);
+  assert.match(frontDoorSurfaceSource, /Hi, I\\u2019m Neroa\. What\\u2019s your name\?/);
   assert.match(frontDoorSurfaceSource, /My name is Tom\./);
   assert.match(frontDoorSurfaceSource, /Conversational Preview/);
   assert.match(frontDoorSurfaceSource, /Conversation Rhythm/);
@@ -110,9 +114,10 @@ test("/neroa front door uses Neroa wordmark-first branding without logo assets o
 
 test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/auth"/);
-  assert.match(frontDoorSurfaceSource, /href="\/neroa\/account"/);
-  assert.match(frontDoorSurfaceSource, /href="\/neroa\/project"/);
-  assert.match(frontDoorSurfaceSource, /Let’s begin your project/);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/auth"/g), 2);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/account"/g), 0);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/project"/g), 0);
+  assert.match(frontDoorSurfaceSource, /Let\\u2019s begin your project/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/auth"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/diy"/);
@@ -128,12 +133,24 @@ test("/neroa front door avoids DIY Managed and live-runtime claims", () => {
     frontDoorSurfaceSource,
     /opens the project conversation without pretending live chat is already active\./
   );
+  assert.match(
+    frontDoorSurfaceSource,
+    /The front door stays project-first, with guardrails and control in place before execution begins\./
+  );
   assert.match(frontDoorSurfaceSource, /Pricing and execution options follow after Neroa understands the project scope\./);
   assert.match(frontDoorSurfaceSource, /No forms, fake connected states, or live submission paths are active here\./);
+  assert.match(
+    frontDoorSurfaceSource,
+    /No pricing table or execution model choice appears at the front door\./
+  );
   assert.doesNotMatch(frontDoorSurfaceSource, /\bDIY\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /\bManaged\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /self-guided/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /done-for-you/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /pick a plan/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /choose a plan/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /plan choice/i);
+  assert.doesNotMatch(frontDoorSurfaceSource, /plan selection/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Unlimited AI/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Autonomous execution is live/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /Build your full MVP today/i);
@@ -161,6 +178,8 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /wordmark-first/);
   assert.match(frontDoorSurfaceSource, /spacious/);
   assert.match(frontDoorSurfaceSource, /intentionally quiet/);
+  assert.match(frontDoorSurfaceSource, /guardrails and control/i);
+  assert.match(frontDoorSurfaceSource, /calm, intentional, and reviewable/i);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {

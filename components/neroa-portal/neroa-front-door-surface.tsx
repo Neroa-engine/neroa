@@ -5,7 +5,7 @@ const conversationMoments = [
   {
     speaker: "Neroa",
     tone: "assistant",
-    line: "Hi, I’m Neroa. What’s your name?",
+    line: "Hi, I\u2019m Neroa. What\u2019s your name?",
     detail:
       "A calm front-door prompt that opens the project conversation without pretending live chat is already active."
   },
@@ -18,9 +18,10 @@ const conversationMoments = [
   {
     speaker: "Neroa",
     tone: "assistant",
-    line: "Tell me what you want to build, and I’ll help shape the path.",
+    line:
+      "Neroa helps turn an idea into a structured project roadmap, scope, decisions, next steps, and a clean project workspace before execution begins.",
     detail:
-      "From the first exchange, the goal is to move toward a structured roadmap, visible scope, and clear next steps."
+      "The front door stays project-first, with guardrails and control in place before execution begins."
   }
 ] as const;
 
@@ -29,26 +30,26 @@ const capabilityCards = [
     eyebrow: "What Neroa Does",
     title: "Turns an opening conversation into a structured project roadmap.",
     body:
-      "Neroa helps turn an idea into a structured project roadmap, clear scope, decision points, and the next steps that matter before execution begins."
+      "Neroa helps turn an idea into a structured project roadmap, scope, decisions, next steps, and a clean project workspace before execution begins."
   },
   {
     eyebrow: "How Projects Move",
-    title: "Moves from conversation to project clarity without tool sprawl.",
+    title: "Moves from conversation to project clarity without early pricing pressure.",
     body:
-      "After the first exchange, Neroa organizes roadmap direction, scope, decisions, and a clean workspace path so the project can move forward intentionally."
+      "The front door moves toward project definition first, then leaves pricing and execution options for later once scope is understood."
   },
   {
     eyebrow: "Governance And Control",
-    title: "Builds around review, evidence, and approvals.",
+    title: "Keeps guardrails and control close before execution.",
     body:
-      "Neroa is designed to keep strategy, command, evidence, and approvals in view so project movement stays intentional rather than opaque."
+      "Neroa is designed to keep strategy, scope, decisions, next steps, and approvals visible so project movement stays calm, intentional, and reviewable."
   }
 ] as const;
 
 const governancePoints = [
   "Project-first entry before execution pressure",
   "Visible scope, checkpoints, and approvals",
-  "Customer-safe movement instead of hidden operator mechanics"
+  "Guardrails and control stay in place before execution"
 ] as const;
 
 const explanationPoints = [
@@ -79,12 +80,17 @@ export function NeroaFrontDoorSurface() {
 
               <div className="space-y-5">
                 <h1 className="max-w-4xl font-serif text-4xl leading-tight text-slate-50 lg:text-6xl">
-                  Hi, I’m Neroa. What’s your name?
+                  {"Hi, I\u2019m Neroa. What\u2019s your name?"}
                 </h1>
-                <p className="max-w-3xl text-base leading-8 text-slate-300">
-                  Neroa helps turn an idea into a structured project roadmap, scope, decisions,
-                  next steps, and a clean project workspace before execution begins.
-                </p>
+                <div className="max-w-3xl space-y-3 text-base leading-8 text-slate-300">
+                  <p>
+                    Neroa helps turn an idea into a structured project roadmap, scope, decisions,
+                    next steps, and a clean project workspace before execution begins.
+                  </p>
+                  <p className="text-sm text-slate-400">
+                    Guardrails and control stay close before execution begins.
+                  </p>
+                </div>
               </div>
 
               <div className="rounded-[1.8rem] border border-white/8 bg-black/20 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -102,7 +108,7 @@ export function NeroaFrontDoorSurface() {
                       Neroa
                     </p>
                     <p className="mt-2 text-base leading-8 text-slate-50">
-                      Hi, I’m Neroa. What’s your name?
+                      {"Hi, I\u2019m Neroa. What\u2019s your name?"}
                     </p>
                   </article>
 
@@ -118,10 +124,13 @@ export function NeroaFrontDoorSurface() {
                       What Happens Next
                     </p>
                     <p className="mt-3 text-sm leading-8 text-slate-300">
-                      Start with the product you want to build. Neroa turns that opening
-                      conversation into a structured roadmap, clearer scope, visible decisions, and
-                      the next steps that lead into a clean project workspace built around
-                      strategy, command, evidence, and approvals.
+                      Neroa helps turn an idea into a structured project roadmap, scope,
+                      decisions, next steps, and a clean project workspace before execution
+                      begins.
+                    </p>
+                    <p className="mt-3 text-sm leading-8 text-slate-400">
+                      Guardrails and control stay visible before execution begins, so the first
+                      move is clarity before pricing and execution options appear.
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2">
                       {explanationPoints.map((point) => (
@@ -142,19 +151,7 @@ export function NeroaFrontDoorSurface() {
                   href="/neroa/auth"
                   className="rounded-full border border-teal-300/30 bg-teal-300/10 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
                 >
-                  Let’s begin your project
-                </Link>
-                <Link
-                  href="/neroa/account"
-                  className="rounded-full border border-slate-400/20 bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200 transition hover:border-slate-200/40 hover:text-white"
-                >
-                  View Account Portal
-                </Link>
-                <Link
-                  href="/neroa/project"
-                  className="rounded-full border border-slate-400/20 bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200 transition hover:border-slate-200/40 hover:text-white"
-                >
-                  View Project Portal
+                  {"Let\u2019s begin your project"}
                 </Link>
               </div>
 
@@ -247,6 +244,7 @@ export function NeroaFrontDoorSurface() {
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-300">
               <p>Pricing and execution options follow after Neroa understands the project scope.</p>
               <p>No forms, fake connected states, or live submission paths are active here.</p>
+              <p>No pricing table or execution model choice appears at the front door.</p>
               <p>The front door stays wordmark-first, spacious, and intentionally quiet.</p>
             </div>
           </article>
@@ -264,8 +262,8 @@ export function NeroaFrontDoorSurface() {
                 </h2>
                 <p className="max-w-3xl text-sm leading-8 text-slate-300">
                   Use the clean Neroa front door to preview the conversation style, understand how
-                  Neroa frames scope before execution, and move toward the account and project
-                  shells without introducing live runtime behavior yet.
+                  Neroa frames scope before execution, and continue into the placeholder auth route
+                  without introducing live runtime behavior yet.
                 </p>
               </div>
             </div>
@@ -275,19 +273,7 @@ export function NeroaFrontDoorSurface() {
                 href="/neroa/auth"
                 className="rounded-full border border-teal-300/30 bg-teal-300/10 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-teal-100 transition hover:border-teal-200/70 hover:bg-teal-300/16"
               >
-                Let’s begin your project
-              </Link>
-              <Link
-                href="/neroa/account"
-                className="rounded-full border border-slate-400/20 bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200 transition hover:border-slate-200/40 hover:text-white"
-              >
-                View Account Portal
-              </Link>
-              <Link
-                href="/neroa/project"
-                className="rounded-full border border-slate-400/20 bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-[0.24em] text-slate-200 transition hover:border-slate-200/40 hover:text-white"
-              >
-                View Project Portal
+                {"Let\u2019s begin your project"}
               </Link>
             </div>
           </div>
