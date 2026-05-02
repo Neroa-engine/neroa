@@ -25,10 +25,6 @@ import {
 } from "@/lib/intelligence/platform-context";
 import { buildWorkspaceProjectIntelligence } from "@/lib/intelligence/project-brief-generator";
 import {
-  analyzeTaskWithNeroaOne,
-  buildNeroaOneTaskAnalysisRequestFromSpaceContext
-} from "@/lib/neroa-one";
-import {
   applyPendingExecutionHold,
   applyPendingExecutionRelease,
   buildExecutionPacketSummary,
@@ -79,10 +75,10 @@ import {
   normalizeStoredCommandCenterBrandSystem,
   parseWorkspaceProjectDescription,
   type StoredCommandCenterBrandSystem,
-  type StoredProjectMetadata,
   type StoredProjectAsset
 } from "@/lib/workspace/project-metadata";
 import { buildCommandCenterSummary } from "@/lib/workspace/command-center-summary";
+import { classifyCommandCenterTaskIntake } from "@/lib/workspace/command-center-intake";
 import {
   buildDescriptionWithMetadata,
   getOwnedWorkspace,
@@ -126,89 +122,6 @@ function workflowLaneFromSourceType(sourceType: CommandCenterTaskSourceType) {
   }
 
   return "requests" as const;
-}
-
-async function analyzeCommandCenterTaskCreation(args: {
-  workspaceId: string;
-  workspaceName: string;
-  visibleDescription?: string | null;
-  projectMetadata?: StoredProjectMetadata | null;
-  taskId: string;
-  title: string;
-  request: string;
-  normalizedRequest?: string | null;
-  roadmapArea?: string | null;
-  requestType: Parameters<typeof buildCommandCenterTaskIntelligenceMetadata>[0]["requestType"];
-  workflowLane?: Parameters<typeof buildCommandCenterTaskIntelligenceMetadata>[0]["workflowLane"];
-  sourceType?: StoredCommandCenterTask["sourceType"];
-  createdAt?: string | null;
-  updatedAt?: string | null;
-}) {
-  const projectMetadataForAnalyzer = args.projectMetadata
-    ? {
-        archived: args.projectMetadata.archived ?? false,
-        strategyState: args.projectMetadata.strategyState
-          ? {
-              revisionRecords: args.projectMetadata.strategyState.revisionRecords ?? [],
-              planningThreadState: args.projectMetadata.strategyState.planningThreadState ?? null
-            }
-          : null,
-        executionState: args.projectMetadata.executionState ?? null,
-        assets: args.projectMetadata.assets ?? [],
-        commandCenterDecisions: args.projectMetadata.commandCenterDecisions ?? [],
-        commandCenterChangeReviews: args.projectMetadata.commandCenterChangeReviews ?? [],
-        commandCenterTasks: args.projectMetadata.commandCenterTasks ?? [],
-        commandCenterPreviewState: args.projectMetadata.commandCenterPreviewState
-          ? {
-              status: args.projectMetadata.commandCenterPreviewState.state ?? null
-            }
-          : null,
-        commandCenterApprovedDesignPackage:
-          args.projectMetadata.commandCenterApprovedDesignPackage
-            ? {
-                status: args.projectMetadata.commandCenterApprovedDesignPackage.status ?? null
-              }
-            : null,
-        buildSession: args.projectMetadata.buildSession
-          ? {
-              scope: args.projectMetadata.buildSession.scope ?? undefined
-            }
-          : null,
-        saasIntake: args.projectMetadata.saasIntake ?? null,
-        mobileAppIntake: args.projectMetadata.mobileAppIntake ?? null
-      }
-    : null;
-
-  try {
-    return await analyzeTaskWithNeroaOne(
-      buildNeroaOneTaskAnalysisRequestFromSpaceContext({
-        workspaceId: args.workspaceId,
-        projectId: args.workspaceId,
-        projectContext: {
-          workspaceId: args.workspaceId,
-          projectId: args.workspaceId,
-          projectTitle: args.workspaceName,
-          projectDescription: args.visibleDescription ?? null,
-          projectMetadata: projectMetadataForAnalyzer
-        },
-        task: {
-          taskId: args.taskId,
-          title: args.title,
-          request: args.request,
-          normalizedRequest: args.normalizedRequest ?? null,
-          roadmapArea: args.roadmapArea ?? null,
-          requestType: args.requestType ?? null,
-          workflowLane: args.workflowLane ?? null,
-          sourceType: args.sourceType ?? null,
-          createdAt: args.createdAt ?? null,
-          updatedAt: args.updatedAt ?? null
-        },
-        caller: "command_center_task_create"
-      })
-    );
-  } catch {
-    return null;
-  }
 }
 
 function parsePreviewSurfaceTargets(formData: FormData) {
@@ -1184,7 +1097,7 @@ export async function updateCommandCenterTask(formData: FormData) {
   if (mutation === "create_task") {
     const nextTaskId = crypto.randomUUID();
     const nextTaskTitle = buildTaskTitle(titleInput, request);
-    const analyzerResponse = await analyzeCommandCenterTaskCreation({
+    const analyzerResponse = await classifyCommandCenterTaskIntake({
       workspaceId,
       workspaceName: workspace.name,
       visibleDescription: parsed.visibleDescription,

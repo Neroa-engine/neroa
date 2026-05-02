@@ -2,9 +2,11 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import {
+  buildCommandCenterTaskAnalyzerClassification,
   buildCommandCenterTaskIntelligenceMetadata,
   formatCommandCenterRoadmapReviewOutcomeLabel
 } from "../lib/workspace/command-center-tasks.ts";
+import { classifyCommandCenterTaskIntake } from "../lib/workspace/command-center-intake.ts";
 
 const commandCenterSource = readFileSync(
   new URL("../components/workspace/project-command-center-v1.tsx", import.meta.url),
@@ -12,6 +14,14 @@ const commandCenterSource = readFileSync(
 );
 const smartSurfaceSource = readFileSync(
   new URL("../components/workspace/command-center-smart-operator-surface.tsx", import.meta.url),
+  "utf8"
+);
+const commandCenterActionsSource = readFileSync(
+  new URL("../app/workspace/[workspaceId]/command-center/actions.ts", import.meta.url),
+  "utf8"
+);
+const commandCenterIntakeSource = readFileSync(
+  new URL("../lib/workspace/command-center-intake.ts", import.meta.url),
   "utf8"
 );
 
@@ -149,4 +159,108 @@ test("Roadmap review outcomes are derived deterministically from local task and 
     formatCommandCenterRoadmapReviewOutcomeLabel(roadmapChange.roadmapReviewOutcome),
     "Roadmap revision needed"
   );
+});
+
+test("Command Center intake can classify through the Neroa One analyzer fallback without execution wiring", async () => {
+  const response = await classifyCommandCenterTaskIntake({
+    workspaceId: "workspace-alpha",
+    workspaceName: "Alpha Workspace",
+    visibleDescription: "Keep runtime wiring limited to D-Analyzer outcome classification.",
+    projectMetadata: null,
+    taskId: "task-alpha",
+    title: "Clarify the request",
+    request: "Fix this",
+    normalizedRequest: "fix this",
+    roadmapArea: "General coordination",
+    requestType: "new_request",
+    workflowLane: "requests",
+    sourceType: "customer_request",
+    createdAt: "2026-05-01T00:00:00.000Z",
+    updatedAt: "2026-05-01T00:00:00.000Z"
+  });
+
+  assert.ok(response);
+  assert.equal(response.analyzer.source, "mock_fallback");
+  assert.equal(response.outcome, "blocked_missing_information");
+});
+
+test("Command Center task intelligence preserves all five Neroa One analyzer outcomes", () => {
+  const cases = [
+    ["ready_to_build", "approved_for_roadmap"],
+    ["needs_customer_answer", "decision_needed"],
+    ["roadmap_revision_required", "roadmap_revision_needed"],
+    ["blocked_missing_information", "needs_clarification"],
+    ["rejected_outside_scope", "out_of_scope"]
+  ];
+
+  for (const [outcome, reviewOutcome] of cases) {
+    const analyzerResponse = {
+      requestId: `req-${outcome}`,
+      analyzedAt: "2026-05-01T00:00:00.000Z",
+      analyzer: {
+        source: "mock_fallback",
+        version: "neroa_one_task_analyzer_boundary_v1"
+      },
+      outcome,
+      reasoning: {
+        summary: `summary for ${outcome}`,
+        reasons: [`reason for ${outcome}`],
+        missingInformation: [],
+        customerQuestions: []
+      },
+      effects: {
+        buildRoomReady: outcome === "ready_to_build",
+        requiresRoadmapReview: outcome === "roadmap_revision_required",
+        shouldHoldForCustomerAnswer:
+          outcome === "needs_customer_answer" || outcome === "blocked_missing_information",
+        shouldReject: outcome === "rejected_outside_scope"
+      },
+      metadata: {
+        preserveCurrentBehavior: true,
+        caller: "command_center_middle_layout_test"
+      }
+    };
+    const metadata = buildCommandCenterTaskIntelligenceMetadata({
+      request: `request for ${outcome}`,
+      requestType: outcome === "needs_customer_answer" ? "question_decision" : "new_request",
+      workflowLane: outcome === "needs_customer_answer" ? "decisions" : "requests",
+      roadmapArea: "General coordination",
+      projectMetadata: null,
+      analyzerResponse
+    });
+    const analyzerClassification = buildCommandCenterTaskAnalyzerClassification(analyzerResponse);
+
+    assert.equal(metadata.roadmapReviewOutcome, reviewOutcome);
+    assert.deepEqual(metadata.analyzerClassification, analyzerClassification);
+    assert.equal(metadata.analyzerClassification?.analyzerOutcome, outcome);
+    assert.equal(metadata.analyzerClassification?.analyzerSource, "mock_fallback");
+  }
+});
+
+test("Command Center create-task intake uses the analyzer boundary and does not wake execution paths", () => {
+  const createTaskBranchStart = commandCenterActionsSource.indexOf('if (mutation === "create_task")');
+  const createTaskBranchEnd = commandCenterActionsSource.indexOf("} else {", createTaskBranchStart);
+  const createTaskBranch = commandCenterActionsSource.slice(createTaskBranchStart, createTaskBranchEnd);
+
+  assert.notEqual(createTaskBranchStart, -1);
+  assert.notEqual(createTaskBranchEnd, -1);
+  assert.match(createTaskBranch, /classifyCommandCenterTaskIntake\(/);
+  assert.match(createTaskBranch, /buildCommandCenterTaskIntelligenceMetadata\(/);
+  assert.doesNotMatch(createTaskBranch, /submitBuildRoomTaskToCodex|createBuildRoomTask|updateBuildRoomTask/i);
+  assert.doesNotMatch(createTaskBranch, /generateExecutionPacket|buildExecutionPacketSummary|upsertExecutionPacketSummary/i);
+  assert.doesNotMatch(createTaskBranch, /createDraftPromptRoomItem|createQueuedCodeExecutionWorkerRun/i);
+});
+
+test("Command Center intake helper stays isolated from legacy runtime and provider paths", () => {
+  assert.match(commandCenterIntakeSource, /analyzeTaskWithNeroaOne/);
+  assert.match(commandCenterIntakeSource, /buildNeroaOneTaskAnalysisRequestFromSpaceContext/);
+  assert.doesNotMatch(commandCenterIntakeSource, /build-room\/service|codex-relay|worker-trigger/i);
+  assert.doesNotMatch(commandCenterIntakeSource, /generateExecutionPacket|createDraftPromptRoomItem|createQueuedCodeExecutionWorkerRun/i);
+  assert.doesNotMatch(commandCenterIntakeSource, /live-view|browser-runtime|browser-extension/i);
+  assert.doesNotMatch(commandCenterIntakeSource, /@\/lib\/ai\/|openai|anthropic/i);
+});
+
+test("Command Center analyzer wiring does not introduce schema or migration changes", () => {
+  assert.doesNotMatch(commandCenterIntakeSource, /create table|alter table|drop table|migration|schema/i);
+  assert.doesNotMatch(commandCenterActionsSource, /create table|alter table|drop table|migration/i);
 });
