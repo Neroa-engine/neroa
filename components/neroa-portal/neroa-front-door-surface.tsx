@@ -141,11 +141,15 @@ export function NeroaFrontDoorSurface({
         />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.2)_0%,rgba(4,7,10,0.38)_22%,rgba(3,6,8,0.68)_62%,rgba(3,6,8,0.94)_100%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_74%_17%,rgba(244,235,214,0.14),transparent_9%),radial-gradient(circle_at_76%_19%,rgba(255,255,255,0.05),transparent_18%)]" />
+        <div className="absolute left-[2%] top-[7%] h-[18rem] w-[18rem] bg-[radial-gradient(circle_at_52%_44%,rgba(3,5,8,0.94)_0%,rgba(3,5,8,0.88)_22%,rgba(3,5,8,0.58)_44%,rgba(3,5,8,0.18)_64%,transparent_78%)] blur-[2px]" />
         <div className="northstar-energy-core absolute right-[3%] top-[1%] h-[44rem] w-[36rem] lg:w-[42rem]" />
         <div className="northstar-energy-beam northstar-energy-beam-primary absolute right-[15%] top-[5%] h-[76vh] w-[19rem] lg:w-[22rem]" />
         <div className="northstar-energy-beam northstar-energy-beam-secondary absolute right-[12%] top-[8%] h-[70vh] w-[15rem] lg:w-[18rem]" />
         <div className="northstar-energy-particles absolute right-[13%] top-[9%] h-[58vh] w-[22rem] lg:w-[26rem]" />
-        <div className="absolute right-64 top-16 hidden text-teal-100/82 lg:block">
+        <div
+          data-testid="front-door-floating-north-star"
+          className="pointer-events-none absolute right-[18rem] top-[7rem] z-10 hidden text-teal-100/82 lg:block"
+        >
           <NorthStarIcon className="h-5 w-5 drop-shadow-[0_0_20px_rgba(148,255,236,0.38)]" />
         </div>
         <div className="absolute bottom-[14rem] left-[-4%] right-[-4%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.14),transparent_58%)]" />

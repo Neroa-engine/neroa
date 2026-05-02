@@ -265,7 +265,9 @@ test("/neroa front door reflects the locked dark luxury visual direction", () =>
   assert.match(frontDoorSurfaceSource, /shadow-\[0_30px_120px/);
   assert.match(frontDoorSurfaceSource, /rounded-\[2rem\]/);
   assert.doesNotMatch(frontDoorSurfaceSource, /right-\[24%\] top-\[12%\] text-teal-100\/90/);
-  assert.match(frontDoorSurfaceSource, /right-64 top-16 hidden text-teal-100\/82 lg:block/);
+  assert.equal(countOccurrences(frontDoorSurfaceSource, /data-testid="front-door-floating-north-star"/g), 1);
+  assert.match(frontDoorSurfaceSource, /pointer-events-none absolute right-\[18rem\] top-\[7rem\] z-10 hidden text-teal-100\/82 lg:block/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /pointer-events-none absolute left-\[/);
   assert.doesNotMatch(frontDoorSurfaceSource, /left-\[8%\] top-\[18%\] hidden text-teal-100\/82 lg:block/);
   assert.match(frontDoorSurfaceSource, /drop-shadow-\[0_0_20px_rgba\(148,255,236,0\.38\)\]/);
   assert.match(frontDoorSurfaceSource, /h-\[27rem\]/);
