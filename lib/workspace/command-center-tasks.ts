@@ -66,14 +66,6 @@ export type CommandCenterTaskIntelligenceMetadata = {
   bugCandidate: boolean;
   regressionCandidate: boolean;
   billabilityReviewRequired: boolean;
-  analyzerClassification?: CommandCenterTaskAnalyzerClassification | null;
-};
-
-export type CommandCenterTaskAnalyzerClassification = {
-  analyzerOutcome: NeroaOneTaskAnalysisResponse["outcome"];
-  analyzerSource: NeroaOneTaskAnalysisResponse["analyzer"]["source"];
-  analyzerVersion: string;
-  analyzedAt: string;
 };
 
 export const COMMAND_CENTER_TASK_STRATEGY_REVIEW_KINDS = [
@@ -441,9 +433,6 @@ function normalizeCommandCenterTaskIntelligenceMetadata(
   const bugCandidate = asBoolean(record.bugCandidate);
   const regressionCandidate = asBoolean(record.regressionCandidate);
   const billabilityReviewRequired = asBoolean(record.billabilityReviewRequired);
-  const analyzerClassification = normalizeCommandCenterTaskAnalyzerClassification(
-    record.analyzerClassification
-  );
 
   if (
     !requestType ||
@@ -470,43 +459,7 @@ function normalizeCommandCenterTaskIntelligenceMetadata(
     planningCandidate,
     bugCandidate,
     regressionCandidate,
-    billabilityReviewRequired,
-    analyzerClassification
-  };
-}
-
-function normalizeCommandCenterTaskAnalyzerClassification(
-  value: unknown
-): CommandCenterTaskAnalyzerClassification | null {
-  if (!value || typeof value !== "object") {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const analyzerOutcome =
-    record.analyzerOutcome === "ready_to_build" ||
-    record.analyzerOutcome === "needs_customer_answer" ||
-    record.analyzerOutcome === "roadmap_revision_required" ||
-    record.analyzerOutcome === "blocked_missing_information" ||
-    record.analyzerOutcome === "rejected_outside_scope"
-      ? record.analyzerOutcome
-      : null;
-  const analyzerSource =
-    record.analyzerSource === "digitalocean_service" || record.analyzerSource === "mock_fallback"
-      ? record.analyzerSource
-      : null;
-  const analyzerVersion = asNonEmptyString(record.analyzerVersion);
-  const analyzedAt = asNonEmptyString(record.analyzedAt);
-
-  if (!analyzerOutcome || !analyzerSource || !analyzerVersion || !analyzedAt) {
-    return null;
-  }
-
-  return {
-    analyzerOutcome,
-    analyzerSource,
-    analyzerVersion,
-    analyzedAt
+    billabilityReviewRequired
   };
 }
 
@@ -799,21 +752,6 @@ function mapNeroaOneAnalyzerOutcomeToRoadmapReviewOutcome(args: {
   return "reviewing";
 }
 
-export function buildCommandCenterTaskAnalyzerClassification(
-  analyzerResponse: NeroaOneTaskAnalysisResponse | null | undefined
-): CommandCenterTaskAnalyzerClassification | null {
-  if (!analyzerResponse) {
-    return null;
-  }
-
-  return {
-    analyzerOutcome: analyzerResponse.outcome,
-    analyzerSource: analyzerResponse.analyzer.source,
-    analyzerVersion: analyzerResponse.analyzer.version,
-    analyzedAt: analyzerResponse.analyzedAt
-  };
-}
-
 export function buildCommandCenterTaskIntelligenceMetadata(args: {
   request: string | null | undefined;
   requestType?: CommandCenterCustomerRequestType | null;
@@ -833,7 +771,7 @@ export function buildCommandCenterTaskIntelligenceMetadata(args: {
     projectMetadata: args.projectMetadata ?? null
   });
   const roadmapReviewOutcome =
-    args.analyzerResponse
+    args.analyzerResponse?.analyzer.source === "digitalocean_service"
       ? mapNeroaOneAnalyzerOutcomeToRoadmapReviewOutcome({
           analyzerResponse: args.analyzerResponse,
           requestType,
@@ -870,8 +808,7 @@ export function buildCommandCenterTaskIntelligenceMetadata(args: {
       "price",
       "subscription",
       "invoice"
-    ]),
-    analyzerClassification: buildCommandCenterTaskAnalyzerClassification(args.analyzerResponse)
+    ])
   };
 }
 
