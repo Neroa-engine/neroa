@@ -77,12 +77,19 @@ function ChipDivider({
 }
 
 function ValueButton({
-  children
+  children,
+  className = ""
 }: {
   children: ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="flex h-10 w-full items-center justify-center rounded-full border border-white/70 bg-black/20 px-3 text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-teal-200">
+    <div
+      className={[
+        "flex h-10 items-center justify-center rounded-full border border-white/70 bg-black/20 px-3 text-center text-[11px] font-semibold uppercase tracking-[0.13em] text-teal-200 whitespace-nowrap",
+        className
+      ].join(" ")}
+    >
       {children}
     </div>
   );
@@ -285,7 +292,7 @@ export function NeroaFrontDoorSurface({
             {valuePills.map((pill, index) => (
               <div key={pill} className="contents">
                 {index > 0 ? <ChipDivider className="flex px-3" /> : null}
-                <ValueButton>{pill}</ValueButton>
+                <ValueButton className="inline-flex">{pill}</ValueButton>
               </div>
             ))}
           </div>
@@ -294,27 +301,35 @@ export function NeroaFrontDoorSurface({
             <div
               className="grid w-full items-center"
               style={{
-                gridTemplateColumns: "1fr 48px 1fr 48px 1fr 48px 1fr 48px 1fr",
-                columnGap: "0px"
+                gridTemplateColumns:
+                  "220px minmax(24px,1fr) 20px minmax(24px,1fr) 220px minmax(24px,1fr) 20px minmax(24px,1fr) 220px minmax(24px,1fr) 20px minmax(24px,1fr) 220px minmax(24px,1fr) 20px minmax(24px,1fr) 220px"
               }}
             >
-              <ValueButton>Roadmap-First Planning</ValueButton>
+              <ValueButton className="w-[220px]">Roadmap-First Planning</ValueButton>
+              <div aria-hidden="true" />
               <div className="flex h-10 items-center justify-center text-white/80">
                 <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
               </div>
-              <ValueButton>Scope Before Execution</ValueButton>
+              <div aria-hidden="true" />
+              <ValueButton className="w-[220px]">Scope Before Execution</ValueButton>
+              <div aria-hidden="true" />
               <div className="flex h-10 items-center justify-center text-white/80">
                 <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
               </div>
-              <ValueButton>Decisions & Approvals</ValueButton>
+              <div aria-hidden="true" />
+              <ValueButton className="w-[220px]">Decisions & Approvals</ValueButton>
+              <div aria-hidden="true" />
               <div className="flex h-10 items-center justify-center text-white/80">
                 <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
               </div>
-              <ValueButton>Evidence & Review</ValueButton>
+              <div aria-hidden="true" />
+              <ValueButton className="w-[220px]">Evidence & Review</ValueButton>
+              <div aria-hidden="true" />
               <div className="flex h-10 items-center justify-center text-white/80">
                 <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/72" />
               </div>
-              <ValueButton>Build & Execute</ValueButton>
+              <div aria-hidden="true" />
+              <ValueButton className="w-[220px]">Build & Execute</ValueButton>
             </div>
           </div>
         </section>
