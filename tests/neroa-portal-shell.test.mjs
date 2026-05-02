@@ -315,6 +315,8 @@ test("clean auth route exports and renders the Neroa auth page UI", () => {
   assert.match(authPortalSource, /Neroa \| Sign In/);
   assert.match(authPortalSurfaceSource, /"use client"/);
   assert.match(authPortalSurfaceSource, /Welcome to Neroa/);
+  assert.match(authPortalSurfaceSource, /Start with a plan before the build begins\./);
+  assert.match(authPortalSurfaceSource, /Structured Project Access/);
   assert.match(authPortalSurfaceSource, /Sign in or create an account to start your project\./);
   assert.match(authPortalSurfaceSource, /Sign In/);
   assert.match(authPortalSurfaceSource, /Create Account/);
@@ -326,6 +328,14 @@ test("clean auth route exports and renders the Neroa auth page UI", () => {
 
 test("clean auth surface includes local form controls and removes placeholder copy", () => {
   assert.match(authPortalSurfaceSource, /useState/);
+  assert.match(authPortalSurfaceSource, /lg:grid-cols-\[minmax\(0,1\.05fr\)_minmax\(24rem,34rem\)\]/);
+  assert.match(authPortalSurfaceSource, /justify-self-end/);
+  assert.match(authPortalSurfaceSource, /Roadmap-first planning/);
+  assert.match(authPortalSurfaceSource, /Scope before execution/);
+  assert.match(authPortalSurfaceSource, /Decisions and approvals/);
+  assert.match(authPortalSurfaceSource, /Evidence and review/);
+  assert.match(authPortalSurfaceSource, /Build with direction/);
+  assert.match(authPortalSurfaceSource, /Sign in or create an account to begin shaping your project\./);
   assert.match(authPortalSurfaceSource, /showSignInPassword/);
   assert.match(authPortalSurfaceSource, /showCreatePassword/);
   assert.match(authPortalSurfaceSource, /type=\{showSignInPassword \? "text" : "password"\}/);

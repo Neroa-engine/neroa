@@ -119,8 +119,46 @@ export function NeroaAuthSurface() {
           </nav>
         </header>
 
-        <div className="flex flex-1 items-center justify-center py-12 lg:py-16">
-          <section className="w-full max-w-[34rem] rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-8">
+        <div className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(24rem,34rem)] lg:gap-20 lg:py-16">
+          <section className="max-w-3xl space-y-8">
+            <div className="space-y-4">
+              <p className="text-sm font-semibold uppercase tracking-[0.34em] text-teal-200/78">
+                Structured Project Access
+              </p>
+              <h1 className="max-w-3xl font-serif text-[clamp(3.25rem,7vw,5.8rem)] leading-[0.95] tracking-[-0.05em] text-white">
+                Start with a plan before the build begins.
+              </h1>
+              <p className="max-w-2xl text-[1.05rem] leading-8 text-white/66 sm:text-[1.12rem]">
+                Neroa helps turn your software idea into a structured roadmap,
+                clear scope, key decisions, approvals, and a project workspace
+                before execution starts.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {[
+                "Roadmap-first planning",
+                "Scope before execution",
+                "Decisions and approvals",
+                "Evidence and review",
+                "Build with direction"
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 rounded-[1.2rem] border border-white/10 bg-white/[0.035] px-4 py-3 text-sm text-white/72 shadow-[0_0_24px_rgba(45,212,191,0.06)]"
+                >
+                  <NorthStarIcon className="h-3.5 w-3.5 shrink-0 text-teal-200/78" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="max-w-2xl text-[0.98rem] leading-8 text-white/56">
+              Sign in or create an account to begin shaping your project.
+            </p>
+          </section>
+
+          <section className="w-full justify-self-end rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-8">
             <div className="space-y-4 border-b border-white/8 pb-6">
               <div className="flex items-center gap-2 text-white">
                 <NorthStarIcon className="h-4 w-4 text-teal-200/84" />
@@ -128,9 +166,9 @@ export function NeroaAuthSurface() {
               </div>
 
               <div className="space-y-3">
-                <h1 className="font-serif text-4xl text-white sm:text-[2.8rem]">
+                <h2 className="font-serif text-4xl text-white sm:text-[2.8rem]">
                   Welcome to Neroa
-                </h1>
+                </h2>
                 <p className="text-[1rem] leading-8 text-white/68">
                   Sign in or create an account to start your project.
                 </p>
