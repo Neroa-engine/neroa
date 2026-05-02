@@ -1,77 +1,21 @@
+"use client";
+
+import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 
 const valuePills = [
-  {
-    label: "Roadmap-First Planning",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-        <path d="M4 7h5l3 10h8" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx="4" cy="7" r="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="9" cy="7" r="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="12" cy="17" r="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="20" cy="17" r="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-      </svg>
-    ),
-  },
-  {
-    label: "Scope Before Execution",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <circle cx="12" cy="12" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Decisions & Approvals",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-        <path d="M12 3 20 6v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6l8-3Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-        <path d="m8.5 12.3 2.2 2.2 4.8-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Evidence & Review",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-        <rect x="5" y="4" width="14" height="16" rx="2" fill="none" stroke="currentColor" strokeWidth="1.6" />
-        <path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-      </svg>
-    ),
-  },
-  {
-    label: "Build & Execute",
-    icon: (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
-        <path d="M13.5 4.5c3.6.5 5.5 2.4 6 6L13 17l-4-4 4.5-8.5Z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M8.5 15.5 5 19l4.5-1.5M15 6.5l2.5 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    ),
-  },
-];
-
-function SparkIcon({ className = "" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
-      <path
-        d="M12 2.5 14.2 9.8 21.5 12 14.2 14.2 12 21.5 9.8 14.2 2.5 12 9.8 9.8 12 2.5Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinejoin="round"
-      />
-      <path d="M12 7.6V12h4.4" stroke="currentColor" strokeWidth="1.15" strokeLinecap="round" />
-    </svg>
-  );
-}
+  "ROADMAP-FIRST PLANNING",
+  "SCOPE BEFORE EXECUTION",
+  "DECISIONS & APPROVALS",
+  "EVIDENCE & REVIEW",
+  "BUILD & EXECUTE"
+] as const;
 
 function ChatAvatar({
   children,
-  variant = "nero",
+  variant = "nero"
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   variant?: "nero" | "visitor";
 }) {
   return (
@@ -79,8 +23,8 @@ function ChatAvatar({
       className={[
         "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border text-sm",
         variant === "nero"
-          ? "border-teal-300/35 bg-teal-400/18 text-teal-100 shadow-[0_0_28px_rgba(45,212,191,0.22)]"
-          : "border-white/15 bg-white/8 text-white/80",
+          ? "border-teal-300/30 bg-teal-300/10 text-teal-100 shadow-[0_0_24px_rgba(45,212,191,0.16)]"
+          : "border-white/12 bg-white/8 text-white/78"
       ].join(" ")}
     >
       {children}
@@ -88,34 +32,76 @@ function ChatAvatar({
   );
 }
 
-export function NeroaFrontDoorSurface() {
+function MessageRow({
+  author,
+  timestamp,
+  body,
+  avatar,
+  variant = "nero"
+}: {
+  author: string;
+  timestamp: string;
+  body: string;
+  avatar: ReactNode;
+  variant?: "nero" | "visitor";
+}) {
+  return (
+    <div className="flex gap-4 border-b border-white/8 pb-5 last:border-b-0 last:pb-0">
+      <ChatAvatar variant={variant}>{avatar}</ChatAvatar>
+      <div className="min-w-0">
+        <div className="mb-2 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-white/34">
+          <span>{author}</span>
+          <span>{timestamp}</span>
+        </div>
+        <p className="text-[1.02rem] leading-8 text-white/88">{body}</p>
+      </div>
+    </div>
+  );
+}
+
+export function NeroaFrontDoorSurface({
+  isSignedIn = false
+}: {
+  isSignedIn?: boolean;
+}) {
+  const [draftName, setDraftName] = useState("");
+  const [submittedName, setSubmittedName] = useState("");
+
+  const trimmedName = submittedName.trim();
+  const hasStarted = trimmedName.length > 0;
+  const nextProjectHref = isSignedIn ? "/neroa/project" : "/neroa/auth";
+  const ctaLabel = isSignedIn ? "Open Projects" : "Start Your Project";
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const nextName = draftName.trim();
+    if (!nextName) {
+      return;
+    }
+
+    setSubmittedName(nextName);
+    setDraftName("");
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#05080b] text-white">
-      {/* Moon / North Star atmosphere. CSS only, no image assets. */}
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_42%_34%,rgba(255,244,219,0.12),transparent_14%),radial-gradient(circle_at_42%_34%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,rgba(5,8,11,0.25),#05080b_75%)]" />
-        <div className="absolute left-[30%] top-[12%] h-[34rem] w-[34rem] rounded-full border border-[#f7ead1]/35 shadow-[0_0_80px_rgba(255,238,202,0.18),inset_0_0_50px_rgba(255,238,202,0.05)]" />
-        <div className="absolute left-[33%] top-[12%] h-[34rem] w-[34rem] rounded-full bg-[#05080b]/95" />
-        <div className="absolute left-[7%] top-[20%] h-20 w-20 text-white/75">
-          <div className="absolute left-1/2 top-0 h-20 w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-white/70 to-transparent" />
-          <div className="absolute left-0 top-1/2 h-px w-20 -translate-y-1/2 bg-gradient-to-r from-transparent via-white/70 to-transparent" />
-          <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_28px_rgba(255,255,255,0.9)]" />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 h-[28rem] bg-[radial-gradient(ellipse_at_center,rgba(43,211,191,0.12),transparent_40%),linear-gradient(180deg,transparent,rgba(4,7,9,0.92)_62%,#05080b)]" />
-        <div className="absolute inset-x-0 bottom-0 h-[18rem] bg-[linear-gradient(165deg,transparent_0%,transparent_48%,rgba(255,255,255,0.05)_49%,transparent_50%),linear-gradient(25deg,transparent_0%,transparent_58%,rgba(255,255,255,0.04)_59%,transparent_60%)] opacity-60" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:96px_96px] opacity-25" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_34%_20%,rgba(255,244,219,0.15),transparent_10%),radial-gradient(circle_at_34%_20%,rgba(255,255,255,0.08),transparent_18%),linear-gradient(180deg,rgba(3,7,10,0.15),#05080b_72%)]" />
+        <div className="absolute left-[18%] top-[8%] h-[32rem] w-[32rem] rounded-full border border-[#f7ead1]/30 shadow-[0_0_110px_rgba(255,236,198,0.18),inset_0_0_60px_rgba(255,236,198,0.05)]" />
+        <div className="absolute left-[21%] top-[8%] h-[32rem] w-[32rem] rounded-full bg-[#05080b]/95" />
+        <div className="absolute inset-x-0 bottom-0 h-[22rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.16),transparent_42%),linear-gradient(180deg,transparent,rgba(4,7,10,0.84)_64%,#05080b)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:88px_88px] opacity-20" />
       </div>
 
-      <section className="relative mx-auto flex min-h-screen w-full max-w-[1800px] flex-col px-8 py-8 lg:px-14">
-        {/* Header */}
+      <section className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-white/10 pb-6">
-          <Link href="/" className="group flex items-center gap-4">
-            <SparkIcon className="h-8 w-8 text-white/80 transition group-hover:text-teal-200" />
-            <span className="font-serif text-4xl tracking-tight text-white">Neroa</span>
+          <Link href="/" className="font-serif text-[2.15rem] tracking-tight text-white">
+            Neroa
           </Link>
 
-          <nav className="hidden items-center gap-12 text-base text-white/78 md:flex">
-            <Link href="/" className="border-b border-teal-300 pb-2 text-white">
+          <nav className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex">
+            <Link href="/" className="transition hover:text-white">
               Home
             </Link>
             <Link href="/neroa/pricing" className="transition hover:text-white">
@@ -126,119 +112,129 @@ export function NeroaFrontDoorSurface() {
             </Link>
             <Link
               href="/neroa/auth"
-              className="inline-flex items-center gap-3 rounded-full border border-teal-300/60 bg-teal-300/8 px-7 py-3 text-white shadow-[0_0_32px_rgba(45,212,191,0.12)] transition hover:border-teal-200 hover:bg-teal-300/14"
+              className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
             >
               Start Your Project
-              <SparkIcon className="h-4 w-4 text-teal-100" />
             </Link>
           </nav>
         </header>
 
-        {/* Hero */}
-        <div className="grid flex-1 items-center gap-14 py-16 lg:grid-cols-[1fr_0.92fr] lg:py-20">
+        <div className="grid flex-1 items-center gap-14 py-14 lg:grid-cols-[minmax(0,1.02fr)_minmax(28rem,0.92fr)] lg:gap-20 lg:py-20">
           <section className="max-w-4xl">
-            <h1 className="font-serif text-[clamp(5rem,10vw,11rem)] leading-[0.88] tracking-[-0.07em] text-white">
+            <p className="text-sm uppercase tracking-[0.38em] text-teal-200/78">SaaS Done Right</p>
+
+            <h1 className="mt-6 font-serif text-[clamp(4.6rem,11vw,10.5rem)] leading-[0.86] tracking-[-0.08em] text-white">
               SaaS
               <br />
-              <span className="bg-gradient-to-r from-teal-300 via-teal-200 to-white bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-teal-200 via-teal-300 to-white bg-clip-text text-transparent">
                 done
               </span>{" "}
               right.
             </h1>
 
-            <p className="mt-9 text-[clamp(1.35rem,2vw,2rem)] leading-relaxed text-white/68">
+            <p className="mt-8 max-w-2xl text-[clamp(1.2rem,2vw,1.8rem)] leading-relaxed text-white/72">
               Start with a structured plan, not a vague prompt.
             </p>
 
-            <p className="mt-6 max-w-3xl text-[clamp(1.05rem,1.35vw,1.35rem)] leading-9 text-white/62">
+            <p className="mt-5 max-w-3xl text-[clamp(1rem,1.4vw,1.28rem)] leading-9 text-white/58">
               Neroa turns your idea into roadmap, scope, decisions, approvals, and a clear project path before execution begins.
             </p>
-
-            <div className="mt-14 flex flex-wrap gap-4">
-              {valuePills.map((pill) => (
-                <div
-                  key={pill.label}
-                  className="inline-flex min-h-16 items-center gap-3 rounded-2xl border border-white/20 bg-black/28 px-5 py-3 text-teal-200 shadow-[0_0_30px_rgba(20,184,166,0.07)] backdrop-blur"
-                >
-                  <span className="text-teal-300">{pill.icon}</span>
-                  <span className="max-w-[9rem] text-sm font-semibold uppercase leading-5 tracking-[0.08em]">
-                    {pill.label}
-                  </span>
-                </div>
-              ))}
-            </div>
           </section>
 
-          {/* Chat Intake */}
-          <section className="rounded-[2.25rem] border border-white/28 bg-black/45 p-8 shadow-[0_24px_120px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:p-11">
-            <div className="mb-8 flex items-center justify-between">
-              <h2 className="font-serif text-3xl text-white">Neroa</h2>
-              <span className="rounded-full border border-white/12 px-4 py-2 text-xs uppercase tracking-[0.26em] text-white/45">
-                Guided Intake
-              </span>
-            </div>
+          <section className="relative rounded-[2rem] border border-white/14 bg-black/42 p-6 shadow-[0_28px_110px_rgba(0,0,0,0.42)] backdrop-blur-xl sm:p-8 lg:p-9">
+            <div
+              aria-hidden="true"
+              className="scroll-rail pointer-events-none absolute inset-y-8 right-4 w-px rounded-full bg-white/8"
+            />
+            <div
+              className={[
+                "scroll-thumb pointer-events-none absolute right-[13px] w-[5px] rounded-full bg-gradient-to-b from-teal-200/85 via-teal-300/55 to-transparent shadow-[0_0_20px_rgba(45,212,191,0.28)] transition-all",
+                hasStarted ? "top-[34%] h-24" : "top-[18%] h-14"
+              ].join(" ")}
+            />
 
-            <div className="space-y-7">
-              <div className="flex gap-5 border-b border-white/10 pb-6">
-                <ChatAvatar>
-                  <SparkIcon className="h-5 w-5" />
-                </ChatAvatar>
-                <div>
-                  <div className="mb-2 flex items-center gap-4 text-sm text-white/45">
-                    <span>Neroa</span>
-                    <span>10:21 AM</span>
-                  </div>
-                  <p className="text-[1.35rem] leading-8 text-white">
-                    Hi, I’m Neroa. What’s your name?
-                  </p>
+            <div className="pr-8">
+              <div className="mb-7 border-b border-white/10 pb-5">
+                <h2 className="font-serif text-3xl tracking-tight text-white">Neroa</h2>
+                <p className="mt-2 text-sm leading-7 text-white/46">
+                  Plan the project first, then move into the next step with structure.
+                </p>
+              </div>
+
+              <div className="space-y-5">
+                <MessageRow
+                  author="Neroa"
+                  timestamp="10:21 AM"
+                  body="Hi, I'm Neroa. What's your name?"
+                  avatar="AI"
+                />
+
+                {hasStarted ? (
+                  <>
+                    <MessageRow
+                      author={trimmedName}
+                      timestamp="10:22 AM"
+                      body={`My name is ${trimmedName}.`}
+                      avatar={trimmedName.charAt(0).toUpperCase()}
+                      variant="visitor"
+                    />
+
+                    <MessageRow
+                      author="Neroa"
+                      timestamp="10:22 AM"
+                      body={`Nice to meet you, ${trimmedName}. I'm here to help you plan, scope, and prepare your next project before execution begins. Let's begin.`}
+                      avatar="AI"
+                    />
+                  </>
+                ) : null}
+              </div>
+
+              {hasStarted ? (
+                <div className="mt-7 rounded-[1.4rem] border border-white/12 bg-white/[0.04] p-3">
+                  <Link
+                    href={nextProjectHref}
+                    className="flex items-center justify-between rounded-[1.1rem] bg-teal-300 px-5 py-4 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
+                  >
+                    <span>{ctaLabel}</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
                 </div>
-              </div>
-
-              <div className="flex gap-5 border-b border-white/10 pb-6">
-                <ChatAvatar variant="visitor">T</ChatAvatar>
-                <div>
-                  <div className="mb-2 flex items-center gap-4 text-sm text-white/45">
-                    <span>Tom</span>
-                    <span>10:21 AM</span>
+              ) : (
+                <form onSubmit={handleSubmit} className="mt-7 rounded-[1.4rem] border border-white/12 bg-white/[0.035] p-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      value={draftName}
+                      onChange={(event) => setDraftName(event.target.value)}
+                      placeholder="Type your name"
+                      aria-label="What is your name?"
+                      className="h-14 flex-1 bg-transparent px-4 text-base text-white outline-none placeholder:text-white/34"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex h-14 items-center justify-center rounded-full bg-teal-300 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-[#071113] transition hover:bg-teal-200"
+                    >
+                      Let&apos;s Begin
+                    </button>
                   </div>
-                  <p className="text-[1.35rem] leading-8 text-white">
-                    My name is Tom.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-5">
-                <ChatAvatar>
-                  <SparkIcon className="h-5 w-5" />
-                </ChatAvatar>
-                <div>
-                  <div className="mb-2 flex items-center gap-4 text-sm text-white/45">
-                    <span>Neroa</span>
-                    <span>10:22 AM</span>
-                  </div>
-                  <p className="text-[1.12rem] leading-8 text-white/88">
-                    Nice to meet you, Tom. I’m here to help you plan, scope, and prepare your next project before execution begins. Let’s begin.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-9 flex items-center gap-4 rounded-2xl border border-white/15 bg-white/[0.035] p-3">
-              <div className="flex-1 px-4 text-lg text-white/42">
-                Type your message...
-              </div>
-              <Link
-                href="/neroa/auth"
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-teal-300 text-black shadow-[0_0_28px_rgba(45,212,191,0.25)] transition hover:bg-teal-200"
-                aria-label="Start your project"
-              >
-                <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                  <path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
+                </form>
+              )}
             </div>
           </section>
         </div>
+
+        <section className="pb-10">
+          <div className="flex flex-wrap gap-3">
+            {valuePills.map((pill) => (
+              <div
+                key={pill}
+                className="inline-flex min-h-12 items-center rounded-full border border-white/14 bg-white/[0.035] px-5 py-3 text-[0.72rem] font-semibold tracking-[0.18em] text-white/76 shadow-[0_0_24px_rgba(45,212,191,0.05)]"
+              >
+                {pill}
+              </div>
+            ))}
+          </div>
+        </section>
       </section>
     </main>
   );

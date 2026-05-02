@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getOptionalUser } from "@/lib/auth";
 import { NeroaFrontDoorSurface } from "@/components/neroa-portal/neroa-front-door-surface";
 
 export const metadata: Metadata = {
@@ -29,6 +30,8 @@ export const metadata: Metadata = {
   }
 };
 
-export default function LandingPage() {
-  return <NeroaFrontDoorSurface />;
+export default async function LandingPage() {
+  const user = await getOptionalUser();
+
+  return <NeroaFrontDoorSurface isSignedIn={Boolean(user)} />;
 }
