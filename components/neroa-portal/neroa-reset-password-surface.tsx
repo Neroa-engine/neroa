@@ -154,13 +154,13 @@ export function NeroaResetPasswordSurface({
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-white/10 pb-6">
-          <Link href="/" className="flex items-center gap-3 text-white">
+          <Link href="/neroa" className="flex items-center gap-3 text-white">
             <NorthStarIcon className="h-5 w-5 text-teal-200/86" />
             <span className="font-serif text-[2.15rem] tracking-tight">Neroa</span>
           </Link>
 
           <nav className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex">
-            <Link href="/" className="transition hover:text-white">
+            <Link href="/neroa" className="transition hover:text-white">
               Home
             </Link>
             <Link href="/neroa/pricing" className="transition hover:text-white">
@@ -169,8 +169,17 @@ export function NeroaResetPasswordSurface({
             <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
               DIY vs Managed
             </Link>
+            <Link href="/neroa/blog" className="transition hover:text-white">
+              Blog
+            </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
               Sign In
+            </Link>
+            <Link
+              href="/neroa/pricing"
+              className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
+            >
+              Start Your Project
             </Link>
           </nav>
         </header>

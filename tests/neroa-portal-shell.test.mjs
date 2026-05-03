@@ -33,6 +33,7 @@ const pricingPortalSource = readFileSync(
   new URL("../app/neroa/pricing/page.tsx", import.meta.url),
   "utf8"
 );
+const blogPortalSource = readFileSync(new URL("../app/neroa/blog/page.tsx", import.meta.url), "utf8");
 const diyManagedPortalSource = readFileSync(
   new URL("../app/neroa/diy-vs-managed/page.tsx", import.meta.url),
   "utf8"
@@ -51,6 +52,10 @@ const cleanResetPasswordSurfaceSource = readFileSync(
 );
 const pricingPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-pricing-surface.tsx", import.meta.url),
+  "utf8"
+);
+const blogPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-blog-surface.tsx", import.meta.url),
   "utf8"
 );
 const diyManagedPortalSurfaceSource = readFileSync(
@@ -84,6 +89,8 @@ const cleanPortalSources = [
   cleanResetPasswordSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  blogPortalSource,
+  blogPortalSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -96,6 +103,8 @@ const publicEntrySources = [
   frontDoorSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  blogPortalSource,
+  blogPortalSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   authPortalSource,
@@ -121,6 +130,8 @@ const uiOnlyPortalSources = [
   cleanResetPasswordSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  blogPortalSource,
+  blogPortalSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -135,6 +146,8 @@ const nonRuntimeUiPortalSources = [
   projectPortalSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  blogPortalSource,
+  blogPortalSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -169,6 +182,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(pricingPortalSource, /export default function NeroaPricingPage/);
   assert.match(pricingPortalSource, /NeroaPricingSurface/);
   assert.match(pricingPortalSurfaceSource, /export function NeroaPricingSurface/);
+  assert.match(blogPortalSource, /export default function NeroaBlogPage/);
+  assert.match(blogPortalSource, /NeroaBlogSurface/);
+  assert.match(blogPortalSurfaceSource, /export function NeroaBlogSurface/);
   assert.match(diyManagedPortalSource, /export default function NeroaDiyVsManagedPage/);
   assert.match(diyManagedPortalSource, /NeroaDiyManagedSurface/);
   assert.match(diyManagedPortalSurfaceSource, /export function NeroaDiyManagedSurface/);
@@ -232,6 +248,7 @@ test("/neroa front door includes the polished chat-first flow", () => {
   assert.match(frontDoorSurfaceSource, /Home/);
   assert.match(frontDoorSurfaceSource, /Pricing/);
   assert.match(frontDoorSurfaceSource, /DIY vs Managed/);
+  assert.match(frontDoorSurfaceSource, /Blog/);
   assert.match(frontDoorSurfaceSource, /Sign In/);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
 });
@@ -253,7 +270,9 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href=\{startProjectHref\}/g), 2);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/pricing"/g), 1);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa"/);
   assert.match(frontDoorSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/blog"/);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/account"/g), 0);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
@@ -437,7 +456,9 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.match(pricingPortalSurfaceSource, /5,000 managed credits \/ \$7,500/);
   assert.match(pricingPortalSurfaceSource, /Credit Top-Offs/);
   assert.match(pricingPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(pricingPortalSurfaceSource, /Blog/);
   assert.match(pricingPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(pricingPortalSurfaceSource, /href="\/neroa\/blog"/);
   assert.match(
     pricingPortalSurfaceSource,
     /Add more governed build credits when your project needs additional approved work\./
@@ -471,6 +492,40 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.doesNotMatch(pricingPortalSurfaceSource, /GPT-5\.5/i);
 });
 
+test("/neroa/blog route exists and stays inside the clean Neroa portal namespace", () => {
+  assert.match(blogPortalSource, /@\/components\/neroa-portal\/neroa-blog-surface/);
+  assert.match(blogPortalSource, /Neroa \| Blog/);
+  assert.match(
+    blogPortalSource,
+    /Read the Neroa Build Journal for roadmap-first thinking about structured software building, Build Credits, approvals, and governed execution\./
+  );
+  assert.doesNotMatch(blogPortalSource, /@\/components\/marketing\//);
+  assert.doesNotMatch(blogPortalSource, /@\/lib\/billing\//);
+});
+
+test("/neroa/blog includes the build journal hero, five foundational articles, and governed language", () => {
+  assert.match(blogPortalSurfaceSource, /The Neroa Build Journal/);
+  assert.match(blogPortalSurfaceSource, /Roadmap-first thinking for founders, businesses, and builders who want software built with structure instead of chaos\./);
+  assert.match(blogPortalSurfaceSource, /Most software projects do not fail because the idea is bad\./);
+  assert.match(blogPortalSurfaceSource, /Why Today's No-Code and AI App Builders Still Break Down/);
+  assert.match(blogPortalSurfaceSource, /Why Neroa Can Build Differently/);
+  assert.match(blogPortalSurfaceSource, /How Many Credits Does It Take to Get a Basic SaaS to MVP\?/);
+  assert.match(blogPortalSurfaceSource, /Prompting Is Not Product Strategy/);
+  assert.match(blogPortalSurfaceSource, /Why Roadmap-First Building Saves Money/);
+  assert.match(blogPortalSurfaceSource, /roadmap-first/i);
+  assert.match(blogPortalSurfaceSource, /structured software building/i);
+  assert.match(blogPortalSurfaceSource, /Build Credits/);
+  assert.match(blogPortalSurfaceSource, /managed credits/);
+  assert.match(blogPortalSurfaceSource, /evidence and review/i);
+  assert.match(blogPortalSurfaceSource, /governed execution/i);
+  assert.match(blogPortalSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(blogPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(blogPortalSurfaceSource, /testId="blog-page-north-star"/);
+  assert.doesNotMatch(blogPortalSurfaceSource, /<img/i);
+  assert.doesNotMatch(blogPortalSurfaceSource, /<Image/i);
+  assert.doesNotMatch(blogPortalSurfaceSource, /\/logo\//);
+});
+
 test("/neroa/diy-vs-managed route exists and stays inside the clean Neroa portal namespace", () => {
   assert.match(diyManagedPortalSource, /@\/components\/neroa-portal\/neroa-diy-managed-surface/);
   assert.match(diyManagedPortalSource, /Neroa \| DIY vs Managed/);
@@ -502,6 +557,7 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.match(diyManagedPortalSurfaceSource, /Start with pricing/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/blog"/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/auth"/);
   assert.match(diyManagedPortalSurfaceSource, /NeroaNorthStarAccent/);
   assert.match(diyManagedPortalSurfaceSource, /testId="diy-managed-page-north-star"/);
@@ -595,9 +651,11 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /Home/);
   assert.match(authPortalSurfaceSource, /Pricing/);
   assert.match(authPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(authPortalSurfaceSource, /Blog/);
   assert.match(authPortalSurfaceSource, /Start Your Project/);
   assert.match(authPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(authPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(authPortalSurfaceSource, /href="\/neroa\/blog"/);
   assert.doesNotMatch(authPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.doesNotMatch(authPortalSurfaceSource, /@\/components\/auth\//);
   assert.doesNotMatch(authPortalSurfaceSource, /@\/app\/auth\//);
@@ -891,7 +949,11 @@ test("clean auth confirmation and reset routes stay inside the new Neroa auth ar
   assert.match(cleanResetPasswordSurfaceSource, /Update Password/);
   assert.match(cleanResetPasswordSurfaceSource, /Back to Sign In/);
   assert.match(cleanResetPasswordSurfaceSource, /DIY vs Managed/);
+  assert.match(cleanResetPasswordSurfaceSource, /Blog/);
+  assert.match(cleanResetPasswordSurfaceSource, /Start Your Project/);
   assert.match(cleanResetPasswordSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(cleanResetPasswordSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(cleanResetPasswordSurfaceSource, /href="\/neroa\/pricing"/);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/components\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/app\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /\/logo\//);
@@ -945,7 +1007,9 @@ test("clean auth plan flow keeps public CTAs and plan routing aligned", () => {
   assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/neroa\/auth\?plan=/);
   assert.match(pricingPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(pricingPortalSurfaceSource, /Blog/);
   assert.match(pricingPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(pricingPortalSurfaceSource, /href="\/neroa\/blog"/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /href="#plans"/);
   assert.match(pricingPortalSurfaceSource, /id:\s*"free"/);
   assert.match(pricingPortalSurfaceSource, /id:\s*"starter"/);

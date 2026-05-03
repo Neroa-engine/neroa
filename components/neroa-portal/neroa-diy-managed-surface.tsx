@@ -127,6 +127,9 @@ export function NeroaDiyManagedSurface() {
             <Link href="/neroa/diy-vs-managed" className="text-teal-100 transition hover:text-white">
               DIY vs Managed
             </Link>
+            <Link href="/neroa/blog" className="transition hover:text-white">
+              Blog
+            </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
               Sign In
             </Link>
