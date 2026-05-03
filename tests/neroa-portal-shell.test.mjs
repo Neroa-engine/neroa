@@ -1358,8 +1358,70 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.match(projectPortalSurfaceSource, /Roadmap Status/);
   assert.match(projectPortalSurfaceSource, /Scope Items/);
   assert.match(projectPortalSurfaceSource, /Requests/);
-  assert.match(projectPortalSurfaceSource, /Approvals/);
   assert.match(projectPortalSurfaceSource, /Revisions/);
+  assert.match(projectPortalSurfaceSource, /Next Actions/);
+  assert.match(projectPortalSurfaceSource, /Approvals/);
+  assert.match(projectPortalSurfaceSource, /Decisions/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Send requests, review decisions, track revisions, and keep project execution organized\./
+  );
+  assert.match(projectPortalSurfaceSource, /Project Command Chat/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use this space to tell Neroa what you need changed, reviewed, approved, or clarified\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Type a request, revision, approval note, or project question(?:\.\.\.)?/
+  );
+  assert.match(projectPortalSurfaceSource, /Send Command/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Command capture is not connected yet\. This chat will later create project tasks and review items\./
+  );
+  assert.match(projectPortalSurfaceSource, /Customer Tasks/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Customer-visible tasks will appear here after commands are reviewed and organized\./
+  );
+  assert.match(projectPortalSurfaceSource, /Waiting for Review/);
+  assert.match(projectPortalSurfaceSource, /Approved/);
+  assert.match(projectPortalSurfaceSource, /In Progress/);
+  assert.match(projectPortalSurfaceSource, /Needs Customer Input/);
+  assert.match(projectPortalSurfaceSource, /Completed/);
+  assert.match(projectPortalSurfaceSource, /No tasks yet\./);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use Requests for new work, feature changes, or project needs\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use Revisions when something needs to be changed, corrected, or refined\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use Next Actions to clarify what should happen next\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use Approvals to approve or hold work before it moves forward\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use Decisions to record choices that affect scope, design, pricing, or execution\./
+  );
+  assert.doesNotMatch(projectPortalSurfaceSource, /No active requests yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /No approvals waiting yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /No revisions queued yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /No command decisions recorded yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /No next actions queued yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /task created/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /command sent/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNarua\b/);
   assert.match(projectPortalSurfaceSource, /Browser QC/);
   assert.match(projectPortalSurfaceSource, /Evidence/);
   assert.match(projectPortalSurfaceSource, /Visual Review/);
@@ -1384,7 +1446,6 @@ test("Project Portal removes old overview copy and avoids banned project portal 
   assert.doesNotMatch(projectPortalSurfaceSource, /Readiness Notes/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Surface Status/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Placeholder-only/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /runtime-free/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /Authentication Surface/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /Auth Surface/i);
@@ -1810,6 +1871,9 @@ test("Project Portal does not import old project workspace billing auth or runti
     assert.doesNotMatch(source, /worker-trigger/);
     assert.doesNotMatch(source, /browser-runtime-bridge/);
     assert.doesNotMatch(source, /digitalocean/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/schema/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/migrations?\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/model(?:s)?(?:\/|["'])/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*qc(?:\/|["'])/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*browser/i);
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
@@ -36,27 +36,37 @@ const projectRoomCards = [
   }
 ] as const;
 
-const commandCenterCards = [
+const commandCenterCategories = [
   {
-    title: "Requests",
-    body: "No active requests yet."
+    label: "Requests",
+    helper: "Use Requests for new work, feature changes, or project needs."
   },
   {
-    title: "Approvals",
-    body: "No approvals waiting yet."
+    label: "Revisions",
+    helper: "Use Revisions when something needs to be changed, corrected, or refined."
   },
   {
-    title: "Revisions",
-    body: "No revisions queued yet."
+    label: "Next Actions",
+    helper: "Use Next Actions to clarify what should happen next."
   },
   {
-    title: "Decisions",
-    body: "No command decisions recorded yet."
+    label: "Approvals",
+    helper: "Use Approvals to approve or hold work before it moves forward."
   },
   {
-    title: "Next Actions",
-    body: "No next actions queued yet."
+    label: "Decisions",
+    helper: "Use Decisions to record choices that affect scope, design, pricing, or execution."
   }
+] as const;
+
+type CommandCenterCategory = (typeof commandCenterCategories)[number];
+
+const customerTaskColumns = [
+  "Waiting for Review",
+  "Approved",
+  "In Progress",
+  "Needs Customer Input",
+  "Completed"
 ] as const;
 
 const qcRoomCards = [
@@ -121,6 +131,135 @@ function RoomTile({
   );
 }
 
+function CategoryPill({
+  label,
+  active,
+  onClick
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "rounded-full border px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] transition",
+        active
+          ? "border-teal-300/42 bg-teal-300/12 text-teal-100 shadow-[0_0_24px_rgba(45,212,191,0.14)]"
+          : "border-white/12 bg-white/[0.03] text-slate-300 hover:border-teal-300/24 hover:text-slate-100"
+      ].join(" ")}
+    >
+      {label}
+    </button>
+  );
+}
+
+function TaskLaneCard({ title }: { title: string }) {
+  return (
+    <article className="min-w-[14rem] flex-1 rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-100">{title}</h3>
+      <p className="mt-4 text-sm leading-7 text-slate-300">No tasks yet.</p>
+    </article>
+  );
+}
+
+function CommandCenterPanel() {
+  const [activeCategory, setActiveCategory] = useState<CommandCenterCategory>(
+    commandCenterCategories[0]
+  );
+  const [commandDraft, setCommandDraft] = useState("");
+  const [commandNotice, setCommandNotice] = useState("");
+
+  function handleCommandSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setCommandNotice(
+      "Command capture is not connected yet. This chat will later create project tasks and review items."
+    );
+  }
+
+  return (
+    <section className="space-y-5">
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+          Command Center
+        </p>
+        <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Command Center</h1>
+        <p className="max-w-3xl text-sm leading-8 text-slate-300">
+          Send requests, review decisions, track revisions, and keep project execution organized.
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-3">
+        {commandCenterCategories.map((category) => (
+          <CategoryPill
+            key={category.label}
+            label={category.label}
+            active={category.label === activeCategory.label}
+            onClick={() => setActiveCategory(category)}
+          />
+        ))}
+      </div>
+
+      <PillCard title="Project Command Chat" accent>
+        <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-5">
+          <div className="space-y-4">
+            <div className="rounded-[1.15rem] border border-teal-300/18 bg-teal-300/[0.08] px-4 py-4 text-sm leading-7 text-slate-100">
+              Use this space to tell Neroa what you need changed, reviewed, approved, or clarified.
+              Your command will later be organized into customer-facing tasks and internal
+              execution work.
+            </div>
+            <p className="text-sm leading-7 text-slate-300">{activeCategory.helper}</p>
+            <form className="space-y-4" onSubmit={handleCommandSubmit}>
+              <label
+                htmlFor="project-command-chat-input"
+                className="block text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-white/62"
+              >
+                Type a request, revision, approval note, or project question...
+              </label>
+              <textarea
+                id="project-command-chat-input"
+                name="project-command-chat-input"
+                rows={8}
+                value={commandDraft}
+                onChange={(event) => setCommandDraft(event.target.value)}
+                placeholder="Type a request, revision, approval note, or project question..."
+                className="min-h-[16rem] w-full rounded-[1.25rem] border border-white/10 bg-[#05090d]/90 px-4 py-4 text-sm leading-7 text-white outline-none placeholder:text-slate-500"
+                aria-label="Type a request, revision, approval note, or project question"
+              />
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  className="inline-flex rounded-full border border-teal-300/34 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-300/52 hover:bg-teal-300/14"
+                >
+                  Send Command
+                </button>
+                {commandNotice ? (
+                  <p className="text-sm leading-7 text-slate-300">{commandNotice}</p>
+                ) : null}
+              </div>
+            </form>
+          </div>
+        </div>
+      </PillCard>
+
+      <PillCard title="Customer Tasks">
+        <div className="space-y-4">
+          <p className="max-w-3xl text-sm leading-7 text-slate-300">
+            Customer-visible tasks will appear here after commands are reviewed and organized.
+          </p>
+          <div className="flex flex-col gap-4 xl:flex-row">
+            {customerTaskColumns.map((column) => (
+              <TaskLaneCard key={column} title={column} />
+            ))}
+          </div>
+        </div>
+      </PillCard>
+    </section>
+  );
+}
+
 function tabSlug(tab: ProjectTab) {
   return tab.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -170,23 +309,7 @@ function renderProjectPanel(
         tabIndex={0}
         className="space-y-5"
       >
-        <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
-            Command Center
-          </p>
-          <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Command Center</h1>
-          <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Track execution requests, approvals, revisions, and next actions.
-          </p>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-2">
-          {commandCenterCards.map((card, index) => (
-            <PillCard key={card.title} title={card.title} accent={index === 0}>
-              <p className="text-sm leading-7 text-slate-300">{card.body}</p>
-            </PillCard>
-          ))}
-        </div>
+        <CommandCenterPanel />
       </section>
     );
   }
