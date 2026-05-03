@@ -25,6 +25,25 @@ function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
+function NorthStarIcon({
+  className = ""
+}: {
+  className?: string;
+}) {
+  return (
+    <svg viewBox="0 0 20 20" className={className} aria-hidden="true">
+      <path
+        d="M10 1.8 11.8 8.2 18.2 10l-6.4 1.8L10 18.2l-1.8-6.4L1.8 10l6.4-1.8L10 1.8Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <circle cx="10" cy="10" r="1.1" fill="currentColor" />
+    </svg>
+  );
+}
+
 export function NeroaPortalNavigation({
   currentPath,
   tone = "light",
@@ -44,34 +63,19 @@ export function NeroaPortalNavigation({
       )}
     >
       <div className="flex items-center gap-3">
-        <span
-          className={cx(
-            "inline-flex h-9 w-9 items-center justify-center rounded-sm border text-[0.72rem] font-semibold uppercase tracking-[0.3em]",
-            dark
-              ? "border-teal-300/32 bg-teal-300/10 text-teal-100"
-              : "border-stone-300 bg-white/80 text-stone-700"
-          )}
-          aria-hidden="true"
-        >
-          NS
-        </span>
-        <Link
-          href="/neroa"
-          className={cx(
-            "font-serif text-[2rem] tracking-tight transition",
-            dark ? "text-white hover:text-teal-100" : "text-stone-950 hover:text-stone-700"
-          )}
-        >
-          Neroa
+        <Link href="/neroa" className="flex items-center gap-3 text-white">
+          <NorthStarIcon
+            className={cx("h-5 w-5", dark ? "text-teal-200/86" : "text-stone-700")}
+          />
+          <span
+            className={cx(
+              "font-serif text-[2.15rem] tracking-tight transition",
+              dark ? "text-white hover:text-teal-100" : "text-stone-950 hover:text-stone-700"
+            )}
+          >
+            Neroa
+          </span>
         </Link>
-        <span
-          className={cx(
-            "text-[11px] font-semibold uppercase tracking-[0.24em]",
-            dark ? "text-slate-400" : "text-stone-500"
-          )}
-        >
-          North Star
-        </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-6">

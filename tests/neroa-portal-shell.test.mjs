@@ -371,14 +371,15 @@ test("clean portal navigation links the three clean neroa routes only", () => {
   assert.match(portalNavigationSource, /href:\s*"\/neroa"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/account"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/project"/);
+  assert.match(portalNavigationSource, /NorthStarIcon/);
   assert.match(portalNavigationSource, /label:\s*"Home"/);
   assert.match(portalNavigationSource, /label:\s*"Account Portal"/);
   assert.match(portalNavigationSource, /label:\s*"Project Portal"/);
-  assert.match(portalNavigationSource, /North Star/);
   assert.doesNotMatch(portalNavigationSource, /label:\s*"Front Door"/);
   assert.doesNotMatch(portalNavigationSource, /label:\s*"Auth Surface"/);
   assert.doesNotMatch(portalNavigationSource, /Authentication Surface/);
   assert.doesNotMatch(portalNavigationSource, /Clean Portal/);
+  assert.doesNotMatch(portalNavigationSource, />\s*NS\s*</);
 });
 
 test("/neroa front door reflects the locked dark luxury visual direction", () => {
@@ -882,58 +883,71 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
   assert.doesNotMatch(authPortalSurfaceSource, /\bNarua\b/);
 });
 
-test("Account Portal lands on a projects-first account shell with authenticated navigation", () => {
+test("Account Portal lands on a project-board-first account shell with authenticated navigation", () => {
   assert.match(accountPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(accountPortalSurfaceSource, /NeroaNorthStarAccent/);
   assert.match(accountPortalSurfaceSource, /testId="account-page-north-star"/);
   assert.match(accountPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(accountPortalSurfaceSource, /currentPath="\/neroa\/account"/);
   assert.match(accountPortalSurfaceSource, /tone="dark"/);
-  assert.match(accountPortalSurfaceSource, /Projects are the default landing inside your Neroa account\./);
-  assert.match(accountPortalSurfaceSource, /Projects/);
+  assert.match(accountPortalSurfaceSource, /"use client"/);
+  assert.match(accountPortalSurfaceSource, /useState<AccountTab>\("Project Board"\)/);
+  assert.match(accountPortalSurfaceSource, /Project Board/);
   assert.match(accountPortalSurfaceSource, /Billing \/ Usage/);
   assert.match(accountPortalSurfaceSource, /Account/);
-  assert.match(accountPortalSurfaceSource, /Project Board/);
-  assert.match(
-    accountPortalSurfaceSource,
-    /Start from your active projects, recent planning work, and the next project board entry point\./
-  );
+  assert.match(accountPortalSurfaceSource, /Contact/);
   assert.match(accountPortalSurfaceSource, /aria-label="Account portal sections"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/project"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(accountPortalSurfaceSource, /mailto:support@neroa\.io/);
 });
 
-test("Account Portal keeps account scope while making project entry the primary next step", () => {
-  assert.match(accountPortalSurfaceSource, /"Projects"/);
-  assert.match(accountPortalSurfaceSource, /Project Signals/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Roadmap"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Scope"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Decisions"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Evidence"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Build Readiness"/);
+test("Account Portal defaults to an honest Project Board shell without fake project data", () => {
+  assert.match(accountPortalSurfaceSource, /Track active projects, open work, paused items, and next project actions\./);
+  assert.match(accountPortalSurfaceSource, /Active Projects/);
+  assert.match(accountPortalSurfaceSource, /Open Items/);
+  assert.match(accountPortalSurfaceSource, /Paused \/ Waiting/);
+  assert.match(accountPortalSurfaceSource, /Completed \/ Archived/);
+  assert.match(accountPortalSurfaceSource, /Next Action/);
+  assert.match(accountPortalSurfaceSource, /No active projects yet\./);
+  assert.match(accountPortalSurfaceSource, /No open items yet\./);
+  assert.match(accountPortalSurfaceSource, /No paused items yet\./);
+  assert.match(accountPortalSurfaceSource, /No completed projects yet\./);
+  assert.match(accountPortalSurfaceSource, /Start a Project/);
+  assert.match(accountPortalSurfaceSource, /View Project Portal/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /fake project/i);
 });
 
-test("Account Portal removes public portal labels and placeholder language", () => {
+test("Account Portal removes oversized hero copy, duplicate sections, and banned labels", () => {
   assert.match(accountPortalSurfaceSource, /Selected Plan: \{selectedPlanLabel\}/);
   assert.match(accountPortalSurfaceSource, /Managed Build/);
   assert.doesNotMatch(portalNavigationSource, /Front Door/);
   assert.doesNotMatch(portalNavigationSource, /Auth Surface/);
   assert.doesNotMatch(portalNavigationSource, /Authentication Surface/);
   assert.doesNotMatch(portalNavigationSource, /Clean Portal/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Projects are the default landing inside your Neroa account\./);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Projects First/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Project Signals/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Default Landing/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Supporting Context/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Workspace Entry/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Profile Context/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /"Projects",/);
   assert.doesNotMatch(accountPortalSurfaceSource, /placeholder/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Surface Status/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /front door/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /authentication surface/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /clean portal/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /runtime-free/i);
 });
 
 test("Account Portal reflects the locked dark Neroa visual direction", () => {
   assert.match(accountPortalSurfaceSource, /bg-\[#04070a\]/);
   assert.match(accountPortalSurfaceSource, /url\('\/brand\/background\.png'\)/);
   assert.match(accountPortalSurfaceSource, /text-teal-/);
-  assert.match(accountPortalSurfaceSource, /soft silver/i);
-  assert.match(accountPortalSurfaceSource, /shadow-\[0_32px_120px/);
-  assert.match(accountPortalSurfaceSource, /Dark charcoal, soft silver, and teal/);
+  assert.match(accountPortalSurfaceSource, /border-white\/10/);
+  assert.match(accountPortalSurfaceSource, /backdrop-blur/);
+  assert.match(accountPortalSurfaceSource, /shadow-\[0_22px_70px/);
 });
 
 test("Account Portal does not imply live saving or connected integration state", () => {
@@ -957,6 +971,24 @@ test("Account Portal preserves plan query handling without wiring billing runtim
   assert.match(accountPortalSource, /selectedPlan=\{selectedPlan\}/);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/billing\//);
   assert.doesNotMatch(accountPortalSource, /from\s+["'][^"']*stripe/i);
+});
+
+test("Account Portal billing, account, and contact panels stay UI-only", () => {
+  assert.match(
+    accountPortalSurfaceSource,
+    /Review your plan path, Build Credit structure, and managed-credit separation\./
+  );
+  assert.match(
+    accountPortalSurfaceSource,
+    /Manage your profile, preferences, and account access details\./
+  );
+  assert.match(
+    accountPortalSurfaceSource,
+    /Need help with your plan, project setup, or account access\? Contact Neroa support\./
+  );
+  assert.match(accountPortalSurfaceSource, /Contact Support/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
 });
 
 test("Project Portal presents the public project overview content", () => {
@@ -1256,7 +1288,7 @@ test("account and project metadata stay public-facing and drop shell wording", (
   assert.match(accountPortalSource, /title:\s*"Neroa \| Account"/);
   assert.match(
     accountPortalSource,
-    /Start inside your Neroa account from projects, project board access, and supporting plan context\./
+    /Open your Neroa account from the project board, account navigation, and supporting plan context\./
   );
   assert.match(projectPortalSource, /title:\s*"Neroa \| Project"/);
   assert.match(

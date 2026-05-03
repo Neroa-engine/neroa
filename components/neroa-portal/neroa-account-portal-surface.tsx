@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
@@ -16,70 +19,183 @@ type NeroaAccountPortalSurfaceProps = {
   selectedPlan?: SelectedPlan | null;
 };
 
-type AccountSection = {
-  id: string;
-  title: string;
-  eyebrow: string;
-  description: string;
-  supportingCopy: string;
-  ctaLabel?: string;
-  ctaHref?: string;
-};
+const accountTabs = [
+  "Project Board",
+  "Billing / Usage",
+  "Account",
+  "Contact"
+] as const;
 
-const accountSections: readonly AccountSection[] = [
+type AccountTab = (typeof accountTabs)[number];
+
+const boardColumns = [
   {
-    id: "projects",
-    title: "Projects",
-    eyebrow: "Default Landing",
-    description:
-      "Start from your active projects, recent planning work, and the next project board entry point.",
-    supportingCopy:
-      "Projects stay at the top of the account portal so the next roadmap, scope, decision, and board handoff is never buried behind generic account copy.",
-    ctaLabel: "Open Project Portal",
-    ctaHref: "/neroa/project"
+    title: "Active Projects",
+    emptyState: "No active projects yet."
   },
   {
-    id: "billing-usage",
-    title: "Billing / Usage",
-    eyebrow: "Supporting Context",
-    description:
-      "Review plan context, Build Credits, managed-credit separation, and account usage guidance.",
-    supportingCopy:
-      "Billing and usage stay visible as supporting guidance here without wiring live billing runtime or checkout behavior into the account shell.",
-    ctaLabel: "View Pricing",
-    ctaHref: "/neroa/pricing"
+    title: "Open Items",
+    emptyState: "No open items yet."
   },
   {
-    id: "account",
-    title: "Account",
-    eyebrow: "Profile Context",
-    description: "Manage profile context, preferences, and account access details.",
-    supportingCopy:
-      "Account details remain descriptive and calm here so the portal sets expectations without implying live profile editing where that flow is not wired."
+    title: "Paused / Waiting",
+    emptyState: "No paused items yet."
   },
   {
-    id: "project-board",
-    title: "Project Board",
-    eyebrow: "Workspace Entry",
-    description:
-      "Move into the project workspace where roadmap, scope, decisions, evidence, and build readiness come together.",
-    supportingCopy:
-      "Project board access stays close to Projects so the account portal acts like a controlled entry point into active work instead of a public overview page.",
-    ctaLabel: "Open Project Portal",
-    ctaHref: "/neroa/project"
+    title: "Completed / Archived",
+    emptyState: "No completed projects yet."
   }
 ] as const;
 
-const projectSignals = [
-  "Projects lead the page instead of a generic account overview.",
-  "Plan context stays visible as supporting guidance, not the main event.",
-  "Project board access remains one clean step away.",
-  "Dark charcoal, soft silver, and teal keep the portal in the current Neroa design family."
-] as const;
+function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
+  if (activeTab === "Billing / Usage") {
+    return (
+      <section className="space-y-5">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+            Billing / Usage
+          </p>
+          <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Billing / Usage</h1>
+          <p className="max-w-3xl text-sm leading-8 text-slate-300">
+            Review your plan path, Build Credit structure, and managed-credit separation.
+          </p>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
+          <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+              Plan Context
+            </p>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              {selectedPlanLabel
+                ? `Current account entry is carrying ${selectedPlanLabel} plan context into the portal.`
+                : "Plan context appears here when a selected plan is attached to the account entry."}
+            </p>
+          </article>
+          <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+              Build Credits
+            </p>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              Standard Build Credits and managed credits stay distinct so account guidance stays clear without turning this portal into a checkout flow.
+            </p>
+          </article>
+        </div>
+
+        <div>
+          <Link
+            href="/neroa/pricing"
+            className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+          >
+            View Pricing
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  if (activeTab === "Account") {
+    return (
+      <section className="space-y-5">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+            Account
+          </p>
+          <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Account</h1>
+          <p className="max-w-3xl text-sm leading-8 text-slate-300">
+            Manage your profile, preferences, and account access details.
+          </p>
+        </div>
+
+        <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+          <p className="text-sm leading-7 text-slate-300">
+            Account settings stay descriptive here so the portal reflects the real account area cleanly without implying live profile editing where that flow is not wired.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  if (activeTab === "Contact") {
+    return (
+      <section className="space-y-5">
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+            Contact
+          </p>
+          <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Contact</h1>
+          <p className="max-w-3xl text-sm leading-8 text-slate-300">
+            Need help with your plan, project setup, or account access? Contact Neroa support.
+          </p>
+        </div>
+
+        <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+          <a
+            href="mailto:support@neroa.io"
+            className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+          >
+            Contact Support
+          </a>
+          <p className="mt-4 text-sm leading-7 text-slate-300">support@neroa.io</p>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-6">
+      <div className="space-y-3">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+          Project Board
+        </p>
+        <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Project Board</h1>
+        <p className="max-w-3xl text-sm leading-8 text-slate-300">
+          Track active projects, open work, paused items, and next project actions.
+        </p>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {boardColumns.map((column) => (
+          <article
+            key={column.title}
+            className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5 backdrop-blur"
+          >
+            <h2 className="text-lg font-semibold text-slate-100">{column.title}</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-300">{column.emptyState}</p>
+          </article>
+        ))}
+      </div>
+
+      <article className="rounded-[1.5rem] border border-teal-300/22 bg-[linear-gradient(160deg,rgba(10,16,20,0.88)_0%,rgba(6,10,14,0.78)_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.24)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+          Next Action
+        </p>
+        <p className="mt-4 text-sm leading-7 text-slate-300">
+          No next action yet. Start a project or move into the project portal when you are ready to organize roadmap, scope, decisions, evidence, and build readiness.
+        </p>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link
+            href="/neroa/pricing"
+            className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+          >
+            Start a Project
+          </Link>
+          <Link
+            href="/neroa/project"
+            className="inline-flex rounded-full border border-slate-400/25 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/45 hover:text-teal-100"
+          >
+            View Project Portal
+          </Link>
+        </div>
+      </article>
+    </section>
+  );
+}
 
 export function NeroaAccountPortalSurface({
   selectedPlan = null
 }: NeroaAccountPortalSurfaceProps) {
+  const [activeTab, setActiveTab] = useState<AccountTab>("Project Board");
   const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
 
   return (
@@ -90,149 +206,57 @@ export function NeroaAccountPortalSurface({
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.68]"
           style={{ backgroundImage: "url('/brand/background.png')" }}
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.24)_0%,rgba(4,7,10,0.46)_28%,rgba(3,6,8,0.82)_70%,rgba(3,6,8,0.97)_100%)]" />
-        <div className="absolute right-[5%] top-[3%] h-[38rem] w-[30rem] bg-[radial-gradient(circle_at_50%_10%,rgba(173,255,237,0.24),transparent_10%),radial-gradient(ellipse_at_50%_38%,rgba(51,191,164,0.14),transparent_52%)] blur-xl" />
-        <div className="absolute bottom-[10rem] left-[-6%] right-[-6%] h-[16rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.10),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.18)_0%,rgba(4,7,10,0.38)_26%,rgba(3,6,8,0.76)_68%,rgba(3,6,8,0.96)_100%)]" />
+        <div className="absolute right-[5%] top-[3%] h-[38rem] w-[30rem] bg-[radial-gradient(circle_at_50%_10%,rgba(173,255,237,0.18),transparent_10%),radial-gradient(ellipse_at_50%_38%,rgba(51,191,164,0.10),transparent_52%)] blur-xl" />
+        <div className="absolute bottom-[10rem] left-[-6%] right-[-6%] h-[16rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.08),transparent_60%)]" />
         <NeroaNorthStarAccent className="right-[18rem] top-[7rem]" testId="account-page-north-star" />
       </div>
 
-      <div className="relative mx-auto flex w-full max-w-[1680px] flex-col gap-8">
+      <div className="relative mx-auto flex w-full max-w-[1680px] flex-col gap-6">
         <NeroaPortalNavigation currentPath="/neroa/account" tone="dark" />
 
-        <section className="overflow-hidden rounded-[2rem] border border-white/12 bg-[linear-gradient(145deg,rgba(17,24,39,0.96)_0%,rgba(8,11,15,0.98)_100%)] shadow-[0_32px_120px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-          <div className="grid gap-8 border-b border-white/10 px-8 py-9 lg:grid-cols-[1.5fr,0.95fr] lg:px-10">
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.34em] text-teal-200/84">
-                  Account Portal
-                </p>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Projects First
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h1 className="max-w-4xl font-serif text-4xl leading-tight text-slate-50 lg:text-5xl">
-                  Projects are the default landing inside your Neroa account.
-                </h1>
-                <p className="max-w-3xl text-sm leading-8 text-slate-300 lg:text-base">
-                  Start from active projects, recent planning work, and the next project board
-                  entry point. Plan and credit context stay visible as supporting guidance without
-                  turning the top of the account portal into a generic marketing overview.
-                </p>
-              </div>
-
-              {selectedPlanLabel ? (
-                <div className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-teal-100">
-                  Selected Plan: {selectedPlanLabel}
-                </div>
-              ) : null}
-
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  href="/neroa/project"
-                  className="rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
-                >
-                  Open Project Portal
-                </Link>
-                <Link
-                  href="/neroa/pricing"
-                  className="rounded-full border border-slate-400/25 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/45 hover:text-teal-100"
-                >
-                  View Pricing
-                </Link>
-              </div>
-            </div>
-
-            <aside className="rounded-[1.7rem] border border-teal-300/16 bg-[linear-gradient(180deg,rgba(165,243,252,0.10)_0%,rgba(255,255,255,0.04)_100%)] p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200">
-                Project Signals
+        <section className="rounded-[1.9rem] border border-white/10 bg-[linear-gradient(160deg,rgba(8,12,16,0.66)_0%,rgba(6,9,13,0.54)_100%)] p-6 shadow-[0_22px_70px_rgba(0,0,0,0.22)] backdrop-blur-xl">
+          <div className="flex flex-col gap-5 border-b border-white/8 pb-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
+                Account Portal
               </p>
-              <div className="mt-5 space-y-3">
-                {projectSignals.map((item) => (
-                  <div
-                    key={item}
-                    className="rounded-[1rem] border border-white/8 bg-white/5 px-4 py-3 text-sm leading-7 text-slate-200"
-                  >
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <div className="mt-5 rounded-[1rem] border border-white/8 bg-black/20 px-4 py-4 text-sm leading-7 text-slate-300">
-                {selectedPlanLabel
-                  ? `Plan context is attached to this account entry through ${selectedPlanLabel}, then kept secondary to project access.`
-                  : "Plan context appears here when a selected plan is present, but project access remains the primary landing focus."}
-              </div>
-            </aside>
-          </div>
-        </section>
-
-        <section className="grid gap-5 lg:grid-cols-[0.74fr,1.38fr]">
-          <aside className="rounded-[2rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05)_0%,rgba(148,163,184,0.04)_100%)] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.28)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200">
-              Account Navigation
-            </p>
-            <div className="mt-5 space-y-3" aria-label="Account portal sections">
-              {accountSections.map((section, index) => {
-                const active = index === 0;
-
-                return (
-                  <Link
-                    key={section.id}
-                    href={`#${section.id}`}
-                    aria-current={active ? "true" : undefined}
-                    className={[
-                      "block rounded-[1.35rem] border px-4 py-4 transition",
-                      active
-                        ? "border-teal-300/35 bg-teal-300/10 text-slate-50 shadow-[0_0_28px_rgba(45,212,191,0.12)]"
-                        : "border-white/10 bg-black/20 text-slate-300 hover:border-teal-300/25 hover:text-slate-100"
-                    ].join(" ")}
-                  >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-teal-200/78">
-                      {section.eyebrow}
-                    </p>
-                    <p className="mt-2 text-lg font-semibold">{section.title}</p>
-                    <p className="mt-2 text-sm leading-7 opacity-80">{section.description}</p>
-                  </Link>
-                );
-              })}
+              <p className="text-sm leading-7 text-slate-300">
+                Account navigation and project board entry in one clean Neroa portal.
+              </p>
             </div>
-          </aside>
+            {selectedPlanLabel ? (
+              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-slate-200">
+                Selected Plan: {selectedPlanLabel}
+              </div>
+            ) : null}
+          </div>
 
-          <div className="space-y-5">
-            {accountSections.map((section, index) => (
-              <article
-                id={section.id}
-                key={section.id}
-                className={[
-                  "rounded-[2rem] border p-7 shadow-[0_28px_80px_rgba(0,0,0,0.26)]",
-                  index === 0
-                    ? "border-teal-300/24 bg-[linear-gradient(160deg,rgba(17,24,39,0.98)_0%,rgba(8,13,17,0.98)_100%)]"
-                    : "border-white/10 bg-white/[0.04] backdrop-blur"
-                ].join(" ")}
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200/80">
-                  {section.eyebrow}
-                </p>
-                <h2 className="mt-3 font-serif text-3xl text-slate-50">{section.title}</h2>
-                <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-300">
-                  {section.description}
-                </p>
-                <p className="mt-4 rounded-[1.3rem] border border-white/8 bg-black/20 px-4 py-4 text-sm leading-7 text-slate-300">
-                  {section.supportingCopy}
-                </p>
-                {section.ctaHref && section.ctaLabel ? (
-                  <div className="mt-5">
-                    <Link
-                      href={section.ctaHref}
-                      className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
-                    >
-                      {section.ctaLabel}
-                    </Link>
-                  </div>
-                ) : null}
-              </article>
-            ))}
+          <div className="mt-5 flex flex-wrap gap-3" aria-label="Account portal sections">
+            {accountTabs.map((tab) => {
+              const active = tab === activeTab;
+
+              return (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  aria-pressed={active}
+                  className={[
+                    "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition",
+                    active
+                      ? "border-teal-300/42 bg-teal-300/10 text-teal-100 shadow-[0_0_28px_rgba(45,212,191,0.12)]"
+                      : "border-white/12 bg-white/[0.03] text-slate-300 hover:border-teal-300/28 hover:text-slate-100"
+                  ].join(" ")}
+                >
+                  {tab}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
+            {renderPanel(activeTab, selectedPlanLabel)}
           </div>
         </section>
       </div>

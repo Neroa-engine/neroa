@@ -4,7 +4,7 @@ import { NeroaAccountPortalSurface } from "@/components/neroa-portal/neroa-accou
 export const metadata: Metadata = {
   title: "Neroa | Account",
   description:
-    "Start inside your Neroa account from projects, project board access, and supporting plan context."
+    "Open your Neroa account from the project board, account navigation, and supporting plan context."
 };
 
 type AccountSearchParams = Record<string, string | string[] | undefined>;
