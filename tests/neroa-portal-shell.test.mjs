@@ -1331,25 +1331,39 @@ test("Contact page sources avoid spelling drift, runtime imports, and schema-sty
   }
 });
 
-test("Project Portal presents the public project overview content", () => {
+test("Project Portal renders a tabbed project landing with Strategy Room active by default", () => {
   assert.match(projectPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(projectPortalSurfaceSource, /NeroaNorthStarAccent/);
   assert.match(projectPortalSurfaceSource, /testId="project-page-north-star"/);
   assert.match(projectPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(projectPortalSurfaceSource, /currentPath="\/neroa\/project"/);
   assert.match(projectPortalSurfaceSource, /tone="dark"/);
+  assert.match(projectPortalSurfaceSource, /const \[activeTab, setActiveTab\] = useState<ProjectTab>\("Project & Strategy Room"\)/);
+  assert.match(projectPortalSurfaceSource, /aria-label="Project portal sections"/);
+  assert.match(projectPortalSurfaceSource, /Project &amp; Strategy Room/);
+  assert.match(projectPortalSurfaceSource, /Project Room/);
+  assert.match(projectPortalSurfaceSource, /Command Center/);
+  assert.match(projectPortalSurfaceSource, /QC Room/);
   assert.match(
     projectPortalSurfaceSource,
-    /Your project workspace will organize roadmap, scope, decisions, evidence, and build readiness as your plan takes shape\./
+    /Shape the project, clarify the roadmap, and prepare scope before execution begins\./
   );
-  assert.match(projectPortalSurfaceSource, /title:\s*"Roadmap"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Scope"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Decisions"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Evidence"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Build Readiness"/);
-  assert.match(projectPortalSurfaceSource, /Project Highlights/);
-  assert.match(projectPortalSurfaceSource, /Project Overview/);
-  assert.match(projectPortalSurfaceSource, /Readiness Notes/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Tell Neroa what you want to build, who it is for, and what the end result should[\s\S]*accomplish\./
+  );
+  assert.match(projectPortalSurfaceSource, /Describe your project\.\.\./);
+  assert.match(projectPortalSurfaceSource, /Save Strategy Notes/);
+  assert.match(projectPortalSurfaceSource, /Current Project/);
+  assert.match(projectPortalSurfaceSource, /Roadmap Status/);
+  assert.match(projectPortalSurfaceSource, /Scope Items/);
+  assert.match(projectPortalSurfaceSource, /Requests/);
+  assert.match(projectPortalSurfaceSource, /Approvals/);
+  assert.match(projectPortalSurfaceSource, /Revisions/);
+  assert.match(projectPortalSurfaceSource, /Browser QC/);
+  assert.match(projectPortalSurfaceSource, /Evidence/);
+  assert.match(projectPortalSurfaceSource, /Visual Review/);
+  assert.match(projectPortalSurfaceSource, /QC runtime is not connected yet\./);
 });
 
 test("Project Portal remains project-level only and does not promote account sections as primary sections", () => {
@@ -1359,49 +1373,59 @@ test("Project Portal remains project-level only and does not promote account sec
   assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Settings"/);
 });
 
-test("Project Portal stays public-facing and avoids placeholder or legacy runtime wording", () => {
-  assert.match(projectPortalSurfaceSource, /Roadmap, scope, decisions, and evidence in one view/);
+test("Project Portal removes old overview copy and avoids banned project portal wording", () => {
+  assert.match(projectPortalSurfaceSource, /Move between project planning, project structure, execution review, and QC review/);
+  assert.doesNotMatch(
+    projectPortalSurfaceSource,
+    /Your project workspace will organize roadmap, scope, decisions, evidence, and build readiness as your plan takes shape\./
+  );
+  assert.doesNotMatch(projectPortalSurfaceSource, /Project Highlights/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Project Overview/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Readiness Notes/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Surface Status/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Placeholder-only/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /control layer/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /future routing/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Strategy Room/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Command Center/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Build Room/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Live View/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /runtime-free/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Authentication Surface/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Auth Surface/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Clean Portal/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /front door/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /surface status/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /future surfaces/i);
 });
 
 test("Project Portal uses Neroa wordmark-first branding without rename drift", () => {
-  assert.match(projectPortalSurfaceSource, />\s*Neroa\s*</);
-  assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
+  assert.match(portalNavigationSource, />\s*Neroa\s*</);
+  assert.match(projectPortalSurfaceSource, /Neroa project view/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);
-  assert.doesNotMatch(projectPortalSurfaceSource, />\s*N\s*</);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bNarua\b/);
+  assert.doesNotMatch(portalNavigationSource, />\s*N\s*</);
 });
 
-test("Project Portal reflects the locked dark luxury visual direction", () => {
+test("Project Portal reflects the locked dark Neroa portal visual direction", () => {
   assert.match(projectPortalSurfaceSource, /bg-\[#04070a\]/);
   assert.match(projectPortalSurfaceSource, /url\('\/brand\/background\.png'\)/);
-  assert.match(projectPortalSurfaceSource, /charcoal/i);
-  assert.match(projectPortalSurfaceSource, /soft silver/i);
-  assert.match(projectPortalSurfaceSource, /subtle teal/i);
-  assert.match(projectPortalSurfaceSource, /Roadmap, scope, decisions, and evidence in one view/);
-  assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
   assert.match(projectPortalSurfaceSource, /text-teal-/);
-  assert.match(projectPortalSurfaceSource, /shadow-\[0_40px_120px/);
+  assert.match(projectPortalSurfaceSource, /border-white\/10/);
+  assert.match(projectPortalSurfaceSource, /backdrop-blur/);
+  assert.match(projectPortalSurfaceSource, /shadow-\[0_22px_70px/);
 });
 
-test("Project Portal does not imply live saving or connected runtime state", () => {
-  assert.doesNotMatch(projectPortalSurfaceSource, /<form/i);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Connected\b/);
+test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime wiring", () => {
+  assert.match(projectPortalSurfaceSource, /<textarea/);
+  assert.match(projectPortalSurfaceSource, /type="button"/);
+  assert.match(projectPortalSurfaceSource, /disabled/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Sync Now/);
-  assert.doesNotMatch(projectPortalSurfaceSource, /Connect /);
   assert.doesNotMatch(projectPortalSurfaceSource, /Start Build/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /Run Now/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /Launch QC/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /OpenAI/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /DigitalOcean runtime/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bAcme\b/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\bDemo Project\b/i);
 });
 
 test("clean portal shell does not introduce UI UX Library or Design Library surfaces", () => {
@@ -1661,7 +1685,7 @@ test("account and project metadata stay public-facing and drop shell wording", (
   assert.match(projectPortalSource, /title:\s*"Neroa \| Project"/);
   assert.match(
     projectPortalSource,
-    /See your Neroa project roadmap, scope, decisions, evidence, and build readiness in one calm project overview\./
+    /Open the Neroa Project Portal to shape strategy, review project structure, track command flow, and check QC review areas\./
   );
   assert.doesNotMatch(accountPortalSource, /shell/i);
   assert.doesNotMatch(accountPortalSource, /future/i);
@@ -1785,5 +1809,8 @@ test("Project Portal does not import old project workspace billing auth or runti
     assert.doesNotMatch(source, /codex-relay/);
     assert.doesNotMatch(source, /worker-trigger/);
     assert.doesNotMatch(source, /browser-runtime-bridge/);
+    assert.doesNotMatch(source, /digitalocean/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*qc(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*browser/i);
   }
 });

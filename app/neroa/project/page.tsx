@@ -4,7 +4,7 @@ import { NeroaProjectPortalSurface } from "@/components/neroa-portal/neroa-proje
 export const metadata: Metadata = {
   title: "Neroa | Project",
   description:
-    "See your Neroa project roadmap, scope, decisions, evidence, and build readiness in one calm project overview."
+    "Open the Neroa Project Portal to shape strategy, review project structure, track command flow, and check QC review areas."
 };
 
 export default function NeroaProjectPortalPage() {
