@@ -935,7 +935,7 @@ test("Account Portal defaults to an honest Project Board shell without fake proj
 
 test("Account Portal removes oversized hero copy, duplicate sections, and banned labels", () => {
   assert.match(accountPortalSurfaceSource, /Selected Plan: \{selectedPlanLabel\}/);
-  assert.match(accountPortalSurfaceSource, /Managed Build/);
+  assert.match(accountPortalSurfaceSource, /Managed path/);
   assert.doesNotMatch(portalNavigationSource, /Front Door/);
   assert.doesNotMatch(portalNavigationSource, /Auth Surface/);
   assert.doesNotMatch(portalNavigationSource, /Authentication Surface/);
@@ -993,12 +993,59 @@ test("Account Portal preserves plan query handling without wiring billing runtim
 test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(
     accountPortalSurfaceSource,
-    /Review your plan path, Build Credit structure, and managed-credit separation\./
+    /Review your current plan, Build Credits, usage summaries, and credit top-off guidance\s+without implying live billing is already connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /Current Plan/);
+  assert.match(accountPortalSurfaceSource, /Plan/);
+  assert.match(accountPortalSurfaceSource, /Included Build Credits/);
+  assert.match(accountPortalSurfaceSource, /Billing cycle/);
+  assert.match(accountPortalSurfaceSource, /Plan status/);
+  assert.match(accountPortalSurfaceSource, /Choose or adjust your plan from the pricing page\./);
+  assert.match(accountPortalSurfaceSource, /Change Plan/);
+  assert.match(accountPortalSurfaceSource, /Current Credit Balance/);
+  assert.match(accountPortalSurfaceSource, /Available credits/);
+  assert.match(accountPortalSurfaceSource, /Used this month/);
+  assert.match(accountPortalSurfaceSource, /Remaining credits/);
+  assert.match(accountPortalSurfaceSource, /Top-off credits/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Live credit balances will appear here once the credit ledger is connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /Usage Summary/);
+  assert.match(accountPortalSurfaceSource, /Monthly credits used/);
+  assert.match(accountPortalSurfaceSource, /Year-to-date credits used/);
+  assert.match(accountPortalSurfaceSource, /Lifetime credits used/);
+  assert.match(accountPortalSurfaceSource, /Pending credit ledger/);
+  assert.match(accountPortalSurfaceSource, /Project Credit Usage/);
+  assert.match(accountPortalSurfaceSource, /Credits used this month/);
+  assert.match(accountPortalSurfaceSource, /Credits used total/);
+  assert.match(accountPortalSurfaceSource, /Last activity/);
+  assert.match(accountPortalSurfaceSource, /Status/);
+  assert.match(accountPortalSurfaceSource, /No project credit usage yet\./);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Activity time may be shown later as a project insight, but billing remains\s+credit-based\./
+  );
+  assert.match(accountPortalSurfaceSource, /Credit Top-Offs/);
+  assert.match(accountPortalSurfaceSource, /200 credits \/ \$60/);
+  assert.match(accountPortalSurfaceSource, /500 credits \/ \$150/);
+  assert.match(accountPortalSurfaceSource, /1,000 credits \/ \$300/);
+  assert.match(accountPortalSurfaceSource, /2,000 credits \/ \$600/);
+  assert.match(accountPortalSurfaceSource, /View Top-Offs/);
+  assert.match(accountPortalSurfaceSource, /Managed Credits/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Managed credits are separate from standard Build Credits\./
   );
   assert.match(
     accountPortalSurfaceSource,
-    /Build Credits and managed credits stay distinct so this guidance stays clear without implying live billing or checkout flows here\./
+    /Managed credits support higher-touch execution and delivery help\./
   );
+  assert.match(
+    accountPortalSurfaceSource,
+    /Managed balance and usage will appear here once connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /View Managed Build Options/);
   assert.match(
     accountPortalSurfaceSource,
     /Manage your profile, preferences, and account access details\./
@@ -1013,6 +1060,9 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /Contact Support/);
   assert.match(accountPortalSurfaceSource, /aria-label="Contact support at support@neroa\.io"/);
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Workspace Hours/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /billable hours/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
 });

@@ -1,16 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import Link from "next/link";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
 const selectedPlanLabels = {
-  free: "Free",
+  free: "Free Project Preview",
   starter: "Starter",
   pro: "Pro",
   business: "Business",
-  managed: "Managed Build"
+  managed: "Managed path"
 } as const;
 
 type SelectedPlan = keyof typeof selectedPlanLabels;
@@ -47,6 +47,61 @@ const boardColumns = [
   }
 ] as const;
 
+const unavailableValue = "Not available yet";
+
+const creditTopOffOptions = [
+  "200 credits / $60",
+  "500 credits / $150",
+  "1,000 credits / $300",
+  "2,000 credits / $600"
+] as const;
+
+const balanceRows = [
+  { label: "Available credits", value: unavailableValue },
+  { label: "Used this month", value: unavailableValue },
+  { label: "Remaining credits", value: unavailableValue },
+  { label: "Top-off credits", value: unavailableValue }
+] as const;
+
+const usageSummaryRows = [
+  { label: "Monthly credits used", value: "Pending credit ledger" },
+  { label: "Year-to-date credits used", value: "Pending credit ledger" },
+  { label: "Lifetime credits used", value: "Pending credit ledger" }
+] as const;
+
+function BillingCard({
+  title,
+  children,
+  accent = false
+}: {
+  title: string;
+  children: ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <article
+      className={[
+        "rounded-[1.5rem] border p-5 backdrop-blur",
+        accent
+          ? "border-teal-300/24 bg-[linear-gradient(160deg,rgba(8,16,18,0.76)_0%,rgba(5,11,13,0.92)_100%)] shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
+          : "border-white/10 bg-black/25"
+      ].join(" ")}
+    >
+      <h2 className="text-lg font-semibold text-slate-100">{title}</h2>
+      <div className="mt-5 space-y-4">{children}</div>
+    </article>
+  );
+}
+
+function BillingRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-white/8 pb-3 last:border-b-0 last:pb-0">
+      <p className="text-sm text-slate-300">{label}</p>
+      <p className="text-sm font-medium text-slate-100">{value}</p>
+    </div>
+  );
+}
+
 function tabSlug(tab: AccountTab) {
   return tab.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -72,39 +127,111 @@ function renderPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Billing / Usage</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Review your plan path, Build Credit structure, and managed-credit separation.
+            Review your current plan, Build Credits, usage summaries, and credit top-off guidance
+            without implying live billing is already connected.
           </p>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.15fr,0.85fr]">
-          <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-              Plan Context
+        <div className="grid gap-4 xl:grid-cols-2">
+          <BillingCard title="Current Plan" accent>
+            <BillingRow label="Plan" value={selectedPlanLabel ?? unavailableValue} />
+            <BillingRow label="Included Build Credits" value={unavailableValue} />
+            <BillingRow label="Billing cycle" value={unavailableValue} />
+            <BillingRow label="Plan status" value={unavailableValue} />
+            <p className="text-sm leading-7 text-slate-300">
+              Choose or adjust your plan from the pricing page.
             </p>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              {selectedPlanLabel
-                ? `Selected plan context is ${selectedPlanLabel} for reference in the account portal.`
-                : "Selected plan context appears here when a plan is carried into the account portal."}
-            </p>
-          </article>
-          <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-              Build Credits
-            </p>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
-              Standard Build Credits and managed credits stay distinct so this guidance stays clear without implying live billing or checkout flows here.
-            </p>
-          </article>
-        </div>
+            <div>
+              <Link
+                href="/neroa/pricing"
+                aria-label="Change plan from pricing"
+                className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+              >
+                Change Plan
+              </Link>
+            </div>
+          </BillingCard>
 
-        <div>
-          <Link
-            href="/neroa/pricing"
-            aria-label="View pricing"
-            className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
-          >
-            View Pricing
-          </Link>
+          <BillingCard title="Current Credit Balance">
+            {balanceRows.map((row) => (
+              <BillingRow key={row.label} label={row.label} value={row.value} />
+            ))}
+            <p className="text-sm leading-7 text-slate-300">
+              Live credit balances will appear here once the credit ledger is connected.
+            </p>
+          </BillingCard>
+
+          <BillingCard title="Usage Summary">
+            {usageSummaryRows.map((row) => (
+              <BillingRow key={row.label} label={row.label} value={row.value} />
+            ))}
+            <p className="text-sm leading-7 text-slate-300">
+              Usage totals stay honest here until the credit ledger is ready.
+            </p>
+          </BillingCard>
+
+          <BillingCard title="Project Credit Usage">
+            <div className="rounded-[1.2rem] border border-white/8 bg-white/[0.02] p-4">
+              <div className="grid gap-2 border-b border-white/8 pb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-slate-400 sm:grid-cols-[1.4fr,1fr,1fr,1fr,0.8fr]">
+                <p>Project</p>
+                <p>Credits used this month</p>
+                <p>Credits used total</p>
+                <p>Last activity</p>
+                <p>Status</p>
+              </div>
+              <p className="pt-4 text-sm leading-7 text-slate-300">No project credit usage yet.</p>
+            </div>
+            <p className="text-sm leading-7 text-slate-300">
+              Activity time may be shown later as a project insight, but billing remains
+              credit-based.
+            </p>
+          </BillingCard>
+
+          <BillingCard title="Credit Top-Offs">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {creditTopOffOptions.map((option) => (
+                <div
+                  key={option}
+                  className="rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-4 text-sm font-medium text-slate-100"
+                >
+                  {option}
+                </div>
+              ))}
+            </div>
+            <p className="text-sm leading-7 text-slate-300">
+              Review top-off options on pricing before any purchase flow is connected.
+            </p>
+            <div>
+              <Link
+                href="/neroa/pricing"
+                aria-label="View credit top-offs on pricing"
+                className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+              >
+                View Top-Offs
+              </Link>
+            </div>
+          </BillingCard>
+
+          <BillingCard title="Managed Credits">
+            <p className="text-sm leading-7 text-slate-300">
+              Managed credits are separate from standard Build Credits.
+            </p>
+            <p className="text-sm leading-7 text-slate-300">
+              Managed credits support higher-touch execution and delivery help.
+            </p>
+            <p className="text-sm leading-7 text-slate-300">
+              Managed balance and usage will appear here once connected.
+            </p>
+            <div>
+              <Link
+                href="/neroa/pricing"
+                aria-label="View managed build options on pricing"
+                className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+              >
+                View Managed Build Options
+              </Link>
+            </div>
+          </BillingCard>
         </div>
       </section>
     );
