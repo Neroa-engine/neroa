@@ -1375,11 +1375,21 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
     projectPortalSurfaceSource,
     /Type a request, revision, approval note, or project question(?:\.\.\.)?/
   );
+  assert.match(projectPortalSurfaceSource, /type="button"/);
+  assert.match(projectPortalSurfaceSource, /type="submit"/);
+  assert.match(projectPortalSurfaceSource, /role="group" aria-label="Command categories"/);
+  assert.match(projectPortalSurfaceSource, /aria-pressed=\{active\}/);
+  assert.match(projectPortalSurfaceSource, /id=\{helperId\}/);
+  assert.match(projectPortalSurfaceSource, /aria-describedby=\{commandFieldDescription\}/);
   assert.match(projectPortalSurfaceSource, /Send Command/);
   assert.match(
     projectPortalSurfaceSource,
     /Command capture is not connected yet\. This chat will later create project tasks and review items\./
   );
+  assert.match(projectPortalSurfaceSource, /id=\{statusId\}/);
+  assert.match(projectPortalSurfaceSource, /role="status"/);
+  assert.match(projectPortalSurfaceSource, /aria-live="polite"/);
+  assert.match(projectPortalSurfaceSource, /aria-atomic="true"/);
   assert.match(projectPortalSurfaceSource, /Customer Tasks/);
   assert.match(
     projectPortalSurfaceSource,
@@ -1418,6 +1428,8 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.doesNotMatch(projectPortalSurfaceSource, /No next actions queued yet\./);
   assert.doesNotMatch(projectPortalSurfaceSource, /task created/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /command sent/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /href="#/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);

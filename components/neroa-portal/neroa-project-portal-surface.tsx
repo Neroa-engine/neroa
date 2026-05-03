@@ -144,6 +144,7 @@ function CategoryPill({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={[
         "rounded-full border px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] transition",
         active
@@ -171,6 +172,9 @@ function CommandCenterPanel() {
   );
   const [commandDraft, setCommandDraft] = useState("");
   const [commandNotice, setCommandNotice] = useState("");
+  const helperId = "project-command-chat-helper";
+  const statusId = "project-command-chat-status";
+  const commandFieldDescription = commandNotice ? `${helperId} ${statusId}` : helperId;
 
   function handleCommandSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -191,7 +195,7 @@ function CommandCenterPanel() {
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3" role="group" aria-label="Command categories">
         {commandCenterCategories.map((category) => (
           <CategoryPill
             key={category.label}
@@ -210,7 +214,9 @@ function CommandCenterPanel() {
               Your command will later be organized into customer-facing tasks and internal
               execution work.
             </div>
-            <p className="text-sm leading-7 text-slate-300">{activeCategory.helper}</p>
+            <p id={helperId} className="text-sm leading-7 text-slate-300">
+              {activeCategory.helper}
+            </p>
             <form className="space-y-4" onSubmit={handleCommandSubmit}>
               <label
                 htmlFor="project-command-chat-input"
@@ -224,9 +230,9 @@ function CommandCenterPanel() {
                 rows={8}
                 value={commandDraft}
                 onChange={(event) => setCommandDraft(event.target.value)}
-                placeholder="Type a request, revision, approval note, or project question..."
-                className="min-h-[16rem] w-full rounded-[1.25rem] border border-white/10 bg-[#05090d]/90 px-4 py-4 text-sm leading-7 text-white outline-none placeholder:text-slate-500"
+                className="min-h-[16rem] w-full rounded-[1.25rem] border border-white/10 bg-[#05090d]/90 px-4 py-4 text-sm leading-7 text-white outline-none"
                 aria-label="Type a request, revision, approval note, or project question"
+                aria-describedby={commandFieldDescription}
               />
               <div className="flex flex-wrap items-center gap-3">
                 <button
@@ -236,7 +242,15 @@ function CommandCenterPanel() {
                   Send Command
                 </button>
                 {commandNotice ? (
-                  <p className="text-sm leading-7 text-slate-300">{commandNotice}</p>
+                  <p
+                    id={statusId}
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                    className="text-sm leading-7 text-slate-300"
+                  >
+                    {commandNotice}
+                  </p>
                 ) : null}
               </div>
             </form>
