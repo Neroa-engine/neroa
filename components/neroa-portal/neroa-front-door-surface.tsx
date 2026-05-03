@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
+import { NeroaPublicNavigation } from "@/components/neroa-portal/neroa-public-navigation";
 
 const valuePills = [
   "Roadmap-First Planning",
@@ -163,32 +164,10 @@ export function NeroaFrontDoorSurface({
             <span className="font-serif text-[2.15rem] tracking-tight">Neroa</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex">
-            <Link href="/neroa" className="transition hover:text-white">
-              Home
-            </Link>
-            <Link href="/neroa/pricing" className="transition hover:text-white">
-              Pricing
-            </Link>
-            <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
-              DIY vs Managed
-            </Link>
-            <Link href="/neroa/blog" className="transition hover:text-white">
-              Blog
-            </Link>
-            <Link href="/neroa/contact" className="transition hover:text-white">
-              Contact
-            </Link>
-            <Link href="/neroa/auth" className="transition hover:text-white">
-              Sign In
-            </Link>
-            <Link
-              href={startProjectHref}
-              className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
-            >
-              Start Your Project
-            </Link>
-          </nav>
+          <NeroaPublicNavigation
+            currentPath="/neroa"
+            initialSignedIn={isSignedIn}
+          />
         </header>
 
         <div className="grid flex-1 items-start gap-14 py-14 lg:grid-cols-[minmax(0,1.02fr)_minmax(28rem,0.92fr)] lg:gap-20 lg:py-16">

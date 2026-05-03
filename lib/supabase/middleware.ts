@@ -1,6 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { buildAuthRedirectPath, isProtectedAppPath } from "@/lib/auth/routes";
+import {
+  buildAuthRedirectPath,
+  buildCleanNeroaAuthRedirectPath,
+  isProtectedAppPath,
+  isProtectedNeroaPath
+} from "@/lib/auth/routes";
 import {
   ACTIVE_PROJECT_COOKIE,
   ACTIVE_PROJECT_COOKIE_MAX_AGE,
@@ -58,12 +63,16 @@ export async function updateSession(request: NextRequest) {
       data: { user }
     } = await supabase.auth.getUser();
 
-    if (!user && isProtectedAppPath(pathname) && !isLiveViewLaunchRequest(request)) {
+    const requiresLegacyAuth = isProtectedAppPath(pathname);
+    const requiresCleanNeroaAuth = isProtectedNeroaPath(pathname);
+
+    if (!user && (requiresLegacyAuth || requiresCleanNeroaAuth) && !isLiveViewLaunchRequest(request)) {
+      const nextPath = `${request.nextUrl.pathname}${request.nextUrl.search}`;
       const redirectResponse = NextResponse.redirect(
         new URL(
-          buildAuthRedirectPath({
-            nextPath: `${request.nextUrl.pathname}${request.nextUrl.search}`
-          }),
+          requiresCleanNeroaAuth
+            ? buildCleanNeroaAuthRedirectPath({ nextPath })
+            : buildAuthRedirectPath({ nextPath }),
           request.url
         )
       );
