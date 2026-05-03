@@ -101,7 +101,7 @@ export function NeroaProjectPortalSurface() {
                   href="/neroa"
                   className="rounded-full border border-slate-400/30 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/60 hover:text-teal-200"
                 >
-                  Portal Front Door
+                  Home
                 </Link>
                 <Link
                   href="/neroa/account"
