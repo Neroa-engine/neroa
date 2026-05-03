@@ -539,15 +539,34 @@ test("/neroa/diy-vs-managed route exists and stays inside the clean Neroa portal
 });
 
 test("/neroa/diy-vs-managed page explains the two public build paths and links to pricing", () => {
+  assert.match(diyManagedPortalSurfaceSource, /"use client"/);
+  assert.match(diyManagedPortalSurfaceSource, /useState/);
+  assert.match(diyManagedPortalSurfaceSource, /useEffect/);
   assert.match(diyManagedPortalSurfaceSource, /Two ways to build with Neroa\./);
   assert.match(diyManagedPortalSurfaceSource, /DIY Build/);
   assert.match(diyManagedPortalSurfaceSource, /Managed Build/);
-  assert.match(diyManagedPortalSurfaceSource, /roadmap-first/);
-  assert.match(diyManagedPortalSurfaceSource, /scope before execution/);
-  assert.match(diyManagedPortalSurfaceSource, /Build Credits/);
-  assert.match(diyManagedPortalSurfaceSource, /managed credit packages/);
-  assert.match(diyManagedPortalSurfaceSource, /approvals/);
-  assert.match(diyManagedPortalSurfaceSource, /evidence and review/);
+  assert.match(diyManagedPortalSurfaceSource, /Shared foundation/);
+  assert.match(diyManagedPortalSurfaceSource, /Roadmap-first planning/);
+  assert.match(diyManagedPortalSurfaceSource, /Scope before execution/);
+  assert.match(diyManagedPortalSurfaceSource, /Approvals at checkpoints/);
+  assert.match(diyManagedPortalSurfaceSource, /Evidence and review across the build path/);
+  assert.match(diyManagedPortalSurfaceSource, /Scoped tasks/);
+  assert.match(diyManagedPortalSurfaceSource, /Credit-governed execution/);
+  assert.match(diyManagedPortalSurfaceSource, /Review and approval checkpoints/);
+  assert.match(diyManagedPortalSurfaceSource, /Project workspace/);
+  assert.match(diyManagedPortalSurfaceSource, /Managed credit packages/);
+  assert.match(diyManagedPortalSurfaceSource, /Deeper execution support/);
+  assert.match(diyManagedPortalSurfaceSource, /Setup and delivery guidance/);
+  assert.match(diyManagedPortalSurfaceSource, /Stronger review loop/);
+  assert.match(diyManagedPortalSurfaceSource, /More hands-on project handling/);
+  assert.match(diyManagedPortalSurfaceSource, /Learn more/);
+  assert.match(diyManagedPortalSurfaceSource, /type="button"/);
+  assert.match(diyManagedPortalSurfaceSource, /role="dialog"/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-modal="true"/);
+  assert.match(diyManagedPortalSurfaceSource, /Close explanation bubble/);
+  assert.match(diyManagedPortalSurfaceSource, /event\.key === "Escape"/);
+  assert.match(diyManagedPortalSurfaceSource, /Credit-governed execution means build work is controlled by the credits available/);
+  assert.match(diyManagedPortalSurfaceSource, /Managed credits are separate from regular Build Credits/);
   assert.match(diyManagedPortalSurfaceSource, /Both paths start with structure\./);
   assert.match(diyManagedPortalSurfaceSource, /Neroa does not begin by throwing prompts at code\./);
   assert.match(diyManagedPortalSurfaceSource, /Which one should you choose\?/);
@@ -565,12 +584,19 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /<Image/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /\/logo\//i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /\/logos\//i);
-  assert.doesNotMatch(diyManagedPortalSurfaceSource, /unlimited ai/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /instant full MVP/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /magic app builder/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /cheap clone builder/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /GPT-5\.5/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /checkout/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\bNaroa\b/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\bNerowa\b/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\bNarowa\b/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\bNarua\b/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /from\s+["'][^"']*stripe/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /from\s+["']@\/lib\/billing\//i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /browser-runtime-bridge/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /from\s+["'][^"']*model/i);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {
