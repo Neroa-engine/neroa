@@ -73,6 +73,9 @@ function NorthStarIcon({
 export function NeroaContactSurface() {
   const [formValues, setFormValues] = useState(initialFormState);
   const [submitNotice, setSubmitNotice] = useState("");
+  const futureNoteId = "contact-future-note";
+  const formGuidanceId = "contact-form-guidance";
+  const submitNoticeId = "contact-submit-notice";
 
   function handleFieldChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     const { name, value } = event.target;
@@ -125,7 +128,7 @@ export function NeroaContactSurface() {
               Tell us what you need help with. Support intake will be connected to the Neroa
               support system later; for now, email support is the safe fallback.
             </p>
-            <p className="max-w-3xl text-[1rem] leading-8 text-white/62">
+            <p id={futureNoteId} className="max-w-3xl text-[1rem] leading-8 text-white/62">
               Later, this form will create a support request inside Neroa so your issue can be
               tracked from your account.
             </p>
@@ -156,13 +159,14 @@ export function NeroaContactSurface() {
         <section className="grid gap-6 py-12 lg:grid-cols-[minmax(0,1.2fr),minmax(18rem,24rem)]">
           <form
             onSubmit={handleSubmit}
+            aria-describedby={`${formGuidanceId} ${futureNoteId}`}
             className="rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(8,12,16,0.88),rgba(7,10,14,0.68))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur"
           >
             <div className="space-y-3 border-b border-white/10 pb-5">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
                 Support intake
               </p>
-              <p className="max-w-3xl text-sm leading-7 text-slate-300">
+              <p id={formGuidanceId} className="max-w-3xl text-sm leading-7 text-slate-300">
                 Use this form to organize the details Neroa support will need once intake is live.
               </p>
             </div>
@@ -269,7 +273,10 @@ export function NeroaContactSurface() {
             <div className="mt-6 flex flex-col gap-4 border-t border-white/10 pt-5">
               {submitNotice ? (
                 <div
+                  id={submitNoticeId}
                   role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
                   className="rounded-[1rem] border border-teal-300/24 bg-teal-300/10 px-4 py-3 text-sm leading-7 text-teal-50"
                 >
                   {submitNotice}

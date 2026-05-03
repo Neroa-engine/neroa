@@ -543,8 +543,8 @@ function renderPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Contact</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Need help with your plan, project setup, billing questions, or account access? Open the
-            full Neroa support form and keep email as the safe fallback.
+            Need help with account access, billing questions, project setup, or a technical issue?
+            Open the full Neroa support form and keep email as the safe fallback.
           </p>
         </div>
 
@@ -556,8 +556,8 @@ function renderPanel(
             <h2 className="mt-3 text-lg font-semibold text-slate-50">Open the full contact form</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
               Share your support category, name, email, phone number, subject, and message on the
-              dedicated contact page. That keeps your details organized while support intake is
-              being prepared.
+              dedicated contact page. That keeps your details organized before you send them by
+              email.
             </p>
             <p className="mt-3 text-sm leading-7 text-slate-400">
               Later, this form will create a support request inside Neroa so your issue can be

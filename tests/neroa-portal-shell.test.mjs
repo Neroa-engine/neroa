@@ -1169,7 +1169,7 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Contact Support/);
   assert.match(
     accountPortalSurfaceSource,
-    /Need help with your plan, project setup, billing questions, or account access\? Open the\s+full Neroa support form and keep email as the safe fallback\./
+    /Need help with account access, billing questions, project setup, or a technical issue\?\s+Open the full Neroa support form and keep email as the safe fallback\./
   );
   assert.match(accountPortalSurfaceSource, /Open the full contact form/);
   assert.match(accountPortalSurfaceSource, /Open Contact Form/);
@@ -1178,7 +1178,7 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /For urgent help, email support@neroa\.io\./);
   assert.match(
     accountPortalSurfaceSource,
-    /Share your support category, name, email, phone number, subject, and message on the\s+dedicated contact page\./
+    /Share your support category, name, email, phone number, subject, and message on the\s+dedicated contact page\.\s+That keeps your details organized before you send them by\s+email\./
   );
   assert.match(accountPortalSurfaceSource, /aria-label="Open the Neroa contact page"/);
   assert.match(
@@ -1187,6 +1187,13 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
+  assert.ok(
+    accountPortalSurfaceSource.indexOf('href="/neroa/contact"') <
+      accountPortalSurfaceSource.indexOf('href="mailto:support@neroa.io"')
+  );
+  assert.doesNotMatch(accountPortalSurfaceSource, /ticket created/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /request was sent/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /live chat/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Pricing Path:/);
   assert.doesNotMatch(accountPortalSurfaceSource, /selectedPlanLabel/);
   assert.doesNotMatch(accountPortalSurfaceSource, /accountProfile\.planName/);
@@ -1277,6 +1284,9 @@ test("Contact page stays inside the hardened Neroa support scope", () => {
   assert.match(contactPortalSurfaceSource, /name="subject"/);
   assert.match(contactPortalSurfaceSource, /id="support-message"/);
   assert.match(contactPortalSurfaceSource, /name="message"/);
+  assert.match(contactPortalSurfaceSource, /id=\{futureNoteId\}/);
+  assert.match(contactPortalSurfaceSource, /id=\{formGuidanceId\}/);
+  assert.match(contactPortalSurfaceSource, /aria-describedby=\{`\$\{formGuidanceId\} \$\{futureNoteId\}`\}/);
   assert.match(contactPortalSurfaceSource, /type="submit"/);
   assert.match(contactPortalSurfaceSource, /Review Support Details/);
   assert.match(contactPortalSurfaceSource, /Email Support/);
@@ -1285,6 +1295,11 @@ test("Contact page stays inside the hardened Neroa support scope", () => {
     contactPortalSurfaceSource,
     /Support intake is being prepared\.\s+For now, please email support@neroa\.io with these details\./
   );
+  assert.match(contactPortalSurfaceSource, /id=\{submitNoticeId\}/);
+  assert.match(contactPortalSurfaceSource, /role="status"/);
+  assert.match(contactPortalSurfaceSource, /aria-live="polite"/);
+  assert.match(contactPortalSurfaceSource, /aria-atomic="true"/);
+  assert.doesNotMatch(contactPortalSurfaceSource, /setFormValues\(initialFormState\)/);
   assert.doesNotMatch(contactPortalSurfaceSource, /request was sent/i);
   assert.doesNotMatch(contactPortalSurfaceSource, /AI chat is live/i);
   assert.doesNotMatch(contactPortalSurfaceSource, /ticket backend/i);
