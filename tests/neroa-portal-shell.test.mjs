@@ -359,14 +359,23 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.match(pricingPortalSurfaceSource, /1,500 managed credits \/ \$2,250/);
   assert.match(pricingPortalSurfaceSource, /3,000 managed credits \/ \$4,500/);
   assert.match(pricingPortalSurfaceSource, /5,000 managed credits \/ \$7,500/);
-  assert.match(pricingPortalSurfaceSource, /200 \/ \$60/);
-  assert.match(pricingPortalSurfaceSource, /500 \/ \$150/);
-  assert.match(pricingPortalSurfaceSource, /1,000 \/ \$300/);
-  assert.match(pricingPortalSurfaceSource, /2,000 \/ \$600/);
-  assert.match(pricingPortalSurfaceSource, /10 \/ \$10/);
-  assert.match(pricingPortalSurfaceSource, /25 \/ \$20/);
-  assert.match(pricingPortalSurfaceSource, /50 \/ \$35/);
+  assert.match(pricingPortalSurfaceSource, /Credit Top-Offs/);
+  assert.match(
+    pricingPortalSurfaceSource,
+    /Add more governed build credits when your project needs additional approved work\./
+  );
+  assert.match(pricingPortalSurfaceSource, /200 credits \/ \$60/);
+  assert.match(pricingPortalSurfaceSource, /500 credits \/ \$150/);
+  assert.match(pricingPortalSurfaceSource, /1,000 credits \/ \$300/);
+  assert.match(pricingPortalSurfaceSource, /2,000 credits \/ \$600/);
+  assert.match(pricingPortalSurfaceSource, /lg:flex-row lg:items-center lg:justify-between/);
+  assert.match(pricingPortalSurfaceSource, /lg:flex-nowrap lg:justify-end/);
   assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /const workspaceTopOffs/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /10 \/ \$10/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /25 \/ \$20/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /50 \/ \$35/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /workspace-hour/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /@\/lib\/billing\//);
   assert.doesNotMatch(pricingPortalSurfaceSource, /from\s+["'][^"']*stripe/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /checkoutSession/i);

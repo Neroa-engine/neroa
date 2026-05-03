@@ -69,8 +69,12 @@ const plans = [
   }
 ] as const;
 
-const diyTopOffs = ["200 / $60", "500 / $150", "1,000 / $300", "2,000 / $600"] as const;
-const workspaceTopOffs = ["10 / $10", "25 / $20", "50 / $35"] as const;
+const diyTopOffs = [
+  "200 credits / $60",
+  "500 credits / $150",
+  "1,000 credits / $300",
+  "2,000 credits / $600"
+] as const;
 
 function NorthStarIcon({
   className = ""
@@ -224,32 +228,22 @@ export function NeroaPricingSurface() {
             ))}
           </div>
 
-          <div className="grid gap-4 pt-2 lg:grid-cols-2">
-            <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                DIY Credit Top-Offs
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
+          <div className="rounded-[1.45rem] border border-white/10 bg-black/20 px-5 py-4 lg:px-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="max-w-xl space-y-2">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+                  Credit Top-Offs
+                </p>
+                <p className="text-sm leading-7 text-white/62">
+                  Add more governed build credits when your project needs additional approved work.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2.5 lg:flex-nowrap lg:justify-end">
                 {diyTopOffs.map((item) => (
                   <span
                     key={item}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
-                  >
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[1.35rem] border border-white/10 bg-black/20 px-5 py-4">
-              <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                Workspace Hours
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {workspaceTopOffs.map((item) => (
-                  <span
-                    key={item}
-                    className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-[0.72rem] uppercase tracking-[0.14em] text-white/72"
+                    className="inline-flex items-center justify-center rounded-full border border-teal-300/24 bg-white/[0.04] px-3.5 py-1.5 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-teal-100 whitespace-nowrap"
                   >
                     {item}
                   </span>
