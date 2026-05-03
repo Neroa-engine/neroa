@@ -1,12 +1,13 @@
 import Link from "next/link";
 
 type NeroaPortalNavigationProps = {
-  readonly currentPath: "/neroa/account" | "/neroa/project";
+  readonly currentPath: "/neroa/account" | "/neroa/project" | "/neroa/admin";
+  readonly includeAdminPortal?: boolean;
   readonly tone?: "light" | "dark";
   readonly className?: string;
 };
 
-const portalLinks = [
+const basePortalLinks = [
   {
     href: "/neroa",
     label: "Home"
@@ -20,6 +21,11 @@ const portalLinks = [
     label: "Project Portal"
   }
 ] as const;
+
+const adminPortalLink = {
+  href: "/neroa/admin",
+  label: "Admin Portal"
+} as const;
 
 function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
@@ -46,10 +52,12 @@ function NorthStarIcon({
 
 export function NeroaPortalNavigation({
   currentPath,
+  includeAdminPortal = false,
   tone = "light",
   className = ""
 }: NeroaPortalNavigationProps) {
   const dark = tone === "dark";
+  const portalLinks = includeAdminPortal ? [...basePortalLinks, adminPortalLink] : basePortalLinks;
 
   return (
     <nav

@@ -16,6 +16,14 @@ const accountPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-account-portal-surface.tsx", import.meta.url),
   "utf8"
 );
+const adminPortalSource = readFileSync(
+  new URL("../app/neroa/admin/page.tsx", import.meta.url),
+  "utf8"
+);
+const adminPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-admin-portal-surface.tsx", import.meta.url),
+  "utf8"
+);
 const browserSupabaseSource = readFileSync(
   new URL("../lib/supabase/browser.ts", import.meta.url),
   "utf8"
@@ -107,6 +115,8 @@ const cleanPortalSources = [
   frontDoorSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  adminPortalSource,
+  adminPortalSurfaceSource,
   contactPortalSource,
   contactPortalSurfaceSource,
   projectPortalSource,
@@ -148,6 +158,8 @@ const publicEntrySources = [
   cleanResetPasswordSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  adminPortalSource,
+  adminPortalSurfaceSource,
   contactPortalSource,
   contactPortalSurfaceSource,
   projectPortalSource,
@@ -159,6 +171,8 @@ const uiOnlyPortalSources = [
   frontDoorSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  adminPortalSource,
+  adminPortalSurfaceSource,
   contactPortalSource,
   contactPortalSurfaceSource,
   projectPortalSource,
@@ -198,6 +212,7 @@ const nonRuntimeUiPortalSources = [
   portalShellSource
 ];
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
+const adminPortalSources = [adminPortalSource, adminPortalSurfaceSource];
 const contactPortalSources = [contactPortalSource, contactPortalSurfaceSource];
 const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
 const publicNeroaSurfaceSources = [
@@ -231,6 +246,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(accountPortalSource, /export default async function NeroaAccountPortalPage/);
   assert.match(accountPortalSource, /NeroaAccountPortalSurface/);
   assert.match(accountPortalSurfaceSource, /export function NeroaAccountPortalSurface/);
+  assert.match(adminPortalSource, /export default function NeroaAdminPortalPage/);
+  assert.match(adminPortalSource, /NeroaAdminPortalSurface/);
+  assert.match(adminPortalSurfaceSource, /export function NeroaAdminPortalSurface/);
   assert.match(contactPortalSource, /export default function NeroaContactPage/);
   assert.match(contactPortalSource, /NeroaContactSurface/);
   assert.match(contactPortalSurfaceSource, /export function NeroaContactSurface/);
@@ -414,14 +432,17 @@ test("root landing no longer carries the old public front-door strings", () => {
   assert.doesNotMatch(rootLandingSource, /Click here to start the conversation/i);
 });
 
-test("clean portal navigation links the three clean neroa routes only", () => {
+test("clean portal navigation keeps admin isolated behind an explicit admin-only flag", () => {
   assert.match(portalNavigationSource, /href:\s*"\/neroa"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/account"/);
   assert.match(portalNavigationSource, /href:\s*"\/neroa\/project"/);
+  assert.match(portalNavigationSource, /includeAdminPortal = false/);
+  assert.match(portalNavigationSource, /href:\s*"\/neroa\/admin"/);
   assert.match(portalNavigationSource, /NorthStarIcon/);
   assert.match(portalNavigationSource, /label:\s*"Home"/);
   assert.match(portalNavigationSource, /label:\s*"Account Portal"/);
   assert.match(portalNavigationSource, /label:\s*"Project Portal"/);
+  assert.match(portalNavigationSource, /label:\s*"Admin Portal"/);
   assert.doesNotMatch(portalNavigationSource, /label:\s*"Front Door"/);
   assert.doesNotMatch(portalNavigationSource, /label:\s*"Auth Surface"/);
   assert.doesNotMatch(portalNavigationSource, /Authentication Surface/);
@@ -962,8 +983,10 @@ test("Account Portal lands on an account-first shell with authenticated navigati
   assert.match(accountPortalSurfaceSource, /aria-selected=\{active\}/);
   assert.match(accountPortalSurfaceSource, /aria-controls=\{panelId\}/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/project"/);
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/admin"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /includeAdminPortal/);
 });
 
 test("Account Portal defaults to an honest Project Board shell without fake project data", () => {
@@ -1165,6 +1188,14 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Signing Out\.\.\./);
   assert.match(accountPortalSurfaceSource, /Unable to sign out right now\. Please try again\./);
   assert.match(accountPortalSurfaceSource, /aria-live="assertive"/);
+  assert.match(accountPortalSurfaceSource, /Internal Access/);
+  assert.match(accountPortalSurfaceSource, /Admin Portal/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Temporary internal entry for the Neroa Admin Portal\.\s+Admin access control is not\s+connected yet, so this should remain limited to internal testing\./
+  );
+  assert.match(accountPortalSurfaceSource, /Open Admin Portal/);
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/admin"/);
   assert.match(accountPortalSurfaceSource, /Danger Zone/);
   assert.match(accountPortalSurfaceSource, /Delete Account/);
   assert.match(
@@ -1212,6 +1243,183 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.doesNotMatch(accountPortalSurfaceSource, /Delete this account now/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /fetch\(/);
   assert.doesNotMatch(accountPortalSurfaceSource, /\/api\//i);
+});
+
+test("/neroa/admin exists as a dedicated Neroa admin shell route", () => {
+  assert.match(adminPortalSource, /@\/components\/neroa-portal\/neroa-admin-portal-surface/);
+  assert.match(adminPortalSource, /Neroa \| Admin Portal/);
+  assert.match(
+    adminPortalSource,
+    /Open the Neroa Admin Portal shell to review internal admin structure for dashboard, users, projects, support, credits, content, QC, and settings\./
+  );
+  assert.doesNotMatch(adminPortalSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(adminPortalSource, /@\/lib\/auth/);
+});
+
+test("/neroa/admin includes the full admin shell, sections, and honest non-live copy", () => {
+  assert.match(adminPortalSurfaceSource, /"use client"/);
+  assert.match(adminPortalSurfaceSource, /useState<AdminSectionLabel>\("Dashboard"\)/);
+  assert.match(adminPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.match(adminPortalSurfaceSource, /includeAdminPortal/);
+  assert.match(adminPortalSurfaceSource, /currentPath="\/neroa\/admin"/);
+  assert.match(adminPortalSurfaceSource, /tone="dark"/);
+  assert.match(adminPortalSurfaceSource, /NeroaNorthStarAccent/);
+  assert.match(adminPortalSurfaceSource, /testId="admin-page-north-star"/);
+  assert.match(adminPortalSurfaceSource, /Admin Portal/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Admin access control is not connected yet\. This shell is for internal portal structure only\./
+  );
+  assert.match(adminPortalSurfaceSource, /role="group" aria-label="Admin portal sections"/);
+  assert.match(adminPortalSurfaceSource, /Dashboard/);
+  assert.match(adminPortalSurfaceSource, /Users/);
+  assert.match(adminPortalSurfaceSource, /Projects/);
+  assert.match(adminPortalSurfaceSource, /Support Requests/);
+  assert.match(adminPortalSurfaceSource, /Billing \/ Credits/);
+  assert.match(adminPortalSurfaceSource, /Credit Usage/);
+  assert.match(adminPortalSurfaceSource, /System Health/);
+  assert.match(adminPortalSurfaceSource, /Content \/ Blog/);
+  assert.match(adminPortalSurfaceSource, /QC \/ Evidence/);
+  assert.match(adminPortalSurfaceSource, /Settings/);
+  assert.match(adminPortalSurfaceSource, /Admin Dashboard/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Monitor Neroa operations, users, projects, support, credits, content, QC, and system readiness\./
+  );
+  assert.match(adminPortalSurfaceSource, /Active Projects/);
+  assert.match(adminPortalSurfaceSource, /System Alerts/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Admin metrics will appear here once admin data sources are connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /No live admin metrics connected yet\./);
+  assert.match(adminPortalSurfaceSource, /User Directory/);
+  assert.match(adminPortalSurfaceSource, /Account Status/);
+  assert.match(adminPortalSurfaceSource, /Plan Path/);
+  assert.match(adminPortalSurfaceSource, /Last Activity/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /User records will appear here once admin user management is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Project List/);
+  assert.match(adminPortalSurfaceSource, /Project Status/);
+  assert.match(adminPortalSurfaceSource, /Owner/);
+  assert.match(adminPortalSurfaceSource, /Next Action/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Project records will appear here once project tracking is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /New Requests/);
+  assert.match(adminPortalSurfaceSource, /In Review/);
+  assert.match(adminPortalSurfaceSource, /Waiting on Customer/);
+  assert.match(adminPortalSurfaceSource, /Resolved/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Support requests will appear here once the contact form is connected to support tracking\./
+  );
+  assert.match(adminPortalSurfaceSource, /Plan Overview/);
+  assert.match(adminPortalSurfaceSource, /Build Credits/);
+  assert.match(adminPortalSurfaceSource, /Managed Credits/);
+  assert.match(adminPortalSurfaceSource, /Top-Offs/);
+  assert.match(adminPortalSurfaceSource, /Usage Review/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Billing and credit data will appear here once the credit ledger and billing system are connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Credits Used Today/);
+  assert.match(adminPortalSurfaceSource, /Monthly Credits Used/);
+  assert.match(adminPortalSurfaceSource, /Year-to-Date Credits Used/);
+  assert.match(adminPortalSurfaceSource, /Lifetime Credits Used/);
+  assert.match(adminPortalSurfaceSource, /Managed Credits Used/);
+  assert.match(adminPortalSurfaceSource, /Top-Off Credits Purchased/);
+  assert.match(adminPortalSurfaceSource, /Waived \/ Platform-Covered Credits/);
+  assert.match(adminPortalSurfaceSource, /Project Credit Usage/);
+  assert.match(adminPortalSurfaceSource, /High-Usage Accounts/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Review platform credit consumption, customer usage patterns, and credit-governor readiness once the ledger is connected\./
+  );
+  assert.match(
+    adminPortalSurfaceSource,
+    /Credit usage data will appear here once the credit ledger is connected\./
+  );
+  assert.match(
+    adminPortalSurfaceSource,
+    /Waived and platform-covered credits will appear here once execution accounting is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Auth/);
+  assert.match(adminPortalSurfaceSource, /Database/);
+  assert.match(adminPortalSurfaceSource, /Vercel Deployment/);
+  assert.match(adminPortalSurfaceSource, /Hosted Browser/);
+  assert.match(adminPortalSurfaceSource, /QC Capture/);
+  assert.match(adminPortalSurfaceSource, /Background Jobs/);
+  assert.match(adminPortalSurfaceSource, /Error Monitoring/);
+  assert.match(adminPortalSurfaceSource, /Queue Health/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /System health signals will appear here once monitoring is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Blog Posts/);
+  assert.match(adminPortalSurfaceSource, /Drafts/);
+  assert.match(adminPortalSurfaceSource, /Published/);
+  assert.match(adminPortalSurfaceSource, /Content Review/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Blog publishing tools will appear here once admin content management is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Evidence Library/);
+  assert.match(adminPortalSurfaceSource, /QC Runs/);
+  assert.match(adminPortalSurfaceSource, /Visual Reviews/);
+  assert.match(adminPortalSurfaceSource, /Issues Found/);
+  assert.match(adminPortalSurfaceSource, /Browser Capture Status/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /QC evidence will appear here once hosted browser capture is connected\./
+  );
+  assert.match(adminPortalSurfaceSource, /Admin Access/);
+  assert.match(adminPortalSurfaceSource, /Platform Settings/);
+  assert.match(adminPortalSurfaceSource, /Notifications/);
+  assert.match(adminPortalSurfaceSource, /Audit Trail/);
+  assert.match(adminPortalSurfaceSource, /Integration Settings/);
+  assert.match(
+    adminPortalSurfaceSource,
+    /Admin settings will appear here once role-based admin controls are connected\./
+  );
+  assert.doesNotMatch(adminPortalSurfaceSource, /user deleted/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /billing changed/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /credit adjusted/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /admin role enforced/i);
+});
+
+test("Admin Portal sources avoid spelling drift, trust-layer wiring, and runtime imports", () => {
+  for (const source of adminPortalSources) {
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/supabase\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*runtime/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*model(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*schema(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*migration(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*digitalocean/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*browser/i);
+    assert.doesNotMatch(source, /\bschema\b/i);
+    assert.doesNotMatch(source, /\bmigration\b/i);
+  }
+});
+
+test("Admin Portal stays out of the public navigation and project top nav surfaces", () => {
+  assert.doesNotMatch(publicNavigationSource, /Admin Portal/);
+  assert.doesNotMatch(publicNavigationSource, /\/neroa\/admin/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /Admin Portal/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /Admin Portal/);
+  assert.doesNotMatch(blogPortalSurfaceSource, /Admin Portal/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /Admin Portal/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /includeAdminPortal/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /\/neroa\/admin/);
 });
 
 test("Account Portal signs out with the browser-safe Supabase client only", () => {

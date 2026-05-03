@@ -517,6 +517,27 @@ function renderPanel(
           </div>
         </BillingCard>
 
+        <article className="rounded-[1.5rem] border border-teal-300/20 bg-[linear-gradient(160deg,rgba(8,16,18,0.76)_0%,rgba(5,11,13,0.92)_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+              Internal Access
+            </p>
+            <h2 className="text-lg font-semibold text-slate-50">Admin Portal</h2>
+            <p className="max-w-3xl text-sm leading-7 text-slate-300">
+              Temporary internal entry for the Neroa Admin Portal. Admin access control is not
+              connected yet, so this should remain limited to internal testing.
+            </p>
+          </div>
+          <div className="mt-5">
+            <Link
+              href="/neroa/admin"
+              className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+            >
+              Open Admin Portal
+            </Link>
+          </div>
+        </article>
+
         <article className="rounded-[1.5rem] border border-rose-400/20 bg-[linear-gradient(160deg,rgba(34,10,16,0.52)_0%,rgba(19,8,12,0.86)_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
           <div className="space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-200/78">
