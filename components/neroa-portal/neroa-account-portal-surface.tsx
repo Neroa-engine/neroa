@@ -47,10 +47,25 @@ const boardColumns = [
   }
 ] as const;
 
-function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
+function tabSlug(tab: AccountTab) {
+  return tab.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+function renderPanel(
+  activeTab: AccountTab,
+  selectedPlanLabel: string | null,
+  panelId: string,
+  labelledById: string
+) {
   if (activeTab === "Billing / Usage") {
     return (
-      <section className="space-y-5">
+      <section
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={labelledById}
+        tabIndex={0}
+        className="space-y-5"
+      >
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
             Billing / Usage
@@ -68,8 +83,8 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-300">
               {selectedPlanLabel
-                ? `Current account entry is carrying ${selectedPlanLabel} plan context into the portal.`
-                : "Plan context appears here when a selected plan is attached to the account entry."}
+                ? `Selected plan context is ${selectedPlanLabel} for reference in the account portal.`
+                : "Selected plan context appears here when a plan is carried into the account portal."}
             </p>
           </article>
           <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
@@ -77,7 +92,7 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
               Build Credits
             </p>
             <p className="mt-4 text-sm leading-7 text-slate-300">
-              Standard Build Credits and managed credits stay distinct so account guidance stays clear without turning this portal into a checkout flow.
+              Standard Build Credits and managed credits stay distinct so this guidance stays clear without implying live billing or checkout flows here.
             </p>
           </article>
         </div>
@@ -85,6 +100,7 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
         <div>
           <Link
             href="/neroa/pricing"
+            aria-label="View pricing"
             className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
           >
             View Pricing
@@ -96,7 +112,13 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
 
   if (activeTab === "Account") {
     return (
-      <section className="space-y-5">
+      <section
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={labelledById}
+        tabIndex={0}
+        className="space-y-5"
+      >
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
             Account
@@ -109,7 +131,7 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
 
         <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
           <p className="text-sm leading-7 text-slate-300">
-            Account settings stay descriptive here so the portal reflects the real account area cleanly without implying live profile editing where that flow is not wired.
+            Profile, preferences, and account access details stay descriptive here so this view does not imply live profile editing or saved account changes.
           </p>
         </div>
       </section>
@@ -118,7 +140,13 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
 
   if (activeTab === "Contact") {
     return (
-      <section className="space-y-5">
+      <section
+        id={panelId}
+        role="tabpanel"
+        aria-labelledby={labelledById}
+        tabIndex={0}
+        className="space-y-5"
+      >
         <div className="space-y-3">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
             Contact
@@ -132,6 +160,7 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
         <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
           <a
             href="mailto:support@neroa.io"
+            aria-label="Contact support at support@neroa.io"
             className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
           >
             Contact Support
@@ -143,7 +172,13 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
   }
 
   return (
-    <section className="space-y-6">
+    <section
+      id={panelId}
+      role="tabpanel"
+      aria-labelledby={labelledById}
+      tabIndex={0}
+      className="space-y-6"
+    >
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
           Project Board
@@ -171,17 +206,20 @@ function renderPanel(activeTab: AccountTab, selectedPlanLabel: string | null) {
           Next Action
         </p>
         <p className="mt-4 text-sm leading-7 text-slate-300">
-          No next action yet. Start a project or move into the project portal when you are ready to organize roadmap, scope, decisions, evidence, and build readiness.
+          No next action yet. Start a project or open the Project Portal when you are ready to
+          organize roadmap, scope, decisions, evidence, and build readiness.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
           <Link
             href="/neroa/pricing"
+            aria-label="Start a project from pricing"
             className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
           >
             Start a Project
           </Link>
           <Link
             href="/neroa/project"
+            aria-label="View the Project Portal"
             className="inline-flex rounded-full border border-slate-400/25 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/45 hover:text-teal-100"
           >
             View Project Portal
@@ -197,6 +235,9 @@ export function NeroaAccountPortalSurface({
 }: NeroaAccountPortalSurfaceProps) {
   const [activeTab, setActiveTab] = useState<AccountTab>("Project Board");
   const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
+  const activeTabSlug = tabSlug(activeTab);
+  const activeTabId = `account-tab-${activeTabSlug}`;
+  const activePanelId = `account-panel-${activeTabSlug}`;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] px-6 py-10 text-slate-100">
@@ -222,7 +263,8 @@ export function NeroaAccountPortalSurface({
                 Account Portal
               </p>
               <p className="text-sm leading-7 text-slate-300">
-                Account navigation and project board entry in one clean Neroa portal.
+                Move between your project board, billing guidance, account details, and support
+                contact in one Neroa account view.
               </p>
             </div>
             {selectedPlanLabel ? (
@@ -232,16 +274,27 @@ export function NeroaAccountPortalSurface({
             ) : null}
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3" aria-label="Account portal sections">
+          <div
+            className="mt-5 flex flex-wrap gap-3"
+            role="tablist"
+            aria-label="Account portal sections"
+          >
             {accountTabs.map((tab) => {
               const active = tab === activeTab;
+              const tabId = `account-tab-${tabSlug(tab)}`;
+              const panelId = `account-panel-${tabSlug(tab)}`;
 
               return (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  aria-pressed={active}
+                  id={tabId}
+                  role="tab"
+                  aria-selected={active}
+                  aria-controls={panelId}
+                  aria-label={`Open ${tab}`}
+                  tabIndex={active ? 0 : -1}
                   className={[
                     "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition",
                     active
@@ -256,7 +309,7 @@ export function NeroaAccountPortalSurface({
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderPanel(activeTab, selectedPlanLabel)}
+            {renderPanel(activeTab, selectedPlanLabel, activePanelId, activeTabId)}
           </div>
         </section>
       </div>

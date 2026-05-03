@@ -896,7 +896,13 @@ test("Account Portal lands on a project-board-first account shell with authentic
   assert.match(accountPortalSurfaceSource, /Billing \/ Usage/);
   assert.match(accountPortalSurfaceSource, /Account/);
   assert.match(accountPortalSurfaceSource, /Contact/);
+  assert.match(accountPortalSurfaceSource, /role="tablist"/);
+  assert.match(accountPortalSurfaceSource, /role="tab"/);
+  assert.match(accountPortalSurfaceSource, /role="tabpanel"/);
   assert.match(accountPortalSurfaceSource, /aria-label="Account portal sections"/);
+  assert.match(accountPortalSurfaceSource, /aria-label=\{`Open \$\{tab\}`\}/);
+  assert.match(accountPortalSurfaceSource, /aria-selected=\{active\}/);
+  assert.match(accountPortalSurfaceSource, /aria-controls=\{panelId\}/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/project"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(accountPortalSurfaceSource, /mailto:support@neroa\.io/);
@@ -913,8 +919,17 @@ test("Account Portal defaults to an honest Project Board shell without fake proj
   assert.match(accountPortalSurfaceSource, /No open items yet\./);
   assert.match(accountPortalSurfaceSource, /No paused items yet\./);
   assert.match(accountPortalSurfaceSource, /No completed projects yet\./);
+  assert.match(
+    accountPortalSurfaceSource,
+    /No next action yet\. Start a project or open the Project Portal when you are ready to\s+organize roadmap, scope, decisions, evidence, and build readiness\./
+  );
   assert.match(accountPortalSurfaceSource, /Start a Project/);
   assert.match(accountPortalSurfaceSource, /View Project Portal/);
+  assert.match(accountPortalSurfaceSource, /aria-label="Start a project from pricing"/);
+  assert.match(accountPortalSurfaceSource, /aria-label="View the Project Portal"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /const\s+\w*projects\w*\s*=\s*\[/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /\bname:\s*["']/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /\bstatus:\s*["']/);
   assert.doesNotMatch(accountPortalSurfaceSource, /fake project/i);
 });
 
@@ -929,10 +944,12 @@ test("Account Portal removes oversized hero copy, duplicate sections, and banned
   assert.doesNotMatch(accountPortalSurfaceSource, /Projects First/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Project Signals/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Default Landing/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Resume Project/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Supporting Context/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Workspace Entry/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Profile Context/);
   assert.doesNotMatch(accountPortalSurfaceSource, /"Projects",/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /href="#/);
   assert.doesNotMatch(accountPortalSurfaceSource, /placeholder/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Surface Status/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /front door/i);
@@ -980,15 +997,41 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(
     accountPortalSurfaceSource,
+    /Build Credits and managed credits stay distinct so this guidance stays clear without implying live billing or checkout flows here\./
+  );
+  assert.match(
+    accountPortalSurfaceSource,
     /Manage your profile, preferences, and account access details\./
+  );
+  assert.match(
+    accountPortalSurfaceSource,
+    /Profile, preferences, and account access details stay descriptive here so this view does not imply live profile editing or saved account changes\./
   );
   assert.match(
     accountPortalSurfaceSource,
     /Need help with your plan, project setup, or account access\? Contact Neroa support\./
   );
   assert.match(accountPortalSurfaceSource, /Contact Support/);
+  assert.match(accountPortalSurfaceSource, /aria-label="Contact support at support@neroa\.io"/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
+});
+
+test("Account Portal sources avoid spelling drift, runtime imports, and schema-style dependencies", () => {
+  for (const source of accountPortalSources) {
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*runtime/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*model(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*schema(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*migration(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /\bschema\b/i);
+    assert.doesNotMatch(source, /\bmigration\b/i);
+  }
 });
 
 test("Project Portal presents the public project overview content", () => {
