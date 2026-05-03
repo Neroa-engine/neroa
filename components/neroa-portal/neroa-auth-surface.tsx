@@ -325,6 +325,9 @@ export function NeroaAuthSurface({
             <Link href="/neroa/blog" className="transition hover:text-white">
               Blog
             </Link>
+            <Link href="/neroa/contact" className="transition hover:text-white">
+              Contact
+            </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
               Sign In
             </Link>

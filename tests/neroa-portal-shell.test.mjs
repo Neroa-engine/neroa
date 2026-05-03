@@ -16,6 +16,14 @@ const accountPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-account-portal-surface.tsx", import.meta.url),
   "utf8"
 );
+const contactPortalSource = readFileSync(
+  new URL("../app/neroa/contact/page.tsx", import.meta.url),
+  "utf8"
+);
+const contactPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-contact-surface.tsx", import.meta.url),
+  "utf8"
+);
 const projectPortalSource = readFileSync(
   new URL("../app/neroa/project/page.tsx", import.meta.url),
   "utf8"
@@ -89,6 +97,8 @@ const cleanPortalSources = [
   frontDoorSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  contactPortalSource,
+  contactPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource,
   authPortalSource,
@@ -127,6 +137,8 @@ const publicEntrySources = [
   cleanResetPasswordSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  contactPortalSource,
+  contactPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource
 ];
@@ -135,6 +147,8 @@ const uiOnlyPortalSources = [
   frontDoorSurfaceSource,
   accountPortalSource,
   accountPortalSurfaceSource,
+  contactPortalSource,
+  contactPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource,
   authPortalSource,
@@ -155,8 +169,9 @@ const uiOnlyPortalSources = [
 ];
 const nonRuntimeUiPortalSources = [
   frontDoorSurfaceSource,
-  accountPortalSource,
   accountPortalSurfaceSource,
+  contactPortalSource,
+  contactPortalSurfaceSource,
   projectPortalSource,
   projectPortalSurfaceSource,
   pricingPortalSource,
@@ -172,7 +187,18 @@ const nonRuntimeUiPortalSources = [
   portalShellSource
 ];
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
+const contactPortalSources = [contactPortalSource, contactPortalSurfaceSource];
 const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
+const publicNeroaNavSources = [
+  frontDoorSurfaceSource,
+  pricingPortalSurfaceSource,
+  diyManagedPortalSurfaceSource,
+  blogPortalSurfaceSource,
+  blogArticleSurfaceSource,
+  authPortalSurfaceSource,
+  cleanResetPasswordSurfaceSource,
+  contactPortalSurfaceSource
+];
 const blogContentSources = [
   blogPortalSource,
   blogPortalSurfaceSource,
@@ -194,6 +220,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(accountPortalSource, /export default async function NeroaAccountPortalPage/);
   assert.match(accountPortalSource, /NeroaAccountPortalSurface/);
   assert.match(accountPortalSurfaceSource, /export function NeroaAccountPortalSurface/);
+  assert.match(contactPortalSource, /export default function NeroaContactPage/);
+  assert.match(contactPortalSource, /NeroaContactSurface/);
+  assert.match(contactPortalSurfaceSource, /export function NeroaContactSurface/);
   assert.match(projectPortalSource, /export default function NeroaProjectPortalPage/);
   assert.match(projectPortalSource, /NeroaProjectPortalSurface/);
   assert.match(projectPortalSurfaceSource, /export function NeroaProjectPortalSurface/);
@@ -276,8 +305,15 @@ test("/neroa front door includes the polished chat-first flow", () => {
   assert.match(frontDoorSurfaceSource, /Pricing/);
   assert.match(frontDoorSurfaceSource, /DIY vs Managed/);
   assert.match(frontDoorSurfaceSource, /Blog/);
+  assert.match(frontDoorSurfaceSource, /Contact/);
   assert.match(frontDoorSurfaceSource, /Sign In/);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
+});
+
+test("clean Neroa public navigation includes the Contact route on every public surface", () => {
+  for (const source of publicNeroaNavSources) {
+    assert.match(source, /href="\/neroa\/contact"/);
+  }
 });
 
 test("/neroa front door uses Neroa wordmark-first branding without logo assets or naming drift", () => {
@@ -883,7 +919,7 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
   assert.doesNotMatch(authPortalSurfaceSource, /\bNarua\b/);
 });
 
-test("Account Portal lands on a project-board-first account shell with authenticated navigation", () => {
+test("Account Portal lands on an account-first shell with authenticated navigation", () => {
   assert.match(accountPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(accountPortalSurfaceSource, /NeroaNorthStarAccent/);
   assert.match(accountPortalSurfaceSource, /testId="account-page-north-star"/);
@@ -891,7 +927,7 @@ test("Account Portal lands on a project-board-first account shell with authentic
   assert.match(accountPortalSurfaceSource, /currentPath="\/neroa\/account"/);
   assert.match(accountPortalSurfaceSource, /tone="dark"/);
   assert.match(accountPortalSurfaceSource, /"use client"/);
-  assert.match(accountPortalSurfaceSource, /useState<AccountTab>\("Project Board"\)/);
+  assert.match(accountPortalSurfaceSource, /useState<AccountTab>\("Account"\)/);
   assert.match(accountPortalSurfaceSource, /Project Board/);
   assert.match(accountPortalSurfaceSource, /Billing \/ Usage/);
   assert.match(accountPortalSurfaceSource, /Account/);
@@ -905,7 +941,7 @@ test("Account Portal lands on a project-board-first account shell with authentic
   assert.match(accountPortalSurfaceSource, /aria-controls=\{panelId\}/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/project"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
-  assert.match(accountPortalSurfaceSource, /mailto:support@neroa\.io/);
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
 });
 
 test("Account Portal defaults to an honest Project Board shell without fake project data", () => {
@@ -934,7 +970,7 @@ test("Account Portal defaults to an honest Project Board shell without fake proj
 });
 
 test("Account Portal removes oversized hero copy, duplicate sections, and banned labels", () => {
-  assert.match(accountPortalSurfaceSource, /Selected Plan: \{selectedPlanLabel\}/);
+  assert.match(accountPortalSurfaceSource, /Pricing Path: \{selectedPlanLabel\}/);
   assert.match(accountPortalSurfaceSource, /Managed path/);
   assert.doesNotMatch(portalNavigationSource, /Front Door/);
   assert.doesNotMatch(portalNavigationSource, /Auth Surface/);
@@ -980,13 +1016,21 @@ test("Account Portal does not imply live saving or connected integration state",
 test("Account Portal preserves plan query handling without wiring billing runtime", () => {
   assert.match(accountPortalSource, /searchParams/);
   assert.match(accountPortalSource, /normalizeSelectedPlan/);
+  assert.match(accountPortalSource, /buildAccountProfileSnapshot/);
+  assert.match(accountPortalSource, /createSupabaseServerClient/);
+  assert.match(accountPortalSource, /normalizeSessionPlanLabel/);
+  assert.match(accountPortalSource, /readSessionPlanLabel/);
+  assert.match(accountPortalSource, /noStore\(\)/);
   assert.match(accountPortalSource, /case "free"/);
   assert.match(accountPortalSource, /case "starter"/);
   assert.match(accountPortalSource, /case "pro"/);
   assert.match(accountPortalSource, /case "business"/);
   assert.match(accountPortalSource, /case "managed"/);
   assert.match(accountPortalSource, /selectedPlan=\{selectedPlan\}/);
+  assert.match(accountPortalSource, /accountProfile=\{accountProfile\}/);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(accountPortalSource, /@\/lib\/account\//);
+  assert.doesNotMatch(accountPortalSource, /@\/lib\/pricing\//);
   assert.doesNotMatch(accountPortalSource, /from\s+["'][^"']*stripe/i);
 });
 
@@ -1048,27 +1092,105 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /View Managed Build Options/);
   assert.match(
     accountPortalSurfaceSource,
-    /Manage your profile, preferences, and account access details\./
+    /Review the account details attached to this Neroa session, understand your current plan\s+path, and reach the next security step without exposing risky account actions here\./
   );
   assert.match(
     accountPortalSurfaceSource,
-    /Profile, preferences, and account access details stay descriptive here so this view does not imply live profile editing or saved account changes\./
+    /Profile/
+  );
+  assert.match(accountPortalSurfaceSource, /Name/);
+  assert.match(accountPortalSurfaceSource, /Organization/);
+  assert.match(accountPortalSurfaceSource, /Email/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Signed-in email will appear here once account profile data is connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /Plan Context/);
+  assert.match(accountPortalSurfaceSource, /Current Plan/);
+  assert.match(accountPortalSurfaceSource, /Build Credit path/);
+  assert.match(accountPortalSurfaceSource, /View Billing \/ Usage/);
+  assert.match(accountPortalSurfaceSource, /Security/);
+  assert.match(accountPortalSurfaceSource, /Change Email/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Email changes will be handled here once account security settings are connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /Reset Password/);
+  assert.match(accountPortalSource, /\/neroa\/auth\/reset-password/);
+  assert.match(accountPortalSurfaceSource, /Sign Out/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Sign out will be available once account session controls are connected\./
+  );
+  assert.match(accountPortalSurfaceSource, /Danger Zone/);
+  assert.match(accountPortalSurfaceSource, /Delete Account/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Account deletion requires confirmation\s+and data review\.\s+Contact support for deletion\s+requests until self-service deletion is available\./
   );
   assert.match(
     accountPortalSurfaceSource,
     /Need help with your plan, project setup, or account access\? Contact Neroa support\./
   );
   assert.match(accountPortalSurfaceSource, /Contact Support/);
-  assert.match(accountPortalSurfaceSource, /aria-label="Contact support at support@neroa\.io"/);
+  assert.match(accountPortalSurfaceSource, /aria-label="Open the Neroa contact page"/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /aria-label="Contact support about account deletion"/
+  );
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
+  assert.match(accountPortalSurfaceSource, /Pricing Path:/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Workspace Hours/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billable hours/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Delete this account now/i);
 });
 
 test("Account Portal sources avoid spelling drift, runtime imports, and schema-style dependencies", () => {
   for (const source of accountPortalSources) {
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*runtime/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*model(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*schema(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*migration(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /\bschema\b/i);
+    assert.doesNotMatch(source, /\bmigration\b/i);
+  }
+});
+
+test("Contact page stays inside the hardened Neroa support scope", () => {
+  assert.match(contactPortalSource, /Neroa \| Contact/);
+  assert.match(contactPortalSource, /NeroaContactSurface/);
+  assert.match(contactPortalSurfaceSource, /Contact Neroa/);
+  assert.match(
+    contactPortalSurfaceSource,
+    /Get help with your account, plan, project setup, or build path\./
+  );
+  assert.match(contactPortalSurfaceSource, /Account Access/);
+  assert.match(contactPortalSurfaceSource, /Billing \/ Usage/);
+  assert.match(contactPortalSurfaceSource, /Project Setup/);
+  assert.match(contactPortalSurfaceSource, /Managed Build Questions/);
+  assert.match(contactPortalSurfaceSource, /General Support/);
+  assert.match(contactPortalSurfaceSource, /Email Support/);
+  assert.match(contactPortalSurfaceSource, /support@neroa\.io/);
+  assert.match(
+    contactPortalSurfaceSource,
+    /Support chat is planned for a later release\.\s+For now, email support is the safest\s+way to reach Neroa\./
+  );
+  assert.doesNotMatch(contactPortalSurfaceSource, /AI chat is live/i);
+  assert.doesNotMatch(contactPortalSurfaceSource, /ticket backend/i);
+  assert.doesNotMatch(contactPortalSurfaceSource, /<form/i);
+});
+
+test("Contact page sources avoid spelling drift, runtime imports, and schema-style dependencies", () => {
+  for (const source of contactPortalSources) {
     assert.doesNotMatch(source, /\bNaroa\b/);
     assert.doesNotMatch(source, /\bNerowa\b/);
     assert.doesNotMatch(source, /\bNarowa\b/);

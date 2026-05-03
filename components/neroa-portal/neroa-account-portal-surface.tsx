@@ -15,8 +15,19 @@ const selectedPlanLabels = {
 
 type SelectedPlan = keyof typeof selectedPlanLabels;
 
+type AccountProfileSnapshot = {
+  name: string | null;
+  organization: string | null;
+  email: string | null;
+  planName: string | null;
+  hasReliablePlan: boolean;
+  resetPasswordHref: string;
+  signOutAvailable: boolean;
+};
+
 type NeroaAccountPortalSurfaceProps = {
   selectedPlan?: SelectedPlan | null;
+  accountProfile: AccountProfileSnapshot;
 };
 
 const accountTabs = [
@@ -102,6 +113,61 @@ function BillingRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function buildDisplayValue(
+  value: string | null,
+  fallback: string
+) {
+  return value?.trim() ? value : fallback;
+}
+
+function ActionTile({
+  title,
+  description,
+  actionLabel,
+  href,
+  disabled = false,
+  onClick
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  href?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  const actionClassName = [
+    "inline-flex rounded-full border px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition",
+    disabled
+      ? "cursor-not-allowed border-white/10 bg-white/[0.03] text-slate-500"
+      : "border-teal-300/35 bg-teal-300/10 text-teal-100 hover:border-teal-200/60 hover:bg-teal-300/16"
+  ].join(" ");
+
+  return (
+    <article className="rounded-[1.25rem] border border-white/8 bg-white/[0.03] p-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold text-slate-100">{title}</h3>
+          <p className="max-w-2xl text-sm leading-7 text-slate-300">{description}</p>
+        </div>
+        {href ? (
+          <Link href={href} className={actionClassName}>
+            {actionLabel}
+          </Link>
+        ) : (
+          <button
+            type="button"
+            className={actionClassName}
+            disabled={disabled}
+            onClick={onClick}
+          >
+            {actionLabel}
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
 function tabSlug(tab: AccountTab) {
   return tab.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
@@ -109,7 +175,9 @@ function tabSlug(tab: AccountTab) {
 function renderPanel(
   activeTab: AccountTab,
   panelId: string,
-  labelledById: string
+  labelledById: string,
+  accountProfile: AccountProfileSnapshot,
+  onSelectTab: (tab: AccountTab) => void
 ) {
   if (activeTab === "Billing / Usage") {
     return (
@@ -238,6 +306,33 @@ function renderPanel(
   }
 
   if (activeTab === "Account") {
+    const profileRows = [
+      {
+        label: "Name",
+        value: buildDisplayValue(
+          accountProfile.name,
+          "Your name will appear here once account profile details are available."
+        )
+      },
+      {
+        label: "Organization",
+        value: buildDisplayValue(
+          accountProfile.organization,
+          "Organization details will appear here once account profile details are available."
+        )
+      },
+      {
+        label: "Email",
+        value: buildDisplayValue(
+          accountProfile.email,
+          "Signed-in email will appear here once account profile data is connected."
+        )
+      }
+    ] as const;
+    const currentPlanValue = accountProfile.hasReliablePlan
+      ? buildDisplayValue(accountProfile.planName, "Plan details will appear here once available.")
+      : "Plan details will appear here once reliable account plan data is available.";
+
     return (
       <section
         id={panelId}
@@ -252,15 +347,95 @@ function renderPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Account</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Manage your profile, preferences, and account access details.
+            Review the account details attached to this Neroa session, understand your current plan
+            path, and reach the next security step without exposing risky account actions here.
           </p>
         </div>
 
-        <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
-          <p className="text-sm leading-7 text-slate-300">
-            Profile, preferences, and account access details stay descriptive here so this view does not imply live profile editing or saved account changes.
-          </p>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <BillingCard title="Profile" accent>
+            {profileRows.map((row) => (
+              <BillingRow key={row.label} label={row.label} value={row.value} />
+            ))}
+          </BillingCard>
+
+          <BillingCard title="Plan Context">
+            <BillingRow label="Current Plan" value={currentPlanValue} />
+            <BillingRow
+              label="Build Credit path"
+              value="Review included credits and additional capacity from Billing / Usage."
+            />
+            <p className="text-sm leading-7 text-slate-300">
+              Change plans from pricing, then use Billing / Usage to review how your Build Credit
+              path is presented for this account.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/neroa/pricing"
+                aria-label="Change plan from pricing"
+                className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+              >
+                Change Plan
+              </Link>
+              <button
+                type="button"
+                onClick={() => onSelectTab("Billing / Usage")}
+                className="inline-flex rounded-full border border-slate-400/25 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/45 hover:text-teal-100"
+              >
+                View Billing / Usage
+              </button>
+            </div>
+          </BillingCard>
         </div>
+
+        <BillingCard title="Security">
+          <div className="space-y-3">
+            <ActionTile
+              title="Change Email"
+              description="Email changes will be handled here once account security settings are connected."
+              actionLabel="Change Email"
+              disabled
+            />
+            <ActionTile
+              title="Reset Password"
+              description="Reset your password through the clean Neroa account flow without leaving this account surface."
+              actionLabel="Reset Password"
+              href={accountProfile.resetPasswordHref}
+            />
+            <ActionTile
+              title="Sign Out"
+              description={
+                accountProfile.signOutAvailable
+                  ? "Sign out of this Neroa session."
+                  : "Sign out will be available once account session controls are connected."
+              }
+              actionLabel="Sign Out"
+              disabled={!accountProfile.signOutAvailable}
+            />
+          </div>
+        </BillingCard>
+
+        <article className="rounded-[1.5rem] border border-rose-400/20 bg-[linear-gradient(160deg,rgba(34,10,16,0.52)_0%,rgba(19,8,12,0.86)_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+          <div className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-rose-200/78">
+              Danger Zone
+            </p>
+            <h2 className="text-lg font-semibold text-slate-50">Delete Account</h2>
+            <p className="max-w-3xl text-sm leading-7 text-slate-300">
+              Account deletion requires confirmation and data review. Contact support for deletion
+              requests until self-service deletion is available.
+            </p>
+          </div>
+          <div className="mt-5">
+            <Link
+              href="/neroa/contact"
+              aria-label="Contact support about account deletion"
+              className="inline-flex rounded-full border border-rose-200/26 bg-rose-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-rose-100 transition hover:border-rose-200/46 hover:bg-rose-300/14"
+            >
+              Contact Support
+            </Link>
+          </div>
+        </article>
       </section>
     );
   }
@@ -285,13 +460,13 @@ function renderPanel(
         </div>
 
         <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
-          <a
-            href="mailto:support@neroa.io"
-            aria-label="Contact support at support@neroa.io"
+          <Link
+            href="/neroa/contact"
+            aria-label="Open the Neroa contact page"
             className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
           >
             Contact Support
-          </a>
+          </Link>
           <p className="mt-4 text-sm leading-7 text-slate-300">support@neroa.io</p>
         </div>
       </section>
@@ -358,9 +533,10 @@ function renderPanel(
 }
 
 export function NeroaAccountPortalSurface({
-  selectedPlan = null
+  selectedPlan = null,
+  accountProfile
 }: NeroaAccountPortalSurfaceProps) {
-  const [activeTab, setActiveTab] = useState<AccountTab>("Project Board");
+  const [activeTab, setActiveTab] = useState<AccountTab>("Account");
   const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
   const activeTabSlug = tabSlug(activeTab);
   const activeTabId = `account-tab-${activeTabSlug}`;
@@ -396,7 +572,7 @@ export function NeroaAccountPortalSurface({
             </div>
             {selectedPlanLabel ? (
               <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-slate-200">
-                Selected Plan: {selectedPlanLabel}
+                Pricing Path: {selectedPlanLabel}
               </div>
             ) : null}
           </div>
@@ -436,7 +612,7 @@ export function NeroaAccountPortalSurface({
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderPanel(activeTab, activePanelId, activeTabId)}
+            {renderPanel(activeTab, activePanelId, activeTabId, accountProfile, setActiveTab)}
           </div>
         </section>
       </div>
