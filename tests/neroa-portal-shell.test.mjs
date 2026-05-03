@@ -80,6 +80,22 @@ const cleanPortalSources = [
   portalNavigationSource,
   portalShellSource
 ];
+const publicEntrySources = [
+  rootLandingSource,
+  frontDoorSource,
+  frontDoorSurfaceSource,
+  pricingPortalSource,
+  pricingPortalSurfaceSource,
+  authPortalSource,
+  authPortalSurfaceSource,
+  cleanAuthConfirmRouteSource,
+  cleanResetPasswordPageSource,
+  cleanResetPasswordSurfaceSource,
+  accountPortalSource,
+  accountPortalSurfaceSource,
+  projectPortalSource,
+  projectPortalSurfaceSource
+];
 const landingWrapperSources = [rootLandingSource, frontDoorSource];
 const uiOnlyPortalSources = [
   frontDoorSurfaceSource,
@@ -857,11 +873,87 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
 test("clean auth plan flow keeps public CTAs and plan routing aligned", () => {
   assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/neroa\/auth\?plan=/);
+  assert.match(pricingPortalSurfaceSource, /id:\s*"free"/);
+  assert.match(pricingPortalSurfaceSource, /id:\s*"starter"/);
+  assert.match(pricingPortalSurfaceSource, /id:\s*"pro"/);
+  assert.match(pricingPortalSurfaceSource, /id:\s*"business"/);
+  assert.match(pricingPortalSurfaceSource, /id:\s*"managed"/);
   assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
   assert.match(authPortalSource, /selectedPlan = selectedPlanFromQuery \?\? "free"/);
   assert.match(authPortalSurfaceSource, /hasExplicitPlan = false/);
+  assert.match(authPortalSurfaceSource, /Selected Plan: \{selectedPlanLabel\}/);
+  assert.match(authPortalSurfaceSource, /Starting with Free Project Preview\./);
   assert.match(authPortalSurfaceSource, /buildAccountPathForSignIn\(selectedPlan, hasExplicitPlan\)/);
   assert.match(authPortalSurfaceSource, /buildAccountPathForSignup\(selectedPlan\)/);
+});
+
+test("pricing preserves the governed public plan rules and top-off values", () => {
+  assert.match(pricingPortalSurfaceSource, /Project preview/);
+  assert.match(
+    pricingPortalSurfaceSource,
+    /Free is a limited preview experience for shaping an idea, not a free execution or MVP promise\./
+  );
+  assert.match(pricingPortalSurfaceSource, /Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /Managed credits stay distinct from standard Build Credits\./);
+  assert.match(pricingPortalSurfaceSource, /200 credits \/ \$60/);
+  assert.match(pricingPortalSurfaceSource, /500 credits \/ \$150/);
+  assert.match(pricingPortalSurfaceSource, /1,000 credits \/ \$300/);
+  assert.match(pricingPortalSurfaceSource, /2,000 credits \/ \$600/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /40 credits/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /Workspace Hours/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /workspace-hour/i);
+});
+
+test("account and project metadata stay public-facing and drop shell wording", () => {
+  assert.match(accountPortalSource, /title:\s*"Neroa \| Account"/);
+  assert.match(
+    accountPortalSource,
+    /Manage your Neroa account, plan context, credits, and project access in one clear account overview\./
+  );
+  assert.match(projectPortalSource, /title:\s*"Neroa \| Project"/);
+  assert.match(
+    projectPortalSource,
+    /See your Neroa project roadmap, scope, decisions, evidence, and build readiness in one calm project overview\./
+  );
+  assert.doesNotMatch(accountPortalSource, /shell/i);
+  assert.doesNotMatch(accountPortalSource, /future/i);
+  assert.doesNotMatch(projectPortalSource, /shell/i);
+  assert.doesNotMatch(projectPortalSource, /future/i);
+});
+
+test("auth confirm route only hands off to safe /neroa destinations", () => {
+  assert.match(cleanAuthConfirmRouteSource, /const safePortalPathPattern = \/\^\\\/neroa\(\?:\\\/\|\$\)\//);
+  assert.match(cleanAuthConfirmRouteSource, /safePortalPathPattern\.test\(value\)/);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /value && value\.startsWith\("\/"\) && !value\.startsWith\("\/\/"\)\)/);
+});
+
+test("public entry sources remove spelling drift, legacy marketing strings, and old logo paths", () => {
+  for (const source of publicEntrySources) {
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+    assert.doesNotMatch(source, /Open Strategy Room/i);
+    assert.doesNotMatch(source, /Share the idea/i);
+    assert.doesNotMatch(source, /Workspace Hours/i);
+    assert.doesNotMatch(source, /workspace-hour/i);
+    assert.doesNotMatch(source, /\/logo\//i);
+    assert.doesNotMatch(source, /\/logos\//i);
+  }
+});
+
+test("public entry sources avoid Stripe, billing runtime, schema, migration, and model imports", () => {
+  for (const source of publicEntrySources) {
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/stripe\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/schema/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/migrations?\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/models?\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/schema(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/migration(?:s)?(?:\/|["'])/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/model(?:s)?(?:\/|["'])/i);
+  }
 });
 
 test("Account Portal route stays inside the clean neroa portal namespace", () => {

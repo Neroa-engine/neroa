@@ -11,8 +11,15 @@ const allowedOtpTypes: EmailOtpType[] = [
   "email"
 ] as const;
 
+const safePortalPathPattern = /^\/neroa(?:\/|$)/;
+
 function safeNextPath(value: string | null | undefined, fallback = "/neroa/account") {
-  if (value && value.startsWith("/") && !value.startsWith("//")) {
+  if (
+    value &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    safePortalPathPattern.test(value)
+  ) {
     return value;
   }
 
