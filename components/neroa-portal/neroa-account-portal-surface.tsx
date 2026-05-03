@@ -2,31 +2,19 @@
 
 import { type ReactNode, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
-
-const selectedPlanLabels = {
-  free: "Free Project Preview",
-  starter: "Starter",
-  pro: "Pro",
-  business: "Business",
-  managed: "Managed path"
-} as const;
-
-type SelectedPlan = keyof typeof selectedPlanLabels;
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type AccountProfileSnapshot = {
   name: string | null;
   organization: string | null;
   email: string | null;
-  planName: string | null;
-  hasReliablePlan: boolean;
   resetPasswordHref: string;
-  signOutAvailable: boolean;
 };
 
 type NeroaAccountPortalSurfaceProps = {
-  selectedPlan?: SelectedPlan | null;
   accountProfile: AccountProfileSnapshot;
 };
 
@@ -177,6 +165,9 @@ function renderPanel(
   panelId: string,
   labelledById: string,
   accountProfile: AccountProfileSnapshot,
+  signOutError: string | null,
+  isSigningOut: boolean,
+  onSignOut: () => void,
   onSelectTab: (tab: AccountTab) => void
 ) {
   if (activeTab === "Billing / Usage") {
@@ -329,9 +320,8 @@ function renderPanel(
         )
       }
     ] as const;
-    const currentPlanValue = accountProfile.hasReliablePlan
-      ? buildDisplayValue(accountProfile.planName, "Plan details will appear here once available.")
-      : "Plan details will appear here once reliable account plan data is available.";
+    const currentPlanValue =
+      "Plan details will appear here once reliable account plan data is available.";
 
     return (
       <section
@@ -389,6 +379,14 @@ function renderPanel(
         </div>
 
         <BillingCard title="Security">
+          {signOutError ? (
+            <div
+              role="alert"
+              className="rounded-[1.2rem] border border-rose-300/30 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100"
+            >
+              {signOutError}
+            </div>
+          ) : null}
           <div className="space-y-3">
             <ActionTile
               title="Change Email"
@@ -404,13 +402,10 @@ function renderPanel(
             />
             <ActionTile
               title="Sign Out"
-              description={
-                accountProfile.signOutAvailable
-                  ? "Sign out of this Neroa session."
-                  : "Sign out will be available once account session controls are connected."
-              }
-              actionLabel="Sign Out"
-              disabled={!accountProfile.signOutAvailable}
+              description="Sign out of this Neroa session and return to the clean Neroa sign-in route."
+              actionLabel={isSigningOut ? "Signing Out..." : "Sign Out"}
+              disabled={isSigningOut}
+              onClick={onSignOut}
             />
           </div>
         </BillingCard>
@@ -533,14 +528,37 @@ function renderPanel(
 }
 
 export function NeroaAccountPortalSurface({
-  selectedPlan = null,
   accountProfile
 }: NeroaAccountPortalSurfaceProps) {
+  const router = useRouter();
+  const [supabase] = useState(() => createSupabaseBrowserClient());
   const [activeTab, setActiveTab] = useState<AccountTab>("Account");
-  const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const activeTabSlug = tabSlug(activeTab);
   const activeTabId = `account-tab-${activeTabSlug}`;
   const activePanelId = `account-panel-${activeTabSlug}`;
+
+  async function handleSignOut() {
+    setSignOutError(null);
+    setIsSigningOut(true);
+
+    try {
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        setSignOutError(error.message);
+        setIsSigningOut(false);
+        return;
+      }
+
+      router.push("/neroa/auth");
+      router.refresh();
+    } catch {
+      setSignOutError("Unable to sign out right now. Please try again.");
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] px-6 py-10 text-slate-100">
@@ -570,11 +588,6 @@ export function NeroaAccountPortalSurface({
                 contact in one Neroa account view.
               </p>
             </div>
-            {selectedPlanLabel ? (
-              <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-slate-200">
-                Pricing Path: {selectedPlanLabel}
-              </div>
-            ) : null}
           </div>
 
           <div
@@ -612,7 +625,16 @@ export function NeroaAccountPortalSurface({
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderPanel(activeTab, activePanelId, activeTabId, accountProfile, setActiveTab)}
+            {renderPanel(
+              activeTab,
+              activePanelId,
+              activeTabId,
+              accountProfile,
+              signOutError,
+              isSigningOut,
+              handleSignOut,
+              setActiveTab
+            )}
           </div>
         </section>
       </div>

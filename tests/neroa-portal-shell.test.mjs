@@ -16,6 +16,10 @@ const accountPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-account-portal-surface.tsx", import.meta.url),
   "utf8"
 );
+const browserSupabaseSource = readFileSync(
+  new URL("../lib/supabase/browser.ts", import.meta.url),
+  "utf8"
+);
 const contactPortalSource = readFileSync(
   new URL("../app/neroa/contact/page.tsx", import.meta.url),
   "utf8"
@@ -177,7 +181,6 @@ const uiOnlyPortalSources = [
 ];
 const nonRuntimeUiPortalSources = [
   frontDoorSurfaceSource,
-  accountPortalSurfaceSource,
   contactPortalSource,
   contactPortalSurfaceSource,
   projectPortalSource,
@@ -984,8 +987,6 @@ test("Account Portal defaults to an honest Project Board shell without fake proj
 });
 
 test("Account Portal removes oversized hero copy, duplicate sections, and banned labels", () => {
-  assert.match(accountPortalSurfaceSource, /Pricing Path: \{selectedPlanLabel\}/);
-  assert.match(accountPortalSurfaceSource, /Managed path/);
   assert.doesNotMatch(portalNavigationSource, /Front Door/);
   assert.doesNotMatch(portalNavigationSource, /Auth Surface/);
   assert.doesNotMatch(portalNavigationSource, /Authentication Surface/);
@@ -1006,6 +1007,8 @@ test("Account Portal removes oversized hero copy, duplicate sections, and banned
   assert.doesNotMatch(accountPortalSurfaceSource, /authentication surface/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /clean portal/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /runtime-free/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Pricing Path:/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /selectedPlanLabel/);
 });
 
 test("Account Portal reflects the locked dark Neroa visual direction", () => {
@@ -1017,31 +1020,32 @@ test("Account Portal reflects the locked dark Neroa visual direction", () => {
   assert.match(accountPortalSurfaceSource, /shadow-\[0_22px_70px/);
 });
 
-test("Account Portal does not imply live saving or connected integration state", () => {
+test("Account Portal does not imply live saving, risky mutation, or billing integration state", () => {
   assert.doesNotMatch(accountPortalSurfaceSource, /<form/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Connected\b/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Sync Now/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Connect /);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /Supabase/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /supabase\.auth\.updateUser/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /supabase\.auth\.admin/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /deleteUser/i);
 });
 
-test("Account Portal preserves plan query handling without wiring billing runtime", () => {
-  assert.match(accountPortalSource, /searchParams/);
-  assert.match(accountPortalSource, /normalizeSelectedPlan/);
+test("Account Portal reads signed-in email safely without wiring plan data", () => {
   assert.match(accountPortalSource, /buildAccountProfileSnapshot/);
   assert.match(accountPortalSource, /createSupabaseServerClient/);
-  assert.match(accountPortalSource, /normalizeSessionPlanLabel/);
-  assert.match(accountPortalSource, /readSessionPlanLabel/);
+  assert.match(accountPortalSource, /await supabase\.auth\.getUser\(\)/);
+  assert.match(accountPortalSource, /email:\s*user\.email\?\.trim\(\) \?\? null/);
+  assert.match(accountPortalSource, /resetPasswordHref = "\/neroa\/auth\/reset-password"/);
   assert.match(accountPortalSource, /noStore\(\)/);
-  assert.match(accountPortalSource, /case "free"/);
-  assert.match(accountPortalSource, /case "starter"/);
-  assert.match(accountPortalSource, /case "pro"/);
-  assert.match(accountPortalSource, /case "business"/);
-  assert.match(accountPortalSource, /case "managed"/);
-  assert.match(accountPortalSource, /selectedPlan=\{selectedPlan\}/);
   assert.match(accountPortalSource, /accountProfile=\{accountProfile\}/);
+  assert.doesNotMatch(accountPortalSource, /searchParams/);
+  assert.doesNotMatch(accountPortalSource, /normalizeSelectedPlan/);
+  assert.doesNotMatch(accountPortalSource, /selectedPlan=\{/);
+  assert.doesNotMatch(accountPortalSource, /selected_plan/);
+  assert.doesNotMatch(accountPortalSource, /subscription_tier/);
+  assert.doesNotMatch(accountPortalSource, /planName/);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/billing\//);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/account\//);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/pricing\//);
@@ -1121,6 +1125,10 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /Plan Context/);
   assert.match(accountPortalSurfaceSource, /Current Plan/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Plan details will appear here once reliable account plan data is available\./
+  );
   assert.match(accountPortalSurfaceSource, /Build Credit path/);
   assert.match(accountPortalSurfaceSource, /View Billing \/ Usage/);
   assert.match(accountPortalSurfaceSource, /Security/);
@@ -1132,10 +1140,8 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Reset Password/);
   assert.match(accountPortalSource, /\/neroa\/auth\/reset-password/);
   assert.match(accountPortalSurfaceSource, /Sign Out/);
-  assert.match(
-    accountPortalSurfaceSource,
-    /Sign out will be available once account session controls are connected\./
-  );
+  assert.match(accountPortalSurfaceSource, /Signing Out\.\.\./);
+  assert.match(accountPortalSurfaceSource, /Unable to sign out right now\. Please try again\./);
   assert.match(accountPortalSurfaceSource, /Danger Zone/);
   assert.match(accountPortalSurfaceSource, /Delete Account/);
   assert.match(
@@ -1154,12 +1160,35 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
-  assert.match(accountPortalSurfaceSource, /Pricing Path:/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Pricing Path:/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /selectedPlanLabel/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /accountProfile\.planName/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /accountProfile\.hasReliablePlan/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Workspace Hours/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billable hours/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Delete this account now/i);
+});
+
+test("Account Portal signs out with the browser-safe Supabase client only", () => {
+  assert.match(accountPortalSurfaceSource, /useRouter/);
+  assert.match(accountPortalSurfaceSource, /createSupabaseBrowserClient/);
+  assert.match(accountPortalSurfaceSource, /const \[supabase\] = useState\(\(\) => createSupabaseBrowserClient\(\)\)/);
+  assert.match(accountPortalSurfaceSource, /supabase\.auth\.signOut\(\)/);
+  assert.match(accountPortalSurfaceSource, /router\.push\("\/neroa\/auth"\)/);
+  assert.match(accountPortalSurfaceSource, /router\.refresh\(\)/);
+  assert.match(accountPortalSurfaceSource, /role="alert"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /@\/lib\/supabase\/server/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /service_role/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /supabase\.auth\.admin/i);
+});
+
+test("browser Supabase client stays anon-key only for safe client auth actions", () => {
+  assert.match(browserSupabaseSource, /createBrowserClient/);
+  assert.match(browserSupabaseSource, /getSupabaseEnv/);
+  assert.doesNotMatch(browserSupabaseSource, /service_role/i);
+  assert.doesNotMatch(browserSupabaseSource, /createServerClient/);
 });
 
 test("Account Portal sources avoid spelling drift, runtime imports, and schema-style dependencies", () => {
