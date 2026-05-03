@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
-import type { BlogPost } from "@/lib/neroa/blog-posts";
+import { NEROA_BLOG_INDEX_PATH, type BlogPost } from "@/lib/neroa/blog-posts";
 
 function NorthStarIcon({
   className = ""
@@ -61,7 +61,11 @@ export function NeroaBlogArticleSurface({
             <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
               DIY vs Managed
             </Link>
-            <Link href="/neroa/blog" className="text-teal-100 transition hover:text-white">
+            <Link
+              href={NEROA_BLOG_INDEX_PATH}
+              aria-current="page"
+              className="text-teal-100 transition hover:text-white"
+            >
               Blog
             </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
@@ -82,15 +86,17 @@ export function NeroaBlogArticleSurface({
               aria-label="Breadcrumb"
               className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.24em] text-white/48"
             >
-              <Link href="/neroa/blog" className="transition hover:text-white">
+              <Link href={NEROA_BLOG_INDEX_PATH} className="transition hover:text-white">
                 Build Journal
               </Link>
               <span aria-hidden="true">/</span>
-              <span className="text-white/72">{post.title}</span>
+              <span aria-current="page" className="text-white/72">
+                {post.title}
+              </span>
             </nav>
 
             <Link
-              href="/neroa/blog"
+              href={NEROA_BLOG_INDEX_PATH}
               className="inline-flex items-center gap-3 text-sm uppercase tracking-[0.22em] text-teal-200/82 transition hover:text-white"
             >
               <span aria-hidden="true">&lt;</span>

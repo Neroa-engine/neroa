@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
-import { blogPosts } from "@/lib/neroa/blog-posts";
+import {
+  blogPosts,
+  getBlogPostRoute,
+  NEROA_BLOG_INDEX_PATH
+} from "@/lib/neroa/blog-posts";
 
 function NorthStarIcon({
   className = ""
@@ -54,7 +58,11 @@ export function NeroaBlogSurface() {
             <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
               DIY vs Managed
             </Link>
-            <Link href="/neroa/blog" className="text-teal-100 transition hover:text-white">
+            <Link
+              href={NEROA_BLOG_INDEX_PATH}
+              aria-current="page"
+              className="text-teal-100 transition hover:text-white"
+            >
               Blog
             </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
@@ -121,7 +129,7 @@ export function NeroaBlogSurface() {
             {blogPosts.map((post) => (
               <Link
                 key={post.slug}
-                href={`/neroa/blog/${post.slug}`}
+                href={getBlogPostRoute(post.slug)}
                 className="group block rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(6,9,13,0.76))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)] transition duration-200 hover:border-teal-300/45 hover:bg-[linear-gradient(180deg,rgba(10,15,19,0.94),rgba(7,11,15,0.82))]"
               >
                 <div className="space-y-5">

@@ -521,11 +521,15 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
 
 test("/neroa/blog route exists and stays inside the clean Neroa portal namespace", () => {
   assert.match(blogPortalSource, /@\/components\/neroa-portal\/neroa-blog-surface/);
-  assert.match(blogPortalSource, /Neroa \| Blog/);
+  assert.match(blogPortalSource, /The Neroa Build Journal \| Neroa/);
   assert.match(
     blogPortalSource,
     /Read the Neroa Build Journal for roadmap-first thinking about structured software building, Build Credits, approvals, and governed execution\./
   );
+  assert.match(blogPortalSource, /canonical: NEROA_BLOG_INDEX_PATH/);
+  assert.match(blogPortalSource, /title: "The Neroa Build Journal"/);
+  assert.match(blogPortalSource, /type: "website"/);
+  assert.match(blogPortalSource, /card: "summary_large_image"/);
   assert.doesNotMatch(blogPortalSource, /@\/components\/marketing\//);
   assert.doesNotMatch(blogPortalSource, /@\/lib\/billing\//);
 });
@@ -539,7 +543,7 @@ test("/neroa/blog includes the build journal hero, foundational article links, a
   assert.match(blogPortalSurfaceSource, /Most software projects do not fail because the idea is bad\./);
   assert.match(blogPortalSurfaceSource, /Foundational Articles/);
   assert.doesNotMatch(blogPortalSurfaceSource, /Five places to start/);
-  assert.match(blogPortalSurfaceSource, /href=\{`\/neroa\/blog\/\$\{post\.slug\}`\}/);
+  assert.match(blogPortalSurfaceSource, /href=\{getBlogPostRoute\(post\.slug\)\}/);
   assert.match(blogPortalSurfaceSource, /Read article/);
   assert.match(blogPortalSurfaceSource, /roadmap-first/i);
   assert.match(blogPortalSurfaceSource, /structured software building/i);
@@ -547,7 +551,8 @@ test("/neroa/blog includes the build journal hero, foundational article links, a
   assert.match(blogPortalSurfaceSource, /managed credits/);
   assert.match(blogPortalSurfaceSource, /evidence and review/i);
   assert.match(blogPortalSurfaceSource, /governed execution/i);
-  assert.match(blogPortalSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(blogPortalSurfaceSource, /href=\{NEROA_BLOG_INDEX_PATH\}/);
+  assert.match(blogPortalSurfaceSource, /aria-current="page"/);
   assert.match(blogPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.match(blogPortalSurfaceSource, /testId="blog-page-north-star"/);
   assert.doesNotMatch(blogPortalSurfaceSource, /<img/i);
@@ -556,6 +561,13 @@ test("/neroa/blog includes the build journal hero, foundational article links, a
 });
 
 test("blog post data defines all five foundational article titles, slugs, and public-safe language", () => {
+  assert.match(blogPostsSource, /NEROA_BLOG_INDEX_PATH = "\/neroa\/blog"/);
+  assert.match(
+    blogPostsSource,
+    /future admin publishing can replace this module without changing the public blog routes/i
+  );
+  assert.match(blogPostsSource, /export function getStaticBlogPostSlugs/);
+  assert.match(blogPostsSource, /export function getBlogPostRoute/);
   assert.match(blogPostsSource, /slug: "why-no-code-ai-builders-break-down"/);
   assert.match(blogPostsSource, /slug: "why-neroa-can-build-differently"/);
   assert.match(blogPostsSource, /slug: "how-many-credits-basic-saas-mvp"/);
@@ -579,16 +591,23 @@ test("blog post data defines all five foundational article titles, slugs, and pu
   assert.match(blogPostsSource, /structured software building/i);
   assert.match(blogPostsSource, /Build Credits/);
   assert.match(blogPostsSource, /managed credits/i);
+  assert.match(blogPostsSource, /The issue is not that these tools are bad\./);
   assert.doesNotMatch(blogPostsSource, /\bscam\b/i);
   assert.doesNotMatch(blogPostsSource, /\buseless\b/i);
+  assert.doesNotMatch(blogPostsSource, /cannot build apps/i);
 });
 
 test("/neroa/blog/[slug] exists as a static public route with structured article metadata", () => {
   assert.match(blogArticlePageSource, /@\/components\/neroa-portal\/neroa-blog-article-surface/);
   assert.match(blogArticlePageSource, /@\/lib\/neroa\/blog-posts/);
+  assert.match(blogArticlePageSource, /export const dynamicParams = false/);
   assert.match(blogArticlePageSource, /export function generateStaticParams/);
+  assert.match(blogArticlePageSource, /getStaticBlogPostSlugs\(\)\.map\(\(slug\) => \(\{ slug \}\)\)/);
   assert.match(blogArticlePageSource, /params:\s*Promise<PageParams>/);
   assert.match(blogArticlePageSource, /getBlogPostBySlug/);
+  assert.match(blogArticlePageSource, /canonical: getBlogPostRoute\(post\.slug\)/);
+  assert.match(blogArticlePageSource, /type: "article"/);
+  assert.match(blogArticlePageSource, /card: "summary_large_image"/);
   assert.match(blogArticlePageSource, /notFound\(\)/);
   assert.doesNotMatch(blogArticlePageSource, /@\/lib\/billing\//);
   assert.doesNotMatch(blogArticlePageSource, /@\/lib\/auth/);
@@ -597,17 +616,44 @@ test("/neroa/blog/[slug] exists as a static public route with structured article
 test("/neroa/blog/[slug] article surface keeps the hardened Neroa public UI and CTA path", () => {
   assert.match(blogArticleSurfaceSource, /Build Journal/);
   assert.match(blogArticleSurfaceSource, /Back to Build Journal/);
+  assert.match(blogArticleSurfaceSource, /aria-label="Breadcrumb"/);
+  assert.match(blogArticleSurfaceSource, /aria-current="page"/);
   assert.match(blogArticleSurfaceSource, /scope before execution/);
   assert.match(blogArticleSurfaceSource, /evidence and review/);
   assert.match(blogArticleSurfaceSource, /governed execution/);
   assert.match(blogArticleSurfaceSource, /SaaS done right/);
   assert.match(blogArticleSurfaceSource, /Detailed public guidance for roadmap-first, structured software building\./);
   assert.match(blogArticleSurfaceSource, /href="\/neroa\/pricing"/);
-  assert.match(blogArticleSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(blogArticleSurfaceSource, /href=\{NEROA_BLOG_INDEX_PATH\}/);
   assert.match(blogArticleSurfaceSource, /testId="blog-article-page-north-star"/);
   assert.doesNotMatch(blogArticleSurfaceSource, /<img/i);
   assert.doesNotMatch(blogArticleSurfaceSource, /<Image/i);
   assert.doesNotMatch(blogArticleSurfaceSource, /\/logo\//);
+});
+
+test("blog nav links stay aligned with the hardened Neroa public routes", () => {
+  for (const source of [blogPortalSurfaceSource, blogArticleSurfaceSource]) {
+    assert.match(source, /href="\/neroa"/);
+    assert.match(source, /href="\/neroa\/pricing"/);
+    assert.match(source, /href="\/neroa\/diy-vs-managed"/);
+    assert.match(source, /href=\{NEROA_BLOG_INDEX_PATH\}/);
+    assert.match(source, /href="\/neroa\/auth"/);
+    assert.match(source, /Start Your Project/);
+  }
+});
+
+test("blog content sources stay static-only and do not introduce admin CMS or backend publishing imports", () => {
+  for (const source of blogContentSources) {
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/supabase\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/stripe\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/schema/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/migrations?\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*\/models?\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*openai/i);
+    assert.doesNotMatch(source, /from\s+["']@\/app\/admin\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*cms/i);
+  }
 });
 
 test("/neroa/diy-vs-managed route exists and stays inside the clean Neroa portal namespace", () => {

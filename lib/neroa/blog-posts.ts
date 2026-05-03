@@ -12,6 +12,9 @@ export type BlogPost = {
   bodySections: BlogPostSection[];
 };
 
+export const NEROA_BLOG_INDEX_PATH = "/neroa/blog";
+
+// Static public Build Journal source for now; future admin publishing can replace this module without changing the public blog routes.
 export const blogPosts: BlogPost[] = [
   {
     slug: "why-no-code-ai-builders-break-down",
@@ -281,6 +284,14 @@ export const blogPosts: BlogPost[] = [
     ]
   }
 ];
+
+export function getStaticBlogPostSlugs() {
+  return blogPosts.map((post) => post.slug);
+}
+
+export function getBlogPostRoute(slug: string) {
+  return `${NEROA_BLOG_INDEX_PATH}/${slug}`;
+}
 
 export function getBlogPostBySlug(slug: string) {
   return blogPosts.find((post) => post.slug === slug);
