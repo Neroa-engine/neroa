@@ -21,6 +21,14 @@ const projectPortalSource = readFileSync(
   "utf8"
 );
 const authPortalSource = readFileSync(new URL("../app/neroa/auth/page.tsx", import.meta.url), "utf8");
+const cleanAuthConfirmRouteSource = readFileSync(
+  new URL("../app/neroa/auth/confirm/route.ts", import.meta.url),
+  "utf8"
+);
+const cleanResetPasswordPageSource = readFileSync(
+  new URL("../app/neroa/auth/reset-password/page.tsx", import.meta.url),
+  "utf8"
+);
 const pricingPortalSource = readFileSync(
   new URL("../app/neroa/pricing/page.tsx", import.meta.url),
   "utf8"
@@ -31,6 +39,10 @@ const projectPortalSurfaceSource = readFileSync(
 );
 const authPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-auth-surface.tsx", import.meta.url),
+  "utf8"
+);
+const cleanResetPasswordSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-reset-password-surface.tsx", import.meta.url),
   "utf8"
 );
 const pricingPortalSurfaceSource = readFileSync(
@@ -59,6 +71,9 @@ const cleanPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  cleanAuthConfirmRouteSource,
+  cleanResetPasswordPageSource,
+  cleanResetPasswordSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
   northStarAccentSource,
@@ -74,6 +89,20 @@ const uiOnlyPortalSources = [
   projectPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
+  cleanResetPasswordPageSource,
+  cleanResetPasswordSurfaceSource,
+  pricingPortalSource,
+  pricingPortalSurfaceSource,
+  northStarAccentSource,
+  portalNavigationSource,
+  portalShellSource
+];
+const nonRuntimeUiPortalSources = [
+  frontDoorSurfaceSource,
+  accountPortalSource,
+  accountPortalSurfaceSource,
+  projectPortalSource,
+  projectPortalSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
   northStarAccentSource,
@@ -102,6 +131,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(authPortalSource, /export default async function NeroaAuthPage/);
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSurfaceSource, /export function NeroaAuthSurface/);
+  assert.match(cleanAuthConfirmRouteSource, /export async function GET/);
+  assert.match(cleanResetPasswordPageSource, /export default async function NeroaResetPasswordPage/);
+  assert.match(cleanResetPasswordSurfaceSource, /export function NeroaResetPasswordSurface/);
   assert.match(pricingPortalSource, /export default function NeroaPricingPage/);
   assert.match(pricingPortalSource, /NeroaPricingSurface/);
   assert.match(pricingPortalSurfaceSource, /export function NeroaPricingSurface/);
@@ -408,11 +440,15 @@ test("navigation uses Neroa wordmark text only and no image logo paths", () => {
 test("clean auth route exports and renders the Neroa auth page UI", () => {
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSource, /@\/components\/neroa-portal\/neroa-auth-surface/);
+  assert.match(authPortalSource, /initialError/);
+  assert.match(authPortalSource, /initialNotice/);
   assert.doesNotMatch(authPortalSource, /@\/components\/portal\//);
   assert.doesNotMatch(authPortalSource, /@\/components\/workspace\//);
   assert.doesNotMatch(authPortalSource, /@\/components\/auth-form/);
   assert.match(authPortalSource, /Neroa \| Sign In/);
   assert.match(authPortalSurfaceSource, /"use client"/);
+  assert.match(authPortalSurfaceSource, /createSupabaseBrowserClient/);
+  assert.match(authPortalSurfaceSource, /useRouter/);
   assert.match(authPortalSurfaceSource, /Welcome to Neroa/);
   assert.match(authPortalSurfaceSource, /Start with a plan before the build begins\./);
   assert.match(authPortalSurfaceSource, /Structured Project Access/);
@@ -438,17 +474,23 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /Sign in or create an account to begin shaping your project\./);
   assert.match(authPortalSurfaceSource, /showSignInPassword/);
   assert.match(authPortalSurfaceSource, /showCreatePassword/);
+  assert.match(authPortalSurfaceSource, /supabase\.auth\.signInWithPassword/);
+  assert.match(authPortalSurfaceSource, /supabase\.auth\.signUp/);
+  assert.match(authPortalSurfaceSource, /supabase\.auth\.resetPasswordForEmail/);
+  assert.match(authPortalSurfaceSource, /Forgot password\?/);
+  assert.match(authPortalSurfaceSource, /Send Reset Link/);
   assert.match(authPortalSurfaceSource, /type=\{showSignInPassword \? "text" : "password"\}/);
   assert.match(authPortalSurfaceSource, /type=\{showCreatePassword \? "text" : "password"\}/);
   assert.match(authPortalSurfaceSource, /aria-label=\{showSignInPassword \? "Hide password" : "Show password"\}/);
   assert.match(authPortalSurfaceSource, /aria-label=\{showCreatePassword \? "Hide password" : "Show password"\}/);
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleSignInSubmit\}/);
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleCreateSubmit\}/);
+  assert.match(authPortalSurfaceSource, /onSubmit=\{handleForgotPasswordSubmit\}/);
   assert.match(authPortalSurfaceSource, /type="submit"/);
-  assert.match(authPortalSurfaceSource, /Forgot password\? Contact support for now\./);
-  assert.match(authPortalSurfaceSource, /type="button"/);
-  assert.match(authPortalSurfaceSource, /disabled/);
-  assert.doesNotMatch(authPortalSurfaceSource, /href="#"/);
+  assert.match(authPortalSurfaceSource, /buildPlanAwareAccountPath/);
+  assert.match(authPortalSurfaceSource, /\/neroa\/account/);
+  assert.match(authPortalSurfaceSource, /\/neroa\/auth\/confirm/);
+  assert.match(authPortalSurfaceSource, /\/neroa\/auth\/reset-password/);
   assert.match(authPortalSurfaceSource, /selectedPlanLabels/);
   assert.match(authPortalSurfaceSource, /Selected Plan:/);
   assert.match(authPortalSurfaceSource, /free: "Free"/);
@@ -459,6 +501,8 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /Start Your Project/);
   assert.match(authPortalSurfaceSource, /href="\/neroa\/pricing"/);
   assert.doesNotMatch(authPortalSurfaceSource, /NeroaPortalNavigation/);
+  assert.doesNotMatch(authPortalSurfaceSource, /@\/components\/auth\//);
+  assert.doesNotMatch(authPortalSurfaceSource, /@\/app\/auth\//);
   assert.doesNotMatch(authPortalSurfaceSource, /placeholder-only/i);
   assert.doesNotMatch(authPortalSurfaceSource, /future routing notes/i);
   assert.doesNotMatch(authPortalSurfaceSource, /Continue to Account Portal later/);
@@ -473,6 +517,9 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.doesNotMatch(authPortalSurfaceSource, /Continue destinations are informational only and do not trigger redirect decisions\./);
   assert.doesNotMatch(authPortalSurfaceSource, /magic link/i);
   assert.doesNotMatch(authPortalSurfaceSource, /\bConnected\b/);
+  assert.doesNotMatch(authPortalSurfaceSource, /href="#"/);
+  assert.doesNotMatch(authPortalSurfaceSource, /new URL\("\/auth\/confirm"/);
+  assert.doesNotMatch(authPortalSurfaceSource, /["'`]\/reset-password["'`]/);
 });
 
 test("clean auth surface uses Neroa wordmark text only without naming drift", () => {
@@ -698,7 +745,6 @@ test("clean auth page accepts selected plan context without wiring billing runti
 test("clean auth surface does not import auth runtime session or guard modules", () => {
   for (const source of [authPortalSource, authPortalSurfaceSource]) {
     assert.doesNotMatch(source, /@\/lib\/auth/);
-    assert.doesNotMatch(source, /@\/lib\/supabase\//);
     assert.doesNotMatch(source, /@\/lib\/portal\//);
     assert.doesNotMatch(source, /@\/lib\/workspace\//);
     assert.doesNotMatch(source, /@\/components\/auth-form/);
@@ -711,13 +757,40 @@ test("clean auth surface does not import auth runtime session or guard modules",
     assert.doesNotMatch(source, /@\/components\/build-room\//);
     assert.doesNotMatch(source, /@\/components\/front-door\//);
     assert.doesNotMatch(source, /@\/app\/auth\//);
-    assert.doesNotMatch(source, /from\s+["'][^"']*supabase/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*next-auth/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*session/i);
     assert.doesNotMatch(source, /from\s+["'][^"']*guard/i);
     assert.doesNotMatch(source, /\bredirect\(/);
   }
+
+  assert.doesNotMatch(authPortalSource, /@\/lib\/supabase\//);
+  assert.match(authPortalSurfaceSource, /@\/lib\/supabase\/browser/);
+  assert.doesNotMatch(authPortalSurfaceSource, /@\/lib\/supabase\/server/);
+  assert.doesNotMatch(authPortalSurfaceSource, /service_role/i);
+});
+
+test("clean auth confirmation and reset routes stay inside the new Neroa auth architecture", () => {
+  assert.match(cleanAuthConfirmRouteSource, /@\/lib\/supabase\/server/);
+  assert.match(cleanAuthConfirmRouteSource, /\/neroa\/auth/);
+  assert.match(cleanAuthConfirmRouteSource, /\/neroa\/account/);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /buildAuthRedirectPath/);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /APP_ROUTES/);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /@\/app\/auth\//);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /@\/components\/auth\//);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(cleanAuthConfirmRouteSource, /stripe/i);
+
+  assert.match(cleanResetPasswordPageSource, /@\/components\/neroa-portal\/neroa-reset-password-surface/);
+  assert.match(cleanResetPasswordSurfaceSource, /createSupabaseBrowserClient/);
+  assert.match(cleanResetPasswordSurfaceSource, /supabase\.auth\.updateUser/);
+  assert.match(cleanResetPasswordSurfaceSource, /supabase\.auth\.signOut/);
+  assert.match(cleanResetPasswordSurfaceSource, /Reset Password/);
+  assert.match(cleanResetPasswordSurfaceSource, /Update Password/);
+  assert.match(cleanResetPasswordSurfaceSource, /Back to Sign In/);
+  assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/components\/auth\//);
+  assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/app\/auth\//);
+  assert.doesNotMatch(cleanResetPasswordSurfaceSource, /\/logo\//);
 });
 
 test("clean portal shell does not import Neroa One runtime wiring", () => {
@@ -732,7 +805,7 @@ test("clean portal shell does not import Neroa One runtime wiring", () => {
 });
 
 test("clean portal shell stays UI-only and avoids runtime or schema behavior", () => {
-  for (const source of uiOnlyPortalSources) {
+  for (const source of nonRuntimeUiPortalSources) {
     assert.doesNotMatch(source, /createDraftPromptRoomItem/);
     assert.doesNotMatch(source, /submitCodex/);
     assert.doesNotMatch(source, /fetch\(/);

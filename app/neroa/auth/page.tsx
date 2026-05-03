@@ -35,6 +35,8 @@ export default async function NeroaAuthPage({
 }: NeroaAuthPageProps) {
   const resolvedSearchParams = await Promise.resolve(searchParams ?? {});
   const selectedPlan = normalizeSelectedPlan(readSearchParam(resolvedSearchParams, "plan"));
+  const error = readSearchParam(resolvedSearchParams, "error") ?? null;
+  const notice = readSearchParam(resolvedSearchParams, "notice") ?? null;
 
-  return <NeroaAuthSurface selectedPlan={selectedPlan} />;
+  return <NeroaAuthSurface selectedPlan={selectedPlan} initialError={error} initialNotice={notice} />;
 }

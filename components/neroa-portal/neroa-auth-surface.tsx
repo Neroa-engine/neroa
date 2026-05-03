@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 function NorthStarIcon({
   className = ""
@@ -29,7 +31,9 @@ function AuthField({
   value,
   onChange,
   autoComplete,
-  trailingAction
+  trailingAction,
+  placeholder,
+  disabled = false
 }: {
   label: string;
   type?: "text" | "email" | "password";
@@ -37,6 +41,8 @@ function AuthField({
   onChange: (nextValue: string) => void;
   autoComplete?: string;
   trailingAction?: ReactNode;
+  placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <label className="block space-y-2.5">
@@ -49,6 +55,9 @@ function AuthField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           autoComplete={autoComplete}
+          placeholder={placeholder}
+          disabled={disabled}
+          required
           className="h-8 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/28"
         />
         {trailingAction}
@@ -65,34 +74,208 @@ const selectedPlanLabels = {
   managed: "Managed Build"
 } as const;
 
+type SelectedPlan = keyof typeof selectedPlanLabels;
+
 type NeroaAuthSurfaceProps = {
-  selectedPlan?: keyof typeof selectedPlanLabels | null;
+  selectedPlan?: SelectedPlan | null;
+  initialError?: string | null;
+  initialNotice?: string | null;
 };
 
+type AuthMode = "signin" | "create" | "forgot-password";
+type StatusTone = "error" | "success";
+
+function normalizeAuthErrorMessage(message: string) {
+  if (message.toLowerCase() === "email not confirmed") {
+    return "Email not confirmed. Confirm your email first, then sign in to continue.";
+  }
+
+  return message;
+}
+
+function buildAuthStatus(tone: StatusTone, message: string) {
+  return { tone, message };
+}
+
 export function NeroaAuthSurface({
-  selectedPlan = null
+  selectedPlan = null,
+  initialError = null,
+  initialNotice = null
 }: NeroaAuthSurfaceProps) {
-  const [mode, setMode] = useState<"signin" | "create">("signin");
+  const router = useRouter();
+  const [supabase] = useState(() => createSupabaseBrowserClient());
+  const [mode, setMode] = useState<AuthMode>("signin");
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [createName, setCreateName] = useState("");
   const [createEmail, setCreateEmail] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [status, setStatus] = useState(
+    initialError
+      ? buildAuthStatus("error", initialError)
+      : initialNotice
+        ? buildAuthStatus("success", initialNotice)
+        : null
+  );
+  const [activeSubmit, setActiveSubmit] = useState<AuthMode | null>(null);
 
-  function handleSignInSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function buildPlanAwareAccountPath(plan: SelectedPlan | null) {
+    if (!plan) {
+      return "/neroa/account";
+    }
+
+    return `/neroa/account?plan=${plan}`;
   }
 
-  function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+  function buildCleanConfirmUrl(nextPath: string) {
+    const url = new URL("/neroa/auth/confirm", window.location.origin);
+    url.searchParams.set("next", nextPath);
+    return url.toString();
+  }
+
+  function buildResetPasswordPath() {
+    return selectedPlan ? `/neroa/auth/reset-password?plan=${selectedPlan}` : "/neroa/auth/reset-password";
+  }
+
+  function openMode(nextMode: AuthMode) {
+    setMode(nextMode);
+    setStatus(null);
+
+    if (nextMode === "forgot-password" && !forgotPasswordEmail.trim()) {
+      setForgotPasswordEmail(signInEmail.trim() || createEmail.trim());
+    }
+  }
+
+  async function handleSignInSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setStatus(null);
+    setActiveSubmit("signin");
+
+    const email = signInEmail.trim();
+    const password = signInPassword;
+
+    if (!email || !password) {
+      setStatus(buildAuthStatus("error", "Enter both your email and password to sign in."));
+      setActiveSubmit(null);
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) {
+      setStatus(buildAuthStatus("error", normalizeAuthErrorMessage(error.message)));
+      setActiveSubmit(null);
+      return;
+    }
+
+    const destination = buildPlanAwareAccountPath(selectedPlan);
+    router.push(destination);
+    router.refresh();
+  }
+
+  async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus(null);
+    setActiveSubmit("create");
+
+    const name = createName.trim();
+    const email = createEmail.trim();
+    const password = createPassword;
+    const passwordConfirmation = confirmPassword;
+
+    if (!name) {
+      setStatus(buildAuthStatus("error", "Enter your name so Neroa can attach it to the account."));
+      setActiveSubmit(null);
+      return;
+    }
+
+    if (password !== passwordConfirmation) {
+      setStatus(
+        buildAuthStatus("error", "Passwords do not match. Re-enter the same password in both fields.")
+      );
+      setActiveSubmit(null);
+      return;
+    }
+
+    const destination = buildPlanAwareAccountPath(selectedPlan);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: buildCleanConfirmUrl(destination),
+        data: {
+          name,
+          full_name: name
+        }
+      }
+    });
+
+    if (error) {
+      setStatus(buildAuthStatus("error", normalizeAuthErrorMessage(error.message)));
+      setActiveSubmit(null);
+      return;
+    }
+
+    if (data.session) {
+      router.push(destination);
+      router.refresh();
+      return;
+    }
+
+    setStatus(
+      buildAuthStatus(
+        "success",
+        "Account created. Check your email and open the confirmation link in this same browser to continue into Neroa."
+      )
+    );
+    setActiveSubmit(null);
+  }
+
+  async function handleForgotPasswordSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setStatus(null);
+    setActiveSubmit("forgot-password");
+
+    const email = forgotPasswordEmail.trim();
+
+    if (!email) {
+      setStatus(buildAuthStatus("error", "Enter your email so Neroa can send the reset link."));
+      setActiveSubmit(null);
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: buildCleanConfirmUrl(buildResetPasswordPath())
+    });
+
+    if (error) {
+      setStatus(buildAuthStatus("error", normalizeAuthErrorMessage(error.message)));
+      setActiveSubmit(null);
+      return;
+    }
+
+    setStatus(
+      buildAuthStatus(
+        "success",
+        "Password reset email sent. Open the link in this same browser to finish updating your password."
+      )
+    );
+    setActiveSubmit(null);
   }
 
   const passwordToggleClass =
     "text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white";
   const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
+  const isSigningIn = activeSubmit === "signin";
+  const isCreatingAccount = activeSubmit === "create";
+  const isResettingPassword = activeSubmit === "forgot-password";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
@@ -201,7 +384,7 @@ export function NeroaAuthSurface({
             <div className="mt-5 inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1">
               <button
                 type="button"
-                onClick={() => setMode("signin")}
+                onClick={() => openMode("signin")}
                 className={[
                   "rounded-full px-4.5 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition",
                   mode === "signin"
@@ -213,7 +396,7 @@ export function NeroaAuthSurface({
               </button>
               <button
                 type="button"
-                onClick={() => setMode("create")}
+                onClick={() => openMode("create")}
                 className={[
                   "rounded-full px-4.5 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition",
                   mode === "create"
@@ -225,6 +408,19 @@ export function NeroaAuthSurface({
               </button>
             </div>
 
+            {status ? (
+              <div
+                className={[
+                  "mt-5 rounded-[1.2rem] border px-4 py-3 text-sm leading-7",
+                  status.tone === "error"
+                    ? "border-rose-300/30 bg-rose-500/10 text-rose-100"
+                    : "border-emerald-300/30 bg-emerald-500/10 text-emerald-100"
+                ].join(" ")}
+              >
+                {status.message}
+              </div>
+            ) : null}
+
             {mode === "signin" ? (
               <form onSubmit={handleSignInSubmit} className="mt-6 space-y-4">
                 <AuthField
@@ -233,6 +429,8 @@ export function NeroaAuthSurface({
                   value={signInEmail}
                   onChange={setSignInEmail}
                   autoComplete="email"
+                  placeholder="you@example.com"
+                  disabled={isSigningIn}
                 />
                 <AuthField
                   label="Password"
@@ -240,6 +438,8 @@ export function NeroaAuthSurface({
                   value={signInPassword}
                   onChange={setSignInPassword}
                   autoComplete="current-password"
+                  placeholder="Enter your password"
+                  disabled={isSigningIn}
                   trailingAction={
                     <button
                       type="button"
@@ -255,27 +455,30 @@ export function NeroaAuthSurface({
                 <div className="flex items-center justify-between gap-4 pt-0.5">
                   <button
                     type="button"
-                    disabled
-                    className="text-left text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200/72"
+                    onClick={() => openMode("forgot-password")}
+                    className="text-left text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white"
                   >
-                    Forgot password? Contact support for now.
+                    Forgot password?
                   </button>
                 </div>
 
                 <button
                   type="submit"
-                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                  disabled={isSigningIn}
+                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:bg-teal-200/60"
                 >
-                  Sign In
+                  {isSigningIn ? "Signing In..." : "Sign In"}
                 </button>
               </form>
-            ) : (
+            ) : mode === "create" ? (
               <form onSubmit={handleCreateSubmit} className="mt-6 space-y-4">
                 <AuthField
                   label="Name"
                   value={createName}
                   onChange={setCreateName}
                   autoComplete="name"
+                  placeholder="Your name"
+                  disabled={isCreatingAccount}
                 />
                 <AuthField
                   label="Email"
@@ -283,6 +486,8 @@ export function NeroaAuthSurface({
                   value={createEmail}
                   onChange={setCreateEmail}
                   autoComplete="email"
+                  placeholder="you@example.com"
+                  disabled={isCreatingAccount}
                 />
                 <AuthField
                   label="Password"
@@ -290,6 +495,8 @@ export function NeroaAuthSurface({
                   value={createPassword}
                   onChange={setCreatePassword}
                   autoComplete="new-password"
+                  placeholder="Create a password"
+                  disabled={isCreatingAccount}
                   trailingAction={
                     <button
                       type="button"
@@ -307,13 +514,55 @@ export function NeroaAuthSurface({
                   value={confirmPassword}
                   onChange={setConfirmPassword}
                   autoComplete="new-password"
+                  placeholder="Confirm your password"
+                  disabled={isCreatingAccount}
                 />
 
                 <button
                   type="submit"
-                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                  disabled={isCreatingAccount}
+                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:bg-teal-200/60"
                 >
-                  Create Account
+                  {isCreatingAccount ? "Creating Account..." : "Create Account"}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleForgotPasswordSubmit} className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-teal-200/82">
+                    Reset Access
+                  </p>
+                  <p className="text-sm leading-7 text-white/64">
+                    Enter your email and Neroa will send a password-reset link that stays inside the clean auth flow.
+                  </p>
+                </div>
+
+                <AuthField
+                  label="Email"
+                  type="email"
+                  value={forgotPasswordEmail}
+                  onChange={setForgotPasswordEmail}
+                  autoComplete="email"
+                  placeholder="you@example.com"
+                  disabled={isResettingPassword}
+                />
+
+                <div className="flex items-center justify-between gap-4 pt-0.5">
+                  <button
+                    type="button"
+                    onClick={() => openMode("signin")}
+                    className="text-left text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200 disabled:cursor-not-allowed disabled:bg-teal-200/60"
+                >
+                  {isResettingPassword ? "Sending Reset Link..." : "Send Reset Link"}
                 </button>
               </form>
             )}
