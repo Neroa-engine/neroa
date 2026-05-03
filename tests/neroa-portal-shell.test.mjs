@@ -33,6 +33,10 @@ const pricingPortalSource = readFileSync(
   new URL("../app/neroa/pricing/page.tsx", import.meta.url),
   "utf8"
 );
+const diyManagedPortalSource = readFileSync(
+  new URL("../app/neroa/diy-vs-managed/page.tsx", import.meta.url),
+  "utf8"
+);
 const projectPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-project-portal-surface.tsx", import.meta.url),
   "utf8"
@@ -47,6 +51,10 @@ const cleanResetPasswordSurfaceSource = readFileSync(
 );
 const pricingPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-pricing-surface.tsx", import.meta.url),
+  "utf8"
+);
+const diyManagedPortalSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-diy-managed-surface.tsx", import.meta.url),
   "utf8"
 );
 const northStarAccentSource = readFileSync(
@@ -76,6 +84,8 @@ const cleanPortalSources = [
   cleanResetPasswordSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  diyManagedPortalSource,
+  diyManagedPortalSurfaceSource,
   northStarAccentSource,
   portalNavigationSource,
   portalShellSource
@@ -86,6 +96,8 @@ const publicEntrySources = [
   frontDoorSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  diyManagedPortalSource,
+  diyManagedPortalSurfaceSource,
   authPortalSource,
   authPortalSurfaceSource,
   cleanAuthConfirmRouteSource,
@@ -109,6 +121,8 @@ const uiOnlyPortalSources = [
   cleanResetPasswordSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  diyManagedPortalSource,
+  diyManagedPortalSurfaceSource,
   northStarAccentSource,
   portalNavigationSource,
   portalShellSource
@@ -121,6 +135,8 @@ const nonRuntimeUiPortalSources = [
   projectPortalSurfaceSource,
   pricingPortalSource,
   pricingPortalSurfaceSource,
+  diyManagedPortalSource,
+  diyManagedPortalSurfaceSource,
   northStarAccentSource,
   portalNavigationSource,
   portalShellSource
@@ -153,6 +169,9 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(pricingPortalSource, /export default function NeroaPricingPage/);
   assert.match(pricingPortalSource, /NeroaPricingSurface/);
   assert.match(pricingPortalSurfaceSource, /export function NeroaPricingSurface/);
+  assert.match(diyManagedPortalSource, /export default function NeroaDiyVsManagedPage/);
+  assert.match(diyManagedPortalSource, /NeroaDiyManagedSurface/);
+  assert.match(diyManagedPortalSurfaceSource, /export function NeroaDiyManagedSurface/);
   assert.match(northStarAccentSource, /export function NeroaNorthStarAccent/);
   assert.match(portalNavigationSource, /export function NeroaPortalNavigation/);
   assert.match(portalShellSource, /export function NeroaCleanPortalShell/);
@@ -448,6 +467,52 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.doesNotMatch(pricingPortalSurfaceSource, /checkoutSession/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /unlimited ai/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /GPT-5\.5/i);
+});
+
+test("/neroa/diy-vs-managed route exists and stays inside the clean Neroa portal namespace", () => {
+  assert.match(diyManagedPortalSource, /@\/components\/neroa-portal\/neroa-diy-managed-surface/);
+  assert.match(diyManagedPortalSource, /Neroa \| DIY vs Managed/);
+  assert.match(
+    diyManagedPortalSource,
+    /Compare Neroa DIY Build and Managed Build paths, both rooted in roadmap-first planning, scope before execution, approvals, and structured delivery\./
+  );
+  assert.doesNotMatch(diyManagedPortalSource, /@\/lib\/auth/);
+  assert.doesNotMatch(diyManagedPortalSource, /@\/components\/marketing\//);
+  assert.doesNotMatch(diyManagedPortalSource, /@\/lib\/billing\//);
+});
+
+test("/neroa/diy-vs-managed page explains the two public build paths and links to pricing", () => {
+  assert.match(diyManagedPortalSurfaceSource, /Two ways to build with Neroa\./);
+  assert.match(diyManagedPortalSurfaceSource, /DIY Build/);
+  assert.match(diyManagedPortalSurfaceSource, /Managed Build/);
+  assert.match(diyManagedPortalSurfaceSource, /roadmap-first/);
+  assert.match(diyManagedPortalSurfaceSource, /scope before execution/);
+  assert.match(diyManagedPortalSurfaceSource, /Build Credits/);
+  assert.match(diyManagedPortalSurfaceSource, /managed credit packages/);
+  assert.match(diyManagedPortalSurfaceSource, /approvals/);
+  assert.match(diyManagedPortalSurfaceSource, /evidence and review/);
+  assert.match(diyManagedPortalSurfaceSource, /Both paths start with structure\./);
+  assert.match(diyManagedPortalSurfaceSource, /Neroa does not begin by throwing prompts at code\./);
+  assert.match(diyManagedPortalSurfaceSource, /Which one should you choose\?/);
+  assert.match(diyManagedPortalSurfaceSource, /Choose DIY if:/);
+  assert.match(diyManagedPortalSurfaceSource, /Choose Managed if:/);
+  assert.match(diyManagedPortalSurfaceSource, /Compare plans/);
+  assert.match(diyManagedPortalSurfaceSource, /Start with pricing/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/auth"/);
+  assert.match(diyManagedPortalSurfaceSource, /NeroaNorthStarAccent/);
+  assert.match(diyManagedPortalSurfaceSource, /testId="diy-managed-page-north-star"/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /<img/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /<Image/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\/logo\//i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /\/logos\//i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /unlimited ai/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /instant full MVP/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /magic app builder/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /cheap clone builder/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /GPT-5\.5/i);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /checkout/i);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {
