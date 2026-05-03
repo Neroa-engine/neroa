@@ -77,7 +77,8 @@ const selectedPlanLabels = {
 type SelectedPlan = keyof typeof selectedPlanLabels;
 
 type NeroaAuthSurfaceProps = {
-  selectedPlan?: SelectedPlan | null;
+  selectedPlan?: SelectedPlan;
+  hasExplicitPlan?: boolean;
   initialError?: string | null;
   initialNotice?: string | null;
 };
@@ -98,7 +99,8 @@ function buildAuthStatus(tone: StatusTone, message: string) {
 }
 
 export function NeroaAuthSurface({
-  selectedPlan = null,
+  selectedPlan = "free",
+  hasExplicitPlan = false,
   initialError = null,
   initialNotice = null
 }: NeroaAuthSurfaceProps) {
@@ -122,12 +124,17 @@ export function NeroaAuthSurface({
         : null
   );
   const [activeSubmit, setActiveSubmit] = useState<AuthMode | null>(null);
+  const [showEmailConfirmationHelp, setShowEmailConfirmationHelp] = useState(false);
 
-  function buildPlanAwareAccountPath(plan: SelectedPlan | null) {
-    if (!plan) {
+  function buildAccountPathForSignIn(plan: SelectedPlan, preservePlan: boolean) {
+    if (!preservePlan) {
       return "/neroa/account";
     }
 
+    return `/neroa/account?plan=${plan}`;
+  }
+
+  function buildAccountPathForSignup(plan: SelectedPlan) {
     return `/neroa/account?plan=${plan}`;
   }
 
@@ -144,6 +151,7 @@ export function NeroaAuthSurface({
   function openMode(nextMode: AuthMode) {
     setMode(nextMode);
     setStatus(null);
+    setShowEmailConfirmationHelp(false);
 
     if (nextMode === "forgot-password" && !forgotPasswordEmail.trim()) {
       setForgotPasswordEmail(signInEmail.trim() || createEmail.trim());
@@ -153,6 +161,7 @@ export function NeroaAuthSurface({
   async function handleSignInSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus(null);
+    setShowEmailConfirmationHelp(false);
     setActiveSubmit("signin");
 
     const email = signInEmail.trim();
@@ -175,7 +184,7 @@ export function NeroaAuthSurface({
       return;
     }
 
-    const destination = buildPlanAwareAccountPath(selectedPlan);
+    const destination = buildAccountPathForSignIn(selectedPlan, hasExplicitPlan);
     router.push(destination);
     router.refresh();
   }
@@ -183,6 +192,7 @@ export function NeroaAuthSurface({
   async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus(null);
+    setShowEmailConfirmationHelp(false);
     setActiveSubmit("create");
 
     const name = createName.trim();
@@ -204,7 +214,7 @@ export function NeroaAuthSurface({
       return;
     }
 
-    const destination = buildPlanAwareAccountPath(selectedPlan);
+    const destination = buildAccountPathForSignup(selectedPlan);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -212,7 +222,8 @@ export function NeroaAuthSurface({
         emailRedirectTo: buildCleanConfirmUrl(destination),
         data: {
           name,
-          full_name: name
+          full_name: name,
+          selected_plan: selectedPlan
         }
       }
     });
@@ -232,9 +243,10 @@ export function NeroaAuthSurface({
     setStatus(
       buildAuthStatus(
         "success",
-        "Account created. Check your email and open the confirmation link in this same browser to continue into Neroa."
+        "Account created. Check your email for the confirmation link. After confirming, you'll continue into Neroa with your selected plan."
       )
     );
+    setShowEmailConfirmationHelp(true);
     setActiveSubmit(null);
   }
 
@@ -272,7 +284,7 @@ export function NeroaAuthSurface({
 
   const passwordToggleClass =
     "text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white";
-  const selectedPlanLabel = selectedPlan ? selectedPlanLabels[selectedPlan] : null;
+  const selectedPlanLabel = selectedPlanLabels[selectedPlan];
   const isSigningIn = activeSubmit === "signin";
   const isCreatingAccount = activeSubmit === "create";
   const isResettingPassword = activeSubmit === "forgot-password";
@@ -372,11 +384,14 @@ export function NeroaAuthSurface({
                 <p className="text-[0.95rem] leading-7 text-white/68">
                   Sign in or create an account to start your project.
                 </p>
-                {selectedPlanLabel ? (
-                  <div className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-teal-100">
-                    <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/84" />
-                    Selected Plan: {selectedPlanLabel}
-                  </div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-teal-100">
+                  <NorthStarIcon className="h-3.5 w-3.5 text-teal-200/84" />
+                  Selected Plan: {selectedPlanLabel}
+                </div>
+                {!hasExplicitPlan ? (
+                  <p className="max-w-md text-sm leading-7 text-white/56">
+                    Starting with Free Project Preview. You can choose or upgrade a plan after account creation.
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -525,6 +540,20 @@ export function NeroaAuthSurface({
                 >
                   {isCreatingAccount ? "Creating Account..." : "Create Account"}
                 </button>
+
+                {showEmailConfirmationHelp ? (
+                  <div className="rounded-[1.25rem] border border-white/10 bg-white/[0.04] px-4 py-4">
+                    <Link
+                      href="/neroa/pricing"
+                      className="text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white"
+                    >
+                      Back to pricing
+                    </Link>
+                    <p className="mt-3 text-sm leading-7 text-white/58">
+                      Didn&apos;t receive it? Check spam or confirm the email address is correct.
+                    </p>
+                  </div>
+                ) : null}
               </form>
             ) : (
               <form onSubmit={handleForgotPasswordSubmit} className="mt-6 space-y-4">

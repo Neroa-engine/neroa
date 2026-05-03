@@ -78,6 +78,6 @@ export async function GET(request: Request) {
   }
 
   const destination = new URL(next, requestUrl.origin);
-  destination.searchParams.set("notice", buildNotice(next));
+  destination.searchParams.set("notice", buildNotice(destination.pathname));
   return NextResponse.redirect(destination);
 }

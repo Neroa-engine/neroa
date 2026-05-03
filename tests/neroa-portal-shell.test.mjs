@@ -412,6 +412,11 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.match(pricingPortalSurfaceSource, /lg:flex-row lg:items-center lg:justify-between/);
   assert.match(pricingPortalSurfaceSource, /lg:flex-nowrap lg:justify-end/);
   assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
+  assert.match(pricingPortalSurfaceSource, /id: "free"/);
+  assert.match(pricingPortalSurfaceSource, /id: "starter"/);
+  assert.match(pricingPortalSurfaceSource, /id: "pro"/);
+  assert.match(pricingPortalSurfaceSource, /id: "business"/);
+  assert.match(pricingPortalSurfaceSource, /id: "managed"/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /const workspaceTopOffs/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /40 build credits/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /0-10 trial credits/i);
@@ -440,6 +445,9 @@ test("navigation uses Neroa wordmark text only and no image logo paths", () => {
 test("clean auth route exports and renders the Neroa auth page UI", () => {
   assert.match(authPortalSource, /NeroaAuthSurface/);
   assert.match(authPortalSource, /@\/components\/neroa-portal\/neroa-auth-surface/);
+  assert.match(authPortalSource, /selectedPlanFromQuery/);
+  assert.match(authPortalSource, /selectedPlan = selectedPlanFromQuery \?\? "free"/);
+  assert.match(authPortalSource, /hasExplicitPlan = selectedPlanFromQuery !== null/);
   assert.match(authPortalSource, /initialError/);
   assert.match(authPortalSource, /initialNotice/);
   assert.doesNotMatch(authPortalSource, /@\/components\/portal\//);
@@ -479,6 +487,7 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /supabase\.auth\.resetPasswordForEmail/);
   assert.match(authPortalSurfaceSource, /Forgot password\?/);
   assert.match(authPortalSurfaceSource, /Send Reset Link/);
+  assert.match(authPortalSurfaceSource, /Starting with Free Project Preview\. You can choose or upgrade a plan after account creation\./);
   assert.match(authPortalSurfaceSource, /type=\{showSignInPassword \? "text" : "password"\}/);
   assert.match(authPortalSurfaceSource, /type=\{showCreatePassword \? "text" : "password"\}/);
   assert.match(authPortalSurfaceSource, /aria-label=\{showSignInPassword \? "Hide password" : "Show password"\}/);
@@ -487,7 +496,8 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleCreateSubmit\}/);
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleForgotPasswordSubmit\}/);
   assert.match(authPortalSurfaceSource, /type="submit"/);
-  assert.match(authPortalSurfaceSource, /buildPlanAwareAccountPath/);
+  assert.match(authPortalSurfaceSource, /buildAccountPathForSignIn/);
+  assert.match(authPortalSurfaceSource, /buildAccountPathForSignup/);
   assert.match(authPortalSurfaceSource, /\/neroa\/account/);
   assert.match(authPortalSurfaceSource, /\/neroa\/auth\/confirm/);
   assert.match(authPortalSurfaceSource, /\/neroa\/auth\/reset-password/);
@@ -495,6 +505,9 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /Selected Plan:/);
   assert.match(authPortalSurfaceSource, /free: "Free"/);
   assert.match(authPortalSurfaceSource, /managed: "Managed Build"/);
+  assert.match(authPortalSurfaceSource, /selected_plan: selectedPlan/);
+  assert.match(authPortalSurfaceSource, /Back to pricing/);
+  assert.match(authPortalSurfaceSource, /Didn&apos;t receive it\? Check spam or confirm the email address is correct\./);
   assert.match(authPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(authPortalSurfaceSource, /Home/);
   assert.match(authPortalSurfaceSource, /Pricing/);
@@ -510,7 +523,6 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.doesNotMatch(authPortalSurfaceSource, /clean auth surface/i);
   assert.doesNotMatch(authPortalSurfaceSource, /surface status/i);
   assert.doesNotMatch(authPortalSurfaceSource, /control layer/i);
-  assert.doesNotMatch(authPortalSurfaceSource, /project preview/i);
   assert.doesNotMatch(authPortalSurfaceSource, /runtime-free/i);
   assert.doesNotMatch(authPortalSurfaceSource, /No live login or signup submission is active in this pass\./);
   assert.doesNotMatch(authPortalSurfaceSource, /No route guards, session restoration, or redirect logic is active in this pass\./);
@@ -738,6 +750,7 @@ test("clean auth page accepts selected plan context without wiring billing runti
   assert.match(authPortalSource, /case "business"/);
   assert.match(authPortalSource, /case "managed"/);
   assert.match(authPortalSource, /selectedPlan=\{selectedPlan\}/);
+  assert.match(authPortalSource, /hasExplicitPlan=\{hasExplicitPlan\}/);
   assert.doesNotMatch(authPortalSource, /@\/lib\/billing\//);
   assert.doesNotMatch(authPortalSource, /stripe/i);
 });
@@ -774,6 +787,9 @@ test("clean auth confirmation and reset routes stay inside the new Neroa auth ar
   assert.match(cleanAuthConfirmRouteSource, /@\/lib\/supabase\/server/);
   assert.match(cleanAuthConfirmRouteSource, /\/neroa\/auth/);
   assert.match(cleanAuthConfirmRouteSource, /\/neroa\/account/);
+  assert.match(cleanAuthConfirmRouteSource, /safeNextPath/);
+  assert.match(cleanAuthConfirmRouteSource, /new URL\(next, requestUrl\.origin\)/);
+  assert.match(cleanAuthConfirmRouteSource, /destination\.searchParams\.set\("notice"/);
   assert.doesNotMatch(cleanAuthConfirmRouteSource, /buildAuthRedirectPath/);
   assert.doesNotMatch(cleanAuthConfirmRouteSource, /APP_ROUTES/);
   assert.doesNotMatch(cleanAuthConfirmRouteSource, /@\/app\/auth\//);
@@ -785,12 +801,26 @@ test("clean auth confirmation and reset routes stay inside the new Neroa auth ar
   assert.match(cleanResetPasswordSurfaceSource, /createSupabaseBrowserClient/);
   assert.match(cleanResetPasswordSurfaceSource, /supabase\.auth\.updateUser/);
   assert.match(cleanResetPasswordSurfaceSource, /supabase\.auth\.signOut/);
+  assert.match(cleanResetPasswordSurfaceSource, /Password updated\. Sign in with your new password\./);
   assert.match(cleanResetPasswordSurfaceSource, /Reset Password/);
   assert.match(cleanResetPasswordSurfaceSource, /Update Password/);
   assert.match(cleanResetPasswordSurfaceSource, /Back to Sign In/);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/components\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/app\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /\/logo\//);
+});
+
+test("clean auth flow does not introduce schema or migration dependencies", () => {
+  for (const source of [
+    authPortalSource,
+    authPortalSurfaceSource,
+    cleanAuthConfirmRouteSource,
+    cleanResetPasswordPageSource,
+    cleanResetPasswordSurfaceSource
+  ]) {
+    assert.doesNotMatch(source, /schema/i);
+    assert.doesNotMatch(source, /migration/i);
+  }
 });
 
 test("clean portal shell does not import Neroa One runtime wiring", () => {
@@ -822,6 +852,16 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
     assert.doesNotMatch(source, /queue adapter/i);
     assert.doesNotMatch(source, /storage adapter/i);
   }
+});
+
+test("clean auth plan flow keeps public CTAs and plan routing aligned", () => {
+  assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
+  assert.doesNotMatch(frontDoorSurfaceSource, /href="\/neroa\/auth\?plan=/);
+  assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
+  assert.match(authPortalSource, /selectedPlan = selectedPlanFromQuery \?\? "free"/);
+  assert.match(authPortalSurfaceSource, /hasExplicitPlan = false/);
+  assert.match(authPortalSurfaceSource, /buildAccountPathForSignIn\(selectedPlan, hasExplicitPlan\)/);
+  assert.match(authPortalSurfaceSource, /buildAccountPathForSignup\(selectedPlan\)/);
 });
 
 test("Account Portal route stays inside the clean neroa portal namespace", () => {
