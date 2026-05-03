@@ -626,6 +626,8 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.match(diyManagedPortalSurfaceSource, /"use client"/);
   assert.match(diyManagedPortalSurfaceSource, /useState/);
   assert.match(diyManagedPortalSurfaceSource, /useEffect/);
+  assert.match(diyManagedPortalSurfaceSource, /useId/);
+  assert.match(diyManagedPortalSurfaceSource, /useRef/);
   assert.match(diyManagedPortalSurfaceSource, /Two ways to build with Neroa\./);
   assert.match(diyManagedPortalSurfaceSource, /DIY Build/);
   assert.match(diyManagedPortalSurfaceSource, /Managed Build/);
@@ -647,8 +649,14 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.match(diyManagedPortalSurfaceSource, /type="button"/);
   assert.match(diyManagedPortalSurfaceSource, /role="dialog"/);
   assert.match(diyManagedPortalSurfaceSource, /aria-modal="true"/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-labelledby=\{titleId\}/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-describedby=\{descriptionId\}/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-haspopup="dialog"/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-expanded=\{isActive\}/);
   assert.match(diyManagedPortalSurfaceSource, /Close explanation bubble/);
   assert.match(diyManagedPortalSurfaceSource, /event\.key === "Escape"/);
+  assert.match(diyManagedPortalSurfaceSource, /document\.body\.style\.overflow = "hidden"/);
+  assert.match(diyManagedPortalSurfaceSource, /previousActiveElement\?\.focus\(\)/);
   assert.match(diyManagedPortalSurfaceSource, /Credit-governed execution means build work is controlled by the credits available/);
   assert.match(diyManagedPortalSurfaceSource, /Managed credits are separate from regular Build Credits/);
   assert.match(diyManagedPortalSurfaceSource, /Both paths start with structure\./);
@@ -658,10 +666,18 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.match(diyManagedPortalSurfaceSource, /Choose Managed if:/);
   assert.match(diyManagedPortalSurfaceSource, /Compare plans/);
   assert.match(diyManagedPortalSurfaceSource, /Start with pricing/);
+  assert.match(diyManagedPortalSurfaceSource, /Home/);
+  assert.match(diyManagedPortalSurfaceSource, /Pricing/);
+  assert.match(diyManagedPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(diyManagedPortalSurfaceSource, /Blog/);
+  assert.match(diyManagedPortalSurfaceSource, /Sign In/);
+  assert.match(diyManagedPortalSurfaceSource, /Start Your Project/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa"/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/blog"/);
   assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/auth"/);
+  assert.doesNotMatch(diyManagedPortalSurfaceSource, /href="#/);
   assert.match(diyManagedPortalSurfaceSource, /NeroaNorthStarAccent/);
   assert.match(diyManagedPortalSurfaceSource, /testId="diy-managed-page-north-star"/);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /<img/i);
@@ -681,6 +697,23 @@ test("/neroa/diy-vs-managed page explains the two public build paths and links t
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /from\s+["']@\/lib\/billing\//i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /browser-runtime-bridge/i);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /from\s+["'][^"']*model/i);
+});
+
+test("/neroa/diy-vs-managed keeps unique concept identities and locks the public nav routes", () => {
+  assert.match(diyManagedPortalSurfaceSource, /id: "shared-roadmap-first-planning"/);
+  assert.match(diyManagedPortalSurfaceSource, /id: "diy-roadmap-first-planning"/);
+  assert.match(diyManagedPortalSurfaceSource, /id: "diy-credit-governed-execution"/);
+  assert.match(diyManagedPortalSurfaceSource, /id: "managed-credit-packages"/);
+  assert.match(diyManagedPortalSurfaceSource, /activeConceptId/);
+  assert.match(diyManagedPortalSurfaceSource, /concept\.id === activeConceptId/);
+  assert.match(diyManagedPortalSurfaceSource, /setActiveConceptId\(nextConcept\.id\)/);
+  assert.match(diyManagedPortalSurfaceSource, /aria-label="Neroa public navigation"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(diyManagedPortalSurfaceSource, /href="\/neroa\/auth"/);
+  assert.equal(countOccurrences(diyManagedPortalSurfaceSource, /href="\/neroa\/pricing"/g), 4);
 });
 
 test("navigation uses Neroa wordmark text only and no image logo paths", () => {

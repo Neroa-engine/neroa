@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 
 type Concept = {
+  id: string;
   label: string;
   explanation: string;
 };
@@ -18,21 +19,25 @@ type ConceptSection = {
 
 const sharedFoundationConcepts: readonly Concept[] = [
   {
+    id: "shared-roadmap-first-planning",
     label: "Roadmap-first planning",
     explanation:
       "Roadmap-first planning means the project is organized before code starts. Neroa helps define the end goal, user flow, required features, build phases, and decision points so the work has a clear sequence instead of becoming a pile of disconnected prompts."
   },
   {
+    id: "shared-scope-before-execution",
     label: "Scope before execution",
     explanation:
       "Scope before execution means Neroa defines what should be built, what should wait, and what would create unnecessary rebuild risk before work begins. This helps protect credits, reduce rework, and keep the project moving through approved steps instead of uncontrolled changes."
   },
   {
+    id: "shared-approvals-at-checkpoints",
     label: "Approvals at checkpoints",
     explanation:
       "Approvals at checkpoints mean important decisions are reviewed before the next build step continues. Instead of letting execution run ahead blindly, Neroa uses approval moments for roadmap, scope, design direction, feature changes, and build readiness."
   },
   {
+    id: "shared-evidence-and-review",
     label: "Evidence and review across the build path",
     explanation:
       "Evidence and review means progress should be tied to visible proof: screenshots, summaries, completed tasks, test results, or review notes. This gives the customer a way to understand what changed, what passed, what needs revision, and what should happen next."
@@ -51,26 +56,31 @@ const buildPaths: readonly ConceptSection[] = [
     ],
     concepts: [
       {
+        id: "diy-roadmap-first-planning",
         label: "Roadmap-first planning",
         explanation:
           "In DIY Build, roadmap-first planning gives the customer a structured build path they can follow. Neroa helps organize the idea into phases and tasks so the customer is not guessing what to build next or spending credits on scattered changes."
       },
       {
+        id: "diy-scoped-tasks",
         label: "Scoped tasks",
         explanation:
           "Scoped tasks are specific, bounded pieces of work that can be reviewed and approved. Instead of saying 'build the whole app,' Neroa breaks the project into clear tasks with expected outcomes, limits, and acceptance criteria."
       },
       {
+        id: "diy-credit-governed-execution",
         label: "Credit-governed execution",
         explanation:
           "Credit-governed execution means build work is controlled by the credits available and the value of the approved task. Credits are not unlimited AI usage; they are a way to govern forward progress, prevent runaway rebuilds, and keep work aligned to the roadmap."
       },
       {
+        id: "diy-review-and-approval-checkpoints",
         label: "Review and approval checkpoints",
         explanation:
           "In DIY Build, review and approval checkpoints give the customer control. The customer can inspect progress, approve the next step, request revisions, or pause before spending more credits on additional work."
       },
       {
+        id: "diy-project-workspace",
         label: "Project workspace",
         explanation:
           "The project workspace is where the roadmap, scope, tasks, decisions, and review items come together. It gives the customer one organized place to understand where the project stands and what needs to happen next."
@@ -88,26 +98,31 @@ const buildPaths: readonly ConceptSection[] = [
     ],
     concepts: [
       {
+        id: "managed-credit-packages",
         label: "Managed credit packages",
         explanation:
           "Managed credit packages are used for builds where Neroa carries more of the execution burden. Managed credits are separate from regular Build Credits because managed work includes more service, review, setup, coordination, and delivery support."
       },
       {
+        id: "managed-deeper-execution-support",
         label: "Deeper execution support",
         explanation:
           "Deeper execution support means the customer is not expected to manage every task alone. Neroa helps translate roadmap and scope into clearer build action, supports decisions, and carries more of the operational burden throughout the project."
       },
       {
+        id: "managed-setup-and-delivery-guidance",
         label: "Setup and delivery guidance",
         explanation:
           "Setup and delivery guidance helps customers handle the harder parts of getting a SaaS project ready: account setup, integrations, deployment path, review flow, and what needs to be ready before launch or handoff."
       },
       {
+        id: "managed-stronger-review-loop",
         label: "Stronger review loop",
         explanation:
           "A stronger review loop means managed projects get more structured review, feedback, correction, and approval handling. This is useful when the customer wants Neroa to help catch issues, organize revisions, and keep the build moving in the right direction."
       },
       {
+        id: "managed-more-hands-on-project-handling",
         label: "More hands-on project handling",
         explanation:
           "More hands-on project handling means Neroa takes a larger role in guiding the project through planning, execution, review, and readiness. It is designed for customers who want more help and less day-to-day build management."
@@ -200,7 +215,8 @@ function ConceptButton({
       onClick={() => onOpen(concept)}
       className="group inline-flex min-h-12 items-center gap-3 rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] px-4 py-2 text-left text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-teal-100 transition duration-200 hover:border-teal-200/50 hover:bg-[linear-gradient(180deg,rgba(150,255,233,0.12),rgba(255,255,255,0.05))] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200/80"
       aria-label={`${concept.label} Learn more in ${sectionTitle}`}
-      aria-pressed={isActive}
+      aria-expanded={isActive}
+      aria-haspopup="dialog"
     >
       <span>{concept.label}</span>
       <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/20 px-2 py-1 text-[0.58rem] tracking-[0.16em] text-white/70 transition group-hover:border-teal-200/40 group-hover:text-white/88">
@@ -213,11 +229,35 @@ function ConceptButton({
 
 function ConceptModal({
   concept,
+  dialogId,
   onClose
 }: {
   concept: Concept | null;
+  dialogId: string;
   onClose: () => void;
 }) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!concept) {
+      return;
+    }
+
+    const previousActiveElement =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    closeButtonRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousActiveElement?.focus();
+    };
+  }, [concept]);
+
   if (!concept) {
     return null;
   }
@@ -231,9 +271,12 @@ function ConceptModal({
         onClick={onClose}
       />
       <div
+        id={dialogId}
         role="dialog"
         aria-modal="true"
-        aria-label={concept.label}
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        tabIndex={-1}
         className="relative z-10 w-full max-w-3xl overflow-hidden rounded-[2rem] border border-white/18 bg-[linear-gradient(180deg,rgba(24,28,32,0.97),rgba(12,15,18,0.98))] p-6 shadow-[0_40px_140px_rgba(0,0,0,0.62)] sm:p-8"
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(104,211,175,0.16),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.05),transparent_28%)]" />
@@ -242,20 +285,24 @@ function ConceptModal({
             <p className="text-[0.72rem] font-semibold uppercase tracking-[0.3em] text-white/48">
               Premium explanation bubble
             </p>
-            <h3 className="max-w-2xl font-serif text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-[-0.03em] text-teal-200">
+            <h3
+              id={titleId}
+              className="max-w-2xl font-serif text-[clamp(2rem,4vw,3.2rem)] leading-tight tracking-[-0.03em] text-teal-200"
+            >
               {concept.label}
             </h3>
-            <p className="max-w-2xl text-[1rem] leading-8 text-white/76">{concept.explanation}</p>
+            <p id={descriptionId} className="max-w-2xl text-[1rem] leading-8 text-white/76">
+              {concept.explanation}
+            </p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             onClick={onClose}
             className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/14 bg-white/[0.06] text-white/72 transition hover:border-teal-200/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-200/80"
             aria-label="Close explanation bubble"
           >
-            <span aria-hidden="true" className="text-xl leading-none">
-              ×
-            </span>
+            <span aria-hidden="true" className="text-xl leading-none">&times;</span>
           </button>
         </div>
       </div>
@@ -264,27 +311,27 @@ function ConceptModal({
 }
 
 export function NeroaDiyManagedSurface() {
-  const [activeConceptLabel, setActiveConceptLabel] = useState<string | null>(null);
+  const [activeConceptId, setActiveConceptId] = useState<string | null>(null);
 
   const allConcepts = [...sharedFoundationConcepts, ...buildPaths.flatMap((path) => path.concepts)];
 
-  const activeConcept =
-    allConcepts.find((concept) => concept.label === activeConceptLabel) ?? null;
+  const activeConcept = allConcepts.find((concept) => concept.id === activeConceptId) ?? null;
+  const activeDialogId = activeConcept ? `neroa-diy-managed-dialog-${activeConcept.id}` : "";
 
   useEffect(() => {
-    if (!activeConceptLabel) {
+    if (!activeConceptId) {
       return;
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setActiveConceptLabel(null);
+        setActiveConceptId(null);
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [activeConceptLabel]);
+  }, [activeConceptId]);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
@@ -304,7 +351,11 @@ export function NeroaDiyManagedSurface() {
         <div className="absolute bottom-[8rem] left-[-8%] right-[-8%] h-[18rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.1),transparent_60%)]" />
       </div>
 
-      <ConceptModal concept={activeConcept} onClose={() => setActiveConceptLabel(null)} />
+      <ConceptModal
+        concept={activeConcept}
+        dialogId={activeDialogId}
+        onClose={() => setActiveConceptId(null)}
+      />
 
       <section className="relative mx-auto flex w-full max-w-[1680px] flex-col px-6 py-8 lg:px-12">
         <header className="flex items-center justify-between border-b border-white/10 pb-6">
@@ -313,7 +364,10 @@ export function NeroaDiyManagedSurface() {
             <span className="font-serif text-[2.15rem] tracking-tight">Neroa</span>
           </Link>
 
-          <nav className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex">
+          <nav
+            aria-label="Neroa public navigation"
+            className="hidden items-center gap-8 text-sm uppercase tracking-[0.18em] text-white/62 md:flex"
+          >
             <Link href="/neroa" className="transition hover:text-white">
               Home
             </Link>
@@ -375,11 +429,11 @@ export function NeroaDiyManagedSurface() {
             <div className="mt-5 flex flex-wrap gap-3">
               {sharedFoundationConcepts.map((concept) => (
                 <ConceptButton
-                  key={concept.label}
+                  key={concept.id}
                   concept={concept}
                   sectionTitle="Shared foundation"
-                  isActive={activeConceptLabel === concept.label}
-                  onOpen={(nextConcept) => setActiveConceptLabel(nextConcept.label)}
+                  isActive={activeConceptId === concept.id}
+                  onOpen={(nextConcept) => setActiveConceptId(nextConcept.id)}
                 />
               ))}
             </div>
@@ -417,11 +471,11 @@ export function NeroaDiyManagedSurface() {
                     <div className="mt-4 flex flex-wrap gap-2.5">
                       {path.concepts.map((concept) => (
                         <ConceptButton
-                          key={concept.label}
+                          key={concept.id}
                           concept={concept}
                           sectionTitle={path.title}
-                          isActive={activeConceptLabel === concept.label}
-                          onOpen={(nextConcept) => setActiveConceptLabel(nextConcept.label)}
+                          isActive={activeConceptId === concept.id}
+                          onOpen={(nextConcept) => setActiveConceptId(nextConcept.id)}
                         />
                       ))}
                     </div>
