@@ -1000,7 +1000,11 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Included Build Credits/);
   assert.match(accountPortalSurfaceSource, /Billing cycle/);
   assert.match(accountPortalSurfaceSource, /Plan status/);
-  assert.match(accountPortalSurfaceSource, /Choose or adjust your plan from the pricing page\./);
+  assert.match(accountPortalSurfaceSource, /Not available yet/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Live plan details will appear here once account billing and the credit ledger are\s+connected\./
+  );
   assert.match(accountPortalSurfaceSource, /Change Plan/);
   assert.match(accountPortalSurfaceSource, /Current Credit Balance/);
   assert.match(accountPortalSurfaceSource, /Available credits/);
@@ -1036,10 +1040,6 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(
     accountPortalSurfaceSource,
     /Managed credits are separate from standard Build Credits\./
-  );
-  assert.match(
-    accountPortalSurfaceSource,
-    /Managed credits support higher-touch execution and delivery help\./
   );
   assert.match(
     accountPortalSurfaceSource,

@@ -108,7 +108,6 @@ function tabSlug(tab: AccountTab) {
 
 function renderPanel(
   activeTab: AccountTab,
-  selectedPlanLabel: string | null,
   panelId: string,
   labelledById: string
 ) {
@@ -134,12 +133,13 @@ function renderPanel(
 
         <div className="grid gap-4 xl:grid-cols-2">
           <BillingCard title="Current Plan" accent>
-            <BillingRow label="Plan" value={selectedPlanLabel ?? unavailableValue} />
+            <BillingRow label="Plan" value={unavailableValue} />
             <BillingRow label="Included Build Credits" value={unavailableValue} />
             <BillingRow label="Billing cycle" value={unavailableValue} />
             <BillingRow label="Plan status" value={unavailableValue} />
             <p className="text-sm leading-7 text-slate-300">
-              Choose or adjust your plan from the pricing page.
+              Live plan details will appear here once account billing and the credit ledger are
+              connected.
             </p>
             <div>
               <Link
@@ -436,7 +436,7 @@ export function NeroaAccountPortalSurface({
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderPanel(activeTab, selectedPlanLabel, activePanelId, activeTabId)}
+            {renderPanel(activeTab, activePanelId, activeTabId)}
           </div>
         </section>
       </div>
