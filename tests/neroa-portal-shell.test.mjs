@@ -34,6 +34,10 @@ const pricingPortalSource = readFileSync(
   "utf8"
 );
 const blogPortalSource = readFileSync(new URL("../app/neroa/blog/page.tsx", import.meta.url), "utf8");
+const blogArticlePageSource = readFileSync(
+  new URL("../app/neroa/blog/[slug]/page.tsx", import.meta.url),
+  "utf8"
+);
 const diyManagedPortalSource = readFileSync(
   new URL("../app/neroa/diy-vs-managed/page.tsx", import.meta.url),
   "utf8"
@@ -58,10 +62,15 @@ const blogPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-blog-surface.tsx", import.meta.url),
   "utf8"
 );
+const blogArticleSurfaceSource = readFileSync(
+  new URL("../components/neroa-portal/neroa-blog-article-surface.tsx", import.meta.url),
+  "utf8"
+);
 const diyManagedPortalSurfaceSource = readFileSync(
   new URL("../components/neroa-portal/neroa-diy-managed-surface.tsx", import.meta.url),
   "utf8"
 );
+const blogPostsSource = readFileSync(new URL("../lib/neroa/blog-posts.ts", import.meta.url), "utf8");
 const northStarAccentSource = readFileSync(
   new URL("../components/neroa-portal/neroa-north-star-accent.tsx", import.meta.url),
   "utf8"
@@ -91,6 +100,8 @@ const cleanPortalSources = [
   pricingPortalSurfaceSource,
   blogPortalSource,
   blogPortalSurfaceSource,
+  blogArticlePageSource,
+  blogArticleSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -105,6 +116,8 @@ const publicEntrySources = [
   pricingPortalSurfaceSource,
   blogPortalSource,
   blogPortalSurfaceSource,
+  blogArticlePageSource,
+  blogArticleSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   authPortalSource,
@@ -132,6 +145,8 @@ const uiOnlyPortalSources = [
   pricingPortalSurfaceSource,
   blogPortalSource,
   blogPortalSurfaceSource,
+  blogArticlePageSource,
+  blogArticleSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -148,6 +163,8 @@ const nonRuntimeUiPortalSources = [
   pricingPortalSurfaceSource,
   blogPortalSource,
   blogPortalSurfaceSource,
+  blogArticlePageSource,
+  blogArticleSurfaceSource,
   diyManagedPortalSource,
   diyManagedPortalSurfaceSource,
   northStarAccentSource,
@@ -156,6 +173,13 @@ const nonRuntimeUiPortalSources = [
 ];
 const accountPortalSources = [accountPortalSource, accountPortalSurfaceSource];
 const projectPortalSources = [projectPortalSource, projectPortalSurfaceSource];
+const blogContentSources = [
+  blogPortalSource,
+  blogPortalSurfaceSource,
+  blogArticlePageSource,
+  blogArticleSurfaceSource,
+  blogPostsSource
+];
 
 function countOccurrences(source, pattern) {
   return [...source.matchAll(pattern)].length;
@@ -184,7 +208,10 @@ test("clean Neroa portal shell exports renderable pages and shell primitives", (
   assert.match(pricingPortalSurfaceSource, /export function NeroaPricingSurface/);
   assert.match(blogPortalSource, /export default function NeroaBlogPage/);
   assert.match(blogPortalSource, /NeroaBlogSurface/);
+  assert.match(blogArticlePageSource, /export default async function NeroaBlogArticlePage/);
+  assert.match(blogArticlePageSource, /NeroaBlogArticleSurface/);
   assert.match(blogPortalSurfaceSource, /export function NeroaBlogSurface/);
+  assert.match(blogArticleSurfaceSource, /export function NeroaBlogArticleSurface/);
   assert.match(diyManagedPortalSource, /export default function NeroaDiyVsManagedPage/);
   assert.match(diyManagedPortalSource, /NeroaDiyManagedSurface/);
   assert.match(diyManagedPortalSurfaceSource, /export function NeroaDiyManagedSurface/);
@@ -503,15 +530,17 @@ test("/neroa/blog route exists and stays inside the clean Neroa portal namespace
   assert.doesNotMatch(blogPortalSource, /@\/lib\/billing\//);
 });
 
-test("/neroa/blog includes the build journal hero, five foundational articles, and governed language", () => {
+test("/neroa/blog includes the build journal hero, foundational article links, and governed language", () => {
   assert.match(blogPortalSurfaceSource, /The Neroa Build Journal/);
-  assert.match(blogPortalSurfaceSource, /Roadmap-first thinking for founders, businesses, and builders who want software built with structure instead of chaos\./);
+  assert.match(
+    blogPortalSurfaceSource,
+    /Roadmap-first thinking for founders, businesses, and builders who want software built with structure instead of chaos\./
+  );
   assert.match(blogPortalSurfaceSource, /Most software projects do not fail because the idea is bad\./);
-  assert.match(blogPortalSurfaceSource, /Why Today's No-Code and AI App Builders Still Break Down/);
-  assert.match(blogPortalSurfaceSource, /Why Neroa Can Build Differently/);
-  assert.match(blogPortalSurfaceSource, /How Many Credits Does It Take to Get a Basic SaaS to MVP\?/);
-  assert.match(blogPortalSurfaceSource, /Prompting Is Not Product Strategy/);
-  assert.match(blogPortalSurfaceSource, /Why Roadmap-First Building Saves Money/);
+  assert.match(blogPortalSurfaceSource, /Foundational Articles/);
+  assert.doesNotMatch(blogPortalSurfaceSource, /Five places to start/);
+  assert.match(blogPortalSurfaceSource, /href=\{`\/neroa\/blog\/\$\{post\.slug\}`\}/);
+  assert.match(blogPortalSurfaceSource, /Read article/);
   assert.match(blogPortalSurfaceSource, /roadmap-first/i);
   assert.match(blogPortalSurfaceSource, /structured software building/i);
   assert.match(blogPortalSurfaceSource, /Build Credits/);
@@ -524,6 +553,61 @@ test("/neroa/blog includes the build journal hero, five foundational articles, a
   assert.doesNotMatch(blogPortalSurfaceSource, /<img/i);
   assert.doesNotMatch(blogPortalSurfaceSource, /<Image/i);
   assert.doesNotMatch(blogPortalSurfaceSource, /\/logo\//);
+});
+
+test("blog post data defines all five foundational article titles, slugs, and public-safe language", () => {
+  assert.match(blogPostsSource, /slug: "why-no-code-ai-builders-break-down"/);
+  assert.match(blogPostsSource, /slug: "why-neroa-can-build-differently"/);
+  assert.match(blogPostsSource, /slug: "how-many-credits-basic-saas-mvp"/);
+  assert.match(blogPostsSource, /slug: "prompting-is-not-product-strategy"/);
+  assert.match(blogPostsSource, /slug: "why-roadmap-first-building-saves-money"/);
+  assert.match(blogPostsSource, /Why Today's No-Code and AI App Builders Still Break Down/);
+  assert.match(blogPostsSource, /Why Neroa Can Build Differently/);
+  assert.match(blogPostsSource, /How Many Credits Does It Take to Get a Basic SaaS to MVP\?/);
+  assert.match(blogPostsSource, /Prompting Is Not Product Strategy/);
+  assert.match(blogPostsSource, /Why Roadmap-First Building Saves Money/);
+  assert.match(blogPostsSource, /Bubble/);
+  assert.match(blogPostsSource, /Webflow/);
+  assert.match(blogPostsSource, /Framer/);
+  assert.match(blogPostsSource, /Lovable/);
+  assert.match(blogPostsSource, /Bolt/);
+  assert.match(blogPostsSource, /Replit/);
+  assert.match(blogPostsSource, /v0/);
+  assert.match(blogPostsSource, /Cursor/);
+  assert.match(blogPostsSource, /useful for prototypes/);
+  assert.match(blogPostsSource, /roadmap-first/i);
+  assert.match(blogPostsSource, /structured software building/i);
+  assert.match(blogPostsSource, /Build Credits/);
+  assert.match(blogPostsSource, /managed credits/i);
+  assert.doesNotMatch(blogPostsSource, /\bscam\b/i);
+  assert.doesNotMatch(blogPostsSource, /\buseless\b/i);
+});
+
+test("/neroa/blog/[slug] exists as a static public route with structured article metadata", () => {
+  assert.match(blogArticlePageSource, /@\/components\/neroa-portal\/neroa-blog-article-surface/);
+  assert.match(blogArticlePageSource, /@\/lib\/neroa\/blog-posts/);
+  assert.match(blogArticlePageSource, /export function generateStaticParams/);
+  assert.match(blogArticlePageSource, /params:\s*Promise<PageParams>/);
+  assert.match(blogArticlePageSource, /getBlogPostBySlug/);
+  assert.match(blogArticlePageSource, /notFound\(\)/);
+  assert.doesNotMatch(blogArticlePageSource, /@\/lib\/billing\//);
+  assert.doesNotMatch(blogArticlePageSource, /@\/lib\/auth/);
+});
+
+test("/neroa/blog/[slug] article surface keeps the hardened Neroa public UI and CTA path", () => {
+  assert.match(blogArticleSurfaceSource, /Build Journal/);
+  assert.match(blogArticleSurfaceSource, /Back to Build Journal/);
+  assert.match(blogArticleSurfaceSource, /scope before execution/);
+  assert.match(blogArticleSurfaceSource, /evidence and review/);
+  assert.match(blogArticleSurfaceSource, /governed execution/);
+  assert.match(blogArticleSurfaceSource, /SaaS done right/);
+  assert.match(blogArticleSurfaceSource, /Detailed public guidance for roadmap-first, structured software building\./);
+  assert.match(blogArticleSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(blogArticleSurfaceSource, /href="\/neroa\/blog"/);
+  assert.match(blogArticleSurfaceSource, /testId="blog-article-page-north-star"/);
+  assert.doesNotMatch(blogArticleSurfaceSource, /<img/i);
+  assert.doesNotMatch(blogArticleSurfaceSource, /<Image/i);
+  assert.doesNotMatch(blogArticleSurfaceSource, /\/logo\//);
 });
 
 test("/neroa/diy-vs-managed route exists and stays inside the clean Neroa portal namespace", () => {
@@ -1101,6 +1185,22 @@ test("public entry sources remove spelling drift, legacy marketing strings, and 
     assert.doesNotMatch(source, /Share the idea/i);
     assert.doesNotMatch(source, /Workspace Hours/i);
     assert.doesNotMatch(source, /workspace-hour/i);
+    assert.doesNotMatch(source, /\/logo\//i);
+    assert.doesNotMatch(source, /\/logos\//i);
+  }
+});
+
+test("blog content sources remove spelling drift and unsafe public copy", () => {
+  for (const source of blogContentSources) {
+    assert.doesNotMatch(source, /\bNurova\b/);
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+    assert.doesNotMatch(source, /unlimited ai/i);
+    assert.doesNotMatch(source, /instant full app/i);
+    assert.doesNotMatch(source, /magic app builder/i);
+    assert.doesNotMatch(source, /GPT-5\.5/i);
     assert.doesNotMatch(source, /\/logo\//i);
     assert.doesNotMatch(source, /\/logos\//i);
   }

@@ -1,68 +1,6 @@
 import Link from "next/link";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
-
-const posts = [
-  {
-    title: "Why Today's No-Code and AI App Builders Still Break Down",
-    eyebrow: "Foundational article 01",
-    summary:
-      "No-code can help people start, and AI app builders can generate screens quickly. The breakdown usually happens later, when a real SaaS needs architecture, scope, data structure, auth, payments, permissions, workflows, QA, maintainability, and a clear handoff path. The problem is often not that AI cannot code. The problem is that vague prompts and unscoped projects produce fragile builds that keep getting rebuilt.",
-    bullets: [
-      "No-code can help teams start and validate direction",
-      "AI app builders can accelerate early screen generation",
-      "Real SaaS work still needs architecture, auth, payments, data, permissions, QA, and maintenance structure",
-      "Without scope and a guided plan, rebuild loops become expensive"
-    ]
-  },
-  {
-    title: "Why Neroa Can Build Differently",
-    eyebrow: "Foundational article 02",
-    summary:
-      "Neroa does not begin with an open-ended prompt and blind execution. It starts with roadmap-first thinking: idea intake, scope before execution, decisions, approvals, evidence and review, and Build Credits that govern execution. From there, founders can move through DIY and managed paths with less chaos and fewer rebuild loops.",
-    bullets: [
-      "Roadmap-first process before code pressure takes over",
-      "Scope before execution so work stays grounded",
-      "Decisions and approvals reduce unwanted drift",
-      "Build Credits and managed credits keep execution governed"
-    ]
-  },
-  {
-    title: "How Many Credits Does It Take to Get a Basic SaaS to MVP?",
-    eyebrow: "Foundational article 03",
-    summary:
-      "Credit usage depends on project complexity, integrations, auth, database design, payment flow, dashboard depth, AI features, and QA needs. Build Credits are not unlimited AI chat and they are not just minutes. They represent approved work across planning, implementation, review, fixes, and quality checks. A small landing page with auth and a simple dashboard may take fewer credits than a basic SaaS with payments, database design, and admin controls, while a more complex SaaS with AI, integrations, and multi-role workflows will naturally require more governed work.",
-    bullets: [
-      "Credits govern approved build work instead of vague effort claims",
-      "Small landing + auth + simple dashboard projects need less than deeper SaaS builds",
-      "Basic SaaS with payments, database flows, and admin depth requires broader planning and review",
-      "Complex SaaS with AI, integrations, and roles needs more implementation and QA coverage"
-    ]
-  },
-  {
-    title: "Prompting Is Not Product Strategy",
-    eyebrow: "Foundational article 04",
-    summary:
-      "Build me an app is not enough. Product strategy needs product truth: who the user is, what outcome matters, what data exists, how workflows move, where monetization happens, what permissions are required, where approvals belong, and what sequence the build should follow. A roadmap prevents random feature drift, scope control protects budget, and approvals keep teams from rebuilding the wrong thing.",
-    bullets: [
-      "A prompt alone cannot replace product truth",
-      "Roadmap-first planning prevents random feature drift",
-      "Scope control protects budget before implementation spreads",
-      "Approvals help stop unwanted rebuilds"
-    ]
-  },
-  {
-    title: "Why Roadmap-First Building Saves Money",
-    eyebrow: "Foundational article 05",
-    summary:
-      "Most software waste comes from rework, unclear requirements, late design changes, missing data models, auth surprises, payment surprises, and building features out of order. Roadmap-first building saves money because sequencing improves, approval gates reduce waste, and evidence and review make progress easier to trust. Neroa charges for governed progress, not platform chaos.",
-    bullets: [
-      "Bad sequencing causes rebuilds that burn budget",
-      "Unclear scope turns implementation into guesswork",
-      "Approval gates reduce waste before it compounds",
-      "Evidence and review improve trust in governed execution"
-    ]
-  }
-] as const;
+import { blogPosts } from "@/lib/neroa/blog-posts";
 
 function NorthStarIcon({
   className = ""
@@ -172,7 +110,7 @@ export function NeroaBlogSurface() {
           <div className="flex flex-col gap-3 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-2">
               <p className="text-sm uppercase tracking-[0.3em] text-teal-200/78">Foundational articles</p>
-              <h2 className="font-serif text-[2.35rem] text-white">Five places to start.</h2>
+              <h2 className="font-serif text-[2.35rem] text-white">Foundational Articles</h2>
             </div>
             <p className="max-w-2xl text-sm leading-7 text-white/56">
               These articles explain how structured software building, approvals, evidence and review, and governed execution keep teams out of expensive rebuild loops.
@@ -180,35 +118,46 @@ export function NeroaBlogSurface() {
           </div>
 
           <div className="grid gap-5 xl:grid-cols-2">
-            {posts.map((post) => (
-              <article
-                key={post.title}
-                className="rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(6,9,13,0.76))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)]"
+            {blogPosts.map((post) => (
+              <Link
+                key={post.slug}
+                href={`/neroa/blog/${post.slug}`}
+                className="group block rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(6,9,13,0.76))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)] transition duration-200 hover:border-teal-300/45 hover:bg-[linear-gradient(180deg,rgba(10,15,19,0.94),rgba(7,11,15,0.82))]"
               >
                 <div className="space-y-5">
-                  <div className="space-y-3">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                      {post.eyebrow}
-                    </p>
-                    <h3 className="font-serif text-[2rem] leading-tight text-white">{post.title}</h3>
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center gap-3 text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+                      <span>{post.category}</span>
+                      <span className="h-1 w-1 rounded-full bg-teal-200/70" aria-hidden="true" />
+                      <span>{post.readTime}</span>
+                    </div>
+                    <h3 className="font-serif text-[2rem] leading-tight text-white transition group-hover:text-teal-100">
+                      {post.title}
+                    </h3>
                     <p className="text-sm leading-7 text-white/66">{post.summary}</p>
                   </div>
 
                   <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-5">
                     <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                      Key takeaways
+                      What you'll read
                     </p>
                     <ul className="mt-4 space-y-3">
-                      {post.bullets.map((item) => (
-                        <li key={item} className="flex items-start gap-3 text-sm leading-7 text-white/72">
+                      {post.bodySections.slice(0, 3).map((section) => (
+                        <li key={section.heading} className="flex items-start gap-3 text-sm leading-7 text-white/72">
                           <span className="mt-2 h-1.5 w-1.5 rounded-full bg-teal-200/80" aria-hidden="true" />
-                          <span>{item}</span>
+                          <span>{section.heading}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
+
+                  <div className="inline-flex items-center gap-3 text-sm font-semibold uppercase tracking-[0.18em] text-teal-100 transition group-hover:text-white">
+                    <span>Read article</span>
+                    <span aria-hidden="true">/</span>
+                    <span>{post.slug}</span>
+                  </div>
                 </div>
-              </article>
+              </Link>
             ))}
           </div>
         </section>
