@@ -450,19 +450,57 @@ function renderPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Contact</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Need help with your plan, project setup, or account access? Contact Neroa support.
+            Need help with your plan, project setup, billing questions, or account access? Open the
+            full Neroa support form and keep email as the safe fallback.
           </p>
         </div>
 
-        <div className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
-          <Link
-            href="/neroa/contact"
-            aria-label="Open the Neroa contact page"
-            className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
-          >
-            Contact Support
-          </Link>
-          <p className="mt-4 text-sm leading-7 text-slate-300">support@neroa.io</p>
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr),minmax(18rem,22rem)]">
+          <article className="rounded-[1.5rem] border border-teal-300/20 bg-[linear-gradient(160deg,rgba(8,16,18,0.76)_0%,rgba(5,11,13,0.92)_100%)] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+              Support intake
+            </p>
+            <h2 className="mt-3 text-lg font-semibold text-slate-50">Open the full contact form</h2>
+            <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+              Share your support category, name, email, phone number, subject, and message on the
+              dedicated contact page. That keeps your details organized while support intake is
+              being prepared.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-slate-400">
+              Later, this form will create a support request inside Neroa so your issue can be
+              tracked from your account.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/neroa/contact"
+                aria-label="Open the Neroa contact page"
+                className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16"
+              >
+                Open Contact Form
+              </Link>
+              <a
+                href="mailto:support@neroa.io"
+                aria-label="Email Neroa support"
+                className="inline-flex rounded-full border border-slate-400/25 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/45 hover:text-teal-100"
+              >
+                Email Support
+              </a>
+            </div>
+          </article>
+
+          <article className="rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+              Safe fallback
+            </p>
+            <p className="mt-4 text-sm leading-7 text-slate-300">
+              For urgent help, email support@neroa.io.
+            </p>
+            <p className="mt-4 text-sm font-medium text-teal-100">support@neroa.io</p>
+            <p className="mt-4 text-sm leading-7 text-slate-400">
+              The account Contact tab points to the full form so you can review everything before
+              sending details by email.
+            </p>
+          </article>
         </div>
       </section>
     );

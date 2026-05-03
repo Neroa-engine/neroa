@@ -4,7 +4,7 @@ import { NeroaContactSurface } from "@/components/neroa-portal/neroa-contact-sur
 export const metadata: Metadata = {
   title: "Neroa | Contact",
   description:
-    "Contact Neroa for help with account access, plan questions, project setup, and build guidance."
+    "Contact Neroa Support for help with account access, billing questions, project setup, and technical issues."
 };
 
 export default function NeroaContactPage() {

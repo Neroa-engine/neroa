@@ -1,8 +1,21 @@
+"use client";
+
+import type { ChangeEvent, FormEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star-accent";
 import { NeroaPublicNavigation } from "@/components/neroa-portal/neroa-public-navigation";
 
-const supportCategories = [
+const supportCategoryOptions = [
+  "Account Access",
+  "Billing / Usage",
+  "Project Setup",
+  "Managed Build Questions",
+  "Technical Issue",
+  "General Support"
+] as const;
+
+const supportCategoryDetails = [
   {
     title: "Account Access",
     copy: "Help with sign-in, password reset, email access, or account settings."
@@ -20,10 +33,23 @@ const supportCategories = [
     copy: "Questions about managed credits, execution support, and which build path is right for you."
   },
   {
+    title: "Technical Issue",
+    copy: "Share bugs, access issues, or workflow problems so support can review the right details."
+  },
+  {
     title: "General Support",
     copy: "For anything else related to Neroa."
   }
 ] as const;
+
+const initialFormState = {
+  category: supportCategoryOptions[0],
+  name: "",
+  email: "",
+  phone: "",
+  subject: "",
+  message: ""
+} as const;
 
 function NorthStarIcon({
   className = ""
@@ -45,6 +71,25 @@ function NorthStarIcon({
 }
 
 export function NeroaContactSurface() {
+  const [formValues, setFormValues] = useState(initialFormState);
+  const [submitNotice, setSubmitNotice] = useState("");
+
+  function handleFieldChange(event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
+    const { name, value } = event.target;
+
+    setFormValues((currentValues) => ({
+      ...currentValues,
+      [name]: value
+    }));
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitNotice(
+      "Support intake is being prepared. For now, please email support@neroa.io with these details."
+    );
+  }
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] text-white">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -74,26 +119,23 @@ export function NeroaContactSurface() {
           <div className="max-w-4xl space-y-6">
             <p className="text-sm uppercase tracking-[0.34em] text-teal-200/78">Support and guidance</p>
             <h1 className="max-w-4xl font-serif text-[clamp(3.8rem,9vw,7rem)] leading-[0.95] tracking-[-0.05em] text-white">
-              Contact Neroa
+              Contact Neroa Support
             </h1>
             <p className="max-w-3xl text-[1.18rem] leading-8 text-white/70">
-              Get help with your account, plan, project setup, or build path.
+              Tell us what you need help with. Support intake will be connected to the Neroa
+              support system later; for now, email support is the safe fallback.
             </p>
             <p className="max-w-3xl text-[1rem] leading-8 text-white/62">
-              Use the support categories below to route your message clearly. Email is the safest
-              support option right now while the rest of the support surface stays intentionally
-              simple and reliable.
+              Later, this form will create a support request inside Neroa so your issue can be
+              tracked from your account.
             </p>
           </div>
 
           <aside className="rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(7,11,15,0.92),rgba(6,9,13,0.76))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.32)]">
-            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-              Safe contact path
-            </p>
+            <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">Support note</p>
             <div className="mt-5 space-y-4">
               <p className="text-sm leading-7 text-white/70">
-                Start with email when you need help with account access, project setup, or plan
-                questions.
+                For urgent help, email support@neroa.io.
               </p>
               <a
                 href="mailto:support@neroa.io"
@@ -104,26 +146,163 @@ export function NeroaContactSurface() {
               </a>
               <p className="text-sm font-medium text-teal-100">support@neroa.io</p>
               <p className="text-sm leading-7 text-white/58">
-                Support chat is planned for a later release. For now, email support is the safest
-                way to reach Neroa.
+                Share your category, contact details, subject, and message by email if you need a
+                reply before form intake is connected.
               </p>
             </div>
           </aside>
         </section>
 
-        <section className="grid gap-4 py-12 md:grid-cols-2 xl:grid-cols-3">
-          {supportCategories.map((category) => (
-            <article
-              key={category.title}
-              className="rounded-[1.6rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,12,16,0.82),rgba(7,10,14,0.62))] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur"
-            >
+        <section className="grid gap-6 py-12 lg:grid-cols-[minmax(0,1.2fr),minmax(18rem,24rem)]">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-[1.7rem] border border-white/12 bg-[linear-gradient(180deg,rgba(8,12,16,0.88),rgba(7,10,14,0.68))] p-6 shadow-[0_24px_90px_rgba(0,0,0,0.28)] backdrop-blur"
+          >
+            <div className="space-y-3 border-b border-white/10 pb-5">
               <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
-                Support category
+                Support intake
               </p>
-              <h2 className="mt-4 text-[1.35rem] font-semibold text-slate-50">{category.title}</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-300">{category.copy}</p>
-            </article>
-          ))}
+              <p className="max-w-3xl text-sm leading-7 text-slate-300">
+                Use this form to organize the details Neroa support will need once intake is live.
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="support-category" className="text-sm font-medium text-slate-100">
+                  Support category
+                </label>
+                <select
+                  id="support-category"
+                  name="category"
+                  value={formValues.category}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                >
+                  {supportCategoryOptions.map((option) => (
+                    <option key={option} value={option} className="bg-slate-950 text-slate-100">
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="support-name" className="text-sm font-medium text-slate-100">
+                  Name
+                </label>
+                <input
+                  id="support-name"
+                  name="name"
+                  type="text"
+                  autoComplete="name"
+                  value={formValues.name}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                  placeholder="Your name"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="support-email" className="text-sm font-medium text-slate-100">
+                  Email
+                </label>
+                <input
+                  id="support-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={formValues.email}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                  placeholder="you@example.com"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="support-phone" className="text-sm font-medium text-slate-100">
+                  Phone number
+                </label>
+                <input
+                  id="support-phone"
+                  name="phone"
+                  type="tel"
+                  autoComplete="tel"
+                  value={formValues.phone}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                  placeholder="Optional phone number"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="support-subject" className="text-sm font-medium text-slate-100">
+                  Subject
+                </label>
+                <input
+                  id="support-subject"
+                  name="subject"
+                  type="text"
+                  value={formValues.subject}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                  placeholder="Short summary"
+                />
+              </div>
+
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="support-message" className="text-sm font-medium text-slate-100">
+                  Message / What do you need help with?
+                </label>
+                <textarea
+                  id="support-message"
+                  name="message"
+                  rows={7}
+                  value={formValues.message}
+                  onChange={handleFieldChange}
+                  className="w-full rounded-[1rem] border border-white/12 bg-black/25 px-4 py-3 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-teal-300/50 focus:ring-2 focus:ring-teal-300/20"
+                  placeholder="Share the details, timing, and anything support should review."
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-4 border-t border-white/10 pt-5">
+              {submitNotice ? (
+                <div
+                  role="status"
+                  className="rounded-[1rem] border border-teal-300/24 bg-teal-300/10 px-4 py-3 text-sm leading-7 text-teal-50"
+                >
+                  {submitNotice}
+                </div>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="submit"
+                  className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
+                >
+                  Review Support Details
+                </button>
+                <p className="text-sm leading-7 text-slate-400">
+                  Your entries stay visible here after submit so you can copy them into email.
+                </p>
+              </div>
+            </div>
+          </form>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
+            {supportCategoryDetails.map((category) => (
+              <article
+                key={category.title}
+                className="rounded-[1.45rem] border border-white/10 bg-[linear-gradient(180deg,rgba(8,12,16,0.82),rgba(7,10,14,0.62))] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur"
+              >
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-teal-200/78">
+                  Support category
+                </p>
+                <h2 className="mt-3 text-[1.12rem] font-semibold text-slate-50">{category.title}</h2>
+                <p className="mt-3 text-sm leading-7 text-slate-300">{category.copy}</p>
+              </article>
+            ))}
+          </div>
         </section>
       </section>
     </main>

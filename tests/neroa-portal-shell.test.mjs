@@ -1150,9 +1150,17 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(
     accountPortalSurfaceSource,
-    /Need help with your plan, project setup, or account access\? Contact Neroa support\./
+    /Need help with your plan, project setup, billing questions, or account access\? Open the\s+full Neroa support form and keep email as the safe fallback\./
   );
-  assert.match(accountPortalSurfaceSource, /Contact Support/);
+  assert.match(accountPortalSurfaceSource, /Open the full contact form/);
+  assert.match(accountPortalSurfaceSource, /Open Contact Form/);
+  assert.match(accountPortalSurfaceSource, /Email Support/);
+  assert.match(accountPortalSurfaceSource, /support@neroa\.io/);
+  assert.match(accountPortalSurfaceSource, /For urgent help, email support@neroa\.io\./);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Share your support category, name, email, phone number, subject, and message on the\s+dedicated contact page\./
+  );
   assert.match(accountPortalSurfaceSource, /aria-label="Open the Neroa contact page"/);
   assert.match(
     accountPortalSurfaceSource,
@@ -1211,25 +1219,56 @@ test("Account Portal sources avoid spelling drift, runtime imports, and schema-s
 test("Contact page stays inside the hardened Neroa support scope", () => {
   assert.match(contactPortalSource, /Neroa \| Contact/);
   assert.match(contactPortalSource, /NeroaContactSurface/);
-  assert.match(contactPortalSurfaceSource, /Contact Neroa/);
+  assert.match(contactPortalSurfaceSource, /"use client"/);
+  assert.match(contactPortalSurfaceSource, /Contact Neroa Support/);
   assert.match(
     contactPortalSurfaceSource,
-    /Get help with your account, plan, project setup, or build path\./
+    /Tell us what you need help with\.\s+Support intake will be connected to the Neroa\s+support system later; for now, email support is the safe fallback\./
   );
+  assert.match(
+    contactPortalSurfaceSource,
+    /Later, this form will create a support request inside Neroa so your issue can be\s+tracked from your account\./
+  );
+  assert.match(contactPortalSurfaceSource, /Support note/);
+  assert.match(contactPortalSurfaceSource, /For urgent help, email support@neroa\.io\./);
+  assert.match(contactPortalSurfaceSource, /<form/);
+  assert.match(contactPortalSurfaceSource, /onSubmit=\{handleSubmit\}/);
+  assert.match(contactPortalSurfaceSource, /event\.preventDefault\(\)/);
+  assert.match(contactPortalSurfaceSource, /Support category/);
   assert.match(contactPortalSurfaceSource, /Account Access/);
   assert.match(contactPortalSurfaceSource, /Billing \/ Usage/);
   assert.match(contactPortalSurfaceSource, /Project Setup/);
   assert.match(contactPortalSurfaceSource, /Managed Build Questions/);
+  assert.match(contactPortalSurfaceSource, /Technical Issue/);
   assert.match(contactPortalSurfaceSource, /General Support/);
+  assert.match(contactPortalSurfaceSource, /Name/);
+  assert.match(contactPortalSurfaceSource, /Email/);
+  assert.match(contactPortalSurfaceSource, /Phone number/);
+  assert.match(contactPortalSurfaceSource, /Subject/);
+  assert.match(contactPortalSurfaceSource, /Message \/ What do you need help with\?/);
+  assert.match(contactPortalSurfaceSource, /id="support-category"/);
+  assert.match(contactPortalSurfaceSource, /name="category"/);
+  assert.match(contactPortalSurfaceSource, /id="support-name"/);
+  assert.match(contactPortalSurfaceSource, /name="name"/);
+  assert.match(contactPortalSurfaceSource, /id="support-email"/);
+  assert.match(contactPortalSurfaceSource, /name="email"/);
+  assert.match(contactPortalSurfaceSource, /id="support-phone"/);
+  assert.match(contactPortalSurfaceSource, /name="phone"/);
+  assert.match(contactPortalSurfaceSource, /id="support-subject"/);
+  assert.match(contactPortalSurfaceSource, /name="subject"/);
+  assert.match(contactPortalSurfaceSource, /id="support-message"/);
+  assert.match(contactPortalSurfaceSource, /name="message"/);
+  assert.match(contactPortalSurfaceSource, /type="submit"/);
+  assert.match(contactPortalSurfaceSource, /Review Support Details/);
   assert.match(contactPortalSurfaceSource, /Email Support/);
   assert.match(contactPortalSurfaceSource, /support@neroa\.io/);
   assert.match(
     contactPortalSurfaceSource,
-    /Support chat is planned for a later release\.\s+For now, email support is the safest\s+way to reach Neroa\./
+    /Support intake is being prepared\.\s+For now, please email support@neroa\.io with these details\./
   );
+  assert.doesNotMatch(contactPortalSurfaceSource, /request was sent/i);
   assert.doesNotMatch(contactPortalSurfaceSource, /AI chat is live/i);
   assert.doesNotMatch(contactPortalSurfaceSource, /ticket backend/i);
-  assert.doesNotMatch(contactPortalSurfaceSource, /<form/i);
 });
 
 test("Contact page sources avoid spelling drift, runtime imports, and schema-style dependencies", () => {
