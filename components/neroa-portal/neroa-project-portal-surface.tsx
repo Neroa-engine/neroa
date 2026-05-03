@@ -75,20 +75,24 @@ const qcRoomCards = [
     body: "QC runtime is not connected yet."
   },
   {
-    title: "Evidence",
+    title: "Visual Evidence",
     body: "Browser evidence will appear here once QC capture is connected."
   },
   {
-    title: "Visual Review",
-    body: "Visual review will appear here after a QC run."
+    title: "Inspection Report",
+    body: "Inspection notes will appear here after a QC run."
   },
   {
     title: "Issues Found",
-    body: "Inspection results will appear here after a QC run."
+    body: "Issues found during QC will appear here after inspection."
   },
   {
     title: "Review Status",
     body: "Review status will appear here after browser checks are connected."
+  },
+  {
+    title: "QC Run History",
+    body: "QC run history will appear here once hosted browser checks are available."
   }
 ] as const;
 
@@ -329,6 +333,8 @@ function renderProjectPanel(
   }
 
   if (activeTab === "QC Room") {
+    const qcActionsHelperId = "project-qc-actions-helper";
+
     return (
       <section
         id={panelId}
@@ -343,9 +349,33 @@ function renderProjectPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">QC Room</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Review browser checks, visual evidence, QA notes, and inspection results.
+            Review browser checks, visual evidence, inspection notes, and QC readiness.
           </p>
         </div>
+
+        <PillCard title="QC Actions" accent>
+          <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-5">
+            <div className="flex flex-wrap gap-3">
+              {["Run QC Check", "View Evidence Library"].map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  aria-describedby={qcActionsHelperId}
+                  title="QC actions will become available once the hosted browser and evidence capture system are connected."
+                  className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p id={qcActionsHelperId} className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">
+              QC actions will become available once the hosted browser and evidence capture system
+              are connected.
+            </p>
+          </div>
+        </PillCard>
 
         <div className="grid gap-4 xl:grid-cols-2">
           {qcRoomCards.map((card, index) => (

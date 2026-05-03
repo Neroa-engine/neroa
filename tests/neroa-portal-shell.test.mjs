@@ -1446,10 +1446,43 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNarowa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNarua\b/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Review browser checks, visual evidence, inspection notes, and QC readiness\./
+  );
   assert.match(projectPortalSurfaceSource, /Browser QC/);
-  assert.match(projectPortalSurfaceSource, /Evidence/);
-  assert.match(projectPortalSurfaceSource, /Visual Review/);
+  assert.match(projectPortalSurfaceSource, /Visual Evidence/);
+  assert.match(projectPortalSurfaceSource, /Inspection Report/);
+  assert.match(projectPortalSurfaceSource, /Issues Found/);
+  assert.match(projectPortalSurfaceSource, /Review Status/);
+  assert.match(projectPortalSurfaceSource, /QC Run History/);
+  assert.match(projectPortalSurfaceSource, /Run QC Check/);
+  assert.match(projectPortalSurfaceSource, /View Evidence Library/);
   assert.match(projectPortalSurfaceSource, /QC runtime is not connected yet\./);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Browser evidence will appear here once QC capture is connected\./
+  );
+  assert.match(projectPortalSurfaceSource, /Inspection notes will appear here after a QC run\./);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Issues found during QC will appear here after inspection\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Review status will appear here after browser checks are connected\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /QC run history will appear here once hosted browser checks are available\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /QC actions will become available once the hosted browser and evidence capture system are connected\./
+  );
+  assert.doesNotMatch(projectPortalSurfaceSource, /QC complete/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /QC running/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /evidence captured/);
 });
 
 test("Project Portal remains project-level only and does not promote account sections as primary sections", () => {
@@ -1504,6 +1537,12 @@ test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime w
   assert.match(projectPortalSurfaceSource, /disabled/);
   assert.match(projectPortalSurfaceSource, /aria-disabled="true"/);
   assert.match(projectPortalSurfaceSource, /aria-describedby=\{strategyHelperId\}/);
+  assert.match(projectPortalSurfaceSource, /const qcActionsHelperId = "project-qc-actions-helper"/);
+  assert.match(projectPortalSurfaceSource, /aria-describedby=\{qcActionsHelperId\}/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /title="QC actions will become available once the hosted browser and evidence capture system are connected\."/
+  );
   assert.match(projectPortalSurfaceSource, /title="Strategy note saving will appear here once project planning save-back is connected\."/);
   assert.match(projectPortalSurfaceSource, /const strategyPromptId = "project-strategy-notes-prompt"/);
   assert.match(projectPortalSurfaceSource, /const strategyHelperId = "project-strategy-notes-helper"/);
@@ -1516,6 +1555,8 @@ test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime w
   assert.doesNotMatch(projectPortalSurfaceSource, /DigitalOcean runtime/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bAcme\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bDemo Project\b/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /onClick=\{\(\) => router\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /href="\/neroa\/project\/qc/i);
 });
 
 test("clean portal shell does not introduce UI UX Library or Design Library surfaces", () => {
