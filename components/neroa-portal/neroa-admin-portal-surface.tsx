@@ -118,10 +118,14 @@ const dashboardCards = [
 ] as const;
 
 function AdminPill({
+  tabId,
+  panelId,
   label,
   active,
   onClick
 }: {
+  tabId: string;
+  panelId: string;
   label: string;
   active: boolean;
   onClick: () => void;
@@ -130,7 +134,12 @@ function AdminPill({
     <button
       type="button"
       onClick={onClick}
+      id={tabId}
+      role="tab"
+      aria-selected={active}
+      aria-controls={panelId}
       aria-pressed={active}
+      tabIndex={active ? 0 : -1}
       className={[
         "rounded-full border px-4 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.22em] transition",
         active
@@ -141,6 +150,10 @@ function AdminPill({
       {label}
     </button>
   );
+}
+
+function sectionSlug(label: AdminSectionLabel) {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function SurfaceCard({
@@ -175,9 +188,15 @@ function SectionTile({ title }: { title: string }) {
   );
 }
 
-function renderDashboard() {
+function renderDashboard(panelId: string, labelledById: string) {
   return (
-    <section className="space-y-5">
+    <section
+      id={panelId}
+      role="tabpanel"
+      aria-labelledby={labelledById}
+      tabIndex={0}
+      className="space-y-5"
+    >
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
           Dashboard
@@ -211,13 +230,19 @@ function renderDashboard() {
   );
 }
 
-function renderSection(section: AdminSection) {
+function renderSection(section: AdminSection, panelId: string, labelledById: string) {
   if (section.label === "Dashboard") {
-    return renderDashboard();
+    return renderDashboard(panelId, labelledById);
   }
 
   return (
-    <section className="space-y-5">
+    <section
+      id={panelId}
+      role="tabpanel"
+      aria-labelledby={labelledById}
+      tabIndex={0}
+      className="space-y-5"
+    >
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
           {section.label}
@@ -252,6 +277,11 @@ export function NeroaAdminPortalSurface() {
   const [activeSection, setActiveSection] = useState<AdminSectionLabel>("Dashboard");
   const currentSection =
     adminSections.find((section) => section.label === activeSection) ?? adminSections[0];
+  const activeSectionSlug = sectionSlug(activeSection);
+  const activeTabId = `admin-tab-${activeSectionSlug}`;
+  const activePanelId = `admin-panel-${activeSectionSlug}`;
+  const warningId = "admin-portal-warning";
+  const helperId = "admin-portal-helper";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#04070a] px-6 py-10 text-slate-100">
@@ -276,26 +306,45 @@ export function NeroaAdminPortalSurface() {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200/78">
                 Admin Portal
               </p>
-              <p className="max-w-3xl text-sm leading-7 text-slate-300">Admin access control is not connected yet. This shell is for internal portal structure only.</p>
+              <p id={warningId} className="max-w-3xl text-sm leading-7 text-slate-300">
+                Admin access control is not connected yet. This shell is for internal portal
+                structure only.
+              </p>
+              <p id={helperId} className="max-w-3xl text-sm leading-7 text-slate-400">
+                Role-based admin access will be added later.
+              </p>
             </div>
             <div className="rounded-[1.25rem] border border-white/10 bg-black/25 px-5 py-4 text-sm leading-7 text-slate-300">
               Internal testing route: <span className="font-mono text-slate-100">/neroa/admin</span>
             </div>
           </div>
 
-          <div className="mt-5 flex flex-wrap gap-3" role="group" aria-label="Admin portal sections">
-            {adminSections.map((section) => (
-              <AdminPill
-                key={section.label}
-                label={section.label}
-                active={section.label === activeSection}
-                onClick={() => setActiveSection(section.label)}
-              />
-            ))}
+          <div
+            className="mt-5 flex flex-wrap gap-3"
+            role="tablist"
+            aria-label="Admin portal sections"
+            aria-describedby={`${warningId} ${helperId}`}
+          >
+            {adminSections.map((section) => {
+              const slug = sectionSlug(section.label);
+              const tabId = `admin-tab-${slug}`;
+              const panelId = `admin-panel-${slug}`;
+
+              return (
+                <AdminPill
+                  key={section.label}
+                  tabId={tabId}
+                  panelId={panelId}
+                  label={section.label}
+                  active={section.label === activeSection}
+                  onClick={() => setActiveSection(section.label)}
+                />
+              );
+            })}
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderSection(currentSection)}
+            {renderSection(currentSection, activePanelId, activeTabId)}
           </div>
         </section>
       </div>

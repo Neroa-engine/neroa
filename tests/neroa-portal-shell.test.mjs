@@ -1263,6 +1263,9 @@ test("/neroa/admin exists as a dedicated Neroa admin shell route", () => {
 test("/neroa/admin includes the full admin shell, sections, and honest non-live copy", () => {
   assert.match(adminPortalSurfaceSource, /"use client"/);
   assert.match(adminPortalSurfaceSource, /useState<AdminSectionLabel>\("Dashboard"\)/);
+  assert.match(adminPortalSurfaceSource, /const activeSectionSlug = sectionSlug\(activeSection\)/);
+  assert.match(adminPortalSurfaceSource, /const activeTabId = `admin-tab-\$\{activeSectionSlug\}`/);
+  assert.match(adminPortalSurfaceSource, /const activePanelId = `admin-panel-\$\{activeSectionSlug\}`/);
   assert.match(adminPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(adminPortalSurfaceSource, /includeAdminPortal/);
   assert.match(adminPortalSurfaceSource, /currentPath="\/neroa\/admin"/);
@@ -1272,9 +1275,20 @@ test("/neroa/admin includes the full admin shell, sections, and honest non-live 
   assert.match(adminPortalSurfaceSource, /Admin Portal/);
   assert.match(
     adminPortalSurfaceSource,
-    /Admin access control is not connected yet\. This shell is for internal portal structure only\./
+    /Admin access control is not connected yet\.[\s\S]*This shell is for internal portal[\s\S]*structure only\./
   );
-  assert.match(adminPortalSurfaceSource, /role="group" aria-label="Admin portal sections"/);
+  assert.match(adminPortalSurfaceSource, /Role-based admin access will be added later\./);
+  assert.match(adminPortalSurfaceSource, /Internal testing route:/);
+  assert.match(adminPortalSurfaceSource, /\/neroa\/admin/);
+  assert.match(adminPortalSurfaceSource, /role="tablist"/);
+  assert.match(adminPortalSurfaceSource, /aria-label="Admin portal sections"/);
+  assert.match(adminPortalSurfaceSource, /aria-describedby=\{`\$\{warningId\} \$\{helperId\}`\}/);
+  assert.match(adminPortalSurfaceSource, /role="tab"/);
+  assert.match(adminPortalSurfaceSource, /aria-selected=\{active\}/);
+  assert.match(adminPortalSurfaceSource, /aria-controls=\{panelId\}/);
+  assert.match(adminPortalSurfaceSource, /aria-pressed=\{active\}/);
+  assert.match(adminPortalSurfaceSource, /role="tabpanel"/);
+  assert.match(adminPortalSurfaceSource, /aria-labelledby=\{labelledById\}/);
   assert.match(adminPortalSurfaceSource, /Dashboard/);
   assert.match(adminPortalSurfaceSource, /Users/);
   assert.match(adminPortalSurfaceSource, /Projects/);
@@ -1393,6 +1407,10 @@ test("/neroa/admin includes the full admin shell, sections, and honest non-live 
   assert.doesNotMatch(adminPortalSurfaceSource, /billing changed/i);
   assert.doesNotMatch(adminPortalSurfaceSource, /credit adjusted/i);
   assert.doesNotMatch(adminPortalSurfaceSource, /admin role enforced/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /QC running/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /evidence captured/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /placeholder/i);
+  assert.doesNotMatch(adminPortalSurfaceSource, /runtime-free/i);
 });
 
 test("Admin Portal sources avoid spelling drift, trust-layer wiring, and runtime imports", () => {
@@ -1422,6 +1440,7 @@ test("Admin Portal stays out of the public navigation and project top nav surfac
   assert.doesNotMatch(pricingPortalSurfaceSource, /Admin Portal/);
   assert.doesNotMatch(blogPortalSurfaceSource, /Admin Portal/);
   assert.doesNotMatch(diyManagedPortalSurfaceSource, /Admin Portal/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /includeAdminPortal/);
   assert.doesNotMatch(projectPortalSurfaceSource, /includeAdminPortal/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\/neroa\/admin/);
 });
@@ -1936,6 +1955,16 @@ test("clean auth flow preserves a safe /neroa next path for admin access", () =>
   assert.match(authPortalSurfaceSource, /router\.push\(destination\)/);
   assert.doesNotMatch(authPortalSurfaceSource, /router\.push\("\/auth"/);
   assert.doesNotMatch(authPortalSurfaceSource, /router\.push\("\/workspace"/);
+});
+
+test("/neroa/auth preserves next=/neroa/admin where source-testable", () => {
+  assert.match(authPortalSource, /function normalizeSafeNeroaNextPath/);
+  assert.match(authPortalSource, /safeNeroaPathPattern = \/\^\\\/neroa\(\?:\\\/\|\$\)\//);
+  assert.match(authPortalSource, /const nextPath = normalizeSafeNeroaNextPath/);
+  assert.match(authPortalSource, /initialNextPath=\{nextPath\}/);
+  assert.match(authRoutesSource, /params\.set\("next", nextPath\)/);
+  assert.match(supabaseMiddlewareSource, /buildCleanNeroaAuthRedirectPath\(\{ nextPath \}\)/);
+  assert.match(supabaseMiddlewareSource, /const nextPath = `\$\{request\.nextUrl\.pathname\}\$\{request\.nextUrl\.search\}`;/);
 });
 
 test("clean auth confirmation and reset routes stay inside the new Neroa auth architecture", () => {
