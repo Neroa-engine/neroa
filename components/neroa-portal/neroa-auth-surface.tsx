@@ -39,11 +39,11 @@ function AuthField({
   trailingAction?: ReactNode;
 }) {
   return (
-    <label className="block space-y-3">
+    <label className="block space-y-2.5">
       <span className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-white/62">
         {label}
       </span>
-      <div className="flex items-center gap-3 rounded-[1.2rem] border border-white/12 bg-black/20 px-4 py-3 shadow-[0_0_28px_rgba(45,212,191,0.05)]">
+      <div className="flex items-center gap-3 rounded-[1.15rem] border border-white/12 bg-black/20 px-4 py-2.5 shadow-[0_0_28px_rgba(45,212,191,0.05)]">
         <input
           type={type}
           value={value}
@@ -175,18 +175,18 @@ export function NeroaAuthSurface({
             </p>
           </section>
 
-          <section className="w-full justify-self-end rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-6 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-8">
-            <div className="space-y-4 border-b border-white/8 pb-6">
+          <section className="w-full justify-self-end rounded-[2rem] border border-white/14 bg-[linear-gradient(180deg,rgba(7,11,15,0.9),rgba(8,12,16,0.78))] p-5 shadow-[0_34px_120px_rgba(0,0,0,0.46)] backdrop-blur-xl sm:p-6">
+            <div className="space-y-3 border-b border-white/8 pb-5">
               <div className="flex items-center gap-2 text-white">
                 <NorthStarIcon className="h-4 w-4 text-teal-200/84" />
                 <span className="font-serif text-[1.9rem] tracking-tight">Neroa</span>
               </div>
 
-              <div className="space-y-3">
-                <h2 className="font-serif text-4xl text-white sm:text-[2.8rem]">
+              <div className="space-y-2.5">
+                <h2 className="font-serif text-[2.15rem] text-white sm:text-[2.45rem]">
                   Welcome to Neroa
                 </h2>
-                <p className="text-[1rem] leading-8 text-white/68">
+                <p className="text-[0.95rem] leading-7 text-white/68">
                   Sign in or create an account to start your project.
                 </p>
                 {selectedPlanLabel ? (
@@ -198,12 +198,12 @@ export function NeroaAuthSurface({
               </div>
             </div>
 
-            <div className="mt-6 inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1.5">
+            <div className="mt-5 inline-flex rounded-full border border-white/10 bg-white/[0.04] p-1">
               <button
                 type="button"
                 onClick={() => setMode("signin")}
                 className={[
-                  "rounded-full px-5 py-2.5 text-[0.75rem] font-semibold uppercase tracking-[0.18em] transition",
+                  "rounded-full px-4.5 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition",
                   mode === "signin"
                     ? "bg-teal-300 text-[#071113]"
                     : "text-white/62 hover:text-white"
@@ -215,7 +215,7 @@ export function NeroaAuthSurface({
                 type="button"
                 onClick={() => setMode("create")}
                 className={[
-                  "rounded-full px-5 py-2.5 text-[0.75rem] font-semibold uppercase tracking-[0.18em] transition",
+                  "rounded-full px-4.5 py-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] transition",
                   mode === "create"
                     ? "bg-teal-300 text-[#071113]"
                     : "text-white/62 hover:text-white"
@@ -226,7 +226,7 @@ export function NeroaAuthSurface({
             </div>
 
             {mode === "signin" ? (
-              <form onSubmit={handleSignInSubmit} className="mt-8 space-y-5">
+              <form onSubmit={handleSignInSubmit} className="mt-6 space-y-4">
                 <AuthField
                   label="Email"
                   type="email"
@@ -252,7 +252,7 @@ export function NeroaAuthSurface({
                   }
                 />
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between gap-4 pt-0.5">
                   {/* TODO: connect this to a clean forgot-password route when that flow is ready. */}
                   <Link
                     href="#"
@@ -264,13 +264,13 @@ export function NeroaAuthSurface({
 
                 <button
                   type="submit"
-                  className="flex h-14 w-full items-center justify-center rounded-[1.1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
                 >
                   Sign In
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleCreateSubmit} className="mt-8 space-y-5">
+              <form onSubmit={handleCreateSubmit} className="mt-6 space-y-4">
                 <AuthField
                   label="Name"
                   value={createName}
@@ -311,7 +311,7 @@ export function NeroaAuthSurface({
 
                 <button
                   type="submit"
-                  className="flex h-14 w-full items-center justify-center rounded-[1.1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
+                  className="flex h-12 w-full items-center justify-center rounded-[1rem] bg-teal-300 text-sm font-semibold uppercase tracking-[0.2em] text-[#071113] transition hover:bg-teal-200"
                 >
                   Create Account
                 </button>
