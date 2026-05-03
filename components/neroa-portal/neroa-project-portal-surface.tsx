@@ -358,6 +358,9 @@ function renderProjectPanel(
     );
   }
 
+  const strategyPromptId = "project-strategy-notes-prompt";
+  const strategyHelperId = "project-strategy-notes-helper";
+
   return (
     <section
       id={panelId}
@@ -382,7 +385,10 @@ function renderProjectPanel(
         <PillCard title="Strategy Notes" accent>
           <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
             <div className="space-y-4">
-              <div className="max-w-3xl rounded-[1.15rem] border border-teal-300/18 bg-teal-300/[0.07] px-4 py-4 text-sm leading-7 text-slate-100">
+              <div
+                id={strategyPromptId}
+                className="max-w-3xl rounded-[1.15rem] border border-teal-300/18 bg-teal-300/[0.07] px-4 py-4 text-sm leading-7 text-slate-100"
+              >
                 Tell Neroa what you want to build, who it is for, and what the end result should
                 accomplish.
               </div>
@@ -398,16 +404,20 @@ function renderProjectPanel(
                 rows={8}
                 className="min-h-[14rem] w-full rounded-[1.25rem] border border-white/10 bg-black/25 px-4 py-4 text-sm leading-7 text-white outline-none"
                 aria-label="Describe your project"
+                aria-describedby={`${strategyPromptId} ${strategyHelperId}`}
               />
               <div className="flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   disabled
+                  aria-disabled="true"
+                  aria-describedby={strategyHelperId}
+                  title="Strategy note saving will appear here once project planning save-back is connected."
                   className="inline-flex rounded-full border border-white/10 bg-white/[0.03] px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500"
                 >
                   Save Strategy Notes
                 </button>
-                <p className="text-sm leading-7 text-slate-300">
+                <p id={strategyHelperId} className="text-sm leading-7 text-slate-300">
                   Strategy note saving will appear here once project planning save-back is
                   connected.
                 </p>
@@ -419,15 +429,15 @@ function renderProjectPanel(
         <PillCard title="Room Focus">
           <RoomTile
             title="Project Shape"
-            body="Use this room to capture the project direction before roadmap and scope move forward."
+            body="Capture the project direction, audience, and intended result so planning starts with clear shape."
           />
           <RoomTile
             title="Roadmap Clarity"
-            body="Roadmap notes will become visible here once strategy direction is approved."
+            body="Use this room to clarify roadmap direction before roadmap guidance is connected here."
           />
           <RoomTile
             title="Scope Readiness"
-            body="Scope guidance will appear here after project planning begins."
+            body="Use this room to outline what should be in scope before scope guidance is connected here."
           />
         </PillCard>
       </div>

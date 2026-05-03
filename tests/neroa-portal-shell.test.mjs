@@ -1344,6 +1344,7 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.match(projectPortalSurfaceSource, /Project Room/);
   assert.match(projectPortalSurfaceSource, /Command Center/);
   assert.match(projectPortalSurfaceSource, /QC Room/);
+  assert.match(projectPortalSurfaceSource, /Strategy Notes/);
   assert.match(
     projectPortalSurfaceSource,
     /Shape the project, clarify the roadmap, and prepare scope before execution begins\./
@@ -1353,7 +1354,15 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
     /Tell Neroa what you want to build, who it is for, and what the end result should[\s\S]*accomplish\./
   );
   assert.match(projectPortalSurfaceSource, /Describe your project\.\.\./);
+  assert.match(projectPortalSurfaceSource, /aria-label="Describe your project"/);
   assert.match(projectPortalSurfaceSource, /Save Strategy Notes/);
+  assert.match(projectPortalSurfaceSource, /Project Shape/);
+  assert.match(projectPortalSurfaceSource, /Roadmap Clarity/);
+  assert.match(projectPortalSurfaceSource, /Scope Readiness/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Strategy note saving will appear here once project planning save-back is connected\./
+  );
   assert.match(projectPortalSurfaceSource, /Current Project/);
   assert.match(projectPortalSurfaceSource, /Roadmap Status/);
   assert.match(projectPortalSurfaceSource, /Scope Items/);
@@ -1426,6 +1435,9 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.doesNotMatch(projectPortalSurfaceSource, /No revisions queued yet\./);
   assert.doesNotMatch(projectPortalSurfaceSource, /No command decisions recorded yet\./);
   assert.doesNotMatch(projectPortalSurfaceSource, /No next actions queued yet\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /strategy saved/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /roadmap generated/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /live AI/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /task created/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /command sent/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
@@ -1490,6 +1502,11 @@ test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime w
   assert.match(projectPortalSurfaceSource, /<textarea/);
   assert.match(projectPortalSurfaceSource, /type="button"/);
   assert.match(projectPortalSurfaceSource, /disabled/);
+  assert.match(projectPortalSurfaceSource, /aria-disabled="true"/);
+  assert.match(projectPortalSurfaceSource, /aria-describedby=\{strategyHelperId\}/);
+  assert.match(projectPortalSurfaceSource, /title="Strategy note saving will appear here once project planning save-back is connected\."/);
+  assert.match(projectPortalSurfaceSource, /const strategyPromptId = "project-strategy-notes-prompt"/);
+  assert.match(projectPortalSurfaceSource, /const strategyHelperId = "project-strategy-notes-helper"/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Sync Now/);
   assert.doesNotMatch(projectPortalSurfaceSource, /Start Build/i);
@@ -1879,6 +1896,7 @@ test("Project Portal does not import old project workspace billing auth or runti
     assert.doesNotMatch(source, /from\s+["'][^"']*auth/i);
     assert.doesNotMatch(source, /@\/components\/live-view\//);
     assert.doesNotMatch(source, /@\/lib\/ai\//);
+    assert.doesNotMatch(source, /from\s+["'][^"']*openai/i);
     assert.doesNotMatch(source, /codex-relay/);
     assert.doesNotMatch(source, /worker-trigger/);
     assert.doesNotMatch(source, /browser-runtime-bridge/);
