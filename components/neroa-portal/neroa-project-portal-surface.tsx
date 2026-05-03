@@ -4,74 +4,80 @@ import { NeroaNorthStarAccent } from "@/components/neroa-portal/neroa-north-star
 
 const projectSections = [
   {
-    title: "Strategy Room",
-    eyebrow: "Roadmap And Scope Review",
+    title: "Roadmap",
+    eyebrow: "Project Direction",
     description:
-      "Future home for roadmap, scope, and project-truth review inside the clean Project Portal.",
+      "See the shape of the project, the sequence of work, and the milestones that anchor the build path.",
     detail:
-      "This surface is not the intelligence owner yet and does not connect to legacy Strategy Room runtime."
+      "A clear roadmap helps every project stay grounded in approved direction before execution pressure builds."
   },
   {
-    title: "Command Center",
-    eyebrow: "Customer-Safe Coordination",
+    title: "Scope",
+    eyebrow: "Boundaries",
     description:
-      "Future home for customer-safe task, status, and decision visibility in the clean project experience.",
+      "Keep what belongs in the project, what stays out, and what deserves another pass easy to understand.",
     detail:
-      "This panel is not the routing owner and does not release work or reuse the legacy Command Center path."
+      "Scope stays readable when the project portal makes priorities, constraints, and tradeoffs visible at a glance."
   },
   {
-    title: "Project Room",
-    eyebrow: "Future Workspace Viewport",
+    title: "Decisions",
+    eyebrow: "Approvals",
     description:
-      "Future home for a project-facing workspace viewport with calm navigation and review context.",
+      "Track the calls that shape the build, the approvals that unblock motion, and the questions that still matter.",
     detail:
-      "This panel is not the execution home and does not represent Build Room, worker control, or runtime dispatch."
+      "Decisions stay useful when they are visible in the same workspace as roadmap and scope."
   },
   {
-    title: "Evidence / Results",
-    eyebrow: "Customer-Safe Summaries",
+    title: "Evidence",
+    eyebrow: "Review Signals",
     description:
-      "Future home for customer-safe evidence and result summaries once the clean review lanes are surfaced.",
+      "Keep summaries, proof points, and review signals gathered in one place so progress is easy to trust.",
     detail:
-      "This panel is not Live View, QC runtime, browser recording, or extension-driven runtime."
+      "Evidence brings clarity to the project without burying the workspace in noisy status fragments."
   },
   {
-    title: "Roadmap / Scope",
-    eyebrow: "Project Visibility",
+    title: "Build Readiness",
+    eyebrow: "Next Step Clarity",
     description:
-      "Future home for roadmap and scope visibility, checkpoints, and approval support across the project lifecycle.",
+      "Know when the project is ready to move forward, what still needs alignment, and what the next step should be.",
     detail:
-      "This surface is not the live strategy runtime and does not own roadmap intelligence processing."
-  },
-  {
-    title: "Approvals / Decisions",
-    eyebrow: "Governance Queue",
-    description:
-      "Future home for customer and admin approvals, decisions, and governance checkpoints in the clean portal.",
-    detail:
-      "This panel is not a live workflow engine and does not trigger runtime approvals, execution, or queue behavior."
+      "Readiness improves when roadmap, scope, decisions, and evidence all stay visible in one calm project overview."
   }
 ] as const;
 
-const luxuryPillars = [
-  "Premium, spacious, and calm",
-  "Charcoal base with soft silver framing",
-  "Subtle teal guidance instead of loud status colors",
+const projectHighlights = [
+  "Roadmap, scope, decisions, and evidence in one view",
+  "Dark charcoal base with soft silver framing",
+  "Subtle teal guidance across the project workspace",
   "Neroa wordmark-first direction"
+] as const;
+
+const readinessNotes = [
+  "Roadmap stays visible from the first planning pass onward.",
+  "Scope is easier to protect when the workspace stays calm and direct.",
+  "Decisions and evidence belong beside the work, not scattered across pages.",
+  "Build readiness becomes clearer when the whole project story is in one place."
 ] as const;
 
 export function NeroaProjectPortalSurface() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top,#1f252d_0%,#11161d_42%,#090c10_100%)] px-6 py-10 text-slate-100">
+    <main className="relative min-h-screen overflow-hidden bg-[#04070a] px-6 py-10 text-slate-100">
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute right-[7%] top-[4%] h-[24rem] w-[24rem] bg-[radial-gradient(circle_at_50%_24%,rgba(173,255,237,0.16),transparent_12%),radial-gradient(ellipse_at_50%_48%,rgba(51,191,164,0.10),transparent_56%)] blur-xl" />
-        <NeroaNorthStarAccent className="right-[15rem] top-[7rem]" />
+        <div className="absolute inset-0 bg-[#030508]" />
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-[0.68]"
+          style={{ backgroundImage: "url('/brand/background.png')" }}
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,7,10,0.24)_0%,rgba(4,7,10,0.42)_26%,rgba(3,6,8,0.82)_68%,rgba(3,6,8,0.97)_100%)]" />
+        <div className="absolute right-[5%] top-[3%] h-[40rem] w-[32rem] bg-[radial-gradient(circle_at_50%_10%,rgba(173,255,237,0.24),transparent_10%),radial-gradient(ellipse_at_50%_38%,rgba(51,191,164,0.14),transparent_52%)] blur-xl" />
+        <div className="absolute bottom-[10rem] left-[-6%] right-[-6%] h-[16rem] bg-[radial-gradient(ellipse_at_center,rgba(45,212,191,0.10),transparent_60%)]" />
+        <NeroaNorthStarAccent className="right-[18rem] top-[7rem]" testId="project-page-north-star" />
       </div>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-8">
+      <div className="relative mx-auto flex w-full max-w-[1680px] flex-col gap-8">
         <NeroaPortalNavigation currentPath="/neroa/project" tone="dark" />
 
-        <section className="overflow-hidden rounded-[2.2rem] border border-slate-500/30 bg-[linear-gradient(145deg,rgba(20,26,34,0.97)_0%,rgba(10,13,18,0.98)_100%)] shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
-          <div className="grid gap-8 border-b border-slate-200/10 px-8 py-9 lg:grid-cols-[1.7fr,1fr] lg:px-10">
+        <section className="overflow-hidden rounded-[2.2rem] border border-white/12 bg-[linear-gradient(145deg,rgba(20,26,34,0.97)_0%,rgba(10,13,18,0.98)_100%)] shadow-[0_40px_120px_rgba(0,0,0,0.45)]">
+          <div className="grid gap-8 border-b border-slate-200/10 px-8 py-9 lg:grid-cols-[1.55fr,0.95fr] lg:px-10">
             <div className="space-y-5">
               <div className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.34em] text-teal-300/85">
@@ -83,12 +89,11 @@ export function NeroaProjectPortalSurface() {
               </div>
               <div className="space-y-4">
                 <h1 className="max-w-4xl font-serif text-4xl leading-tight text-slate-50 lg:text-5xl">
-                  Dark luxury project surface for the next clean Neroa portal.
+                  Your project workspace will organize roadmap, scope, decisions, evidence, and build readiness as your plan takes shape.
                 </h1>
                 <p className="max-w-3xl text-sm leading-8 text-slate-300 lg:text-base">
-                  This Project Portal carries the calm, premium Neroa direction for future strategy,
-                  command, evidence, roadmap, and approval surfaces without claiming that runtime,
-                  execution, or Neroa One wiring is live yet.
+                  The project portal keeps the whole project story visible in one clean Neroa
+                  overview so progress feels structured, reviewable, and ready for the next step.
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -109,14 +114,10 @@ export function NeroaProjectPortalSurface() {
 
             <aside className="rounded-[1.7rem] border border-teal-300/15 bg-[linear-gradient(180deg,rgba(165,243,252,0.10)_0%,rgba(255,255,255,0.04)_100%)] p-6">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-teal-200">
-                Surface Status
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-300">
-                Placeholder-only project shell. Strategy, command, evidence, approvals, and Neroa
-                One runtime behavior remain intentionally disconnected in this pass.
+                Project Highlights
               </p>
               <div className="mt-5 space-y-3">
-                {luxuryPillars.map((pillar) => (
+                {projectHighlights.map((pillar) => (
                   <div
                     key={pillar}
                     className="rounded-[1rem] border border-white/8 bg-white/5 px-4 py-3 text-sm text-slate-200"
@@ -142,9 +143,6 @@ export function NeroaProjectPortalSurface() {
                 <p className="mt-4 rounded-[1.3rem] border border-slate-200/10 bg-black/20 px-4 py-4 text-sm leading-7 text-slate-300">
                   {section.detail}
                 </p>
-                <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-                  Clean placeholder control surface
-                </p>
               </article>
             ))}
           </div>
@@ -153,26 +151,26 @@ export function NeroaProjectPortalSurface() {
         <section className="grid gap-4 lg:grid-cols-[1.3fr,1fr]">
           <article className="rounded-[2rem] border border-slate-400/20 bg-[linear-gradient(160deg,rgba(17,24,39,0.96)_0%,rgba(8,11,15,0.98)_100%)] px-8 py-8 shadow-[0_30px_90px_rgba(0,0,0,0.35)]">
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-teal-200">
-              Project Portal Boundaries
+              Project Overview
             </p>
             <h2 className="mt-3 font-serif text-3xl text-slate-50">
-              Calm project visibility without inheriting legacy execution architecture.
+              Calm project visibility keeps the plan readable before build pressure takes over.
             </h2>
             <p className="mt-4 max-w-3xl text-sm leading-8 text-slate-300">
-              This clean surface is for future visibility and governance only. It does not import
-              legacy Strategy Room, Command Center, Build Room, Live View, Browser QC, auxiliary
-              library surfaces, or Neroa One runtime modules.
+              Roadmap, scope, decisions, evidence, and build readiness belong together. This
+              project portal keeps them framed in one clear workspace so the next move feels
+              intentional instead of improvised.
             </p>
           </article>
 
           <article className="rounded-[2rem] border border-slate-300/15 bg-white/5 px-8 py-8 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur">
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">
-              Future Readiness Notes
+              Readiness Notes
             </p>
             <div className="mt-4 space-y-4 text-sm leading-7 text-slate-300">
-              <p>Customer-safe project visibility first, runtime ownership later.</p>
-              <p>No forms, no fake connected states, and no live execution claims in this pass.</p>
-              <p>Evidence and approvals stay review-oriented, not runtime-driven or queue-backed.</p>
+              {readinessNotes.map((note) => (
+                <p key={note}>{note}</p>
+              ))}
             </div>
           </article>
         </section>

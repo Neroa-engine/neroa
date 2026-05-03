@@ -4,7 +4,7 @@ import { NeroaPricingSurface } from "@/components/neroa-portal/neroa-pricing-sur
 export const metadata: Metadata = {
   title: "Neroa | Pricing",
   description:
-    "Choose a Neroa plan with governed build credits, separate managed credits, and separate workspace hours before starting your project."
+    "Neroa pricing is built around governed Build Credits, project preview access, credit top-offs, and managed credits."
 };
 
 export default function NeroaPricingPage() {

@@ -253,13 +253,13 @@ export function NeroaAuthSurface({
                 />
 
                 <div className="flex items-center justify-between gap-4 pt-0.5">
-                  {/* TODO: connect this to a clean forgot-password route when that flow is ready. */}
-                  <Link
-                    href="#"
-                    className="text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200 transition hover:text-white"
+                  <button
+                    type="button"
+                    disabled
+                    className="text-left text-[0.74rem] font-semibold uppercase tracking-[0.2em] text-teal-200/72"
                   >
-                    Forgot password?
-                  </Link>
+                    Forgot password? Contact support for now.
+                  </button>
                 </div>
 
                 <button

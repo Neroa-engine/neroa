@@ -332,6 +332,10 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.doesNotMatch(pricingPortalSource, /@\/lib\/billing\//);
   assert.doesNotMatch(pricingPortalSource, /@\/components\/marketing\//);
   assert.match(pricingPortalSource, /Neroa \| Pricing/);
+  assert.match(
+    pricingPortalSource,
+    /Neroa pricing is built around governed Build Credits, project preview access, credit top-offs, and managed credits\./
+  );
   assert.match(pricingPortalSurfaceSource, /Governed Build Credits/);
   assert.match(pricingPortalSurfaceSource, /Build Credits govern approved work/);
   assert.match(pricingPortalSurfaceSource, /Choose the Neroa lane that fits your project\./);
@@ -441,8 +445,10 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleSignInSubmit\}/);
   assert.match(authPortalSurfaceSource, /onSubmit=\{handleCreateSubmit\}/);
   assert.match(authPortalSurfaceSource, /type="submit"/);
-  assert.match(authPortalSurfaceSource, /href="#"/);
-  assert.match(authPortalSurfaceSource, /TODO: connect this to a clean forgot-password route/);
+  assert.match(authPortalSurfaceSource, /Forgot password\? Contact support for now\./);
+  assert.match(authPortalSurfaceSource, /type="button"/);
+  assert.match(authPortalSurfaceSource, /disabled/);
+  assert.doesNotMatch(authPortalSurfaceSource, /href="#"/);
   assert.match(authPortalSurfaceSource, /selectedPlanLabels/);
   assert.match(authPortalSurfaceSource, /Selected Plan:/);
   assert.match(authPortalSurfaceSource, /free: "Free"/);
@@ -482,53 +488,53 @@ test("clean auth surface uses Neroa wordmark text only without naming drift", ()
   assert.doesNotMatch(authPortalSurfaceSource, /\bNarua\b/);
 });
 
-test("Account Portal placeholder sections are present", () => {
+test("Account Portal presents the public account overview content", () => {
   assert.match(accountPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(accountPortalSurfaceSource, /NeroaNorthStarAccent/);
-  assert.match(accountPortalSurfaceSource, /className="right-\[14rem\] top-\[6\.5rem\] text-teal-300\/70"/);
+  assert.match(accountPortalSurfaceSource, /testId="account-page-north-star"/);
+  assert.match(accountPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(accountPortalSurfaceSource, /currentPath="\/neroa\/account"/);
+  assert.match(accountPortalSurfaceSource, /tone="dark"/);
+  assert.match(
+    accountPortalSurfaceSource,
+    /Manage your Neroa account, plan context, and project access from one clean starting point\./
+  );
+  assert.match(accountPortalSurfaceSource, /"Profile"/);
+  assert.match(accountPortalSurfaceSource, /"Plan & Credits"/);
   assert.match(accountPortalSurfaceSource, /"Projects"/);
-  assert.match(accountPortalSurfaceSource, /"Billing \/ Usage"/);
-  assert.match(accountPortalSurfaceSource, /"Account Settings"/);
-  assert.match(accountPortalSurfaceSource, /"Team \/ Access"/);
-  assert.match(accountPortalSurfaceSource, /Integrations \/ Infrastructure/);
+  assert.match(accountPortalSurfaceSource, /"Settings"/);
+  assert.match(accountPortalSurfaceSource, /Account Highlights/);
+  assert.match(accountPortalSurfaceSource, /Account Overview/);
+  assert.match(accountPortalSurfaceSource, /Account Path/);
 });
 
 test("Account Portal remains account-level only and does not promote project portal sections as primary sections", () => {
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Strategy Room"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Command Center"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Project Room"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Evidence \/ Results"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Roadmap \/ Scope"/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Approvals \/ Decisions"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Roadmap"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Scope"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Decisions"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Evidence"/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /title:\s*"Build Readiness"/);
 });
 
-test("Account Portal panels stay planning-only and not live runtime surfaces", () => {
-  assert.match(accountPortalSurfaceSource, /It is not the project execution home\./);
-  assert.match(accountPortalSurfaceSource, /does not connect to Stripe, payment state, credits, or invoice data yet\./);
-  assert.match(accountPortalSurfaceSource, /No auth runtime, profile saving, or settings persistence is connected in this pass\./);
-  assert.match(accountPortalSurfaceSource, /does not connect to team membership, invites, auth providers, or access enforcement yet\./);
-  assert.match(
-    accountPortalSurfaceSource,
-    /does not[\s\S]*create connections, fake connected states, or imply that provider runtime flows are[\s\S]*active\./
-  );
+test("Account Portal stays public-facing and avoids internal placeholder or runtime copy", () => {
+  assert.match(accountPortalSurfaceSource, /One clean account starting point/);
+  assert.match(accountPortalSurfaceSource, /Plan context and Build Credit guidance/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Clean Surface Status/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /placeholder/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Surface Status/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /control surface/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /runtime-free/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /No auth runtime/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /fake connected states/i);
 });
 
-test("Account Portal integrations panel includes planned providers and migration worker guidance", () => {
-  assert.match(accountPortalSurfaceSource, /"GitHub"/);
-  assert.match(accountPortalSurfaceSource, /"Vercel"/);
-  assert.match(accountPortalSurfaceSource, /"Supabase"/);
-  assert.match(accountPortalSurfaceSource, /"Stripe"/);
-  assert.match(accountPortalSurfaceSource, /"Resend"/);
-  assert.match(accountPortalSurfaceSource, /"OpenAI \/ Neroa AI credits"/);
-  assert.match(accountPortalSurfaceSource, /"DNS \/ domain setup later"/);
-  assert.match(accountPortalSurfaceSource, /"Database Migration Worker later"/);
-  assert.match(accountPortalSurfaceSource, /Browser automation is fallback and verification only/);
-  assert.match(
-    accountPortalSurfaceSource,
-    /Risky database, payment, and production changes require explicit customer or admin[\s\S]*approval before execution\./
-  );
-  assert.match(accountPortalSurfaceSource, /approved Supabase CLI or Postgres worker path/);
+test("Account Portal reflects the locked dark Neroa visual direction", () => {
+  assert.match(accountPortalSurfaceSource, /bg-\[#04070a\]/);
+  assert.match(accountPortalSurfaceSource, /url\('\/brand\/background\.png'\)/);
+  assert.match(accountPortalSurfaceSource, /text-teal-/);
+  assert.match(accountPortalSurfaceSource, /soft silver/i);
+  assert.match(accountPortalSurfaceSource, /shadow-\[0_32px_120px/);
+  assert.match(accountPortalSurfaceSource, /Neroa visual language/);
 });
 
 test("Account Portal does not imply live saving or connected integration state", () => {
@@ -537,39 +543,49 @@ test("Account Portal does not imply live saving or connected integration state",
   assert.doesNotMatch(accountPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Sync Now/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Connect /);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Supabase/);
 });
 
-test("Project Portal placeholder sections are present", () => {
+test("Project Portal presents the public project overview content", () => {
   assert.match(projectPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.match(projectPortalSurfaceSource, /NeroaNorthStarAccent/);
-  assert.match(projectPortalSurfaceSource, /className="right-\[15rem\] top-\[7rem\]"/);
+  assert.match(projectPortalSurfaceSource, /testId="project-page-north-star"/);
+  assert.match(projectPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(projectPortalSurfaceSource, /currentPath="\/neroa\/project"/);
   assert.match(projectPortalSurfaceSource, /tone="dark"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Strategy Room"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Command Center"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Project Room"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Evidence \/ Results"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Roadmap \/ Scope"/);
-  assert.match(projectPortalSurfaceSource, /title:\s*"Approvals \/ Decisions"/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Your project workspace will organize roadmap, scope, decisions, evidence, and build readiness as your plan takes shape\./
+  );
+  assert.match(projectPortalSurfaceSource, /title:\s*"Roadmap"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Scope"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Decisions"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Evidence"/);
+  assert.match(projectPortalSurfaceSource, /title:\s*"Build Readiness"/);
+  assert.match(projectPortalSurfaceSource, /Project Highlights/);
+  assert.match(projectPortalSurfaceSource, /Project Overview/);
+  assert.match(projectPortalSurfaceSource, /Readiness Notes/);
 });
 
 test("Project Portal remains project-level only and does not promote account sections as primary sections", () => {
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Profile"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Plan & Credits"/);
   assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Projects"/);
-  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Billing \/ Usage"/);
-  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Account Settings"/);
-  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Team \/ Access"/);
-  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Integrations \/ Infrastructure"/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /title:\s*"Settings"/);
 });
 
-test("Project Portal panels stay planning-only and not live runtime surfaces", () => {
-  assert.match(projectPortalSurfaceSource, /not the intelligence owner yet/);
-  assert.match(projectPortalSurfaceSource, /not the routing owner/);
-  assert.match(projectPortalSurfaceSource, /not the execution home/);
-  assert.match(projectPortalSurfaceSource, /not Live View, QC runtime, browser recording, or extension-driven runtime/);
-  assert.match(projectPortalSurfaceSource, /not the live strategy runtime/);
-  assert.match(projectPortalSurfaceSource, /not a live workflow engine/);
-  assert.match(projectPortalSurfaceSource, /Placeholder-only project shell/);
-  assert.match(projectPortalSurfaceSource, /Clean placeholder control surface/);
+test("Project Portal stays public-facing and avoids placeholder or legacy runtime wording", () => {
+  assert.match(projectPortalSurfaceSource, /Roadmap, scope, decisions, and evidence in one view/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Surface Status/);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Placeholder-only/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /control layer/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /future routing/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Strategy Room/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Command Center/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Build Room/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /Live View/i);
 });
 
 test("Project Portal uses Neroa wordmark-first branding without rename drift", () => {
@@ -582,11 +598,12 @@ test("Project Portal uses Neroa wordmark-first branding without rename drift", (
 });
 
 test("Project Portal reflects the locked dark luxury visual direction", () => {
-  assert.match(projectPortalSurfaceSource, /bg-\[radial-gradient/);
+  assert.match(projectPortalSurfaceSource, /bg-\[#04070a\]/);
+  assert.match(projectPortalSurfaceSource, /url\('\/brand\/background\.png'\)/);
   assert.match(projectPortalSurfaceSource, /charcoal/i);
   assert.match(projectPortalSurfaceSource, /soft silver/i);
   assert.match(projectPortalSurfaceSource, /subtle teal/i);
-  assert.match(projectPortalSurfaceSource, /Premium, spacious, and calm/);
+  assert.match(projectPortalSurfaceSource, /Roadmap, scope, decisions, and evidence in one view/);
   assert.match(projectPortalSurfaceSource, /Neroa wordmark-first direction/);
   assert.match(projectPortalSurfaceSource, /text-teal-/);
   assert.match(projectPortalSurfaceSource, /shadow-\[0_40px_120px/);
@@ -749,7 +766,6 @@ test("Account Portal does not import old account billing auth or project runtime
     assert.doesNotMatch(source, /@\/lib\/workspace\//);
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
   }
-  assert.match(accountPortalSurfaceSource, /"Stripe"/);
 });
 
 test("Project Portal route stays inside the clean neroa portal namespace", () => {
