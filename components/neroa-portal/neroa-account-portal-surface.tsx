@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useState } from "react";
+import { type FormEvent, type ReactNode, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NeroaPortalNavigation } from "@/components/neroa-portal/neroa-portal-navigation";
@@ -124,12 +124,14 @@ function buildStatus(tone: StatusTone, message: string) {
 }
 
 function ProfileField({
+  inputId,
   label,
   value,
   onChange,
   placeholder,
   disabled
 }: {
+  inputId: string;
   label: string;
   value: string;
   onChange: (nextValue: string) => void;
@@ -137,12 +139,14 @@ function ProfileField({
   disabled?: boolean;
 }) {
   return (
-    <label className="block space-y-2.5">
+    <label htmlFor={inputId} className="block space-y-2.5">
       <span className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-white/62">
         {label}
       </span>
       <div className="flex items-center gap-3 rounded-[1.15rem] border border-white/12 bg-black/20 px-4 py-2.5 shadow-[0_0_28px_rgba(45,212,191,0.05)]">
         <input
+          id={inputId}
+          name={inputId}
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -355,8 +359,12 @@ function renderPanel(
       selectedPlanPathLabels[accountProfile.selectedPlan ?? "free"];
     const profileEmailValue = buildDisplayValue(
       accountProfile.email,
-      "Signed-in email will appear here once account profile data is connected."
+      "Email unavailable for this session."
     );
+    const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      void onSaveProfile();
+    };
 
     return (
       <section
@@ -382,6 +390,8 @@ function renderPanel(
             {profileStatus ? (
               <div
                 role="status"
+                aria-live="polite"
+                aria-atomic="true"
                 className={[
                   "rounded-[1.2rem] border px-4 py-3 text-sm leading-7",
                   profileStatus.tone === "error"
@@ -392,8 +402,9 @@ function renderPanel(
                 {profileStatus.message}
               </div>
             ) : null}
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleProfileSubmit}>
               <ProfileField
+                inputId="account-profile-name"
                 label="Name"
                 value={profileName}
                 onChange={onProfileNameChange}
@@ -401,6 +412,7 @@ function renderPanel(
                 disabled={isSavingProfile}
               />
               <ProfileField
+                inputId="account-profile-organization"
                 label="Organization"
                 value={profileOrganization}
                 onChange={onProfileOrganizationChange}
@@ -428,9 +440,9 @@ function renderPanel(
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
-                  type="button"
-                  onClick={onSaveProfile}
+                  type="submit"
                   disabled={isSavingProfile}
+                  aria-busy={isSavingProfile}
                   className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-slate-500"
                 >
                   {isSavingProfile ? "Saving Profile..." : "Save Profile"}
@@ -475,6 +487,8 @@ function renderPanel(
           {signOutError ? (
             <div
               role="alert"
+              aria-live="assertive"
+              aria-atomic="true"
               className="rounded-[1.2rem] border border-rose-300/30 bg-rose-500/10 px-4 py-3 text-sm leading-7 text-rose-100"
             >
               {signOutError}

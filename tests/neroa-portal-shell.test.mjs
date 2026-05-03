@@ -1123,16 +1123,20 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Name/);
   assert.match(accountPortalSurfaceSource, /Organization/);
   assert.match(accountPortalSurfaceSource, /Email/);
+  assert.match(accountPortalSurfaceSource, /htmlFor=\{inputId\}/);
+  assert.match(accountPortalSurfaceSource, /id=\{inputId\}/);
+  assert.match(accountPortalSurfaceSource, /name=\{inputId\}/);
+  assert.match(accountPortalSurfaceSource, /<form className="space-y-4" onSubmit=\{handleProfileSubmit\}>/);
   assert.match(accountPortalSurfaceSource, /Name not added yet\./);
   assert.match(accountPortalSurfaceSource, /Organization not added yet\./);
-  assert.match(
-    accountPortalSurfaceSource,
-    /Signed-in email will appear here once account profile data is connected\./
-  );
+  assert.match(accountPortalSurfaceSource, /Email unavailable for this session\./);
   assert.match(accountPortalSurfaceSource, /Save Profile/);
+  assert.match(accountPortalSurfaceSource, /type="submit"/);
+  assert.match(accountPortalSurfaceSource, /aria-busy=\{isSavingProfile\}/);
   assert.match(accountPortalSurfaceSource, /Saving Profile\.\.\./);
   assert.match(accountPortalSurfaceSource, /Profile updated\. Name and organization were saved to your account\./);
   assert.match(accountPortalSurfaceSource, /Unable to save your profile right now\. Please try again\./);
+  assert.match(accountPortalSurfaceSource, /aria-live="polite"/);
   assert.match(accountPortalSurfaceSource, /supabase\.auth\.updateUser/);
   assert.match(accountPortalSurfaceSource, /Plan Context/);
   assert.match(accountPortalSurfaceSource, /Selected Plan Path/);
@@ -1156,9 +1160,11 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /Reset Password/);
   assert.match(accountPortalSource, /\/neroa\/auth\/reset-password/);
+  assert.match(accountPortalSurfaceSource, /href=\{accountProfile\.resetPasswordHref\}/);
   assert.match(accountPortalSurfaceSource, /Sign Out/);
   assert.match(accountPortalSurfaceSource, /Signing Out\.\.\./);
   assert.match(accountPortalSurfaceSource, /Unable to sign out right now\. Please try again\./);
+  assert.match(accountPortalSurfaceSource, /aria-live="assertive"/);
   assert.match(accountPortalSurfaceSource, /Danger Zone/);
   assert.match(accountPortalSurfaceSource, /Delete Account/);
   assert.match(
@@ -1167,6 +1173,7 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   );
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
   assert.match(accountPortalSurfaceSource, /Contact Support/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /href="#"/);
   assert.match(
     accountPortalSurfaceSource,
     /Need help with account access, billing questions, project setup, or a technical issue\?\s+Open the full Neroa support form and keep email as the safe fallback\./
@@ -1203,6 +1210,8 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
   assert.doesNotMatch(accountPortalSurfaceSource, /billing runtime/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Delete this account now/i);
+  assert.doesNotMatch(accountPortalSurfaceSource, /fetch\(/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /\/api\//i);
 });
 
 test("Account Portal signs out with the browser-safe Supabase client only", () => {
