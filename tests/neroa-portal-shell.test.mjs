@@ -1366,6 +1366,45 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.match(projectPortalSurfaceSource, /Current Project/);
   assert.match(projectPortalSurfaceSource, /Roadmap Status/);
   assert.match(projectPortalSurfaceSource, /Scope Items/);
+  assert.match(projectPortalSurfaceSource, /Decisions/);
+  assert.match(projectPortalSurfaceSource, /Build Readiness/);
+  assert.match(projectPortalSurfaceSource, /Project Files \/ References/);
+  assert.match(projectPortalSurfaceSource, /Recent Activity/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Review the current project structure, roadmap status, scope, decisions, files, and[\s\S]*readiness\./
+  );
+  assert.match(projectPortalSurfaceSource, /No current project connected yet\./);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Roadmap will appear here once strategy is approved\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Scope items will appear here once project planning begins\./
+  );
+  assert.match(projectPortalSurfaceSource, /No project decisions recorded yet\./);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Build readiness will appear here once project planning is approved\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Project files and references will appear here once upload and project storage are connected\./
+  );
+  assert.match(
+    projectPortalSurfaceSource,
+    /Recent project activity will appear here once project tracking is connected\./
+  );
+  assert.match(projectPortalSurfaceSource, /Project Actions/);
+  assert.match(projectPortalSurfaceSource, /Start Project Planning/);
+  assert.match(projectPortalSurfaceSource, /Open Command Center/);
+  assert.match(projectPortalSurfaceSource, /onClick=\{\(\) => onTabChange\("Project & Strategy Room"\)\}/);
+  assert.match(projectPortalSurfaceSource, /onClick=\{\(\) => onTabChange\("Command Center"\)\}/);
+  assert.match(
+    projectPortalSurfaceSource,
+    /Use the room tabs to move into planning or command review without leaving the Project[\s\S]*Portal\./
+  );
   assert.match(projectPortalSurfaceSource, /Requests/);
   assert.match(projectPortalSurfaceSource, /Revisions/);
   assert.match(projectPortalSurfaceSource, /Next Actions/);
@@ -1441,6 +1480,9 @@ test("Project Portal renders a tabbed project landing with Strategy Room active 
   assert.doesNotMatch(projectPortalSurfaceSource, /task created/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /command sent/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /placeholder/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /project created/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /roadmap ready/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /files uploaded/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /href="#/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNaroa\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bNerowa\b/);
@@ -1537,6 +1579,8 @@ test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime w
   assert.match(projectPortalSurfaceSource, /disabled/);
   assert.match(projectPortalSurfaceSource, /aria-disabled="true"/);
   assert.match(projectPortalSurfaceSource, /aria-describedby=\{strategyHelperId\}/);
+  assert.match(projectPortalSurfaceSource, /const projectRoomActionsHelperId = "project-room-actions-helper"/);
+  assert.match(projectPortalSurfaceSource, /aria-describedby=\{projectRoomActionsHelperId\}/);
   assert.match(projectPortalSurfaceSource, /const qcActionsHelperId = "project-qc-actions-helper"/);
   assert.match(projectPortalSurfaceSource, /aria-describedby=\{qcActionsHelperId\}/);
   assert.match(
@@ -1556,6 +1600,8 @@ test("Project Portal stays UI-only and avoids fake project, AI, QC, or runtime w
   assert.doesNotMatch(projectPortalSurfaceSource, /\bAcme\b/);
   assert.doesNotMatch(projectPortalSurfaceSource, /\bDemo Project\b/i);
   assert.doesNotMatch(projectPortalSurfaceSource, /onClick=\{\(\) => router\./);
+  assert.doesNotMatch(projectPortalSurfaceSource, /from\s+["']@\/lib\/schema/i);
+  assert.doesNotMatch(projectPortalSurfaceSource, /from\s+["']@\/lib\/migrations?\//i);
   assert.doesNotMatch(projectPortalSurfaceSource, /href="\/neroa\/project\/qc/i);
 });
 

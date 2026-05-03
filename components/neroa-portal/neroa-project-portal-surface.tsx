@@ -33,6 +33,14 @@ const projectRoomCards = [
   {
     title: "Build Readiness",
     body: "Build readiness will appear here once project planning is approved."
+  },
+  {
+    title: "Project Files / References",
+    body: "Project files and references will appear here once upload and project storage are connected."
+  },
+  {
+    title: "Recent Activity",
+    body: "Recent project activity will appear here once project tracking is connected."
   }
 ] as const;
 
@@ -284,10 +292,13 @@ function tabSlug(tab: ProjectTab) {
 
 function renderProjectPanel(
   activeTab: ProjectTab,
+  onTabChange: (tab: ProjectTab) => void,
   panelId: string,
   labelledById: string
 ) {
   if (activeTab === "Project Room") {
+    const projectRoomActionsHelperId = "project-room-actions-helper";
+
     return (
       <section
         id={panelId}
@@ -302,10 +313,40 @@ function renderProjectPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Project Room</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Review the current project structure, roadmap status, scope items, and build
+            Review the current project structure, roadmap status, scope, decisions, files, and
             readiness.
           </p>
         </div>
+
+        <PillCard title="Project Actions" accent>
+          <div className="rounded-[1.25rem] border border-white/10 bg-black/20 p-5">
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => onTabChange("Project & Strategy Room")}
+                aria-describedby={projectRoomActionsHelperId}
+                className="inline-flex rounded-full border border-teal-300/34 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-300/52 hover:bg-teal-300/14"
+              >
+                Start Project Planning
+              </button>
+              <button
+                type="button"
+                onClick={() => onTabChange("Command Center")}
+                aria-describedby={projectRoomActionsHelperId}
+                className="inline-flex rounded-full border border-white/12 bg-white/[0.03] px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-200 transition hover:border-teal-300/28 hover:text-slate-100"
+              >
+                Open Command Center
+              </button>
+            </div>
+            <p
+              id={projectRoomActionsHelperId}
+              className="mt-4 max-w-3xl text-sm leading-7 text-slate-300"
+            >
+              Use the room tabs to move into planning or command review without leaving the Project
+              Portal.
+            </p>
+          </div>
+        </PillCard>
 
         <div className="grid gap-4 xl:grid-cols-2">
           {projectRoomCards.map((card, index) => (
@@ -546,7 +587,7 @@ export function NeroaProjectPortalSurface() {
           </div>
 
           <div className="mt-6 rounded-[1.7rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(148,163,184,0.03)_100%)] p-6">
-            {renderProjectPanel(activeTab, activePanelId, activeTabId)}
+            {renderProjectPanel(activeTab, setActiveTab, activePanelId, activeTabId)}
           </div>
         </section>
       </div>
