@@ -109,6 +109,10 @@ const portalShellSource = readFileSync(
 );
 const middlewareSource = readFileSync(new URL("../middleware.ts", import.meta.url), "utf8");
 const authRoutesSource = readFileSync(new URL("../lib/auth/routes.ts", import.meta.url), "utf8");
+const supabaseMiddlewareSource = readFileSync(
+  new URL("../lib/supabase/middleware.ts", import.meta.url),
+  "utf8"
+);
 
 const cleanPortalSources = [
   frontDoorSource,
@@ -1192,7 +1196,7 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Admin Portal/);
   assert.match(
     accountPortalSurfaceSource,
-    /Temporary internal entry for the Neroa Admin Portal\.\s+Admin access control is not\s+connected yet, so this should remain limited to internal testing\./
+    /Temporary internal entry for the Neroa Admin Portal\.\s+Sign-in is required\.\s+Role-based\s+admin access will be added later\./
   );
   assert.match(accountPortalSurfaceSource, /Open Admin Portal/);
   assert.match(accountPortalSurfaceSource, /href="\/neroa\/admin"/);
@@ -1878,6 +1882,8 @@ test("landing wrappers only use optional auth lookup for post-chat routing", () 
 test("clean auth page accepts selected plan context without wiring billing runtime", () => {
   assert.match(authPortalSource, /searchParams/);
   assert.match(authPortalSource, /normalizeSelectedPlan/);
+  assert.match(authPortalSource, /normalizeSafeNeroaNextPath/);
+  assert.match(authPortalSource, /safeNeroaPathPattern = \/\^\\\/neroa/);
   assert.match(authPortalSource, /case "free"/);
   assert.match(authPortalSource, /case "starter"/);
   assert.match(authPortalSource, /case "pro"/);
@@ -1885,6 +1891,8 @@ test("clean auth page accepts selected plan context without wiring billing runti
   assert.match(authPortalSource, /case "managed"/);
   assert.match(authPortalSource, /selectedPlan=\{selectedPlan\}/);
   assert.match(authPortalSource, /hasExplicitPlan=\{hasExplicitPlan\}/);
+  assert.match(authPortalSource, /const nextPath = normalizeSafeNeroaNextPath/);
+  assert.match(authPortalSource, /initialNextPath=\{nextPath\}/);
   assert.doesNotMatch(authPortalSource, /@\/lib\/billing\//);
   assert.doesNotMatch(authPortalSource, /stripe/i);
 });
@@ -1915,6 +1923,19 @@ test("clean auth surface does not import auth runtime session or guard modules",
   assert.match(authPortalSurfaceSource, /@\/lib\/supabase\/browser/);
   assert.doesNotMatch(authPortalSurfaceSource, /@\/lib\/supabase\/server/);
   assert.doesNotMatch(authPortalSurfaceSource, /service_role/i);
+});
+
+test("clean auth flow preserves a safe /neroa next path for admin access", () => {
+  assert.match(authPortalSurfaceSource, /initialNextPath = "\/neroa\/account"/);
+  assert.match(authPortalSurfaceSource, /function buildAccountPathForSignIn/);
+  assert.match(authPortalSurfaceSource, /return initialNextPath;/);
+  assert.match(authPortalSurfaceSource, /function buildAccountPathForSignup/);
+  assert.match(authPortalSurfaceSource, /const destination = buildAccountPathForSignIn/);
+  assert.match(authPortalSurfaceSource, /const destination = buildAccountPathForSignup/);
+  assert.match(authPortalSurfaceSource, /buildCleanConfirmUrl\(destination\)/);
+  assert.match(authPortalSurfaceSource, /router\.push\(destination\)/);
+  assert.doesNotMatch(authPortalSurfaceSource, /router\.push\("\/auth"/);
+  assert.doesNotMatch(authPortalSurfaceSource, /router\.push\("\/workspace"/);
 });
 
 test("clean auth confirmation and reset routes stay inside the new Neroa auth architecture", () => {
@@ -1954,12 +1975,25 @@ test("clean auth confirmation and reset routes stay inside the new Neroa auth ar
 test("middleware matcher covers clean neroa session routes and uses clean auth redirects for protected portal pages", () => {
   assert.match(middlewareSource, /"\/neroa\/:path\*"/);
   assert.match(authRoutesSource, /"\/neroa\/account"/);
+  assert.match(authRoutesSource, /"\/neroa\/admin"/);
   assert.match(authRoutesSource, /"\/neroa\/project"/);
   assert.match(authRoutesSource, /buildCleanNeroaAuthRedirectPath/);
   assert.match(authRoutesSource, /return query \? `\/neroa\/auth\?\$\{query\}` : "\/neroa\/auth"/);
   assert.match(authRoutesSource, /export function isProtectedNeroaPath/);
   assert.match(cleanAuthConfirmRouteSource, /safePortalPathPattern = \/\^\\\/neroa/);
   assert.doesNotMatch(authRoutesSource, /service_role/i);
+});
+
+test("/neroa/admin is treated as a clean protected Neroa route with a safe clean-auth redirect", () => {
+  assert.match(authRoutesSource, /export const protectedNeroaPathPrefixes = \[/);
+  assert.match(authRoutesSource, /"\/neroa\/admin"/);
+  assert.match(supabaseMiddlewareSource, /buildCleanNeroaAuthRedirectPath/);
+  assert.match(supabaseMiddlewareSource, /const nextPath = `\$\{request\.nextUrl\.pathname\}\$\{request\.nextUrl\.search\}`;/);
+  assert.match(supabaseMiddlewareSource, /requiresCleanNeroaAuth/);
+  assert.match(supabaseMiddlewareSource, /buildCleanNeroaAuthRedirectPath\(\{ nextPath \}\)/);
+  assert.match(authRoutesSource, /params\.set\("next", nextPath\)/);
+  assert.match(authRoutesSource, /return query \? `\/neroa\/auth\?\$\{query\}` : "\/neroa\/auth"/);
+  assert.doesNotMatch(supabaseMiddlewareSource, /service_role/i);
 });
 
 test("clean auth flow does not introduce schema or migration dependencies", () => {

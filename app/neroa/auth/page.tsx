@@ -12,6 +12,8 @@ type NeroaAuthPageProps = {
   searchParams?: Promise<AuthSearchParams> | AuthSearchParams;
 };
 
+const safeNeroaPathPattern = /^\/neroa(?:\/|$)/;
+
 function readSearchParam(searchParams: AuthSearchParams, key: string) {
   const value = searchParams[key];
   return Array.isArray(value) ? value[0] : value;
@@ -30,6 +32,22 @@ function normalizeSelectedPlan(value: string | undefined) {
   }
 }
 
+function normalizeSafeNeroaNextPath(
+  value: string | undefined,
+  fallback = "/neroa/account"
+) {
+  if (
+    value &&
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    safeNeroaPathPattern.test(value)
+  ) {
+    return value;
+  }
+
+  return fallback;
+}
+
 export default async function NeroaAuthPage({
   searchParams
 }: NeroaAuthPageProps) {
@@ -39,6 +57,7 @@ export default async function NeroaAuthPage({
   const hasExplicitPlan = selectedPlanFromQuery !== null;
   const error = readSearchParam(resolvedSearchParams, "error") ?? null;
   const notice = readSearchParam(resolvedSearchParams, "notice") ?? null;
+  const nextPath = normalizeSafeNeroaNextPath(readSearchParam(resolvedSearchParams, "next"));
 
   return (
     <NeroaAuthSurface
@@ -46,6 +65,7 @@ export default async function NeroaAuthPage({
       hasExplicitPlan={hasExplicitPlan}
       initialError={error}
       initialNotice={notice}
+      initialNextPath={nextPath}
     />
   );
 }

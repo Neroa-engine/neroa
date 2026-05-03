@@ -84,6 +84,7 @@ type NeroaAuthSurfaceProps = {
   hasExplicitPlan?: boolean;
   initialError?: string | null;
   initialNotice?: string | null;
+  initialNextPath?: string;
 };
 
 type AuthMode = "signin" | "create" | "forgot-password";
@@ -105,7 +106,8 @@ export function NeroaAuthSurface({
   selectedPlan = "free",
   hasExplicitPlan = false,
   initialError = null,
-  initialNotice = null
+  initialNotice = null,
+  initialNextPath = "/neroa/account"
 }: NeroaAuthSurfaceProps) {
   const router = useRouter();
   const [supabase] = useState(() => createSupabaseBrowserClient());
@@ -131,11 +133,11 @@ export function NeroaAuthSurface({
   const [showEmailConfirmationHelp, setShowEmailConfirmationHelp] = useState(false);
 
   function buildAccountPathForSignIn(_plan: SelectedPlan, _preservePlan: boolean) {
-    return "/neroa/account";
+    return initialNextPath;
   }
 
   function buildAccountPathForSignup(_plan: SelectedPlan) {
-    return "/neroa/account";
+    return initialNextPath;
   }
 
   function buildCleanConfirmUrl(nextPath: string) {

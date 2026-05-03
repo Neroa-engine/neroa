@@ -524,8 +524,8 @@ function renderPanel(
             </p>
             <h2 className="text-lg font-semibold text-slate-50">Admin Portal</h2>
             <p className="max-w-3xl text-sm leading-7 text-slate-300">
-              Temporary internal entry for the Neroa Admin Portal. Admin access control is not
-              connected yet, so this should remain limited to internal testing.
+              Temporary internal entry for the Neroa Admin Portal. Sign-in is required. Role-based
+              admin access will be added later.
             </p>
           </div>
           <div className="mt-5">

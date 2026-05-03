@@ -13,6 +13,7 @@ export const protectedAppPathPrefixes = [
 
 export const protectedNeroaPathPrefixes = [
   "/neroa/account",
+  "/neroa/admin",
   "/neroa/project"
 ] as const;
 
