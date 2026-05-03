@@ -6,21 +6,26 @@ const plans = [
     id: "free",
     name: "Free",
     price: "$0/month",
-    eyebrow: "Explore the idea",
-    description: "For exploring an idea before you commit to a structured build path.",
-    highlights: ["0-10 trial credits", "10 Strategy Room messages", "0 Workspace Hours"],
-    detail: "Governed build credits stay separate from workspace time and any future managed build lane."
+    eyebrow: "Project preview",
+    description: "Preview the Neroa planning flow before you move into a paid governed Build Credit lane.",
+    highlights: [
+      "Guided idea intake",
+      "Roadmap and scope preview",
+      "Command Center preview",
+      "Limited trial credits included",
+      "1 starter project"
+    ],
+    detail: "Free is a limited preview experience for shaping an idea, not a free execution or MVP promise."
   },
   {
     id: "starter",
     name: "Starter",
     price: "$49.99/month",
     eyebrow: "Roadmap-first launch",
-    description: "Structured planning and controlled DIY build credits for one active project at a time.",
+    description: "Structured planning and governed Build Credits for one active project at a time.",
     highlights: [
-      "200 DIY Build Credits",
+      "200 Build Credits",
       "30 Strategy Room messages",
-      "10 Workspace Hours",
       "1 active project"
     ],
     detail: "Starter is for shaping and progressing a bounded project, not promising a full MVP out of the box."
@@ -30,14 +35,13 @@ const plans = [
     name: "Pro",
     price: "$179/month",
     eyebrow: "Multi-project momentum",
-    description: "More governed credits, more workspace time, and more room to move across a small portfolio.",
+    description: "More governed Build Credits and more room to move across a small portfolio.",
     highlights: [
-      "600 DIY Build Credits",
+      "600 Build Credits",
       "60 Strategy Room messages",
-      "25 Workspace Hours",
       "up to 3 active projects"
     ],
-    detail: "DIY credits remain tracked separately from managed credits and workspace hours."
+    detail: "Build Credits remain tracked separately from managed credits."
   },
   {
     id: "business",
@@ -46,9 +50,8 @@ const plans = [
     eyebrow: "Scaled operating lane",
     description: "For teams that need higher governed usage, review capacity, and controlled project throughput.",
     highlights: [
-      "1,600 DIY Build Credits",
+      "1,600 Build Credits",
       "150 Strategy Room messages",
-      "75 Workspace Hours",
       "5-10 active projects"
     ],
     detail: "Built for portfolio oversight, approvals, and evidence-backed progress with clear governed usage."
@@ -65,7 +68,7 @@ const plans = [
       "3,000 managed credits / $4,500",
       "5,000 managed credits / $7,500"
     ],
-    detail: "Managed credits stay distinct from DIY build credits and workspace hours."
+    detail: "Managed credits stay distinct from standard Build Credits."
   }
 ] as const;
 
@@ -147,8 +150,8 @@ export function NeroaPricingSurface() {
                 Choose the Neroa lane that fits your project.
               </h1>
               <p className="max-w-3xl text-[1.12rem] leading-8 text-white/68">
-                Neroa pricing is structured around governed build credits, separate
-                managed execution credits, and distinct workspace hours. Pick the
+                Neroa pricing is structured around governed Build Credits and separate
+                managed credits. Pick the
                 lane that matches your project scope, then continue into account
                 setup with the plan context already attached.
               </p>
@@ -156,8 +159,8 @@ export function NeroaPricingSurface() {
 
             <div className="grid gap-4 sm:grid-cols-3">
               {[
+                "Build Credits govern approved work",
                 "DIY and Managed credits remain separate",
-                "Workspace hours stay separate from build credits",
                 "No live checkout or billing runtime is wired on this page"
               ].map((item) => (
                 <div

@@ -333,26 +333,31 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.doesNotMatch(pricingPortalSource, /@\/components\/marketing\//);
   assert.match(pricingPortalSource, /Neroa \| Pricing/);
   assert.match(pricingPortalSurfaceSource, /Governed Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /Build Credits govern approved work/);
   assert.match(pricingPortalSurfaceSource, /Choose the Neroa lane that fits your project\./);
   assert.match(pricingPortalSurfaceSource, /DIY and Managed credits remain separate/);
-  assert.match(pricingPortalSurfaceSource, /Workspace hours stay separate from build credits/);
   assert.match(pricingPortalSurfaceSource, /No live checkout or billing runtime is wired on this page/);
   assert.match(pricingPortalSurfaceSource, /Free/);
+  assert.match(pricingPortalSurfaceSource, /Project preview/);
   assert.match(pricingPortalSurfaceSource, /\$0\/month/);
-  assert.match(pricingPortalSurfaceSource, /0-10 trial credits/);
+  assert.match(pricingPortalSurfaceSource, /Guided idea intake/);
+  assert.match(pricingPortalSurfaceSource, /Roadmap and scope preview/);
+  assert.match(pricingPortalSurfaceSource, /Command Center preview/);
+  assert.match(pricingPortalSurfaceSource, /Limited trial credits included/);
+  assert.match(pricingPortalSurfaceSource, /1 starter project/);
   assert.match(pricingPortalSurfaceSource, /Starter/);
   assert.match(pricingPortalSurfaceSource, /\$49\.99\/month/);
-  assert.match(pricingPortalSurfaceSource, /200 DIY Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /200 Build Credits/);
   assert.match(
     pricingPortalSurfaceSource,
     /Starter is for shaping and progressing a bounded project, not promising a full MVP out of the box\./
   );
   assert.match(pricingPortalSurfaceSource, /Pro/);
   assert.match(pricingPortalSurfaceSource, /\$179\/month/);
-  assert.match(pricingPortalSurfaceSource, /600 DIY Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /600 Build Credits/);
   assert.match(pricingPortalSurfaceSource, /Business/);
   assert.match(pricingPortalSurfaceSource, /\$499\/month/);
-  assert.match(pricingPortalSurfaceSource, /1,600 DIY Build Credits/);
+  assert.match(pricingPortalSurfaceSource, /1,600 Build Credits/);
   assert.match(pricingPortalSurfaceSource, /Managed Build/);
   assert.match(pricingPortalSurfaceSource, /from \$750/);
   assert.match(pricingPortalSurfaceSource, /500 managed credits \/ \$750/);
@@ -372,10 +377,15 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.match(pricingPortalSurfaceSource, /lg:flex-nowrap lg:justify-end/);
   assert.match(pricingPortalSurfaceSource, /href=\{`\/neroa\/auth\?plan=\$\{plan\.id\}`\}/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /const workspaceTopOffs/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /40 build credits/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /0-10 trial credits/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /Workspace Hours/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /10 \/ \$10/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /25 \/ \$20/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /50 \/ \$35/);
   assert.doesNotMatch(pricingPortalSurfaceSource, /workspace-hour/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /workspace pack/i);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /buy workspace time/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /@\/lib\/billing\//);
   assert.doesNotMatch(pricingPortalSurfaceSource, /from\s+["'][^"']*stripe/i);
   assert.doesNotMatch(pricingPortalSurfaceSource, /checkoutSession/i);
