@@ -889,7 +889,12 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /Selected Plan:/);
   assert.match(authPortalSurfaceSource, /free: "Free"/);
   assert.match(authPortalSurfaceSource, /managed: "Managed Build"/);
-  assert.match(authPortalSurfaceSource, /selected_plan: selectedPlan/);
+  assert.match(authPortalSurfaceSource, /const \[createOrganization, setCreateOrganization\] = useState\(""\)/);
+  assert.match(authPortalSurfaceSource, /label="Organization"/);
+  assert.match(authPortalSurfaceSource, /placeholder="Organization \(optional\)"/);
+  assert.match(authPortalSurfaceSource, /required=\{false\}/);
+  assert.match(authPortalSurfaceSource, /organization: organization \|\| null/);
+  assert.match(authPortalSurfaceSource, /selected_plan: selectedPlanPath/);
   assert.match(authPortalSurfaceSource, /Back to pricing/);
   assert.match(authPortalSurfaceSource, /Didn&apos;t receive it\? Check spam or confirm the email address is correct\./);
   assert.match(authPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
@@ -1001,7 +1006,6 @@ test("Account Portal removes oversized hero copy, duplicate sections, and banned
   assert.doesNotMatch(accountPortalSurfaceSource, /Profile Context/);
   assert.doesNotMatch(accountPortalSurfaceSource, /"Projects",/);
   assert.doesNotMatch(accountPortalSurfaceSource, /href="#/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /placeholder/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Surface Status/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /front door/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /authentication surface/i);
@@ -1021,13 +1025,10 @@ test("Account Portal reflects the locked dark Neroa visual direction", () => {
 });
 
 test("Account Portal does not imply live saving, risky mutation, or billing integration state", () => {
-  assert.doesNotMatch(accountPortalSurfaceSource, /<form/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /Connected\b/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /Save Changes/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Sync Now/);
   assert.doesNotMatch(accountPortalSurfaceSource, /Connect /);
   assert.doesNotMatch(accountPortalSurfaceSource, /Stripe/);
-  assert.doesNotMatch(accountPortalSurfaceSource, /supabase\.auth\.updateUser/);
   assert.doesNotMatch(accountPortalSurfaceSource, /supabase\.auth\.admin/i);
   assert.doesNotMatch(accountPortalSurfaceSource, /deleteUser/i);
 });
@@ -1037,13 +1038,16 @@ test("Account Portal reads signed-in email safely without wiring plan data", () 
   assert.match(accountPortalSource, /createSupabaseServerClient/);
   assert.match(accountPortalSource, /await supabase\.auth\.getUser\(\)/);
   assert.match(accountPortalSource, /email:\s*user\.email\?\.trim\(\) \?\? null/);
+  assert.match(accountPortalSource, /readMetadataValue\(user\.user_metadata, \["name", "full_name"\]\)/);
+  assert.match(accountPortalSource, /readMetadataValue\(user\.user_metadata, \["organization"\]\)/);
+  assert.match(accountPortalSource, /readMetadataValue\(user\.user_metadata, \["selected_plan"\]\)/);
+  assert.match(accountPortalSource, /selectedPlan,/);
   assert.match(accountPortalSource, /resetPasswordHref = "\/neroa\/auth\/reset-password"/);
   assert.match(accountPortalSource, /noStore\(\)/);
   assert.match(accountPortalSource, /accountProfile=\{accountProfile\}/);
   assert.doesNotMatch(accountPortalSource, /searchParams/);
   assert.doesNotMatch(accountPortalSource, /normalizeSelectedPlan/);
   assert.doesNotMatch(accountPortalSource, /selectedPlan=\{/);
-  assert.doesNotMatch(accountPortalSource, /selected_plan/);
   assert.doesNotMatch(accountPortalSource, /subscription_tier/);
   assert.doesNotMatch(accountPortalSource, /planName/);
   assert.doesNotMatch(accountPortalSource, /@\/lib\/billing\//);
@@ -1055,9 +1059,9 @@ test("Account Portal reads signed-in email safely without wiring plan data", () 
 test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(
     accountPortalSurfaceSource,
-    /Review your current plan, Build Credits, usage summaries, and credit top-off guidance\s+without implying live billing is already connected\./
+    /Review your selected plan path, Build Credits, usage summaries, and credit top-off guidance\s+without implying live billing is already connected\./
   );
-  assert.match(accountPortalSurfaceSource, /Current Plan/);
+  assert.match(accountPortalSurfaceSource, /Billing Plan Details/);
   assert.match(accountPortalSurfaceSource, /Plan/);
   assert.match(accountPortalSurfaceSource, /Included Build Credits/);
   assert.match(accountPortalSurfaceSource, /Billing cycle/);
@@ -1065,7 +1069,7 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Not available yet/);
   assert.match(
     accountPortalSurfaceSource,
-    /Live plan details will appear here once account billing and the credit ledger are\s+connected\./
+    /Billing plan details pending until account billing and the credit ledger are\s+connected\./
   );
   assert.match(accountPortalSurfaceSource, /Change Plan/);
   assert.match(accountPortalSurfaceSource, /Current Credit Balance/);
@@ -1119,18 +1123,31 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
   assert.match(accountPortalSurfaceSource, /Name/);
   assert.match(accountPortalSurfaceSource, /Organization/);
   assert.match(accountPortalSurfaceSource, /Email/);
+  assert.match(accountPortalSurfaceSource, /Name not added yet\./);
+  assert.match(accountPortalSurfaceSource, /Organization not added yet\./);
   assert.match(
     accountPortalSurfaceSource,
     /Signed-in email will appear here once account profile data is connected\./
   );
+  assert.match(accountPortalSurfaceSource, /Save Profile/);
+  assert.match(accountPortalSurfaceSource, /Saving Profile\.\.\./);
+  assert.match(accountPortalSurfaceSource, /Profile updated\. Name and organization were saved to your account\./);
+  assert.match(accountPortalSurfaceSource, /Unable to save your profile right now\. Please try again\./);
+  assert.match(accountPortalSurfaceSource, /supabase\.auth\.updateUser/);
   assert.match(accountPortalSurfaceSource, /Plan Context/);
-  assert.match(accountPortalSurfaceSource, /Current Plan/);
+  assert.match(accountPortalSurfaceSource, /Selected Plan Path/);
+  assert.match(accountPortalSurfaceSource, /Free Project Preview/);
   assert.match(
     accountPortalSurfaceSource,
-    /Plan details will appear here once reliable account plan data is available\./
+    /Billing plan details will appear once account billing and the credit ledger are\s+connected\./
+  );
+  assert.match(
+    accountPortalSurfaceSource,
+    /Billing plan details pending\. Credit ledger not connected yet\./
   );
   assert.match(accountPortalSurfaceSource, /Build Credit path/);
   assert.match(accountPortalSurfaceSource, /View Billing \/ Usage/);
+  assert.doesNotMatch(accountPortalSurfaceSource, /Current Plan/);
   assert.match(accountPortalSurfaceSource, /Security/);
   assert.match(accountPortalSurfaceSource, /Change Email/);
   assert.match(
@@ -1148,6 +1165,8 @@ test("Account Portal billing, account, and contact panels stay UI-only", () => {
     accountPortalSurfaceSource,
     /Account deletion requires confirmation\s+and data review\.\s+Contact support for deletion\s+requests until self-service deletion is available\./
   );
+  assert.match(accountPortalSurfaceSource, /href="\/neroa\/contact"/);
+  assert.match(accountPortalSurfaceSource, /Contact Support/);
   assert.match(
     accountPortalSurfaceSource,
     /Need help with your plan, project setup, billing questions, or account access\? Open the\s+full Neroa support form and keep email as the safe fallback\./
@@ -1575,7 +1594,8 @@ test("clean auth plan flow keeps public CTAs and plan routing aligned", () => {
   assert.match(authPortalSurfaceSource, /Selected Plan: \{selectedPlanLabel\}/);
   assert.match(authPortalSurfaceSource, /Starting with Free Project Preview\./);
   assert.match(authPortalSurfaceSource, /buildAccountPathForSignIn\(selectedPlan, hasExplicitPlan\)/);
-  assert.match(authPortalSurfaceSource, /buildAccountPathForSignup\(selectedPlan\)/);
+  assert.match(authPortalSurfaceSource, /const selectedPlanPath = selectedPlan \?\? "free"/);
+  assert.match(authPortalSurfaceSource, /buildAccountPathForSignup\(selectedPlanPath\)/);
 });
 
 test("session-aware public navigation defaults signed out and exposes portal links when signed in", () => {
@@ -1691,6 +1711,31 @@ test("Account Portal does not import old account billing auth or project runtime
     assert.doesNotMatch(source, /@\/lib\/workspace\//);
     assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
   }
+});
+
+test("account profile correction pass stays out of destructive auth, Stripe, schema, and naming drift", () => {
+  for (const source of [
+    authPortalSource,
+    authPortalSurfaceSource,
+    accountPortalSource,
+    accountPortalSurfaceSource,
+    browserSupabaseSource
+  ]) {
+    assert.doesNotMatch(source, /supabase\.auth\.admin/i);
+    assert.doesNotMatch(source, /deleteUser/i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*stripe/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/billing\//i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/schema/i);
+    assert.doesNotMatch(source, /from\s+["']@\/lib\/migrations?\//i);
+    assert.doesNotMatch(source, /from\s+["'][^"']*openai/i);
+    assert.doesNotMatch(source, /\bNaroa\b/);
+    assert.doesNotMatch(source, /\bNerowa\b/);
+    assert.doesNotMatch(source, /\bNarowa\b/);
+    assert.doesNotMatch(source, /\bNarua\b/);
+  }
+
+  assert.match(accountPortalSurfaceSource, /supabase\.auth\.signOut/);
+  assert.match(accountPortalSurfaceSource, /router\.push\("\/neroa\/auth"\)/);
 });
 
 test("Project Portal route stays inside the clean neroa portal namespace", () => {

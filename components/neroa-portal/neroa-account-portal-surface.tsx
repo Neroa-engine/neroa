@@ -11,6 +11,7 @@ type AccountProfileSnapshot = {
   name: string | null;
   organization: string | null;
   email: string | null;
+  selectedPlan: "free" | "starter" | "pro" | "business" | "managed" | null;
   resetPasswordHref: string;
 };
 
@@ -68,6 +69,16 @@ const usageSummaryRows = [
   { label: "Lifetime credits used", value: "Pending credit ledger" }
 ] as const;
 
+const selectedPlanPathLabels = {
+  free: "Free Project Preview",
+  starter: "Starter",
+  pro: "Pro",
+  business: "Business",
+  managed: "Managed Build"
+} as const;
+
+type StatusTone = "error" | "success";
+
 function BillingCard({
   title,
   children,
@@ -106,6 +117,42 @@ function buildDisplayValue(
   fallback: string
 ) {
   return value?.trim() ? value : fallback;
+}
+
+function buildStatus(tone: StatusTone, message: string) {
+  return { tone, message };
+}
+
+function ProfileField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  disabled
+}: {
+  label: string;
+  value: string;
+  onChange: (nextValue: string) => void;
+  placeholder: string;
+  disabled?: boolean;
+}) {
+  return (
+    <label className="block space-y-2.5">
+      <span className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-white/62">
+        {label}
+      </span>
+      <div className="flex items-center gap-3 rounded-[1.15rem] border border-white/12 bg-black/20 px-4 py-2.5 shadow-[0_0_28px_rgba(45,212,191,0.05)]">
+        <input
+          type="text"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="h-8 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/28"
+        />
+      </div>
+    </label>
+  );
 }
 
 function ActionTile({
@@ -165,6 +212,13 @@ function renderPanel(
   panelId: string,
   labelledById: string,
   accountProfile: AccountProfileSnapshot,
+  profileName: string,
+  profileOrganization: string,
+  profileStatus: { tone: StatusTone; message: string } | null,
+  isSavingProfile: boolean,
+  onProfileNameChange: (value: string) => void,
+  onProfileOrganizationChange: (value: string) => void,
+  onSaveProfile: () => void,
   signOutError: string | null,
   isSigningOut: boolean,
   onSignOut: () => void,
@@ -185,19 +239,19 @@ function renderPanel(
           </p>
           <h1 className="font-serif text-3xl text-slate-50 sm:text-[2.5rem]">Billing / Usage</h1>
           <p className="max-w-3xl text-sm leading-8 text-slate-300">
-            Review your current plan, Build Credits, usage summaries, and credit top-off guidance
+            Review your selected plan path, Build Credits, usage summaries, and credit top-off guidance
             without implying live billing is already connected.
           </p>
         </div>
 
         <div className="grid gap-4 xl:grid-cols-2">
-          <BillingCard title="Current Plan" accent>
+          <BillingCard title="Billing Plan Details" accent>
             <BillingRow label="Plan" value={unavailableValue} />
             <BillingRow label="Included Build Credits" value={unavailableValue} />
             <BillingRow label="Billing cycle" value={unavailableValue} />
             <BillingRow label="Plan status" value={unavailableValue} />
             <p className="text-sm leading-7 text-slate-300">
-              Live plan details will appear here once account billing and the credit ledger are
+              Billing plan details pending until account billing and the credit ledger are
               connected.
             </p>
             <div>
@@ -297,31 +351,12 @@ function renderPanel(
   }
 
   if (activeTab === "Account") {
-    const profileRows = [
-      {
-        label: "Name",
-        value: buildDisplayValue(
-          accountProfile.name,
-          "Your name will appear here once account profile details are available."
-        )
-      },
-      {
-        label: "Organization",
-        value: buildDisplayValue(
-          accountProfile.organization,
-          "Organization details will appear here once account profile details are available."
-        )
-      },
-      {
-        label: "Email",
-        value: buildDisplayValue(
-          accountProfile.email,
-          "Signed-in email will appear here once account profile data is connected."
-        )
-      }
-    ] as const;
-    const currentPlanValue =
-      "Plan details will appear here once reliable account plan data is available.";
+    const selectedPlanPathLabel =
+      selectedPlanPathLabels[accountProfile.selectedPlan ?? "free"];
+    const profileEmailValue = buildDisplayValue(
+      accountProfile.email,
+      "Signed-in email will appear here once account profile data is connected."
+    );
 
     return (
       <section
@@ -344,20 +379,78 @@ function renderPanel(
 
         <div className="grid gap-4 xl:grid-cols-2">
           <BillingCard title="Profile" accent>
-            {profileRows.map((row) => (
-              <BillingRow key={row.label} label={row.label} value={row.value} />
-            ))}
+            {profileStatus ? (
+              <div
+                role="status"
+                className={[
+                  "rounded-[1.2rem] border px-4 py-3 text-sm leading-7",
+                  profileStatus.tone === "error"
+                    ? "border-rose-300/30 bg-rose-500/10 text-rose-100"
+                    : "border-emerald-300/30 bg-emerald-500/10 text-emerald-100"
+                ].join(" ")}
+              >
+                {profileStatus.message}
+              </div>
+            ) : null}
+            <form className="space-y-4">
+              <ProfileField
+                label="Name"
+                value={profileName}
+                onChange={onProfileNameChange}
+                placeholder="Name not added yet."
+                disabled={isSavingProfile}
+              />
+              <ProfileField
+                label="Organization"
+                value={profileOrganization}
+                onChange={onProfileOrganizationChange}
+                placeholder="Organization not added yet."
+                disabled={isSavingProfile}
+              />
+              <BillingRow label="Email" value={profileEmailValue} />
+              <div className="rounded-[1.2rem] border border-white/8 bg-white/[0.03] px-4 py-4">
+                <p className="text-[0.72rem] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                  Profile Preview
+                </p>
+                <div className="mt-3 space-y-3">
+                  <BillingRow
+                    label="Name"
+                    value={buildDisplayValue(profileName.trim() || null, "Name not added yet.")}
+                  />
+                  <BillingRow
+                    label="Organization"
+                    value={buildDisplayValue(
+                      profileOrganization.trim() || null,
+                      "Organization not added yet."
+                    )}
+                  />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={onSaveProfile}
+                  disabled={isSavingProfile}
+                  className="inline-flex rounded-full border border-teal-300/35 bg-teal-300/10 px-5 py-3 text-xs font-semibold uppercase tracking-[0.2em] text-teal-100 transition hover:border-teal-200/60 hover:bg-teal-300/16 disabled:cursor-not-allowed disabled:border-white/10 disabled:bg-white/[0.03] disabled:text-slate-500"
+                >
+                  {isSavingProfile ? "Saving Profile..." : "Save Profile"}
+                </button>
+              </div>
+            </form>
           </BillingCard>
 
           <BillingCard title="Plan Context">
-            <BillingRow label="Current Plan" value={currentPlanValue} />
+            <BillingRow label="Selected Plan Path" value={selectedPlanPathLabel} />
             <BillingRow
               label="Build Credit path"
               value="Review included credits and additional capacity from Billing / Usage."
             />
             <p className="text-sm leading-7 text-slate-300">
-              Change plans from pricing, then use Billing / Usage to review how your Build Credit
-              path is presented for this account.
+              Billing plan details will appear once account billing and the credit ledger are
+              connected.
+            </p>
+            <p className="text-sm leading-7 text-slate-300">
+              Billing plan details pending. Credit ledger not connected yet.
             </p>
             <div className="flex flex-wrap gap-3">
               <Link
@@ -571,11 +664,51 @@ export function NeroaAccountPortalSurface({
   const router = useRouter();
   const [supabase] = useState(() => createSupabaseBrowserClient());
   const [activeTab, setActiveTab] = useState<AccountTab>("Account");
+  const [profileName, setProfileName] = useState(accountProfile.name ?? "");
+  const [profileOrganization, setProfileOrganization] = useState(accountProfile.organization ?? "");
+  const [profileStatus, setProfileStatus] = useState<{ tone: StatusTone; message: string } | null>(
+    null
+  );
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const activeTabSlug = tabSlug(activeTab);
   const activeTabId = `account-tab-${activeTabSlug}`;
   const activePanelId = `account-panel-${activeTabSlug}`;
+
+  async function handleSaveProfile() {
+    setProfileStatus(null);
+    setIsSavingProfile(true);
+
+    try {
+      const name = profileName.trim();
+      const organization = profileOrganization.trim();
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          name: name || null,
+          full_name: name || null,
+          organization: organization || null
+        }
+      });
+
+      if (error) {
+        setProfileStatus(buildStatus("error", error.message));
+        setIsSavingProfile(false);
+        return;
+      }
+
+      setProfileStatus(
+        buildStatus("success", "Profile updated. Name and organization were saved to your account.")
+      );
+      setIsSavingProfile(false);
+      router.refresh();
+    } catch {
+      setProfileStatus(
+        buildStatus("error", "Unable to save your profile right now. Please try again.")
+      );
+      setIsSavingProfile(false);
+    }
+  }
 
   async function handleSignOut() {
     setSignOutError(null);
@@ -668,6 +801,13 @@ export function NeroaAccountPortalSurface({
               activePanelId,
               activeTabId,
               accountProfile,
+              profileName,
+              profileOrganization,
+              profileStatus,
+              isSavingProfile,
+              setProfileName,
+              setProfileOrganization,
+              handleSaveProfile,
               signOutError,
               isSigningOut,
               handleSignOut,

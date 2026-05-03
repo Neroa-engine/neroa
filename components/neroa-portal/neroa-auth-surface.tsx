@@ -34,7 +34,8 @@ function AuthField({
   autoComplete,
   trailingAction,
   placeholder,
-  disabled = false
+  disabled = false,
+  required = true
 }: {
   label: string;
   type?: "text" | "email" | "password";
@@ -44,6 +45,7 @@ function AuthField({
   trailingAction?: ReactNode;
   placeholder?: string;
   disabled?: boolean;
+  required?: boolean;
 }) {
   return (
     <label className="block space-y-2.5">
@@ -58,7 +60,7 @@ function AuthField({
           autoComplete={autoComplete}
           placeholder={placeholder}
           disabled={disabled}
-          required
+          required={required}
           className="h-8 flex-1 bg-transparent text-base text-white outline-none placeholder:text-white/28"
         />
         {trailingAction}
@@ -111,6 +113,7 @@ export function NeroaAuthSurface({
   const [signInEmail, setSignInEmail] = useState("");
   const [signInPassword, setSignInPassword] = useState("");
   const [createName, setCreateName] = useState("");
+  const [createOrganization, setCreateOrganization] = useState("");
   const [createEmail, setCreateEmail] = useState("");
   const [createPassword, setCreatePassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -127,16 +130,12 @@ export function NeroaAuthSurface({
   const [activeSubmit, setActiveSubmit] = useState<AuthMode | null>(null);
   const [showEmailConfirmationHelp, setShowEmailConfirmationHelp] = useState(false);
 
-  function buildAccountPathForSignIn(plan: SelectedPlan, preservePlan: boolean) {
-    if (!preservePlan) {
-      return "/neroa/account";
-    }
-
-    return `/neroa/account?plan=${plan}`;
+  function buildAccountPathForSignIn(_plan: SelectedPlan, _preservePlan: boolean) {
+    return "/neroa/account";
   }
 
-  function buildAccountPathForSignup(plan: SelectedPlan) {
-    return `/neroa/account?plan=${plan}`;
+  function buildAccountPathForSignup(_plan: SelectedPlan) {
+    return "/neroa/account";
   }
 
   function buildCleanConfirmUrl(nextPath: string) {
@@ -197,9 +196,11 @@ export function NeroaAuthSurface({
     setActiveSubmit("create");
 
     const name = createName.trim();
+    const organization = createOrganization.trim();
     const email = createEmail.trim();
     const password = createPassword;
     const passwordConfirmation = confirmPassword;
+    const selectedPlanPath = selectedPlan ?? "free";
 
     if (!name) {
       setStatus(buildAuthStatus("error", "Enter your name so Neroa can attach it to the account."));
@@ -215,7 +216,7 @@ export function NeroaAuthSurface({
       return;
     }
 
-    const destination = buildAccountPathForSignup(selectedPlan);
+    const destination = buildAccountPathForSignup(selectedPlanPath);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -224,7 +225,8 @@ export function NeroaAuthSurface({
         data: {
           name,
           full_name: name,
-          selected_plan: selectedPlan
+          organization: organization || null,
+          selected_plan: selectedPlanPath
         }
       }
     });
@@ -479,6 +481,15 @@ export function NeroaAuthSurface({
                   autoComplete="name"
                   placeholder="Your name"
                   disabled={isCreatingAccount}
+                />
+                <AuthField
+                  label="Organization"
+                  value={createOrganization}
+                  onChange={setCreateOrganization}
+                  autoComplete="organization"
+                  placeholder="Organization (optional)"
+                  disabled={isCreatingAccount}
+                  required={false}
                 />
                 <AuthField
                   label="Email"

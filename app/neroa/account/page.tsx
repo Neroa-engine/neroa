@@ -13,6 +13,7 @@ type AccountProfileSnapshot = {
   name: string | null;
   organization: string | null;
   email: string | null;
+  selectedPlan: "free" | "starter" | "pro" | "business" | "managed" | null;
   resetPasswordHref: string;
 };
 
@@ -45,21 +46,26 @@ async function buildAccountProfileSnapshot(): Promise<AccountProfileSnapshot> {
         name: null,
         organization: null,
         email: null,
+        selectedPlan: null,
         resetPasswordHref
       };
     }
 
+    const rawSelectedPlan = readMetadataValue(user.user_metadata, ["selected_plan"]);
+    const selectedPlan =
+      rawSelectedPlan === "free" ||
+      rawSelectedPlan === "starter" ||
+      rawSelectedPlan === "pro" ||
+      rawSelectedPlan === "business" ||
+      rawSelectedPlan === "managed"
+        ? rawSelectedPlan
+        : null;
+
     return {
-      name: readMetadataValue(user.user_metadata, ["full_name", "name", "display_name"]),
-      organization: readMetadataValue(user.user_metadata, [
-        "organization",
-        "organization_name",
-        "organizationName",
-        "company",
-        "company_name",
-        "companyName"
-      ]),
+      name: readMetadataValue(user.user_metadata, ["name", "full_name"]),
+      organization: readMetadataValue(user.user_metadata, ["organization"]),
       email: user.email?.trim() ?? null,
+      selectedPlan,
       resetPasswordHref
     };
   } catch {
@@ -67,6 +73,7 @@ async function buildAccountProfileSnapshot(): Promise<AccountProfileSnapshot> {
       name: null,
       organization: null,
       email: null,
+      selectedPlan: null,
       resetPasswordHref
     };
   }
