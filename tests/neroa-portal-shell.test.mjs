@@ -231,6 +231,7 @@ test("/neroa front door includes the polished chat-first flow", () => {
   assert.match(frontDoorSurfaceSource, /onSubmit=\{handleSubmit\}/);
   assert.match(frontDoorSurfaceSource, /Home/);
   assert.match(frontDoorSurfaceSource, /Pricing/);
+  assert.match(frontDoorSurfaceSource, /DIY vs Managed/);
   assert.match(frontDoorSurfaceSource, /Sign In/);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
 });
@@ -252,6 +253,7 @@ test("/neroa front door CTAs point only to clean /neroa routes", () => {
   assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href=\{startProjectHref\}/g), 2);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/pricing"/g), 1);
+  assert.match(frontDoorSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
   assert.equal(countOccurrences(frontDoorSurfaceSource, /href="\/neroa\/account"/g), 0);
   assert.match(frontDoorSurfaceSource, /Start Your Project/);
   assert.match(frontDoorSurfaceSource, /Let&apos;s Begin/);
@@ -296,8 +298,6 @@ test("/neroa front door uses public-facing product language and avoids DIY Manag
   assert.doesNotMatch(frontDoorSurfaceSource, /not choosing an execution model/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /front-door prompt/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /pretending live chat is already active/i);
-  assert.doesNotMatch(frontDoorSurfaceSource, /\bDIY\b/);
-  assert.doesNotMatch(frontDoorSurfaceSource, /\bManaged\b/);
   assert.doesNotMatch(frontDoorSurfaceSource, /self-guided/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /done-for-you/i);
   assert.doesNotMatch(frontDoorSurfaceSource, /pick a plan/i);
@@ -436,6 +436,8 @@ test("/neroa pricing route renders the clean pricing page and plan-selection han
   assert.match(pricingPortalSurfaceSource, /3,000 managed credits \/ \$4,500/);
   assert.match(pricingPortalSurfaceSource, /5,000 managed credits \/ \$7,500/);
   assert.match(pricingPortalSurfaceSource, /Credit Top-Offs/);
+  assert.match(pricingPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(pricingPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
   assert.match(
     pricingPortalSurfaceSource,
     /Add more governed build credits when your project needs additional approved work\./
@@ -592,8 +594,10 @@ test("clean auth surface includes local form controls and removes placeholder co
   assert.match(authPortalSurfaceSource, /className="right-\[18rem\] top-\[7rem\]"/);
   assert.match(authPortalSurfaceSource, /Home/);
   assert.match(authPortalSurfaceSource, /Pricing/);
+  assert.match(authPortalSurfaceSource, /DIY vs Managed/);
   assert.match(authPortalSurfaceSource, /Start Your Project/);
   assert.match(authPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.match(authPortalSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
   assert.doesNotMatch(authPortalSurfaceSource, /NeroaPortalNavigation/);
   assert.doesNotMatch(authPortalSurfaceSource, /@\/components\/auth\//);
   assert.doesNotMatch(authPortalSurfaceSource, /@\/app\/auth\//);
@@ -886,6 +890,8 @@ test("clean auth confirmation and reset routes stay inside the new Neroa auth ar
   assert.match(cleanResetPasswordSurfaceSource, /Reset Password/);
   assert.match(cleanResetPasswordSurfaceSource, /Update Password/);
   assert.match(cleanResetPasswordSurfaceSource, /Back to Sign In/);
+  assert.match(cleanResetPasswordSurfaceSource, /DIY vs Managed/);
+  assert.match(cleanResetPasswordSurfaceSource, /href="\/neroa\/diy-vs-managed"/);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/components\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /@\/app\/auth\//);
   assert.doesNotMatch(cleanResetPasswordSurfaceSource, /\/logo\//);
@@ -938,6 +944,9 @@ test("clean portal shell stays UI-only and avoids runtime or schema behavior", (
 test("clean auth plan flow keeps public CTAs and plan routing aligned", () => {
   assert.match(frontDoorSurfaceSource, /const startProjectHref = "\/neroa\/pricing"/);
   assert.doesNotMatch(frontDoorSurfaceSource, /href="\/neroa\/auth\?plan=/);
+  assert.match(pricingPortalSurfaceSource, /DIY vs Managed/);
+  assert.match(pricingPortalSurfaceSource, /href="\/neroa\/pricing"/);
+  assert.doesNotMatch(pricingPortalSurfaceSource, /href="#plans"/);
   assert.match(pricingPortalSurfaceSource, /id:\s*"free"/);
   assert.match(pricingPortalSurfaceSource, /id:\s*"starter"/);
   assert.match(pricingPortalSurfaceSource, /id:\s*"pro"/);

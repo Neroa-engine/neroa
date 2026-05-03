@@ -128,11 +128,14 @@ export function NeroaPricingSurface() {
             <Link href="/neroa/pricing" className="transition hover:text-white">
               Pricing
             </Link>
+            <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
+              DIY vs Managed
+            </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
               Sign In
             </Link>
             <Link
-              href="#plans"
+              href="/neroa/pricing"
               className="inline-flex items-center rounded-full border border-teal-300/45 bg-teal-300/10 px-5 py-3 text-white shadow-[0_0_28px_rgba(45,212,191,0.12)] transition hover:border-teal-200/70 hover:bg-teal-300/16"
             >
               Start Your Project

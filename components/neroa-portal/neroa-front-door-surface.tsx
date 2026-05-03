@@ -170,6 +170,9 @@ export function NeroaFrontDoorSurface({
             <Link href="/neroa/pricing" className="transition hover:text-white">
               Pricing
             </Link>
+            <Link href="/neroa/diy-vs-managed" className="transition hover:text-white">
+              DIY vs Managed
+            </Link>
             <Link href="/neroa/auth" className="transition hover:text-white">
               Sign In
             </Link>
